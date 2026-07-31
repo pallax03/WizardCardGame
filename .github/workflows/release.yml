@@ -1,7 +1,10 @@
 name: Release
 
 on:
-  push:
+  workflow_run:
+    workflows: ["Application CI", "Wizard-Engine CI"]
+    types:
+      - completed
     branches:
       - master
 
@@ -9,6 +12,7 @@ jobs:
   release:
     name: Semantic Release
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: write
       issues: write
