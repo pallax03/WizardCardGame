@@ -1,0 +1,49 @@
+services:
+  nginx:
+    image: nginx:1.25-alpine
+    container_name: ${PROJECT_NAME}-nginx
+    ports:
+      - "80:80"
+    environment:
+      - ENGINE_PORT=${ENGINE_PORT}
+      - APPLICATION_PORT=${APPLICATION_PORT}
+    volumes:
+      - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
+    depends_on:
+      - application
+      - wizard-engine
+    restart: always
+
+  redis:
+    image: redis:7-alpine
+    container_name: ${PROJECT_NAME}-redis
+    ports:
+      - "${REDIS_PORT}:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --save 60 1 --loglevel warning
+    restart: always
+
+  wizard-engine:
+    build:
+      context: ./wizardEngine
+    container_name: ${PROJECT_NAME}-wizard-engine
+    environment:
+      - PORT=${ENGINE_PORT}
+    depends_on:
+      - redis
+    restart: on-failure
+
+  application:
+    build:
+      context: ./application
+    container_name: ${PROJECT_NAME}-application
+    environment:
+      - PORT=${APPLICATION_PORT}
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost
+    depends_on:
+      - wizard-engine
+    restart: always
+
+volumes:
+  redis-data:

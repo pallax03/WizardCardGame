@@ -1,0 +1,48 @@
+name: Wizard-Engine CI
+
+on:
+  push:
+    branches:
+      - master
+      - develop
+    paths:
+      - 'wizardEngine/**'
+      - '.github/workflows/ci-wizard_engine.yml'
+  pull_request:
+    branches:
+      - master
+      - develop
+    paths:
+      - 'wizardEngine/**'
+
+jobs:
+  wizard-engine-test:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'sbt'
+      
+      - name: Install SBT
+        uses: sbt/setup-sbt@v1
+
+      - name: Auto-Format (Scalafmt & Scalafix)
+        working-directory: ./wizardEngine
+        run: sbt scalafmtAll scalafixAll || true
+
+      - name: Commit Auto-Formatting Changes
+        if: github.actor != 'dependabot[bot]'
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'style: auto-format scala code'
+
+      - name: SBT Compile, Test & Coverage
+        working-directory: ./wizardEngine
+        run: sbt clean coverage test coverageReport
