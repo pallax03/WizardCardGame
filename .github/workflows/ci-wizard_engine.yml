@@ -5,23 +5,34 @@ on:
     branches:
       - master
       - develop
-    paths:
-      - 'wizardEngine/**'
-      - '.github/workflows/ci-wizard_engine.yml'
   pull_request:
     branches:
       - master
       - develop
-    paths:
-      - 'wizardEngine/**'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      engine: ${{ steps.filter.outputs.engine }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            engine:
+              - 'wizardEngine/**'
+              - '.github/workflows/ci-wizard_engine.yml'
+
   wizard-engine-test:
+    needs: changes
+    if: ${{ needs.changes.outputs.engine == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
         with:
           token: ${{ secrets.RELEASE_TOKEN }}
 
