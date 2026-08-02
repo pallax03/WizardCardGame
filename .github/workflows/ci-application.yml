@@ -5,24 +5,35 @@ on:
     branches:
       - master
       - develop
-    paths:
-      - 'application/**'
-      - '.github/workflows/ci-application.yml'
   pull_request:
     branches:
       - master
       - develop
-    paths:
-      - 'application/**'
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'application/**'
+              - '.github/workflows/ci-application.yml'
+
   application-test:
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' }}
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
 
       - name: Setup Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
