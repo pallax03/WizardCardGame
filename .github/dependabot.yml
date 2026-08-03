@@ -8,6 +8,10 @@ updates:
     labels:
       - "dependencies"
       - "application"
+    groups:
+      npm-dependencies:
+        patterns:
+          - "*"
 
   - package-ecosystem: "sbt"
     directory: "/wizardEngine"
@@ -17,3 +21,7 @@ updates:
     labels:
       - "dependencies"
       - "wizardEngine"
+    groups:
+      sbt-dependencies:
+        patterns:
+          - "*"
