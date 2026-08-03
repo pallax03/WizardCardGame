@@ -1,12 +1,12 @@
-package it.unibo.pps.wizard.engine.prolog
+package it.unibo.pps.wizard.engine.adapters.prolog
 
-import it.unibo.pps.wizard.engine.model.basic.BasicTestDSL._
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
-import it.unibo.pps.wizard.engine.model.basic.bidding.Trick
-import it.unibo.pps.wizard.engine.model.basic.cards.Card._
-import it.unibo.pps.wizard.engine.model.basic.cards.Hand._
+import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
+import it.unibo.pps.wizard.engine.model.basic.BasicTestDSL.*
+import it.unibo.pps.wizard.engine.model.basic.bidding.{Bid, Trick}
+import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
+import it.unibo.pps.wizard.engine.model.basic.cards.Hand.*
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
-import it.unibo.pps.wizard.engine.model.rules.TableRules._
+import it.unibo.pps.wizard.engine.model.rules.TableRules.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

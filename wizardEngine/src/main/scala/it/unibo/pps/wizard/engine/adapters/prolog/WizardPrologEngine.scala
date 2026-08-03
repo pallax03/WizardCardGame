@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.prolog
+package it.unibo.pps.wizard.engine.adapters.prolog
 
 import alice.tuprolog.Term
 import alice.tuprolog.Theory
@@ -7,7 +7,7 @@ import it.unibo.pps.wizard.engine.model.basic.bidding.Trick
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.basic.cards.Hand
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
-import it.unibo.pps.wizard.engine.prolog.WizardTermMapper._
+import WizardTermMapper._
 import it.unibo.pps.wizard.util.PrologEngine
 
 import scala.util.Using

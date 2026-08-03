@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.prolog
+package it.unibo.pps.wizard.engine.adapters.prolog
 
 import it.unibo.pps.wizard.engine.model.basic.cards._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump

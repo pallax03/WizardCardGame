@@ -1,6 +1,6 @@
-package it.unibo.pps.wizard.engine.prolog
+package it.unibo.pps.wizard.engine.adapters.prolog
 
-import it.unibo.pps.wizard.engine.model.basic.cards.Card._
+import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
