@@ -1,0 +1,41 @@
+package it.unibo.pps.wizard.codecs.engine.model
+
+import io.circe.parser.*
+import io.circe.syntax.*
+import it.unibo.pps.wizard.codecs.engine.model.CardCodecs.given
+import it.unibo.pps.wizard.engine.model.basic.cards.Card
+import it.unibo.pps.wizard.engine.model.basic.cards.Card._
+import it.unibo.pps.wizard.engine.model.basic.cards.Card.{Color, Rank}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class TestCardCodecs extends AnyWordSpec with Matchers:
+
+  "CardCodecs" should:
+    "encode and decode Card.Color correctly" in:
+      val color = Color.Red
+      val json = color.asJson
+      json.as[Color] shouldBe Right(color)
+
+    "encode and decode Card.Rank correctly" in:
+      val rank = Rank.Ten
+      val json = rank.asJson
+      json.as[Rank] shouldBe Right(rank)
+
+    "encode and decode Card.Standard correctly" in:
+      val card: Card = Seven of Blue
+      val jsonString = card.asJson.noSpaces
+      jsonString shouldBe """{"type":"Standard","color":"Blue","rank":7}"""
+      decode[Card](jsonString) shouldBe Right(card)
+
+    "encode and decode Card.Wizard correctly" in:
+      val card: Card = wizard
+      val jsonString = card.asJson.noSpaces
+      jsonString shouldBe """{"type":"Wizard","id":1}"""
+      decode[Card](jsonString) shouldBe Right(card)
+
+    "encode and decode Card.Jester correctly" in:
+      val card: Card = jester
+      val jsonString = card.asJson.noSpaces
+      jsonString shouldBe """{"type":"Jester","id":1}"""
+      decode[Card](jsonString) shouldBe Right(card)
