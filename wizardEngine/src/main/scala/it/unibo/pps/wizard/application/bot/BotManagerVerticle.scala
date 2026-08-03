@@ -10,8 +10,8 @@ import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.Players
 import it.unibo.pps.wizard.engine.model.configuration.BotsDifficulty
 import it.unibo.pps.wizard.engine.model.core.GameAction
-import it.unibo.pps.wizard.engine.ports.WizardAIPort
-import it.unibo.pps.wizard.engine.ports.WizardInboundPort
+import it.unibo.pps.wizard.engine.ports.AIPort
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,8 +32,8 @@ import scala.util.Success
  * It delegates the actual strategy execution to instances of [[BotStrategy]].
  */
 class BotManagerVerticle(
-    wizardInboundPort: WizardInboundPort,
-    wizardAIPort: WizardAIPort
+                          wizardInboundPort: GameEngineInboundPort,
+                          wizardAIPort: AIPort
 ) extends AbstractVerticle:
 
   private var bots: Map[PlayerId, BotStrategy] = Map.empty

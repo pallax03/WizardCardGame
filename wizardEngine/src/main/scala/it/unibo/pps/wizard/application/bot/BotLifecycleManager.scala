@@ -1,8 +1,8 @@
 package it.unibo.pps.wizard.application.bot
 
 import io.vertx.core.Vertx
-import it.unibo.pps.wizard.engine.ports.WizardAIPort
-import it.unibo.pps.wizard.engine.ports.WizardInboundPort
+import it.unibo.pps.wizard.engine.ports.AIPort
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
 
 import scala.concurrent.Future
 import scala.concurrent.Promise
@@ -18,9 +18,9 @@ import scala.concurrent.Promise
  * @param aiPort       The AI port for handling bot decision-making.
  */
 class BotLifecycleManager(
-    private val vertx: Vertx,
-    private val inboundPort: WizardInboundPort,
-    private val aiPort: WizardAIPort
+                           private val vertx: Vertx,
+                           private val inboundPort: GameEngineInboundPort,
+                           private val aiPort: AIPort
 ):
   private var currentBotDeploymentId: Option[String] = None
 

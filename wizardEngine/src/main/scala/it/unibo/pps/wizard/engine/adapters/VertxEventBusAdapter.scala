@@ -8,16 +8,16 @@ import it.unibo.pps.wizard.engine.events.InvitationEvent
 import it.unibo.pps.wizard.engine.events.LifecycleEvent
 import it.unibo.pps.wizard.engine.events.ProgressEvent
 import it.unibo.pps.wizard.engine.events.WizardEvent
-import it.unibo.pps.wizard.engine.ports.WizardOutboundPort
+import it.unibo.pps.wizard.engine.ports.GameEngineOutboundPort
 
 import scala.concurrent.Future
 
 /**
- * An implementation of the [[WizardOutboundPort]] that uses Vert.x event bus to publish events.
+ * An implementation of the [[GameEngineOutboundPort]] that uses Vert.x event bus to publish events.
  *
  * @param vertx the Vert.x instance used to publish events
  */
-class VertxEventBusAdapter(private val vertx: Vertx) extends WizardOutboundPort:
+class VertxEventBusAdapter(private val vertx: Vertx) extends GameEngineOutboundPort:
 
   override def publishEvent(event: WizardEvent): Future[Unit] =
     eventAddresses(event).foreach: address =>

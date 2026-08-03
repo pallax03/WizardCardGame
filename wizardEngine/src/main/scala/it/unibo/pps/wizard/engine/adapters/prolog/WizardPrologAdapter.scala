@@ -9,7 +9,7 @@ import it.unibo.pps.wizard.engine.model.basic.gameplay.{Round, Table}
 import it.unibo.pps.wizard.engine.model.core.GameState
 import it.unibo.pps.wizard.engine.model.rules.BiddingRules.*
 import it.unibo.pps.wizard.engine.model.rules.TableRules.*
-import it.unibo.pps.wizard.engine.ports.{WizardAIPort, WizardInboundPort}
+import it.unibo.pps.wizard.engine.ports.{AIPort, GameEngineInboundPort}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -17,7 +17,8 @@ import scala.concurrent.Future
 /**
  * Adapter that connects the game engine's AI requirements with the Prolog knowledge base.
  *
- * This Adapter work with [[WizardGameAdapter]] as every api need to get actual state to respond with the correct data for the correct playerId request.
+ * This Adapter work with [[GameEngineInboundAdapter]] as every api need to get actual state to respond with the correct data for the correct playerId request.
+ *
  * @throws Future[Exception] Each api return a failed future if any problem occurs.
  *
  * This component acts as a safety layer:
@@ -25,7 +26,7 @@ import scala.concurrent.Future
  * 2. Manages interactions with the [[WizardPrologEngine]].
  * 3. Provides robust fallbacks: if Prolog fails to return a valid move, this adapter ensures the game continues by providing a valid default move.
  */
-class WizardPrologAdapter(private val inboundPort: WizardInboundPort) extends WizardAIPort:
+class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extends AIPort:
 
   private val engine = WizardPrologEngine()
 

@@ -10,8 +10,8 @@ import it.unibo.pps.wizard.engine.model.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameEngine
 import it.unibo.pps.wizard.engine.model.core.GameState
-import it.unibo.pps.wizard.engine.ports.WizardInboundPort
-import it.unibo.pps.wizard.engine.ports.WizardOutboundPort
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
+import it.unibo.pps.wizard.engine.ports.GameEngineOutboundPort
 import it.unibo.pps.wizard.util.Id
 import it.unibo.pps.wizard.util.VerticleExecutor
 
@@ -24,13 +24,13 @@ enum WizardGameState:
   case Running(state: GameState)
 
 /**
- * An adapter that implements the [[WizardInboundPort]] interface, allowing interaction with the Wizard game engine.
+ * An adapter that implements the [[GameEngineInboundPort]] interface, allowing interaction with the Wizard game engine.
  *
  * @param vertx the Vert.x instance used for event handling
  * @param outboundPort the outbound port used to publish events
  */
-class WizardGameAdapter(private val vertx: Vertx, private val outboundPort: WizardOutboundPort)
-    extends WizardInboundPort:
+class GameEngineInboundAdapter(private val vertx: Vertx, private val outboundPort: GameEngineOutboundPort)
+    extends GameEngineInboundPort:
   private var currentState: WizardGameState = WizardGameState.NotConfigured
   private val verticleExecutor: VerticleExecutor = VerticleExecutor(this.vertx)
   private var subscriptions: Map[String, MessageConsumer[?]] = Map.empty

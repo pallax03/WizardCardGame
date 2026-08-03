@@ -8,7 +8,7 @@ import scala.concurrent.Future
  * Outbound port for the Wizard game engine.
  * This trait defines the methods that can be called by the game engine to publish events to external components.
  */
-trait WizardOutboundPort:
+trait GameEngineOutboundPort:
 
   /**
    * Publishes a single event.
