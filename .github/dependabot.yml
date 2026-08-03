@@ -9,9 +9,12 @@ updates:
       - "dependencies"
       - "application"
     groups:
-      npm-dependencies:
+      npm-safe-updates:
         patterns:
           - "*"
+        update-types:
+          - "patch"
+          - "minor"
 
   - package-ecosystem: "sbt"
     directory: "/wizardEngine"
@@ -22,6 +25,9 @@ updates:
       - "dependencies"
       - "wizardEngine"
     groups:
-      sbt-dependencies:
+      sbt-safe-updates:
         patterns:
           - "*"
+        update-types:
+          - "patch"
+          - "minor"
