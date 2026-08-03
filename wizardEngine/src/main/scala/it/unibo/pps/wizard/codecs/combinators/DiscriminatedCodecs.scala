@@ -13,4 +13,4 @@ object DiscriminatedCodecs:
       cursor.downField(tagKey).as[String].flatMap: tag =>
         resolver.lift(tag) match
           case Some(decoder) => decoder(cursor)
-          case None          => Left(DecodingFailure(s"Tag non riconosciuto '$tag' per $tagKey", cursor.history))
+          case None          => Left(DecodingFailure(s"Tag not recognized '$tag' for $tagKey", cursor.history))

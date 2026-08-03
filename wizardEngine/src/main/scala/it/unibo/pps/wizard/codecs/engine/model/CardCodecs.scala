@@ -1,8 +1,10 @@
 package it.unibo.pps.wizard.codecs.engine.model
 
-import io.circe._, io.circe.syntax._
-import it.unibo.pps.wizard.codecs.combinators.DiscriminatedCodecs._
+import io.circe.*
+import io.circe.syntax.*
+import it.unibo.pps.wizard.codecs.combinators.DiscriminatedCodecs.*
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
+import it.unibo.pps.wizard.engine.model.basic.cards.SpecialCard
 
 object CardCodecs:
   given Encoder[Card.Color] = Encoder.encodeString.contramap(_.toString)
@@ -14,8 +16,8 @@ object CardCodecs:
   
   given Encoder[Card] = Encoder.instance:
     case Card.Standard(c, r) => Json.obj("color" -> c.asJson, "rank" -> r.asJson).withTag("type", "Standard")
-    case Card.Wizard(id)     => Json.obj("id" -> id.asJson).withTag("type", "Wizard")
-    case Card.Jester(id)     => Json.obj("id" -> id.asJson).withTag("type", "Jester")
+    case sc: (SpecialCard & Product) =>
+      Json.obj("id" -> sc.id.asJson).withTag("type", sc.productPrefix)
 
   given Decoder[Card] = decodeByTag("type"):
     case "Standard" => Decoder.forProduct2("color", "rank")(Card.Standard.apply)
