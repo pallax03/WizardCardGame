@@ -19,8 +19,8 @@ class TestScoreboard extends AnyWordSpec with Matchers:
   val r1: Round = Round(1)
   val r2: Round = Round(2)
   val r3: Round = Round(3)
-  val b1: Bid = Bid(1)
-  val b2: Bid = Bid(2)
+  val b1: Bid = 1
+  val b2: Bid = 2
 
   "A Scoreboard" when:
     "empty" should:
@@ -75,9 +75,9 @@ class TestScoreboard extends AnyWordSpec with Matchers:
       "return rows sorted chronologically by round, regardless of insertion order" in:
         // Inseriamo i round in ordine sparso (R2, poi R3, poi R1)
         val sb = Scoreboard.empty
-          .addScore(p1Id, r2, Score(30), Bid(2))
-          .addScore(p1Id, r3, Score(40), Bid(1))
-          .addScore(p1Id, r1, Score(10), Bid(0))
+          .addScore(p1Id, r2, Score(30), 2)
+          .addScore(p1Id, r3, Score(40), 1)
+          .addScore(p1Id, r1, Score(10), 0)
 
         val rows = sb.toRoundRows(players)
 

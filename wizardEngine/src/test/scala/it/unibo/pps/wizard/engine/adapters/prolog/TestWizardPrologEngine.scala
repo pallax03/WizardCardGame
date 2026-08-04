@@ -2,7 +2,6 @@ package it.unibo.pps.wizard.engine.adapters.prolog
 
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
 import it.unibo.pps.wizard.engine.model.basic.BasicTestDSL.*
-import it.unibo.pps.wizard.engine.model.basic.bidding.{Bid, Trick}
 import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
 import it.unibo.pps.wizard.engine.model.basic.cards.Hand.*
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
@@ -26,7 +25,7 @@ class TestWizardPrologEngine extends AnyWordSpec with Matchers:
 
     "adjust bid" in:
       val handSize = hand.toList.size
-      val bid = engine.adjustBid(hand, Bid(handSize + 1)).head
+      val bid = engine.adjustBid(hand, handSize + 1).head
       bid should be >= 0
       bid should be <= handSize
 
@@ -38,8 +37,8 @@ class TestWizardPrologEngine extends AnyWordSpec with Matchers:
           winningCard = Option(Ten of Yellow),
           followingColor = Option(Yellow),
           trump = Option(Five of Blue).asTrump,
-          playerBid = Bid(5),
-          playerTrick = Trick(3)
+          playerBid = 5,
+          playerTrick = 3
         )
         .head
       legalCards should contain(bestCard)

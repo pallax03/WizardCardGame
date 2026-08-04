@@ -48,7 +48,7 @@ object Scoreboard:
      * @return a tuple of [[Score]] and [[Bid]], defaulting to (0, 0) if not found.
      */
     def getStatsForRound(r: Round, pId: PlayerId): (Score, Bid) =
-      sb.getOrElse(pId, Map.empty).getOrElse(r, (Score(0), Bid(0)))
+      sb.getOrElse(pId, Map.empty).getOrElse(r, (Score(0), 0))
 
     private def allPlayedRounds: List[Round] = sb.values.flatMap(_.keys).toSet.toList.sorted
 

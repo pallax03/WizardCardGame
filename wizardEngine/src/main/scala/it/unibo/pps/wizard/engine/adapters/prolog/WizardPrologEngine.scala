@@ -60,7 +60,7 @@ class WizardPrologEngine:
    */
   def placeBid(hand: Hand, trump: Trump): Option[Bid] =
     query(s"place_bid(${cardsTerm(hand.toList)}, ${trumpColorTerm(trump)}, Bid)", "Bid").map(term =>
-      Bid(term.toString.toInt)
+      term.toString.toInt
     )
 
   /**
@@ -73,7 +73,7 @@ class WizardPrologEngine:
    */
   def adjustBid(hand: Hand, rejectedBid: Bid): Option[Bid] =
     query(s"adjust_bid(${cardsTerm(hand.toList)}, $rejectedBid, FinalBid)", "FinalBid").map(term =>
-      Bid(term.toString.toInt)
+      term.toString.toInt
     )
 
   /**

@@ -83,7 +83,7 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
     onRunningPhase("adjust bid"):
       case GameState.Bidding(core, currentBids, _) =>
         withHand(core.hands.getHand(playerId)): hand =>
-          val rejectedBid = Bid(core.round.value - currentBids.total)
+          val rejectedBid = core.round.value - currentBids.total
           engine
             .adjustBid(hand, rejectedBid)
             .filter(_.validateBid(core.round, currentBids, core.players.totalPlayers).isRight)
@@ -115,6 +115,5 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
 
   private def firstValidBid(round: Round, bids: Bids, totalPlayers: Int): Bid =
     (0 to round.value)
-      .map(Bid(_))
       .find(_.validateBid(round, bids, totalPlayers).isRight)
-      .getOrElse(Bid(0))
+      .getOrElse(0)

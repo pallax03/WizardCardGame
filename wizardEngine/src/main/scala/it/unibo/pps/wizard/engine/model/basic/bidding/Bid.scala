@@ -7,8 +7,6 @@ import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 type Bid = Int
 
 object Bid:
-  def apply(value: Int): Bid = value
-
   extension (b: Bid)
     /**
      * Checks if the bid is valid for the given round.

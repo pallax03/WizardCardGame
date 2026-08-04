@@ -47,7 +47,7 @@ object BiddingRules:
       else Right(())
 
   private def isWithinBounds(bid: Bid, round: Round): Boolean =
-    bid >= Bid(0) && bid.isValid(round)
+    bid >= 0 && bid.isValid(round)
 
   private def isLastPlayerInvalid(
       bid: Bid,

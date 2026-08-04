@@ -1,7 +1,6 @@
 package it.unibo.pps.wizard.engine.model.basic.scoreboard
 
 import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -29,7 +28,7 @@ class TestRoundRow extends AnyWordSpec with Matchers:
         row.getBid(p1.id) shouldBe ""
 
       "return the correct string representation of score and bid when present" in:
-        val stats = Map(p1.id -> Some((Score(10), Bid(2))))
+        val stats = Map(p1.id -> Some((Score(10), 2)))
         val row = RoundRow(r1, stats)
 
         row.getScore(p1.id) shouldBe "10"
@@ -39,11 +38,11 @@ class TestRoundRow extends AnyWordSpec with Matchers:
     "generating stats for all players" should:
       "correctly map scoreboard data to options" in:
         val sb = Scoreboard.empty
-          .addScore(p1.id, r1, Score(25), Bid(1))
+          .addScore(p1.id, r1, Score(25), 1)
 
         val stats = RoundRow.getStatsForAllPlayers(r1, players, sb)
 
-        stats(p1.id) shouldBe Some((Score(25), Bid(1)))
+        stats(p1.id) shouldBe Some((Score(25), 1))
         stats(p2.id) shouldBe None
         stats(p3.id) shouldBe None
 
@@ -57,8 +56,8 @@ class TestRoundRow extends AnyWordSpec with Matchers:
 
       "populate each row with the correct historical data from the scoreboard" in:
         val sb = Scoreboard.empty
-          .addScore(p1.id, r1, Score(10), Bid(1))
-          .addScore(p2.id, r2, Score(20), Bid(2))
+          .addScore(p1.id, r1, Score(10), 1)
+          .addScore(p2.id, r2, Score(20), 2)
 
         val rows = RoundRow.updateRows(players, sb)
 

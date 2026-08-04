@@ -5,9 +5,7 @@ import it.unibo.pps.wizard.engine.events.LifecycleEvent
 import it.unibo.pps.wizard.engine.events.ProgressEvent
 import it.unibo.pps.wizard.engine.model.basic.BasicTestDSL._
 import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
-import it.unibo.pps.wizard.engine.model.basic.bidding.Trick
 import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.cards.Card._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
@@ -61,7 +59,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         bids = Bids.empty,
         table = currentTable,
         currentPlayerTurn = p4.id,
-        tricksWon = Tricks.initialize(mockPlayers)
+        tricksWon = Tricks.empty
       )
 
       val action = GameAction.PlayCard(p4.id, c3)
@@ -98,7 +96,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         bids = Bids.empty,
         table = currentTable,
         currentPlayerTurn = p4.id,
-        tricksWon = Tricks.initialize(mockPlayers)
+        tricksWon = Tricks.empty
       )
 
       val action = GameAction.PlayCard(p4.id, c3)
@@ -131,7 +129,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
     "allow the current player to place a valid bid" in:
       val core = createMockCore(1)
       val biddingState = GameState.Bidding(core, Bids.empty, p1.id)
-      val action = GameAction.PlaceBid(p1.id, Bid(1))
+      val action = GameAction.PlaceBid(p1.id, 1)
 
       val result = GameEngine.processAction(biddingState, action)
 
@@ -143,12 +141,12 @@ class TestGameEngine extends AnyWordSpec with Matchers:
             nextState.currentPlayer shouldBe p2.id
           case _ => fail("Expected GameState.Bidding")
 
-        engine.events should contain(ActionEvent.BidPlaced(p1.id, Bid(1)))
+        engine.events should contain(ActionEvent.BidPlaced(p1.id, 1))
 
     "fail with NotYourTurn when a player places a bid out of turn" in:
       val core = createMockCore(1)
       val biddingState = GameState.Bidding(core, Bids.empty, p1.id)
-      val action = GameAction.PlaceBid(p2.id, Bid(3))
+      val action = GameAction.PlaceBid(p2.id, 3)
 
       val result = GameEngine.processAction(biddingState, action)
 
@@ -160,10 +158,10 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       )
       val core = createMockCore(1).copy(hands = hands)
 
-      val currentBids = Bids.empty + (p1.id -> Bid(0)) + (p2.id -> Bid(1)) + (p3.id -> Bid(0))
+      val currentBids = Bids.empty + (p1.id -> 0) + (p2.id -> 1) + (p3.id -> 0)
       val biddingState = GameState.Bidding(core, currentBids, p4.id)
 
-      val action = GameAction.PlaceBid(p4.id, Bid(1))
+      val action = GameAction.PlaceBid(p4.id, 1)
       val result = GameEngine.processAction(biddingState, action)
 
       result.isRight shouldBe true
@@ -225,7 +223,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         bids = Bids.empty,
         table = currentTable,
         currentPlayerTurn = p4.id,
-        tricksWon = Tricks.initialize(mockPlayers)
+        tricksWon = Tricks.empty
       )
 
       val action = GameAction.PlayCard(p4.id, c3)
@@ -236,14 +234,14 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         engine.state match
           case nextState: GameState.Playing =>
             nextState.table.playedCards.isEmpty shouldBe true
-            nextState.tricksWon(p2.id) shouldBe Trick(1)
+            nextState.tricksWon(p2.id) shouldBe 1
             nextState.currentPlayerTurn shouldBe p2.id
           case _ => fail("Expected GameState.Playing")
 
     "fail with InvalidAction when does not match the current game state" in:
       val core = createMockCore(1)
       val choosingState = GameState.ChoosingTrump(core)
-      val action = GameAction.PlaceBid(p1.id, Bid(1))
+      val action = GameAction.PlaceBid(p1.id, 1)
 
       val result = GameEngine.processAction(choosingState, action)
 

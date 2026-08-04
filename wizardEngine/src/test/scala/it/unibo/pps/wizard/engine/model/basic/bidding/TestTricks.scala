@@ -15,27 +15,15 @@ class TestTricks extends AnyWordSpec with Matchers:
   val players: Players = Players(Player.human(p1, name1), Player.human(p2, name2))
 
   "Tricks" when:
-    "initialized" should:
-      val tricks = Tricks.initialize(players)
-      "set all players to zero" in:
-        tricks(p1) shouldBe 0
-        tricks(p2) shouldBe 0
-
     "empty" should:
       "return zero for any player" in:
         Tricks.empty(p1) shouldBe 0
 
     "receiving a trick" should:
+      val t = Tricks.empty.addTrickTo(p1)
       "increment the count for the player" in:
-        val t = Tricks.initialize(players).addTrickTo(p1)
         t(p1) shouldBe 1
-        t(p2) shouldBe 0
-
       "accumulate correctly over multiple tricks" in:
-        val t = Tricks
-          .initialize(players)
-          .addTrickTo(p1)
-          .addTrickTo(p1)
-          .addTrickTo(p2)
-        t(p1) shouldBe 2
-        t(p2) shouldBe 1
+        val newTricks = t.addTrickTo(p1).addTrickTo(p2)
+        newTricks(p1) shouldBe 2
+        newTricks(p2) shouldBe 1
