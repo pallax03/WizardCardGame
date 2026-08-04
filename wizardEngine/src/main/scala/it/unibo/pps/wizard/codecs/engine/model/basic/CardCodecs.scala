@@ -1,10 +1,9 @@
-package it.unibo.pps.wizard.codecs.engine.model
+package it.unibo.pps.wizard.codecs.engine.model.basic
 
 import io.circe.*
 import io.circe.syntax.*
 import it.unibo.pps.wizard.codecs.combinators.DiscriminatedCodecs.*
-import it.unibo.pps.wizard.engine.model.basic.cards.Card
-import it.unibo.pps.wizard.engine.model.basic.cards.SpecialCard
+import it.unibo.pps.wizard.engine.model.basic.cards.{Card, SpecialCard}
 
 object CardCodecs:
   given Encoder[Card.Color] = Encoder.encodeString.contramap(_.toString)

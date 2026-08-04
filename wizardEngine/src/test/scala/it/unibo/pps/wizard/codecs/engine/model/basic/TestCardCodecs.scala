@@ -1,11 +1,9 @@
-package it.unibo.pps.wizard.codecs.engine.model
+package it.unibo.pps.wizard.codecs.engine.model.basic
 
-import io.circe.parser._, io.circe.syntax._
-
+import io.circe.parser.*
+import io.circe.syntax.*
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
-import it.unibo.pps.wizard.engine.model.basic.cards.Card._
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.{Color, Rank}
-
+import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

@@ -1,9 +1,10 @@
-package it.unibo.pps.wizard.codecs.engine.model
+package it.unibo.pps.wizard.codecs.engine.model.basic
 
-import io.circe._, io.circe.syntax._
-import it.unibo.pps.wizard.codecs.combinators.DiscriminatedCodecs._
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
+import io.circe.*
+import io.circe.syntax.*
+import it.unibo.pps.wizard.codecs.combinators.DiscriminatedCodecs.*
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
 
 object TrumpCodecs:
   import CardCodecs.given
