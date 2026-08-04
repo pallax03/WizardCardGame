@@ -1,10 +1,9 @@
 package it.unibo.pps.wizard.engine.model.core
 
-import it.unibo.pps.wizard.engine.model.basic._
+import it.unibo.pps.wizard.engine.model.basic.*
 import it.unibo.pps.wizard.engine.model.basic.cards.Hands
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
-import it.unibo.pps.wizard.engine.model.basic.scoreboard.Scoreboard
 import it.unibo.pps.wizard.engine.model.rules.RoundManager.firstPlayer
 
 /**
@@ -46,6 +45,6 @@ object CoreState:
       hands = Hands.empty,
       trump = Trump.Absent,
       round = round,
-      dealerId = round.firstPlayer(players),
+      dealerId = round.firstPlayer(players.getPlayerIds),
       scoreboard = Scoreboard.empty
     )

@@ -125,7 +125,7 @@ object GameEngine:
       cardPlayedEvent: ActionEvent.CardPlayed
   ): Either[GameError, GameEngine] =
     val nextPlayer =
-      currentState.core.players.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayerTurn)
+      currentState.core.players.getPlayerIds.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayerTurn)
 
     updatedCore.hands
       .getHand(nextPlayer)
@@ -179,7 +179,7 @@ object GameEngine:
       completedBids: Bids,
       bidPlacedEvent: ActionEvent.BidPlaced
   ): Either[GameError, GameEngine] =
-    val firstPlayer = currentState.core.round.firstPlayer(currentState.core.players)
+    val firstPlayer = currentState.core.round.firstPlayer(currentState.core.players.getPlayerIds)
     for
       hand <- currentState.core.hands
         .getHand(firstPlayer)
@@ -206,7 +206,7 @@ object GameEngine:
       bidPlacedEvent: ActionEvent.BidPlaced
   ): Either[GameError, GameEngine] =
     val nextPlayer =
-      currentState.core.players.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayer)
+      currentState.core.players.getPlayerIds.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayer)
 
     val nextState = currentState.copy(
       currentBids = updatedBids,
@@ -324,7 +324,7 @@ object GameEngine:
       updatedTricks: Tricks
   ): GameEngine =
     val updatedScoreboard = ScoringRules.compute(
-      updatedCore.players,
+      updatedCore.players.getPlayerIds,
       state.bids,
       updatedTricks,
       updatedCore.round,
@@ -334,14 +334,14 @@ object GameEngine:
     (next.state, ProgressEvent.RoundScored(updatedScoreboard, updatedCore.players) +: next.events)
 
   private def nextRoundOrEnd(core: CoreState): GameEngine =
-    if core.round.isLastRound(core.players) then
+    if core.round.isLastRound(core.players.getPlayerIds) then
       (
         GameState.Ended(core.players, core.scoreboard),
         List(LifecycleEvent.GameEnded(core.scoreboard, core.players))
       )
     else
       val nextRound = core.round.next
-      val nextDealer = core.players.nextAfter(core.dealerId).getOrElse(core.dealerId)
+      val nextDealer = core.players.getPlayerIds.nextAfter(core.dealerId).getOrElse(core.dealerId)
       val updatedCore = core.copy(round = nextRound, dealerId = nextDealer)
 
       setupRoundEngine(nextRound, updatedCore)

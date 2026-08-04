@@ -1,11 +1,12 @@
 package it.unibo.pps.wizard.engine.model.rules
 
+//import cats.syntax.traverse.toTraverseOps
 import cats.data.State
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.Players
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
-import it.unibo.pps.wizard.engine.model.basic.cards._
-import it.unibo.pps.wizard.engine.model.basic.gameplay._
+import it.unibo.pps.wizard.engine.model.basic.cards.*
+import it.unibo.pps.wizard.engine.model.basic.gameplay.*
 import it.unibo.pps.wizard.engine.model.core.CoreState
 import it.unibo.pps.wizard.engine.model.core.GameError
 import it.unibo.pps.wizard.engine.model.core.GameState
@@ -13,52 +14,49 @@ import it.unibo.pps.wizard.engine.model.core.GameState
 /** Manages game round lifecycle operations, player turns, card dealing, and state initialization. */
 object RoundManager:
 
-  extension (players: Players)
+  extension (playersIds: List[PlayerId])
     /**
      * Determines the next player in the turn order following the current player.
      *
      * @param current the ID of the current player.
      * @return Right containing the next [[PlayerId]], or Left with a [[GameError]] if the player is not found.
      */
-    def nextAfter(current: PlayerId): Either[GameError, PlayerId] =
-      val idx = players.toList.indexWhere(_.id == current)
-      Either.cond(
-        idx >= 0,
-        players.toList((idx + 1) % players.totalPlayers).id,
-        GameError.NotYourTurn
-      )
+    def nextAfter(current: PlayerId): Either[GameError, PlayerId] = playersIds.indexWhere(_ == current) match
+      case id if id >= 0 => Right(playersIds((id + 1) % playersIds.size))
+      case _ => Left(GameError.NotYourTurn)
 
   extension (round: Round)
     /**
      * Determines the first player of the given round based on a shifting rotation.
      *
-     * @param players the list of players.
+     * @param playersIds the list of players Ids.
      * @return the [[PlayerId]] of the dealer's successor who starts the round.
      */
-    def firstPlayer(players: Players): PlayerId =
-      players.toList((round.value - 1) % players.totalPlayers).id
+    def firstPlayer(playersIds: List[PlayerId]): PlayerId =
+      playersIds((round.value - 1) % playersIds.size)
 
     /**
      * Checks if this round is the final round of the game based on the player count.
      *
-     * @param players the list of players.
+     * @param playersIds the list of players Ids.
      * @return true if all cards in the deck are distributed evenly, false otherwise.
      */
-    def isLastRound(players: Players): Boolean =
-      round.value == (Deck.TOTAL_SIZE / players.totalPlayers)
+    def isLastRound(playersIds: List[PlayerId]): Boolean =
+      round.value == (Deck.TOTAL_SIZE / playersIds.size)
 
     /**
      * State action that deals cards to players and reveals the trump card.
      *
-     * @param players the list of players.
+     * @param playersIds the list of players Ids.
      * @return a state transition resulting in a tuple of [[Hands]] and an optional trump [[Card]].
      */
-    def deal(players: Players): State[Deck, (Hands, Option[Card])] =
+    def deal(playersIds: List[PlayerId]): State[Deck, (Hands, Option[Card])] =
       val cardsPerPlayer = round.value
       for
-        drawn <- Deck.pop(cardsPerPlayer * players.totalPlayers)
+//        drawn <- playersIds.traverse(p => Deck.pop(round.value).map(p -> Hand(_)))
+        drawn <- Deck.pop(cardsPerPlayer * playersIds.size)
         hands = Hands(
-          players.toList.map(_.id).zip(drawn.grouped(cardsPerPlayer).map(Hand(_)).toList).toMap
+          playersIds.zip(drawn.grouped(cardsPerPlayer).map(Hand(_)).toList).toMap
         )
         trump <- Deck.pop(1).map(_.headOption)
       yield (hands, trump)
@@ -74,9 +72,9 @@ object RoundManager:
       for
         core <- State.get[CoreState]
 
-        (hands, optionTrump) = round.deal(core.players).runA(deck).value
+        (hands, optionTrump) = round.deal(core.players.getPlayerIds).runA(deck).value
 
-        firstPlayer = round.firstPlayer(core.players)
+        firstPlayer = round.firstPlayer(core.players.getPlayerIds)
 
         newCore = core.copy(
           hands = hands,
@@ -85,17 +83,9 @@ object RoundManager:
 
         _ <- State.set(newCore)
       yield
-        val isUnresolved: Boolean = newCore.trump match
-          case Trump.WizardUnresolved(c) => true
-          case _                         => false
-
-        if isUnresolved then GameState.ChoosingTrump(newCore)
-        else
-          GameState.Bidding(
-            core = newCore,
-            currentBids = Bids.empty,
-            currentPlayer = firstPlayer
-          )
+        newCore.trump match
+          case Trump.WizardUnresolved(c) => GameState.ChoosingTrump(newCore)
+          case _                         => GameState.Bidding(core = newCore, currentBids = Bids.empty, currentPlayer = firstPlayer)
 
   extension (expectedPlayer: PlayerId)
     /**

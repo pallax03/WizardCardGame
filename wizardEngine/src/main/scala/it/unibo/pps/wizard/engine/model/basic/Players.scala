@@ -35,6 +35,7 @@ object Players:
 
   extension (players: Players)
     def toList: List[Player] = players
+    def getPlayerIds: List[PlayerId] = players.map(_.id)
     def totalPlayers: Int = players.size
     def filter(predicate: Player => Boolean): Players = players.filter(predicate)
     def findById(id: PlayerId): Option[Player] = players.find(_.id == id)
