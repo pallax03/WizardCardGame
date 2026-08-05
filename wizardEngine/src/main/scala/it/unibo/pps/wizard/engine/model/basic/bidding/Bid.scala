@@ -15,7 +15,7 @@ object Bid:
      * @param round the current game round.
      * @return true if the bid is less than or equal to the round number, false otherwise.
      */
-    def isValid(round: Round): Boolean = b <= round.value
+    def isValid(round: Round): Boolean = b <= round
 
 /** Represents the collection of bids placed by all players in a round. */
 opaque type Bids = Map[PlayerId, Bid]

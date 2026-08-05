@@ -2,17 +2,20 @@ package it.unibo.pps.wizard.codecs.engine.model.core
 
 import io.circe.parser.*
 import io.circe.syntax.*
-import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
+
+import it.unibo.pps.wizard.engine.model.basic.*
+
 import it.unibo.pps.wizard.engine.model.core.GameAction
+
 import org.scalatest.EitherValues.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import it.unibo.pps.wizard.codecs.engine.model.core.GameActionCodecs.given
 
 class TestGameActionCodecs extends AnyWordSpec with Matchers:
 
+  import cards.Card.*
   "GameActionCodecs" should:
+    import GameActionCodecs.given 
     "encode and decode ResolveTrumpColor correctly" in:
       val action: GameAction = GameAction.ResolveTrumpColor(PlayerId(1), Color.Red)
       val jsonString = action.asJson.noSpaces

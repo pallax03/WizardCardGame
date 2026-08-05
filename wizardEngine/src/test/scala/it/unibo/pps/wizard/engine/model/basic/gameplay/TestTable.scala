@@ -1,17 +1,18 @@
 package it.unibo.pps.wizard.engine.model.basic.gameplay
 
-import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.basic.cards.Card
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.wizard
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
+import it.unibo.pps.wizard.engine.model.basic._
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 import scala.language.postfixOps
 
 class TestTable extends AnyWordSpec with Matchers:
-  import Card.*
-  import Table.*
+  
+  import BasicTestDSL.*
+  import cards.Card
+  import cards.Card.*
+  
   "A Table" when:
     val p1 = PlayerId(1)
     val p2 = PlayerId(2)

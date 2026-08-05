@@ -2,13 +2,16 @@ package it.unibo.pps.wizard.codecs.engine.model.basic
 
 import io.circe.parser.*
 import io.circe.syntax.*
-import it.unibo.pps.wizard.engine.model.basic.cards.Card
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
+
+import it.unibo.pps.wizard.engine.model.basic.cards.*
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestCardCodecs extends AnyWordSpec with Matchers:
 
+  import Card.*
+  
   "CardCodecs" should:
     import CardCodecs.given 
     "encode and decode Card.Color correctly" in:

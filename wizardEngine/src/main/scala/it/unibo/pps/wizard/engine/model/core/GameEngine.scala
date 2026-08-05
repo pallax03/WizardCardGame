@@ -7,6 +7,7 @@ import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
 import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.cards._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Round.*
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
 import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons._

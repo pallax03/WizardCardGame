@@ -1,9 +1,7 @@
 package it.unibo.pps.wizard.engine.model.rules
 
 import it.unibo.pps.wizard.engine.model.basic.*
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
-import it.unibo.pps.wizard.engine.model.basic.bidding.Trick
 import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 
@@ -31,21 +29,15 @@ object ScoringRules:
   ): Scoreboard =
     playersIds.foldLeft(scoreboard): (sb, playerId) =>
       val bid = bids(playerId)
+      val tricksWon = tricks(playerId)
+      
+      val pointsGained = 
+        if bid == tricksWon then BASE_WIN_POINTS + (tricksWon * POINTS_PER_TRICK)
+        else -Math.abs(bid - tricksWon) * POINTS_PER_TRICK
+        
       val cumulativePoints =
-        sb.getStatsForRound(Round(round.value - 1), playerId)._1
-          + bid.calculatePointsFor(tricks(playerId))
+        sb.getStatsForRound(round - 1, playerId)._1 + pointsGained
+        
       sb.addScore(playerId, round, cumulativePoints, bid)
-
-  extension (bid: Bid)
-    /**
-     * Calculates the score obtained for a round based on the bid and the actual tricks won.
-     * Gains points if the bid is exactly met, otherwise loses points proportional to the difference.
-     *
-     * @param tricksWon the number of tricks actually won by the player.
-     * @return the [[Score]] gained (or lost) in the round.
-     */
-    def calculatePointsFor(tricksWon: Trick): Score = if bid == tricksWon
-    then BASE_WIN_POINTS + (tricksWon * POINTS_PER_TRICK)
-    else -Math.abs(bid - tricksWon) * POINTS_PER_TRICK
 
 export ScoringRules.*

@@ -1,28 +1,22 @@
-package it.unibo.pps.wizard.engine.model.basic.scoreboard
+package it.unibo.pps.wizard.engine.model.basic
 
 import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestScoreboard extends AnyWordSpec with Matchers:
-  import Scoreboard.*
-
-  val p1Id: PlayerId = PlayerId(1)
-  val p2Id: PlayerId = PlayerId(2)
-
-  val p1: Player = Player.human(p1Id, PlayerName("Alice"))
-  val p2: Player = Player.human(p2Id, PlayerName("Bob"))
-  val players: Players = Players(p1, p2)
-
-  val r1: Round = Round(1)
-  val r2: Round = Round(2)
-  val r3: Round = Round(3)
-  val b1: Bid = 1
-  val b2: Bid = 2
+  import bidding.Bid
+  import gameplay.Round
 
   "A Scoreboard" when:
+    val p1Id: PlayerId = PlayerId(1)
+    val p2Id: PlayerId = PlayerId(2)
+
+    val r1: Round = 1
+    val r2: Round = 2
+    val b1: Bid = 1
+    val b2: Bid = 2
     "empty" should:
       val sb = Scoreboard.empty
 
@@ -66,29 +60,3 @@ class TestScoreboard extends AnyWordSpec with Matchers:
 
         val (score, _) = sb.getStatsForRound(r1, p1Id)
         score shouldBe -15
-
-//    "converting to RoundRows" should:
-//      "return rows sorted chronologically by round, regardless of insertion order" in:
-//        // Inseriamo i round in ordine sparso (R2, poi R3, poi R1)
-//        val sb = Scoreboard.empty
-//          .addScore(p1Id, r2, 30, 2)
-//          .addScore(p1Id, r3, 40, 1)
-//          .addScore(p1Id, r1, 10, 0)
-//
-//        val rows = sb.toRoundRows(players)
-//
-//        rows.size shouldBe 3
-//        rows.head.round shouldBe r1
-//        rows(1).round shouldBe r2
-//        rows(2).round shouldBe r3
-
-//  "Round Ordering" should:
-//    "correctly compare rounds based on their values" in:
-//      val roundOrdering = summon[Ordering[Round]]
-//
-//      roundOrdering.compare(r1, r2) should clicksLessThanZero
-//      roundOrdering.compare(r2, r1) should clicksGreaterThanZero
-//      roundOrdering.compare(r1, r1) shouldBe 0
-//
-//  private def clicksLessThanZero = be < 0
-//  private def clicksGreaterThanZero = be > 0

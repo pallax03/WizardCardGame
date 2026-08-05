@@ -5,6 +5,7 @@ import it.unibo.pps.wizard.engine.events.InvitationEvent
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Round.*
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameError
 
@@ -27,7 +28,7 @@ class DumbBotStrategy(random: Random = Random()) extends BotStrategy:
     asyncWrapper:
       invitation match
         case InvitationEvent.WaitingForBid(playerId, round) =>
-          bid = round -> random.nextInt(round.value + 1)
+          bid = round -> random.nextInt(round.next)
           GameAction.PlaceBid(
             playerId,
             bid._2
@@ -47,7 +48,7 @@ class DumbBotStrategy(random: Random = Random()) extends BotStrategy:
           reason match
             case GameError.InvalidBid =>
               val (round, lastBid) = bid
-              bid = round -> (lastBid + 1) % (round.value + 1)
+              bid = round -> (lastBid + 1) % (round.next)
               GameAction.PlaceBid(playerId, bid._2)
 
             case GameError.CardNotAllowed(notAllowedReason) =>

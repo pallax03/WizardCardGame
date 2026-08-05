@@ -29,7 +29,7 @@ object BiddingRules:
   ): Either[GameError, Bids] =
     bid
       .validateBid(round, currentBids, totalPlayers)
-      .map(_ => currentBids + (currentPlayer -> bid))
+      .map(_ => currentBids + (currentPlayer place bid))
 
   extension (bid: Bid)
     /**
@@ -56,5 +56,5 @@ object BiddingRules:
       totalPlayers: Int
   ): Boolean =
     val isLastPlayer = currentBids.isComplete(totalPlayers - 1)
-    isLastPlayer && (currentBids.total + bid) == round.value
+    isLastPlayer && (currentBids.total + bid) == round
 export BiddingRules.*

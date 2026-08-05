@@ -1,12 +1,14 @@
 package it.unibo.pps.wizard.engine.adapters.prolog
 
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
+import it.unibo.pps.wizard.engine.model.basic.*
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestWizardTermMapper extends AnyWordSpec with Matchers:
 
+  import cards.Card.*
+  import gameplay.Trump
   "WizardTermMapper" when:
     import WizardTermMapper.*
     "mapping color to term" should:

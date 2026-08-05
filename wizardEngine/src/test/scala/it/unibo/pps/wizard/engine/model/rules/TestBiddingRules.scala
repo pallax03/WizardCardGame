@@ -1,20 +1,21 @@
 package it.unibo.pps.wizard.engine.model.rules
 
 import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.core.GameError
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestBiddingRules extends AnyWordSpec with Matchers:
-  val p1: PlayerId = PlayerId(1)
-  val p2: PlayerId = PlayerId(2)
-  val p3: PlayerId = PlayerId(3)
-  val totalPlayers = 3
-  val round2: Round = Round(2)
 
+  import bidding.Bids
+  import gameplay.Round
   "BiddingRules" when:
+    val p1: PlayerId = PlayerId(1)
+    val p2: PlayerId = PlayerId(2)
+
+    val totalPlayers = 3
+    val round2: Round = 2
     "a bid is outside the valid range" should:
       "reject negative bids" in:
         -1.validateBid(round2, Bids.empty, totalPlayers) shouldBe Left(GameError.InvalidBid)
@@ -23,8 +24,8 @@ class TestBiddingRules extends AnyWordSpec with Matchers:
         3.validateBid(round2, Bids.empty, totalPlayers) shouldBe Left(GameError.InvalidBid)
 
     "processing the final bid (Hook Rule)" should:
-      val bidsAfterP1 = Bids.empty + (p1 -> 1)
-      val bidsAfterP2 = bidsAfterP1 + (p2 -> 0)
+      val bidsAfterP1 = Bids.empty + (p1 place 1)
+      val bidsAfterP2 = bidsAfterP1 + (p2 place 0)
 
       "reject the bid if it causes the total to equal the round number" in:
         1.validateBid(round2, bidsAfterP2, totalPlayers) shouldBe Left(GameError.InvalidBid)
@@ -35,8 +36,7 @@ class TestBiddingRules extends AnyWordSpec with Matchers:
     "a bid is valid" should:
       "add the bid to the Bids collection" in:
         val result = processBid(1, Bids.empty, p1, round2, totalPlayers)
-        result shouldBe Right(Bids.empty + (p1 -> 1))
+        result shouldBe Right(Bids.empty + (p1 place 1))
 
-  "BiddingRules integration logic" should:
-    "correctly identify when a bid is within bounds" in:
-      1.validateBid(round2, Bids.empty, totalPlayers) shouldBe Right(())
+      "correctly identify when a bid is within bounds" in:
+        1.validateBid(round2, Bids.empty, totalPlayers) shouldBe Right(())

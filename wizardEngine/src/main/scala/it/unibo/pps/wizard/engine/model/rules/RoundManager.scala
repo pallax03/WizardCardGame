@@ -32,7 +32,7 @@ object RoundManager:
      * @return the [[PlayerId]] of the dealer's successor who starts the round.
      */
     def firstPlayer(playersIds: List[PlayerId]): PlayerId =
-      playersIds((round.value - 1) % playersIds.size)
+      playersIds((round - 1) % playersIds.size)
 
     /**
      * Checks if this round is the final round of the game based on the player count.
@@ -41,20 +41,20 @@ object RoundManager:
      * @return true if all cards in the deck are distributed evenly, false otherwise.
      */
     def isLastRound(playersIds: List[PlayerId]): Boolean =
-      round.value == (Deck.TOTAL_SIZE / playersIds.size)
+      round == (Deck.TOTAL_SIZE / playersIds.size)
 
     /**
      * State action that deals cards to players and reveals the trump card.
      *
      * @param playersIds the list of players Ids.
-     * @return a state transition resulting in a tuple of [[Hands]] and an optional trump [[Card]].
+     * @return a state transition resulting in a tuple of [[Hands]] and a [[Trump]].
      */
-    def deal(playersIds: List[PlayerId]): State[Deck, (Hands, Option[Card])] =
-      val cardsPerPlayer = round.value
+    def deal(playersIds: List[PlayerId]): State[Deck, (Hands, Trump)] =
+      val cardsPerPlayer = round
       for
-        handsList <- playersIds.traverse(p => Deck.pop(cardsPerPlayer).map(p -> Hand(_)))
+        handsList <- playersIds.traverse(p => Deck.pop(cardsPerPlayer).map(p.holds))
         trump <- Deck.pop(1).map(_.headOption)
-      yield (Hands(handsList.toMap), trump)
+      yield (Hands(handsList.toMap), trump.asTrump)
 
     /**
      * State action that initializes a new round, dealing cards and determining the next phase.
@@ -67,20 +67,18 @@ object RoundManager:
       for
         core <- State.get[CoreState]
 
-        (hands, optionTrump) = round.deal(core.playersIds).runA(deck).value
-
-        firstPlayer = round.firstPlayer(core.playersIds)
+        (hands, trump) = round.deal(core.playersIds).runA(deck).value
 
         newCore = core.copy(
           hands = hands,
-          trump = optionTrump.asTrump
+          trump = trump
         )
 
         _ <- State.set(newCore)
       yield
-        newCore.trump match
-          case Trump.WizardUnresolved(c) => GameState.ChoosingTrump(newCore)
-          case _                         => GameState.Bidding(core = newCore, currentBids = Bids.empty, currentPlayer = firstPlayer)
+        trump match
+          case _: Trump.WizardUnresolved => GameState.ChoosingTrump(newCore)
+          case _                         => GameState.Bidding(core = newCore, currentBids = Bids.empty, currentPlayer = round.firstPlayer(core.playersIds))
 
   extension (expectedPlayer: PlayerId)
     /**

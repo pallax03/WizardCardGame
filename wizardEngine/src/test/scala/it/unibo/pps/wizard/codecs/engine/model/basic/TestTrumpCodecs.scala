@@ -2,17 +2,19 @@ package it.unibo.pps.wizard.codecs.engine.model.basic
 
 import io.circe.parser.*
 import io.circe.syntax.*
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
+
+import it.unibo.pps.wizard.engine.model.basic.*
+
 import org.scalatest.EitherValues.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestTrumpCodecs extends AnyWordSpec with Matchers:
 
+  import cards.Card.*
+  import gameplay.Trump
   "TrumpCodecs" should:
     import TrumpCodecs.given
-
     "encode and decode Trump.Absent correctly" in:
       val trump: Trump = Trump.Absent
       val jsonString = trump.asJson.noSpaces

@@ -9,14 +9,6 @@ type Trick = Int
 opaque type Tricks = Map[PlayerId, Trick]
 
 object Tricks:
-//  /**
-//   * Initializes the trick count to 0 for all active players.
-//   *
-//   * @param players the list of players.
-//   * @return a [[Tricks]] map with all player scores set to 0.
-//   */
-//  def initialize(players: Players): Tricks =
-//    players.toList.map(_.id -> 0).toMap
   def empty: Tricks = Map.empty
 
   extension (t: Tricks)

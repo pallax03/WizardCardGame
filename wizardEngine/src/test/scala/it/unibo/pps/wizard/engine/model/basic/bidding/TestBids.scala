@@ -1,17 +1,16 @@
 package it.unibo.pps.wizard.engine.model.basic.bidding
 
-import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
+import it.unibo.pps.wizard.engine.model.basic._
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestBids extends AnyWordSpec with Matchers:
-  import Bid.*
 
-  val p1: PlayerId = PlayerId(1)
-  val p2: PlayerId = PlayerId(2)
+  import bidding.Bid.*
+  import gameplay.Round
+  import gameplay.Round.*
+
   "A Bid" when:
     "validated" should:
       "be valid if within round range" in:
@@ -20,7 +19,8 @@ class TestBids extends AnyWordSpec with Matchers:
         3.isValid(round) shouldBe false
 
   "Bids collection" when:
-    import Bids.*
+    val p1: PlayerId = PlayerId(1)
+    val p2: PlayerId = PlayerId(2)
     "empty" should:
       val bids = Bids.empty
       "return zero for any player" in:
@@ -31,7 +31,7 @@ class TestBids extends AnyWordSpec with Matchers:
         bids.total shouldBe 0
 
     "receiving bids" should:
-      val bids = Bids.empty + (p1 -> 1) + (p2 -> 2)
+      val bids = Bids.empty + (p1 place 1) + (p2 place 2)
       "store and retrieve bids correctly" in:
         bids(p1) shouldBe 1
         bids(p2) shouldBe 2

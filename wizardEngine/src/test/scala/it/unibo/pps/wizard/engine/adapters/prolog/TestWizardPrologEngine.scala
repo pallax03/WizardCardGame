@@ -1,15 +1,18 @@
 package it.unibo.pps.wizard.engine.adapters.prolog
 
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
-import it.unibo.pps.wizard.engine.model.basic.BasicTestDSL.*
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.*
-import it.unibo.pps.wizard.engine.model.basic.cards.Hand.*
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
+import it.unibo.pps.wizard.engine.model.basic.*
 import it.unibo.pps.wizard.engine.model.rules.TableRules.*
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestWizardPrologEngine extends AnyWordSpec with Matchers:
+
+  import BasicTestDSL.*
+  import cards.Card.*
+  import cards.Hand.*
+  import gameplay.Table
 
   "WizardPrologEngine" should:
     val engine = WizardPrologEngine()
