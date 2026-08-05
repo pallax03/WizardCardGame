@@ -48,7 +48,7 @@ class DumbBotStrategy(random: Random = Random()) extends BotStrategy:
           reason match
             case GameError.InvalidBid =>
               val (round, lastBid) = bid
-              bid = round -> (lastBid + 1) % (round.next)
+              bid = round -> (lastBid + 1) % round.next
               GameAction.PlaceBid(playerId, bid._2)
 
             case GameError.CardNotAllowed(notAllowedReason) =>

@@ -35,7 +35,7 @@ object GameEngine:
    * Initializes the game engine with the given players.
    * Deals cards, sets the initial game state, and generates relevant events.
    *
-   * @param players The players participating in the game.
+   * @param playersIds The playersIds participating in the game.
    * @return A new GameEngine with the initial game state and events.
    */
   def initializeGame(playersIds: List[PlayerId]): GameEngine =
