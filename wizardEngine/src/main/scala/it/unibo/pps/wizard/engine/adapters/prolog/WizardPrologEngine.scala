@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.prolog
+package it.unibo.pps.wizard.engine.adapters.prolog
 
 import alice.tuprolog.Term
 import alice.tuprolog.Theory
@@ -7,10 +7,11 @@ import it.unibo.pps.wizard.engine.model.basic.bidding.Trick
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.basic.cards.Hand
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
-import it.unibo.pps.wizard.engine.prolog.WizardTermMapper._
 import it.unibo.pps.wizard.util.PrologEngine
 
 import scala.util.Using
+
+import WizardTermMapper._
 
 /**
  * An adapter engine that delegates AI decision-making to a Prolog-based knowledge base.
@@ -60,7 +61,7 @@ class WizardPrologEngine:
    */
   def placeBid(hand: Hand, trump: Trump): Option[Bid] =
     query(s"place_bid(${cardsTerm(hand.toList)}, ${trumpColorTerm(trump)}, Bid)", "Bid").map(term =>
-      Bid(term.toString.toInt)
+      term.toString.toInt
     )
 
   /**
@@ -73,7 +74,7 @@ class WizardPrologEngine:
    */
   def adjustBid(hand: Hand, rejectedBid: Bid): Option[Bid] =
     query(s"adjust_bid(${cardsTerm(hand.toList)}, $rejectedBid, FinalBid)", "FinalBid").map(term =>
-      Bid(term.toString.toInt)
+      term.toString.toInt
     )
 
   /**

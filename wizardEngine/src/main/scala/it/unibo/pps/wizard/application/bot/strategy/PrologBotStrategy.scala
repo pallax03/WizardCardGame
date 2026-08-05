@@ -4,19 +4,19 @@ import it.unibo.pps.wizard.engine.events.FailureEvent
 import it.unibo.pps.wizard.engine.events.InvitationEvent
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.ports.WizardAIPort
+import it.unibo.pps.wizard.engine.ports.AIPort
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
- * An intelligent implementation of [[BotStrategy]] that leverages the [[WizardAIPort]].
+ * An intelligent implementation of [[BotStrategy]] that leverages the [[AIPort]].
  *
  * This strategy delegates decision-making to the Prolog-backed engine through the
  * provided port. It is designed to play optimally based on the knowledge base
  * defined in the Prolog theory.
  */
-class PrologBotStrategy(port: WizardAIPort) extends BotStrategy:
+class PrologBotStrategy(port: AIPort) extends BotStrategy:
 
   override def resolveInvitationEvents(invitation: InvitationEvent): Future[GameAction] =
     invitation match

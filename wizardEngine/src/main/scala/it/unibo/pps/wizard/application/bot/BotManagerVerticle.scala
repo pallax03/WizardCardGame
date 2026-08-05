@@ -7,11 +7,10 @@ import it.unibo.pps.wizard.engine.events.InvitationEvent
 import it.unibo.pps.wizard.engine.events.LifecycleEvent
 import it.unibo.pps.wizard.engine.events.PlayerScoped
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.basic.Players
 import it.unibo.pps.wizard.engine.model.configuration.BotsDifficulty
 import it.unibo.pps.wizard.engine.model.core.GameAction
-import it.unibo.pps.wizard.engine.ports.WizardAIPort
-import it.unibo.pps.wizard.engine.ports.WizardInboundPort
+import it.unibo.pps.wizard.engine.ports.AIPort
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,8 +31,8 @@ import scala.util.Success
  * It delegates the actual strategy execution to instances of [[BotStrategy]].
  */
 class BotManagerVerticle(
-    wizardInboundPort: WizardInboundPort,
-    wizardAIPort: WizardAIPort
+    wizardInboundPort: GameEngineInboundPort,
+    wizardAIPort: AIPort
 ) extends AbstractVerticle:
 
   private var bots: Map[PlayerId, BotStrategy] = Map.empty
@@ -43,8 +42,9 @@ class BotManagerVerticle(
     println("Starting BotManagerVerticle...")
     wizardInboundPort
       .subscribe[LifecycleEvent]:
-        case LifecycleEvent.GameStarted(players, difficulty) => registerBots(players, difficulty)
-        case _: LifecycleEvent.GameEnded                     => bots = Map.empty
+        case LifecycleEvent.GameStarted(playersIds, difficulty) =>
+          registerBots(playersIds, difficulty)
+        case _: LifecycleEvent.GameEnded => bots = Map.empty
       .foreach(id => subscriptionIds = id :: subscriptionIds)
 
     subscribeToEvents[InvitationEvent](1000): (strategy, event) =>
@@ -59,11 +59,10 @@ class BotManagerVerticle(
     bots = Map.empty
     subscriptionIds = Nil
 
-  private def registerBots(players: Players, difficulty: BotsDifficulty): Unit =
-    bots = players.toList
-      .filter(_.isBot)
-      .map(player => player.id -> BotStrategy(difficulty, wizardAIPort))
-      .toMap
+  private def registerBots(playersIds: List[PlayerId], difficulty: BotsDifficulty): Unit =
+    val _ = (playersIds, difficulty, wizardAIPort)
+    // TODO: BotManagerVerticle should receive the list of bot IDs
+    bots = Map.empty
 
   private def delayed[T](delayMs: Long)(action: => Future[T]): Future[T] =
     val promise = Promise[T]()

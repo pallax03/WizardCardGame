@@ -15,7 +15,7 @@ import scala.concurrent.Future
  * Each method is asynchronous, returning a [[Future]] to ensure the game engine
  * remains responsive while the AI computes its strategy.
  */
-trait WizardAIPort:
+trait AIPort:
 
   /**
    * Selects the best trump color to resolve a Wizard card.

@@ -1,9 +1,6 @@
 package it.unibo.pps.wizard.engine.model.basic.gameplay
 
-import it.unibo.pps.wizard.engine.model.basic.cards.Card
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.jester
-import it.unibo.pps.wizard.engine.model.basic.cards.Card.wizard
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
+import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core.GameError
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -12,8 +9,10 @@ import scala.language.postfixOps
 
 class TestTrump extends AnyWordSpec with Matchers:
 
+  import cards.Card
+  import cards.Card.*
+  import gameplay.Trump
   "A Trump" when:
-    import Card.*
     "Absent" should:
       val trump = Trump.Absent
       "provide no card and no effective color" in:

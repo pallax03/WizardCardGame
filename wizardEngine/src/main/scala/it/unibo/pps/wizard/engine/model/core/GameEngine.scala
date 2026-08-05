@@ -7,6 +7,7 @@ import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
 import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.cards._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Round._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
 import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons._
@@ -34,12 +35,12 @@ object GameEngine:
    * Initializes the game engine with the given players.
    * Deals cards, sets the initial game state, and generates relevant events.
    *
-   * @param players The players participating in the game.
+   * @param playersIds The playersIds participating in the game.
    * @return A new GameEngine with the initial game state and events.
    */
-  def initializeGame(players: Players): GameEngine =
+  def initializeGame(playersIds: List[PlayerId]): GameEngine =
     val initialRound = Round.start
-    val initialCore = CoreState.initialize(players, initialRound)
+    val initialCore = CoreState.initialize(playersIds, initialRound)
 
     setupRoundEngine(initialRound, initialCore)
 
@@ -80,8 +81,6 @@ object GameEngine:
       card: Card
   ): Either[GameError, GameEngine] =
     val playerHand = currentState.core.hands.getHand(playerId).getOrElse(Hand.empty)
-    val playerName =
-      currentState.core.players.findById(playerId).map(_.name).getOrElse(PlayerName("Unknown"))
 
     for
       _ <- currentState.currentPlayerTurn.validateTurnOf(playerId)
@@ -96,14 +95,13 @@ object GameEngine:
       followingColor = updatedTable.followingColor
       cardPlayedEvent = ActionEvent.CardPlayed(
         playerId,
-        playerName,
         card,
         winningCard,
         followingColor
       )
 
       finalEngine <-
-        if updatedTable.isTrickComplete(updatedCore.players.totalPlayers) then
+        if updatedTable.isTrickComplete(updatedCore.playersIds.size) then
           advanceCompletedTrick(currentState, updatedCore, updatedTable, cardPlayedEvent)
         else advanceRegularTurn(currentState, updatedCore, updatedTable, playerId, cardPlayedEvent)
     yield finalEngine
@@ -125,7 +123,9 @@ object GameEngine:
       cardPlayedEvent: ActionEvent.CardPlayed
   ): Either[GameError, GameEngine] =
     val nextPlayer =
-      currentState.core.players.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayerTurn)
+      currentState.core.playersIds
+        .nextAfter(currentPlayerId)
+        .getOrElse(currentState.currentPlayerTurn)
 
     updatedCore.hands
       .getHand(nextPlayer)
@@ -155,7 +155,7 @@ object GameEngine:
       playerId: PlayerId,
       bid: Bid
   ): Either[GameError, GameEngine] =
-    val totalPlayers = currentState.core.players.totalPlayers
+    val totalPlayers = currentState.core.playersIds.size
 
     for
       _ <- currentState.currentPlayer.validateTurnOf(playerId)
@@ -164,7 +164,7 @@ object GameEngine:
         currentState.currentBids,
         playerId,
         currentState.core.round,
-        currentState.core.players.totalPlayers
+        currentState.core.playersIds.size
       )
       bidPlacedEvent = ActionEvent.BidPlaced(playerId, bid)
 
@@ -179,7 +179,7 @@ object GameEngine:
       completedBids: Bids,
       bidPlacedEvent: ActionEvent.BidPlaced
   ): Either[GameError, GameEngine] =
-    val firstPlayer = currentState.core.round.firstPlayer(currentState.core.players)
+    val firstPlayer = currentState.core.round.firstPlayer(currentState.core.playersIds)
     for
       hand <- currentState.core.hands
         .getHand(firstPlayer)
@@ -206,7 +206,7 @@ object GameEngine:
       bidPlacedEvent: ActionEvent.BidPlaced
   ): Either[GameError, GameEngine] =
     val nextPlayer =
-      currentState.core.players.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayer)
+      currentState.core.playersIds.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayer)
 
     val nextState = currentState.copy(
       currentBids = updatedBids,
@@ -271,7 +271,7 @@ object GameEngine:
         .playerOf(winningCard)
         .toRight(GameError.InconsistentState(TableNoWinner))
 
-      updatedTricks = state.tricksWon.addTrickTo(winnerId)
+      updatedTricks = state.tricksWon addTrickTo winnerId
 
       trickWonEvent = ProgressEvent.TrickWon(
         winnerId,
@@ -324,24 +324,27 @@ object GameEngine:
       updatedTricks: Tricks
   ): GameEngine =
     val updatedScoreboard = ScoringRules.compute(
-      updatedCore.players,
+      updatedCore.playersIds,
       state.bids,
       updatedTricks,
       updatedCore.round,
       updatedCore.scoreboard
     )
     val next = nextRoundOrEnd(updatedCore.copy(scoreboard = updatedScoreboard))
-    (next.state, ProgressEvent.RoundScored(updatedScoreboard, updatedCore.players) +: next.events)
+    (
+      next.state,
+      ProgressEvent.RoundScored(updatedScoreboard, updatedCore.playersIds) +: next.events
+    )
 
   private def nextRoundOrEnd(core: CoreState): GameEngine =
-    if core.round.isLastRound(core.players) then
+    if core.round.isLastRound(core.playersIds) then
       (
-        GameState.Ended(core.players, core.scoreboard),
-        List(LifecycleEvent.GameEnded(core.scoreboard, core.players))
+        GameState.Ended(core.playersIds, core.scoreboard),
+        List(LifecycleEvent.GameEnded(core.scoreboard, core.playersIds))
       )
     else
       val nextRound = core.round.next
-      val nextDealer = core.players.nextAfter(core.dealerId).getOrElse(core.dealerId)
+      val nextDealer = core.playersIds.nextAfter(core.dealerId).getOrElse(core.dealerId)
       val updatedCore = core.copy(round = nextRound, dealerId = nextDealer)
 
       setupRoundEngine(nextRound, updatedCore)

@@ -1,5 +1,7 @@
-package it.unibo.pps.wizard.engine.adapters
+package it.unibo.pps.wizard.engine.adapters.prolog
 
+import it.unibo.pps.wizard.engine.adapters.WizardGameState
+import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
@@ -10,9 +12,8 @@ import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 import it.unibo.pps.wizard.engine.model.core.GameState
 import it.unibo.pps.wizard.engine.model.rules.BiddingRules._
 import it.unibo.pps.wizard.engine.model.rules.TableRules._
-import it.unibo.pps.wizard.engine.ports.WizardAIPort
-import it.unibo.pps.wizard.engine.ports.WizardInboundPort
-import it.unibo.pps.wizard.engine.prolog.WizardPrologEngine
+import it.unibo.pps.wizard.engine.ports.AIPort
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -20,7 +21,8 @@ import scala.concurrent.Future
 /**
  * Adapter that connects the game engine's AI requirements with the Prolog knowledge base.
  *
- * This Adapter work with [[WizardGameAdapter]] as every api need to get actual state to respond with the correct data for the correct playerId request.
+ * This Adapter work with [[GameEngineInboundAdapter]] as every api need to get actual state to respond with the correct data for the correct playerId request.
+ *
  * @throws Future[Exception] Each api return a failed future if any problem occurs.
  *
  * This component acts as a safety layer:
@@ -28,7 +30,7 @@ import scala.concurrent.Future
  * 2. Manages interactions with the [[WizardPrologEngine]].
  * 3. Provides robust fallbacks: if Prolog fails to return a valid move, this adapter ensures the game continues by providing a valid default move.
  */
-class WizardPrologAdapter(private val inboundPort: WizardInboundPort) extends WizardAIPort:
+class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extends AIPort:
 
   private val engine = WizardPrologEngine()
 
@@ -73,7 +75,7 @@ class WizardPrologAdapter(private val inboundPort: WizardInboundPort) extends Wi
         withHand(core.hands.getHand(playerId)): hand =>
           engine
             .placeBid(hand, core.trump)
-            .getOrElse(firstValidBid(core.round, currentBids, core.players.totalPlayers))
+            .getOrElse(firstValidBid(core.round, currentBids, core.playersIds.size))
 
   /**
    * @inheritdoc
@@ -85,11 +87,11 @@ class WizardPrologAdapter(private val inboundPort: WizardInboundPort) extends Wi
     onRunningPhase("adjust bid"):
       case GameState.Bidding(core, currentBids, _) =>
         withHand(core.hands.getHand(playerId)): hand =>
-          val rejectedBid = Bid(core.round.value - currentBids.total)
+          val rejectedBid = core.round - currentBids.total
           engine
             .adjustBid(hand, rejectedBid)
-            .filter(_.validateBid(core.round, currentBids, core.players.totalPlayers).isRight)
-            .getOrElse(firstValidBid(core.round, currentBids, core.players.totalPlayers))
+            .filter(_.validateBid(core.round, currentBids, core.playersIds.size).isRight)
+            .getOrElse(firstValidBid(core.round, currentBids, core.playersIds.size))
 
   /**
    * @inheritdoc
@@ -116,7 +118,6 @@ class WizardPrologAdapter(private val inboundPort: WizardInboundPort) extends Wi
             .getOrElse(legalCards.head)
 
   private def firstValidBid(round: Round, bids: Bids, totalPlayers: Int): Bid =
-    (0 to round.value)
-      .map(Bid(_))
+    (0 to round)
       .find(_.validateBid(round, bids, totalPlayers).isRight)
-      .getOrElse(Bid(0))
+      .getOrElse(0)

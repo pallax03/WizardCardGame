@@ -4,7 +4,7 @@ import it.unibo.pps.wizard.engine.events.FailureEvent
 import it.unibo.pps.wizard.engine.events.InvitationEvent
 import it.unibo.pps.wizard.engine.model.configuration.BotsDifficulty
 import it.unibo.pps.wizard.engine.model.core.GameAction
-import it.unibo.pps.wizard.engine.ports.WizardAIPort
+import it.unibo.pps.wizard.engine.ports.AIPort
 
 import scala.concurrent.Future
 
@@ -39,6 +39,6 @@ object BotStrategy:
    * @param wizardAIPort The port used by [[PrologBotStrategy]], or a new future AI supported strategy.
    * @return A concrete implementation of [[BotStrategy]].
    */
-  def apply(difficulty: BotsDifficulty, wizardAIPort: WizardAIPort): BotStrategy = difficulty match
+  def apply(difficulty: BotsDifficulty, wizardAIPort: AIPort): BotStrategy = difficulty match
     case BotsDifficulty.Dumb   => new DumbBotStrategy()
     case BotsDifficulty.Prolog => new PrologBotStrategy(wizardAIPort)

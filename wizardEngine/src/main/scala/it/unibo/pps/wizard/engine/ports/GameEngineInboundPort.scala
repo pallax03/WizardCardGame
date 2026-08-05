@@ -2,7 +2,7 @@ package it.unibo.pps.wizard.engine.ports
 
 import it.unibo.pps.wizard.engine.adapters.WizardGameState
 import it.unibo.pps.wizard.engine.events.Event
-import it.unibo.pps.wizard.engine.model.basic.Players
+import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.model.core.GameAction
 
@@ -13,7 +13,7 @@ import scala.reflect.ClassTag
  * Inbound port for the Wizard game engine.
  * This trait defines the methods that can be called by external components to interact with the game engine.
  */
-trait WizardInboundPort:
+trait GameEngineInboundPort:
 
   /**
    * Retrieves the current state of the game.
@@ -29,7 +29,7 @@ trait WizardInboundPort:
    * @param config the configuration for the game
    * @return a Future indicating the completion of the game start process
    */
-  def startGame(players: Players, config: GameConfiguration): Future[Unit]
+  def startGame(players: List[PlayerId], config: GameConfiguration): Future[Unit]
 
   /**
    * Submits a game action for processing.

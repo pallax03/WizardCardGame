@@ -5,13 +5,13 @@ import io.vertx.core.eventbus.MessageConsumer
 import it.unibo.pps.wizard.engine.events.FailureEvent.ActionFailed
 import it.unibo.pps.wizard.engine.events.LifecycleEvent.GameStarted
 import it.unibo.pps.wizard.engine.events._
-import it.unibo.pps.wizard.engine.model.basic.Players
+import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameEngine
 import it.unibo.pps.wizard.engine.model.core.GameState
-import it.unibo.pps.wizard.engine.ports.WizardInboundPort
-import it.unibo.pps.wizard.engine.ports.WizardOutboundPort
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
+import it.unibo.pps.wizard.engine.ports.GameEngineOutboundPort
 import it.unibo.pps.wizard.util.Id
 import it.unibo.pps.wizard.util.VerticleExecutor
 
@@ -24,13 +24,15 @@ enum WizardGameState:
   case Running(state: GameState)
 
 /**
- * An adapter that implements the [[WizardInboundPort]] interface, allowing interaction with the Wizard game engine.
+ * An adapter that implements the [[GameEngineInboundPort]] interface, allowing interaction with the Wizard game engine.
  *
  * @param vertx the Vert.x instance used for event handling
  * @param outboundPort the outbound port used to publish events
  */
-class WizardGameAdapter(private val vertx: Vertx, private val outboundPort: WizardOutboundPort)
-    extends WizardInboundPort:
+class GameEngineInboundAdapter(
+    private val vertx: Vertx,
+    private val outboundPort: GameEngineOutboundPort
+) extends GameEngineInboundPort:
   private var currentState: WizardGameState = WizardGameState.NotConfigured
   private val verticleExecutor: VerticleExecutor = VerticleExecutor(this.vertx)
   private var subscriptions: Map[String, MessageConsumer[?]] = Map.empty
@@ -39,11 +41,13 @@ class WizardGameAdapter(private val vertx: Vertx, private val outboundPort: Wiza
     runOnVerticle("State Retrieval"):
       this.currentState
 
-  override def startGame(players: Players, config: GameConfiguration): Future[Unit] =
+  override def startGame(players: List[PlayerId], config: GameConfiguration): Future[Unit] =
     runOnVerticle("Game Start"):
       this.currentState match
         case WizardGameState.NotConfigured =>
-          val playersAndBots: Players = Players.create(players, config.numberOfBots)
+          val maxId = if players.isEmpty then 0 else players.map(_.toInt).max
+          val botIds = (1 to config.numberOfBots).map(i => PlayerId(maxId + i)).toList
+          val playersAndBots: List[PlayerId] = players ++ botIds
           val initialState = GameEngine.initializeGame(playersAndBots)
           this.currentState = WizardGameState.Running(initialState.state)
           this.outboundPort.publishEvent(GameStarted(playersAndBots, config.botsDifficulty))

@@ -7,9 +7,11 @@ val scalatestVersion      = "3.2.20"
 val catsVersion           = "2.13.0"
 val vertxVersion          = "5.1.5"
 val tuPrologVersion       = "4.1.1"
+val circeVersion          = "0.14.10"
 
 ThisBuild / scalaVersion := scala3Version
-ThisBuild / scalacOptions := Seq("-Wunused:all", "-Wunused:imports", "-Werror", "-language:implicitConversions")
+ThisBuild / scalacOptions := Seq("-Wunused:all", "-Wunused:imports", "-Werror", "-language:implicitConversions", "-Wconf:msg=not declared infix:s")
+Test / scalacOptions += "-Wconf:msg=Alphanumeric method:s"
 
 ThisBuild / scalafixDependencies += "org.typelevel" %% "typelevel-scalafix" % "0.2.0"
 
@@ -17,7 +19,10 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.typelevel"             %%    "cats-core"               % catsVersion,
   "org.scalatest"             %%    "scalatest"               % scalatestVersion % Test,
   "io.vertx"                   %    "vertx-core"              % vertxVersion,
-  "it.unibo.alice.tuprolog"    % "2p-core"                   % tuPrologVersion
+  "it.unibo.alice.tuprolog"    %    "2p-core"                 % tuPrologVersion,
+  "io.circe"                  %%    "circe-core"              % circeVersion,
+  "io.circe"                  %%    "circe-generic"           % circeVersion,
+  "io.circe"                  %%    "circe-parser"            % circeVersion
 )
 
 assembly / assemblyJarName := s"${name.value}.jar"

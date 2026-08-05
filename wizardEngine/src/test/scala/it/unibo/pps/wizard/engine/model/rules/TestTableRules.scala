@@ -1,11 +1,6 @@
 package it.unibo.pps.wizard.engine.model.rules
 
-import it.unibo.pps.wizard.engine.model.basic.BasicTestDSL._
 import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.basic.cards.Card
-import it.unibo.pps.wizard.engine.model.basic.cards.Card._
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
 import it.unibo.pps.wizard.engine.model.core.CardNotAllowedReasons._
 import it.unibo.pps.wizard.engine.model.core.GameError
 import org.scalatest.matchers.should.Matchers
@@ -14,8 +9,11 @@ import org.scalatest.wordspec.AnyWordSpec
 import scala.language.postfixOps
 
 class TestTableRules extends AnyWordSpec with Matchers:
-  import TableRules.*
 
+  import BasicTestDSL._
+  import cards.Card
+  import cards.Card._
+  import gameplay.{Table, Trump}
   "TableRules Validation" when:
     val p1 = PlayerId(1)
     val myWizard = wizard
