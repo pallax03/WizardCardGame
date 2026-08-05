@@ -31,8 +31,8 @@ import scala.util.Success
  * It delegates the actual strategy execution to instances of [[BotStrategy]].
  */
 class BotManagerVerticle(
-                          wizardInboundPort: GameEngineInboundPort,
-                          wizardAIPort: AIPort
+    wizardInboundPort: GameEngineInboundPort,
+    wizardAIPort: AIPort
 ) extends AbstractVerticle:
 
   private var bots: Map[PlayerId, BotStrategy] = Map.empty
@@ -42,8 +42,9 @@ class BotManagerVerticle(
     println("Starting BotManagerVerticle...")
     wizardInboundPort
       .subscribe[LifecycleEvent]:
-        case LifecycleEvent.GameStarted(playersIds, difficulty) => registerBots(playersIds, difficulty)
-        case _: LifecycleEvent.GameEnded                     => bots = Map.empty
+        case LifecycleEvent.GameStarted(playersIds, difficulty) =>
+          registerBots(playersIds, difficulty)
+        case _: LifecycleEvent.GameEnded => bots = Map.empty
       .foreach(id => subscriptionIds = id :: subscriptionIds)
 
     subscribeToEvents[InvitationEvent](1000): (strategy, event) =>

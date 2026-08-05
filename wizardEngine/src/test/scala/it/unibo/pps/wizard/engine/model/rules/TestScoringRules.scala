@@ -1,7 +1,6 @@
 package it.unibo.pps.wizard.engine.model.rules
 
 import it.unibo.pps.wizard.engine.model.basic._
-
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -32,7 +31,7 @@ class TestScoringRules extends AnyWordSpec with Matchers:
 
       "add round 2 gains to the previous baseline for successful bids" in:
         scoreboardAfterR2(p0)(round2) shouldBe (50, 1)
-      
+
       "deduct round 2 penalties from the previous baseline for failed bids" in:
         scoreboardAfterR2(p1)(round2) shouldBe (10, 2)
         scoreboardAfterR2(p2)(round2) shouldBe (20, 0)

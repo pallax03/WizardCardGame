@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.codecs.engine.model.basic
 
-import io.circe.*
+import io.circe._
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
 object PlayerCodecs:

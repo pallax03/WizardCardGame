@@ -1,7 +1,6 @@
 package it.unibo.pps.wizard.engine.adapters.prolog
 
-import it.unibo.pps.wizard.engine.model.basic.*
-
+import it.unibo.pps.wizard.engine.model.basic._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

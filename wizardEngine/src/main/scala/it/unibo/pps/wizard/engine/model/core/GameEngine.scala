@@ -7,7 +7,7 @@ import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
 import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.cards._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Round.*
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Round._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
 import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons._
@@ -123,7 +123,9 @@ object GameEngine:
       cardPlayedEvent: ActionEvent.CardPlayed
   ): Either[GameError, GameEngine] =
     val nextPlayer =
-      currentState.core.playersIds.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayerTurn)
+      currentState.core.playersIds
+        .nextAfter(currentPlayerId)
+        .getOrElse(currentState.currentPlayerTurn)
 
     updatedCore.hands
       .getHand(nextPlayer)
@@ -329,7 +331,10 @@ object GameEngine:
       updatedCore.scoreboard
     )
     val next = nextRoundOrEnd(updatedCore.copy(scoreboard = updatedScoreboard))
-    (next.state, ProgressEvent.RoundScored(updatedScoreboard, updatedCore.playersIds) +: next.events)
+    (
+      next.state,
+      ProgressEvent.RoundScored(updatedScoreboard, updatedCore.playersIds) +: next.events
+    )
 
   private def nextRoundOrEnd(core: CoreState): GameEngine =
     if core.round.isLastRound(core.playersIds) then

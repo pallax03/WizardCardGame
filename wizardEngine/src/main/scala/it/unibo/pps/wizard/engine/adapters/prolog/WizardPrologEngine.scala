@@ -7,10 +7,11 @@ import it.unibo.pps.wizard.engine.model.basic.bidding.Trick
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.basic.cards.Hand
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
-import WizardTermMapper._
 import it.unibo.pps.wizard.util.PrologEngine
 
 import scala.util.Using
+
+import WizardTermMapper._
 
 /**
  * An adapter engine that delegates AI decision-making to a Prolog-based knowledge base.

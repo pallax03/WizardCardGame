@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.engine.model.rules
 
-import it.unibo.pps.wizard.engine.model.basic.*
+import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
 import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
@@ -30,14 +30,14 @@ object ScoringRules:
     playersIds.foldLeft(scoreboard): (sb, playerId) =>
       val bid = bids(playerId)
       val tricksWon = tricks(playerId)
-      
-      val pointsGained = 
+
+      val pointsGained =
         if bid == tricksWon then BASE_WIN_POINTS + (tricksWon * POINTS_PER_TRICK)
         else -Math.abs(bid - tricksWon) * POINTS_PER_TRICK
-        
+
       val cumulativePoints =
         sb.getStatsForRound(round - 1, playerId)._1 + pointsGained
-        
+
       sb.addScore(playerId, round, cumulativePoints, bid)
 
 export ScoringRules.*

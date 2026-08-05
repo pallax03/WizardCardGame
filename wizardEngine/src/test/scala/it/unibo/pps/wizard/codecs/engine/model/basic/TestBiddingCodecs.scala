@@ -1,10 +1,9 @@
 package it.unibo.pps.wizard.codecs.engine.model.basic
 
-import io.circe.parser.*
-import io.circe.syntax.*
-import it.unibo.pps.wizard.engine.model.basic.*
-
-import org.scalatest.EitherValues.*
+import io.circe.parser._
+import io.circe.syntax._
+import it.unibo.pps.wizard.engine.model.basic._
+import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -22,7 +21,7 @@ class TestBiddingCodecs extends AnyWordSpec with Matchers:
       jsonString shouldBe """{"1":2,"2":0}"""
       decode[Bids](jsonString).value shouldBe bids
 
-    "encode and decode Tricks map correctly" in :
+    "encode and decode Tricks map correctly" in:
       val tricks = Tricks.empty addTrickTo p1 addTrickTo p2 addTrickTo p2
       val jsonString = tricks.asJson.noSpaces
       jsonString shouldBe """{"1":1,"2":2}"""

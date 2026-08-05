@@ -29,8 +29,10 @@ enum WizardGameState:
  * @param vertx the Vert.x instance used for event handling
  * @param outboundPort the outbound port used to publish events
  */
-class GameEngineInboundAdapter(private val vertx: Vertx, private val outboundPort: GameEngineOutboundPort)
-    extends GameEngineInboundPort:
+class GameEngineInboundAdapter(
+    private val vertx: Vertx,
+    private val outboundPort: GameEngineOutboundPort
+) extends GameEngineInboundPort:
   private var currentState: WizardGameState = WizardGameState.NotConfigured
   private val verticleExecutor: VerticleExecutor = VerticleExecutor(this.vertx)
   private var subscriptions: Map[String, MessageConsumer[?]] = Map.empty

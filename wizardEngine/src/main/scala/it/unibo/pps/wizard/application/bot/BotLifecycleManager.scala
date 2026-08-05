@@ -18,9 +18,9 @@ import scala.concurrent.Promise
  * @param aiPort       The AI port for handling bot decision-making.
  */
 class BotLifecycleManager(
-                           private val vertx: Vertx,
-                           private val inboundPort: GameEngineInboundPort,
-                           private val aiPort: AIPort
+    private val vertx: Vertx,
+    private val inboundPort: GameEngineInboundPort,
+    private val aiPort: AIPort
 ):
   private var currentBotDeploymentId: Option[String] = None
 

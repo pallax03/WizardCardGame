@@ -1,17 +1,18 @@
 package it.unibo.pps.wizard.codecs.engine.model.basic
 
-import io.circe.*
-import io.circe.syntax.*
+import io.circe._
+import io.circe.syntax._
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 
 object TableCodecs:
-  import CardCodecs.given 
+  import CardCodecs.given
   import PlayerCodecs.given
-  
+
   given Encoder[(PlayerId, Card)] = Encoder.forProduct2("playerId", "card")(identity)
-  given Decoder[(PlayerId, Card)] = Decoder.forProduct2("playerId", "card")((pId: PlayerId, c: Card) => (pId, c))
+  given Decoder[(PlayerId, Card)] =
+    Decoder.forProduct2("playerId", "card")((pId: PlayerId, c: Card) => (pId, c))
 
   given Encoder[Table] = Encoder.instance: t =>
     val fields = List(

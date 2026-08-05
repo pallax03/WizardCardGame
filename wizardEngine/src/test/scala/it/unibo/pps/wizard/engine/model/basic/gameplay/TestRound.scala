@@ -13,7 +13,7 @@ class TestRound extends AnyWordSpec with Matchers:
         round shouldBe 1
       "is a Int" in:
         round shouldBe a[Int]
-    
+
     "transitioning" should:
       "correctly move to the next round" in:
         val r1 = Round.start

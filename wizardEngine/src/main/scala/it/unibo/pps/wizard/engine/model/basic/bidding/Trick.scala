@@ -19,7 +19,7 @@ object Tricks:
      * @return the number of tricks won.
      */
     def apply(p: PlayerId): Trick = t.getOrElse(p, 0)
-    
+
     /**
      * Increments the trick count by 1 for the player who won the current trick.
      *

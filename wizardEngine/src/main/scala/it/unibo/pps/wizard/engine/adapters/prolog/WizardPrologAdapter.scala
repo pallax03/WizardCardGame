@@ -3,13 +3,17 @@ package it.unibo.pps.wizard.engine.adapters.prolog
 import it.unibo.pps.wizard.engine.adapters.WizardGameState
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.basic.bidding.{Bid, Bids}
-import it.unibo.pps.wizard.engine.model.basic.cards.{Card, Hand}
-import it.unibo.pps.wizard.engine.model.basic.gameplay.{Round, Table}
+import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
+import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
+import it.unibo.pps.wizard.engine.model.basic.cards.Card
+import it.unibo.pps.wizard.engine.model.basic.cards.Hand
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 import it.unibo.pps.wizard.engine.model.core.GameState
-import it.unibo.pps.wizard.engine.model.rules.BiddingRules.*
-import it.unibo.pps.wizard.engine.model.rules.TableRules.*
-import it.unibo.pps.wizard.engine.ports.{AIPort, GameEngineInboundPort}
+import it.unibo.pps.wizard.engine.model.rules.BiddingRules._
+import it.unibo.pps.wizard.engine.model.rules.TableRules._
+import it.unibo.pps.wizard.engine.ports.AIPort
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

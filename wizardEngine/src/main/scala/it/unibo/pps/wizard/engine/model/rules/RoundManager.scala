@@ -1,11 +1,11 @@
 package it.unibo.pps.wizard.engine.model.rules
 
-import cats.syntax.traverse.toTraverseOps
 import cats.data.State
+import cats.syntax.traverse.toTraverseOps
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
-import it.unibo.pps.wizard.engine.model.basic.cards.*
-import it.unibo.pps.wizard.engine.model.basic.gameplay.*
+import it.unibo.pps.wizard.engine.model.basic.cards._
+import it.unibo.pps.wizard.engine.model.basic.gameplay._
 import it.unibo.pps.wizard.engine.model.core.CoreState
 import it.unibo.pps.wizard.engine.model.core.GameError
 import it.unibo.pps.wizard.engine.model.core.GameState
@@ -20,9 +20,10 @@ object RoundManager:
      * @param current the ID of the current player.
      * @return Right containing the next [[PlayerId]], or Left with a [[GameError]] if the player is not found.
      */
-    def nextAfter(current: PlayerId): Either[GameError, PlayerId] = playersIds.indexWhere(_ == current) match
-      case id if id >= 0 => Right(playersIds((id + 1) % playersIds.size))
-      case _ => Left(GameError.NotYourTurn)
+    def nextAfter(current: PlayerId): Either[GameError, PlayerId] =
+      playersIds.indexWhere(_ == current) match
+        case id if id >= 0 => Right(playersIds((id + 1) % playersIds.size))
+        case _             => Left(GameError.NotYourTurn)
 
   extension (round: Round)
     /**
@@ -75,10 +76,14 @@ object RoundManager:
         )
 
         _ <- State.set(newCore)
-      yield
-        trump match
-          case _: Trump.WizardUnresolved => GameState.ChoosingTrump(newCore)
-          case _                         => GameState.Bidding(core = newCore, currentBids = Bids.empty, currentPlayer = round.firstPlayer(core.playersIds))
+      yield trump match
+        case _: Trump.WizardUnresolved => GameState.ChoosingTrump(newCore)
+        case _ =>
+          GameState.Bidding(
+            core = newCore,
+            currentBids = Bids.empty,
+            currentPlayer = round.firstPlayer(core.playersIds)
+          )
 
   extension (expectedPlayer: PlayerId)
     /**
