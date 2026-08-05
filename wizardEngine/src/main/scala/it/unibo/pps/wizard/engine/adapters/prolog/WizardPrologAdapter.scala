@@ -71,7 +71,7 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
         withHand(core.hands.getHand(playerId)): hand =>
           engine
             .placeBid(hand, core.trump)
-            .getOrElse(firstValidBid(core.round, currentBids, core.players.totalPlayers))
+            .getOrElse(firstValidBid(core.round, currentBids, core.playersIds.size))
 
   /**
    * @inheritdoc
@@ -86,8 +86,8 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
           val rejectedBid = core.round.value - currentBids.total
           engine
             .adjustBid(hand, rejectedBid)
-            .filter(_.validateBid(core.round, currentBids, core.players.totalPlayers).isRight)
-            .getOrElse(firstValidBid(core.round, currentBids, core.players.totalPlayers))
+            .filter(_.validateBid(core.round, currentBids, core.playersIds.size).isRight)
+            .getOrElse(firstValidBid(core.round, currentBids, core.playersIds.size))
 
   /**
    * @inheritdoc

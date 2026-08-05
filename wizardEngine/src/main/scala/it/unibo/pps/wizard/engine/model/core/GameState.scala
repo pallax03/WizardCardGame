@@ -36,4 +36,4 @@ object GameState:
   ) extends GameState
 
   /** The final state of the game, containing the definitive scoreboard. */
-  case class Ended(players: Players, scoreboard: Scoreboard) extends GameState
+  case class Ended(playersIds: List[PlayerId], scoreboard: Scoreboard) extends GameState

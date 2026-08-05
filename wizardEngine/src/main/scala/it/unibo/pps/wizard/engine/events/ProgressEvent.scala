@@ -15,5 +15,5 @@ object ProgressEvent:
       extends ProgressEvent
   case class TrickWon(winnerId: PlayerId, tricksWon: Trick, trickedCards: List[Card])
       extends ProgressEvent
-  case class RoundScored(scoreboard: Scoreboard, players: Players) extends ProgressEvent
+  case class RoundScored(scoreboard: Scoreboard, playersIds: List[PlayerId]) extends ProgressEvent
   case class PhaseChanged(phaseName: String) extends ProgressEvent

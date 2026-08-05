@@ -44,9 +44,9 @@ class GameEngineInboundAdapter(private val vertx: Vertx, private val outboundPor
       this.currentState match
         case WizardGameState.NotConfigured =>
           val playersAndBots: Players = Players.create(players, config.numberOfBots)
-          val initialState = GameEngine.initializeGame(playersAndBots)
+          val initialState = GameEngine.initializeGame(playersAndBots.getPlayerIds)
           this.currentState = WizardGameState.Running(initialState.state)
-          this.outboundPort.publishEvent(GameStarted(playersAndBots, config.botsDifficulty))
+          this.outboundPort.publishEvent(GameStarted(playersAndBots.getPlayerIds, config.botsDifficulty))
           this.outboundPort.publishAllEvents(initialState.events)
         case _ =>
 

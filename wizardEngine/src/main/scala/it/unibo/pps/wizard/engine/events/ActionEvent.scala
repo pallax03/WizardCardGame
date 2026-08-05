@@ -12,7 +12,6 @@ object ActionEvent:
   case class TrumpColorResolved(playerId: PlayerId, color: Card.Color) extends ActionEvent
   case class CardPlayed(
       playerId: PlayerId,
-      playerName: PlayerName,
       card: Card,
       winningCard: Option[Card],
       followingColor: Option[Card.Color]

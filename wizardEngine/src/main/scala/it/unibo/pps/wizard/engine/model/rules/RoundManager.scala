@@ -1,9 +1,8 @@
 package it.unibo.pps.wizard.engine.model.rules
 
-//import cats.syntax.traverse.toTraverseOps
+import cats.syntax.traverse.toTraverseOps
 import cats.data.State
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.basic.Players
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
 import it.unibo.pps.wizard.engine.model.basic.cards.*
 import it.unibo.pps.wizard.engine.model.basic.gameplay.*
@@ -53,13 +52,9 @@ object RoundManager:
     def deal(playersIds: List[PlayerId]): State[Deck, (Hands, Option[Card])] =
       val cardsPerPlayer = round.value
       for
-//        drawn <- playersIds.traverse(p => Deck.pop(round.value).map(p -> Hand(_)))
-        drawn <- Deck.pop(cardsPerPlayer * playersIds.size)
-        hands = Hands(
-          playersIds.zip(drawn.grouped(cardsPerPlayer).map(Hand(_)).toList).toMap
-        )
+        handsList <- playersIds.traverse(p => Deck.pop(cardsPerPlayer).map(p -> Hand(_)))
         trump <- Deck.pop(1).map(_.headOption)
-      yield (hands, trump)
+      yield (Hands(handsList.toMap), trump)
 
     /**
      * State action that initializes a new round, dealing cards and determining the next phase.
@@ -72,9 +67,9 @@ object RoundManager:
       for
         core <- State.get[CoreState]
 
-        (hands, optionTrump) = round.deal(core.players.getPlayerIds).runA(deck).value
+        (hands, optionTrump) = round.deal(core.playersIds).runA(deck).value
 
-        firstPlayer = round.firstPlayer(core.players.getPlayerIds)
+        firstPlayer = round.firstPlayer(core.playersIds)
 
         newCore = core.copy(
           hands = hands,

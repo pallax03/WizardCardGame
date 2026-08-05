@@ -27,19 +27,19 @@ class TestGameEngine extends AnyWordSpec with Matchers:
 
   def createMockCore(roundValue: Int): CoreState =
     val round = Round(roundValue)
-    CoreState.initialize(mockPlayers, round)
+    CoreState.initialize(mockPlayers.getPlayerIds, round)
 
   "A GameEngine" should:
     "initialize a new game correctly via initializeGame" in:
-      val engine = GameEngine.initializeGame(mockPlayers)
+      val engine = GameEngine.initializeGame(mockPlayers.getPlayerIds)
 
       engine.state match
         case _: GameState.Bidding       =>
         case _: GameState.ChoosingTrump =>
         case _ => fail("Expected GameState.Bidding or GameState.ChoosingTrump")
 
-      engine.events.exists(_.isInstanceOf[ProgressEvent.CardsDealt]) shouldBe true
-      engine.events.exists(_.isInstanceOf[ProgressEvent.PhaseChanged]) shouldBe true
+      engine.events.exists(_.isInstanceOf[ProgressEvent.CardsDealt]).shouldBe(true)
+      engine.events.exists(_.isInstanceOf[ProgressEvent.PhaseChanged]).shouldBe(true)
 
     "trigger completeRound and nextRoundOrEnd when the last trick of a round is played" in:
       val c0 = Two of Blue
@@ -65,7 +65,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       val action = GameAction.PlayCard(p4.id, c3)
       val result = GameEngine.processAction(playingState, action)
 
-      result.isRight shouldBe true
+      result.isRight.shouldBe(true)
       result.foreach: engine =>
         engine.state match
           case bidding: GameState.Bidding =>
@@ -74,8 +74,8 @@ class TestGameEngine extends AnyWordSpec with Matchers:
             choosing.core.round.value shouldBe 2
           case _ => fail("Expected transition to Round 2 (Bidding or ChoosingTrump)")
 
-        engine.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]) shouldBe true
-        engine.events.exists(_.isInstanceOf[ProgressEvent.CardsDealt]) shouldBe true
+        engine.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]).shouldBe(true)
+        engine.events.exists(_.isInstanceOf[ProgressEvent.CardsDealt]).shouldBe(true)
 
     "trigger nextRoundOrEnd to end the game when the last trick of the final round is played" in:
       val lastRound = 60 / mockPlayers.totalPlayers
@@ -108,8 +108,8 @@ class TestGameEngine extends AnyWordSpec with Matchers:
           case _: GameState.Ended =>
           case _                  => fail("Expected GameState.Ended")
 
-        engine.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]) shouldBe true
-        engine.events.exists(_.isInstanceOf[LifecycleEvent.GameEnded]) shouldBe true
+        engine.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]).shouldBe(true)
+        engine.events.exists(_.isInstanceOf[LifecycleEvent.GameEnded]).shouldBe(true)
 
     "allow resolving an unresolved wizard trump during ChoosingTrump phase" in:
       val core = createMockCore(1).updateTrump(Option(wizard).asTrump)
@@ -118,7 +118,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
 
       val result = GameEngine.processAction(choosingState, action)
 
-      result.isRight shouldBe true
+      result.isRight.shouldBe(true)
       result.foreach: engine =>
         engine.state match
           case nextState: GameState.Bidding =>
@@ -133,7 +133,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
 
       val result = GameEngine.processAction(biddingState, action)
 
-      result.isRight shouldBe true
+      result.isRight.shouldBe(true)
       result.foreach: engine =>
         engine.state match
           case nextState: GameState.Bidding =>
@@ -164,15 +164,15 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       val action = GameAction.PlaceBid(p4.id, 1)
       val result = GameEngine.processAction(biddingState, action)
 
-      result.isRight shouldBe true
+      result.isRight.shouldBe(true)
       result.foreach: engine =>
         engine.state match
           case playingState: GameState.Playing =>
-            playingState.table.playedCards.isEmpty shouldBe true
+            playingState.table.playedCards.isEmpty.shouldBe(true)
             playingState.currentPlayerTurn shouldBe p1.id
           case _ => fail("Expected GameState.Playing")
 
-        engine.events.exists(_.isInstanceOf[ProgressEvent.PhaseChanged]) shouldBe true
+        engine.events.exists(_.isInstanceOf[ProgressEvent.PhaseChanged]).shouldBe(true)
 
     "allow playing a card, removing it from hand and adding it to the table" in:
       val c1 = Five of Blue
@@ -193,7 +193,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       val action = GameAction.PlayCard(p1.id, c1)
       val result = GameEngine.processAction(playingState, action)
 
-      result.isRight shouldBe true
+      result.isRight.shouldBe(true)
       result.foreach: engine =>
         engine.state match
           case nextState: GameState.Playing =>
@@ -229,11 +229,11 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       val action = GameAction.PlayCard(p4.id, c3)
       val result = GameEngine.processAction(playingState, action)
 
-      result.isRight shouldBe true
+      result.isRight.shouldBe(true)
       result.foreach: engine =>
         engine.state match
           case nextState: GameState.Playing =>
-            nextState.table.playedCards.isEmpty shouldBe true
+            nextState.table.playedCards.isEmpty.shouldBe(true)
             nextState.tricksWon(p2.id) shouldBe 1
             nextState.currentPlayerTurn shouldBe p2.id
           case _ => fail("Expected GameState.Playing")

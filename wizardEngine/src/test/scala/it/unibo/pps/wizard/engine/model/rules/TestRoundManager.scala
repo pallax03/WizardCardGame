@@ -22,19 +22,19 @@ class TestRoundManager extends AnyWordSpec with Matchers:
   "RoundManager on round 1" when:
     "managing turn order" should:
       "find the next player correctly" in:
-        playersIds.nextAfter(p1.id) shouldBe Right(p2.id)
-        playersIds.nextAfter(p3.id) shouldBe Right(p1.id)
+        playersIds.nextAfter(p1) shouldBe Right(p2)
+        playersIds.nextAfter(p3) shouldBe Right(p1)
 
       "fail if current player is not in the list" in:
-        playersIds.nextAfter(PlayerId(99)) shouldBe Left(GameError.NotYourTurn)
+        playersIds.nextAfter(PlayerId(99)).shouldBe(Left(GameError.NotYourTurn))
 
     "determining the first player of a round" should:
       "rotate correctly based on the round number" in:
         val round = Round.start
-        round.firstPlayer(playersIds) shouldBe p1.id
-        round.next.firstPlayer(playersIds) shouldBe p2.id
-        round.next.next.firstPlayer(playersIds) shouldBe p3.id
-        round.next.next.next.firstPlayer(playersIds) shouldBe p1.id
+        round.firstPlayer(playersIds).shouldBe(p1)
+        round.next.firstPlayer(playersIds).shouldBe(p2)
+        round.next.next.firstPlayer(playersIds).shouldBe(p3)
+        round.next.next.next.firstPlayer(playersIds).shouldBe(p1)
 
     "dealing cards" should:
       "distribute the correct amount of cards based on the round" in:
@@ -42,10 +42,10 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         val round = Round.start
         val (deckAfter, (hands, trump)) = round.deal(playersIds).run(initialDeck).value
 
-        hands.getHand(p1.id).toList should have size 1
-        hands.getHand(p2.id).toList should have size 1
-        trump shouldBe defined
-        deckAfter.length shouldBe (Deck.TOTAL_SIZE - 3 - 1)
+        hands.getHand(p1).toList.length.shouldBe(1)
+        hands.getHand(p2).toList.length.shouldBe(1)
+        trump.isDefined.shouldBe(true)
+        deckAfter.length.shouldBe(Deck.TOTAL_SIZE - 3 - 1)
 
       "handle deals where no cards are left for the trump card" in:
         val initialDeck = Deck.create
@@ -53,10 +53,10 @@ class TestRoundManager extends AnyWordSpec with Matchers:
 
         val (deckAfter, (hands, trump)) = maxRound.deal(playersIds).run(initialDeck).value
 
-        hands.getHand(p1.id).value.toList should have size 20
-        trump shouldBe empty
-        deckAfter.length shouldBe 0
-        maxRound.isLastRound(playersIds) shouldBe true
+        hands.getHand(p1).value.toList.length.shouldBe(20)
+        trump.isEmpty.shouldBe(true)
+        deckAfter.length.shouldBe(0)
+        maxRound.isLastRound(playersIds).shouldBe(true)
 
       "popped trump should not be in deck or in any player's hand" in:
         val initialDeck = Deck.create
@@ -64,20 +64,20 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         val (deckAfter, (hands, trump)) = round.deal(playersIds).run(initialDeck).value
 
         trump.foreach { t =>
-          deckAfter.cards should not contain t
+          deckAfter.cards.contains(t).shouldBe(false)
           playersIds.toList.foreach { player =>
-            hands.getHand(player.id).value.toList should not contain t
+            hands.getHand(player).value.toList.contains(t).shouldBe(false)
           }
         }
 
     "validating the turn of a player" should:
       "succeed if the action player matches the expected player" in:
-        val expected = p2.id
-        expected.validateTurnOf(p2.id) shouldBe Right(())
+        val expected = p2
+        expected.validateTurnOf(p2).shouldBe(Right(()))
 
       "fail with NotYourTurn if the action player is different" in:
-        val expected = p2.id
-        expected.validateTurnOf(p1.id) shouldBe Left(GameError.NotYourTurn)
+        val expected = p2
+        expected.validateTurnOf(p1).shouldBe(Left(GameError.NotYourTurn))
 
     "initializing a new round" should:
       import Card.*
@@ -93,9 +93,9 @@ class TestRoundManager extends AnyWordSpec with Matchers:
           .runA(CoreState.initialize(playersIds, round))
           .value match
           case biddingState: GameState.Bidding =>
-            biddingState.core.hands.getHand(p1.id).value.toList should have size 1
-            biddingState.currentPlayer shouldBe p1.id
-            biddingState.core.trump shouldBe TrumpResolved
+            biddingState.core.hands.getHand(p1).value.toList.length.shouldBe(1)
+            biddingState.currentPlayer.shouldBe(p1)
+            biddingState.core.trump.shouldBe(TrumpResolved)
           case _ => ()
 
       "correctly transition to ChoosingTrump state" in:
@@ -109,6 +109,6 @@ class TestRoundManager extends AnyWordSpec with Matchers:
           .runA(CoreState.initialize(playersIds, round))
           .value match
           case choosingState: GameState.ChoosingTrump =>
-            choosingState.core.hands.getHand(p1.id).value.toList should have size 1
-            choosingState.core.trump shouldBe TrumpUnResolved
+            choosingState.core.hands.getHand(p1).value.toList.length.shouldBe(1)
+            choosingState.core.trump.shouldBe(TrumpUnResolved)
           case _ => ()

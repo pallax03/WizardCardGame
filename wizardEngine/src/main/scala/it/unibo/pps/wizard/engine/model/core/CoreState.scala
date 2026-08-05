@@ -17,7 +17,7 @@ import it.unibo.pps.wizard.engine.model.rules.RoundManager.firstPlayer
  * @param scoreboard the accumulated scores of all players across rounds.
  */
 case class CoreState(
-    players: Players,
+    playersIds: List[PlayerId],
     hands: Hands,
     trump: Trump,
     round: Round,
@@ -37,14 +37,14 @@ object CoreState:
    * @return A starting [[CoreState]] with empty hands, Absent trump, and empty scoreboard.
    */
   def initialize(
-      players: Players,
+      playersIds: List[PlayerId],
       round: Round
   ): CoreState =
     CoreState(
-      players = players,
+      playersIds = playersIds,
       hands = Hands.empty,
       trump = Trump.Absent,
       round = round,
-      dealerId = round.firstPlayer(players.getPlayerIds),
+      dealerId = round.firstPlayer(playersIds),
       scoreboard = Scoreboard.empty
     )
