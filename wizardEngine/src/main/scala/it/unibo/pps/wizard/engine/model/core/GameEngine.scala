@@ -269,7 +269,7 @@ object GameEngine:
         .playerOf(winningCard)
         .toRight(GameError.InconsistentState(TableNoWinner))
 
-      updatedTricks = state.tricksWon.addTrickTo(winnerId)
+      updatedTricks = state.tricksWon addTrickTo winnerId
 
       trickWonEvent = ProgressEvent.TrickWon(
         winnerId,

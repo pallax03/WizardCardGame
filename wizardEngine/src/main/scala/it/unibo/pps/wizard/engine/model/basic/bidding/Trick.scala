@@ -26,4 +26,4 @@ object Tricks:
      * @param p the player ID of the trick winner.
      * @return the updated [[Tricks]] collection.
      */
-    def addTrickTo(p: PlayerId): Tricks = t.updated(p, t.getOrElse(p, 0) + 1)
+    infix def addTrickTo(p: PlayerId): Tricks = t.updated(p, t.getOrElse(p, 0) + 1)
