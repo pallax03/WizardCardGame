@@ -5,8 +5,6 @@ import it.unibo.pps.wizard.engine.ports.WebSocketsPort
 import scala.concurrent.Future
 //import it.unibo.pps.wizard.engine.ports.RedisPubSubPort
 
-
-
 class VertxWebSocketsAdapter(
     // private val inboundPort: GameEngineInboundAdapter,
     // private val redisPubSubPort: RedisPubSubPort
