@@ -7,14 +7,14 @@ import scala.concurrent.Future
 
 /**
  * Adapter that implements LobbyStatePort to persist Lobby state in a Redis Key-Value store.
- * 
+ *
  * This is an Infrastructure Driven Adapter. It lives at the boundary of the system
  * and knows how to talk to the actual Redis database.
- * 
+ *
  * @param redisClient The driver/client used to execute commands against the Redis server.
  *                    (see io.vertx.redis.client.RedisAPI)
  */
-class RedisLobbyStateAdapter(/* redisClient: RedisAPI */) extends LobbyStatePort:
+class RedisLobbyStateAdapter( /* redisClient: RedisAPI */ ) extends LobbyStatePort:
 
   /** @inheritdoc */
   override def saveLobby(lobby: Lobby): Future[Unit] =

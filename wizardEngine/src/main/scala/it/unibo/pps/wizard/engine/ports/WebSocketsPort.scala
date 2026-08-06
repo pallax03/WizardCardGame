@@ -10,7 +10,7 @@ import scala.concurrent.Future
  *
  * Flow for WebSockets Verticle:
  * 1. Client sends a message -> Verticle intercepts it -> calls `handleClientMessage`.
- * 2. Client opens connection -> Verticle validates it -> calls `subscribeLobbyEvents` 
+ * 2. Client opens connection -> Verticle validates it -> calls `subscribeLobbyEvents`
  *    passing a callback (e.g., `socket.writeTextMessage(...)`) to forward Redis events.
  *
  * todo: maybe this port can be deleted, and implement those functions only in the adapter
@@ -32,7 +32,7 @@ trait WebSocketsPort:
    * The adapter relies on the `RedisPubSubPort` to achieve this.
    *
    * @param lobbyId       the unique identifier of the lobby.
-   * @param onJsonMessage the callback to execute when a new event arrives from the Pub/Sub system. 
+   * @param onJsonMessage the callback to execute when a new event arrives from the Pub/Sub system.
    *                      The Verticle should provide a function that writes to the actual socket.
    * @return a Future completing when the subscription is successfully established.
    */

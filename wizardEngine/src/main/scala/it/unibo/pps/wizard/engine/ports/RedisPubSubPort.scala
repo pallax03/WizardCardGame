@@ -4,20 +4,20 @@ import scala.concurrent.Future
 
 /**
  * Internal port to manage the real-time event synchronization across distributed instances.
- * 
- * This port relies on a Publish/Subscribe pattern (e.g., Redis Pub/Sub) rather than a static 
+ *
+ * This port relies on a Publish/Subscribe pattern (e.g., Redis Pub/Sub) rather than a static
  * Key-Value store, enabling reactive event-driven architectures.
- * 
+ *
  * Flow for Game Engine Outbound Adapter:
- * - Whenever the core game engine emits a new GameState or Event, the outbound adapter 
+ * - Whenever the core game engine emits a new GameState or Event, the outbound adapter
  *   calls `publish` to broadcast the state to all connected nodes.
- * 
+ *
  * Flow for WebSockets Verticle / Adapter:
- * - When a client successfully connects (after validation via LobbyStatePort), 
+ * - When a client successfully connects (after validation via LobbyStatePort),
  *   the adapter calls `subscribe` on the lobby's specific channel.
- * - Every time a message arrives from the channel, the provided `onMessage` callback is fired, 
+ * - Every time a message arrives from the channel, the provided `onMessage` callback is fired,
  *   which will route the JSON payload directly to the client's WebSocket.
- * - On client disconnect, if it's the last client for that lobby on the current node, 
+ * - On client disconnect, if it's the last client for that lobby on the current node,
  *   `unsubscribe` should be called to free resources.
  */
 trait RedisPubSubPort:

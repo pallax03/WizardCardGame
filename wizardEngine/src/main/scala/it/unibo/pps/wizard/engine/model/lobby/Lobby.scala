@@ -1,8 +1,6 @@
 package it.unibo.pps.wizard.engine.model.lobby
 
-/**
- * Represents the status of a Lobby.
- */
+/** Represents the status of a Lobby. */
 enum LobbyStatus:
   case WAITING, IN_GAME, FINISHED
 

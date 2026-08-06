@@ -1,12 +1,14 @@
 package it.unibo.pps.wizard.engine.adapters
 
-import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, RedisPubSubPort, WebSocketsPort}
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
+import it.unibo.pps.wizard.engine.ports.RedisPubSubPort
+import it.unibo.pps.wizard.engine.ports.WebSocketsPort
 
 import scala.concurrent.Future
 
 /**
  * Adapter that implements the WebSocketsPort.
- * 
+ *
  * It acts as a bridge between the Vert.x WebSocket Verticle and the internal engine ports.
  * - Forwards incoming JSON strings to the `GameEngineInboundPort` after deserialization.
  * - Binds the WebSocket output stream to the `RedisPubSubPort` subscriptions.

@@ -1,17 +1,18 @@
 package it.unibo.pps.wizard.engine.adapters
 
 import it.unibo.pps.wizard.engine.events.WizardEvent
-import it.unibo.pps.wizard.engine.ports.{GameEngineOutboundPort, RedisPubSubPort}
+import it.unibo.pps.wizard.engine.ports.GameEngineOutboundPort
+import it.unibo.pps.wizard.engine.ports.RedisPubSubPort
 
 import scala.concurrent.Future
 
 /**
- * Adapter that implements GameEngineOutboundPort to publish pure domain events 
+ * Adapter that implements GameEngineOutboundPort to publish pure domain events
  * to the distributed Redis Pub/Sub infrastructure.
- * 
+ *
  * This Adapter bridges the gap between the Game Engine (which knows nothing about network)
  * and Redis (which only knows strings and channels).
- * 
+ *
  * @param lobbyId The UUID of the lobby this adapter is currently working for.
  * @param pubSubPort The internal port/client used to interact with Redis Pub/Sub.
  */

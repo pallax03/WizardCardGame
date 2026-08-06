@@ -1,18 +1,19 @@
 package it.unibo.pps.wizard.engine.ports
 
 import it.unibo.pps.wizard.engine.model.lobby.Lobby
+
 import scala.concurrent.Future
 
 /**
  * Internal port to manage the persistent state of a Lobby before the game starts.
- * 
+ *
  * This port is designed to interact with a Key-Value store (e.g., Redis Key-Value).
  * It acts as the single source of truth for the lobby composition across the distributed system.
- * 
+ *
  * Flow for HTTP API (Verticle):
  * 1. An HTTP request arrives to create a lobby or join an existing one.
  * 2. The HTTP Verticle uses this port (`saveLobby`) to store or update the lobby state.
- * 
+ *
  * Flow for WebSockets (Verticle):
  * 1. A client attempts to open a WebSocket connection for a specific lobbyId and playerId.
  * 2. The WebSocket Verticle uses this port (`getLobby`) to fetch the current state.
