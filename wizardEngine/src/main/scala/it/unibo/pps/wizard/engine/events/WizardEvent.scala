@@ -6,8 +6,17 @@ trait WizardEvent extends Event
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
 /**
- * Marks an event as being specific to a single player.
- * Allows the UI to route the event to the correct player's client.
+ * Marks a global event as being specific to a single player.
+ * Inform every player that playerId trigger a FailureEvent or a InvitationEvent.
+ * Example: InvitationEvent: WaitingForBid for playerId2 -> inform every player that playerId2 need to place a bid.
  */
 trait PlayerScoped extends WizardEvent:
   def playerId: PlayerId
+
+/**
+ * Marks an event as highly sensitive/private, to be delivered ONLY to the specified player.
+ * Differs from playerScoped, THIS IS A PRIVATE EVENT SENT ONLY TO THE SPECIFIED PlayerId.
+ * Example: Dealing cards to a player's hand.
+ */
+trait DestinationScoped extends WizardEvent:
+  def destinationId: PlayerId

@@ -1,19 +1,14 @@
 package it.unibo.pps.wizard.engine.model.configuration
 
-/** Represents the configuration of a game, including the player's name, the number of bots, and the difficulty level of the bots. */
-enum BotsDifficulty:
-  case Dumb
-  case Prolog
+import it.unibo.pps.wizard.engine.model.lobby.LobbyPlayer
 
 /**
- * Represents the configuration of a game, including the player's name, the number of bots, and the difficulty level of the bots.
+ * Represents the configuration of a game.
  *
- * @param playerName The name of the human player.
- * @param numberOfBots The number of bot players in the game.
- * @param botsDifficulty The difficulty level of the bot players.
+ * @param timer The custom timer for each player's action.
+ * @param players List of players (human and bots).
  */
 case class GameConfiguration(
-    playerName: String,
-    numberOfBots: Int,
-    botsDifficulty: BotsDifficulty
+    timer: Long, //todo: to be implemented during heartbeat pattern issue#3
+    players: List[LobbyPlayer]
 )

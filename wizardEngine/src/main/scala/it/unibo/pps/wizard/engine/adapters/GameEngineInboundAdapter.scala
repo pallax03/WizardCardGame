@@ -45,12 +45,10 @@ class GameEngineInboundAdapter(
     runOnVerticle("Game Start"):
       this.currentState match
         case WizardGameState.NotConfigured =>
-          val maxId = if players.isEmpty then 0 else players.map(_.toInt).max
-          val botIds = (1 to config.numberOfBots).map(i => PlayerId(maxId + i)).toList
-          val playersAndBots: List[PlayerId] = players ++ botIds
+          val playersAndBots = config.players.map(_.id)
           val initialState = GameEngine.initializeGame(playersAndBots)
           this.currentState = WizardGameState.Running(initialState.state)
-          this.outboundPort.publishEvent(GameStarted(playersAndBots, config.botsDifficulty))
+          this.outboundPort.publishEvent(GameStarted(playersAndBots))
           this.outboundPort.publishAllEvents(initialState.events)
         case _ =>
 

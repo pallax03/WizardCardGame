@@ -7,7 +7,6 @@ import it.unibo.pps.wizard.engine.events.InvitationEvent
 import it.unibo.pps.wizard.engine.events.LifecycleEvent
 import it.unibo.pps.wizard.engine.events.PlayerScoped
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.configuration.BotsDifficulty
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.ports.AIPort
 import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
@@ -42,8 +41,8 @@ class BotManagerVerticle(
     println("Starting BotManagerVerticle...")
     wizardInboundPort
       .subscribe[LifecycleEvent]:
-        case LifecycleEvent.GameStarted(playersIds, difficulty) =>
-          registerBots(playersIds, difficulty)
+        case LifecycleEvent.GameStarted(playersIds) =>
+          registerBots(playersIds)
         case _: LifecycleEvent.GameEnded => bots = Map.empty
       .foreach(id => subscriptionIds = id :: subscriptionIds)
 
@@ -59,9 +58,9 @@ class BotManagerVerticle(
     bots = Map.empty
     subscriptionIds = Nil
 
-  private def registerBots(playersIds: List[PlayerId], difficulty: BotsDifficulty): Unit =
-    val _ = (playersIds, difficulty, wizardAIPort)
-    // TODO: BotManagerVerticle should receive the list of bot IDs
+  private def registerBots(playersIds: List[PlayerId]): Unit =
+    val _ = (playersIds, wizardAIPort)
+    // TODO: BotManagerVerticle should receive the list of bot IDs and their difficulty
     bots = Map.empty
 
   private def delayed[T](delayMs: Long)(action: => Future[T]): Future[T] =
