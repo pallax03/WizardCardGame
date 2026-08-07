@@ -19,6 +19,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "org.typelevel"             %%    "cats-core"               % catsVersion,
   "org.scalatest"             %%    "scalatest"               % scalatestVersion % Test,
   "io.vertx"                   %    "vertx-core"              % vertxVersion,
+  "io.vertx"                   %    "vertx-web"               % vertxVersion,
   "it.unibo.alice.tuprolog"    %    "2p-core"                 % tuPrologVersion,
   "io.circe"                  %%    "circe-core"              % circeVersion,
   "io.circe"                  %%    "circe-generic"           % circeVersion,
