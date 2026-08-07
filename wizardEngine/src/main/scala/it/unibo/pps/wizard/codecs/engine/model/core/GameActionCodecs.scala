@@ -4,7 +4,7 @@ import io.circe._
 import io.circe.syntax._
 import it.unibo.pps.wizard.codecs.combinators.DiscriminatedCodecs._
 import it.unibo.pps.wizard.codecs.engine.model.basic.CardCodecs.given
-import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerCodecs.given
+import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import it.unibo.pps.wizard.engine.model.core.GameAction
 
 object GameActionCodecs:

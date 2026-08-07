@@ -3,7 +3,7 @@ package it.unibo.pps.wizard.codecs.engine.model.basic
 import io.circe._
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
-object PlayerCodecs:
+object PlayerIdCodecs:
 
   given Encoder[PlayerId] = Encoder.encodeInt.asInstanceOf[Encoder[PlayerId]]
   given Decoder[PlayerId] = Decoder.decodeInt.asInstanceOf[Decoder[PlayerId]]

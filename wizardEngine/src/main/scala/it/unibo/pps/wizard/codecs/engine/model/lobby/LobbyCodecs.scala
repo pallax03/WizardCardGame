@@ -1,13 +1,11 @@
 package it.unibo.pps.wizard.codecs.engine.model.lobby
 
 import io.circe._
-import it.unibo.pps.wizard.engine.model.lobby.BotsDifficulty
-import it.unibo.pps.wizard.engine.model.lobby.Lobby
-import it.unibo.pps.wizard.engine.model.lobby.LobbyPlayer
-import it.unibo.pps.wizard.engine.model.lobby.LobbyStatus
+import it.unibo.pps.wizard.engine.model.lobby._
+
+import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 
 object LobbyCodecs:
-  import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerCodecs.given
 
   given Encoder[LobbyStatus] = Encoder.encodeString.contramap(_.toString)
   given Decoder[LobbyStatus] =
