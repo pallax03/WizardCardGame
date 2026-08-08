@@ -4,6 +4,11 @@ package it.unibo.pps.wizard.engine.model.lobby
 enum LobbyStatus:
   case WAITING, IN_GAME, FINISHED
 
+opaque type LobbyId = String
+
+object LobbyId:
+  def apply(id: String): LobbyId = id  
+
 /**
  * Represents a game lobby in the application layer.
  * todo: This object is typically serialized and persisted in Redis.
@@ -13,7 +18,7 @@ enum LobbyStatus:
  * @param status the current lifecycle status of the lobby.
  */
 case class Lobby(
-    uuid: String,
+    uuid: LobbyId,
     players: List[LobbyPlayer],
     status: LobbyStatus
 )
