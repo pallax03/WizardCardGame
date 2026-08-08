@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.adapters.http
+package it.unibo.pps.wizard.application.web.http
 
 import io.circe.Json
 import io.vertx.core.Vertx

@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.adapters.http.responses
+package it.unibo.pps.wizard.application.web.http.responses
 
 import io.circe.Encoder
 import io.vertx.ext.web.RoutingContext

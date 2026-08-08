@@ -29,4 +29,4 @@ extension (request: HttpServerRequest)
    * @return An `Option` containing the extracted `PlayerID` if present, otherwise `None`.
    */
   def extractPlayerId: Option[PlayerId] =
-    Option(request.getParam("playerId")).map(_.toInt).map(PlayerId(_))
+    Option(request.getParam("playerId")).flatMap(_.toIntOption).map(PlayerId(_))

@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.adapters.http.routes
+package it.unibo.pps.wizard.application.web.http.routes
 
 import io.vertx.ext.web.{Router, RoutingContext}
 

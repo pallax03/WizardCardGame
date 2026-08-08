@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.adapters.http
+package it.unibo.pps.wizard.application.web.http
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.http.{HttpServer, HttpServerOptions}

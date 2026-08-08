@@ -3,14 +3,23 @@ package it.unibo.pps.wizard
 import io.vertx.core.json.JsonObject
 import io.vertx.core.{DeploymentOptions, Vertx}
 import io.vertx.ext.web.Router
-import it.unibo.pps.wizard.engine.adapters.http.HttpServerVerticle
-import it.unibo.pps.wizard.engine.adapters.http.routes.{HealthRoutes, RootRoutes}
+import it.unibo.pps.wizard.application.web.http.HttpServerVerticle
+import it.unibo.pps.wizard.application.web.http.routes.{HealthRoutes, RootRoutes}
+import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
+import it.unibo.pps.wizard.engine.adapters.{RedisLobbyStateAdapter, RedisPubSubAdapter, VertxWebSocketsAdapter}
+
+import scala.annotation.nowarn
 
 object Main:
+  val port: Int = sys.env.getOrElse("PORT", "8080").toInt
 
   def main(args: Array[String]): Unit =
-    val port = sys.env.getOrElse("PORT", "8080").toInt
     val vertx = Vertx.vertx()
+//    runHTTPServer(vertx)
+    runWSServer(vertx)
+
+  @nowarn
+  private def runHTTPServer(vertx: Vertx): Unit =
     val routes: Seq[Router => Unit] = Seq(RootRoutes.mount, HealthRoutes.mount)
     val options = DeploymentOptions().setConfig(JsonObject().put("http.port", port))
 
@@ -21,7 +30,12 @@ object Main:
         println(s"Deploy failed: ${ar.cause().getMessage}")
         vertx.close()
 
-    // val wizardOutboundPort: WizardOutboundPort = VertxEventBusAdapter(vertx)
-    // Todo: start HTTP / WebSocket server on Vert.x to expose the engine port
-    // val wizardEnginePort: WizardInboundPort = WizardGameAdapter(vertx, wizardOutboundPort)
-    // val wizardAIPort: WizardAIPort = WizardPrologAdapter(wizardEnginePort)
+  private def runWSServer(vertx: Vertx): Unit =
+    val lobbyStatePort = RedisLobbyStateAdapter()
+    val redisPubSub = RedisPubSubAdapter()
+    val wsAdapter = VertxWebSocketsAdapter(redisPubSub)
+    vertx.deployVerticle(WebSocketsVerticle(wsAdapter, lobbyStatePort, port)).onComplete: ar =>
+      if ar.succeeded() then
+        println(s"WebSocket server deployed ($ar) on port $port")
+      else
+        println(s"WebSocket Deploy failed: ${ar.cause().getMessage}")

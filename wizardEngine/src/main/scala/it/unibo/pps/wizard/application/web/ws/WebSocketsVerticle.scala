@@ -23,11 +23,11 @@ class WebSocketsVerticle(
 
   override def start(): Unit =
     val router = Router.router(vertx)
-    router.route("/socket.io/lobby/:lobbyId").handler { ctx =>
+    router.route("/socket.io/lobby/:lobbyId/player/:playerId").handler { ctx =>
       val req = ctx.request()
       val lobbyIdOpt = req.extractLobbyId
       val playerIdOpt = req.extractPlayerId
-
+      println(s"request received from /lobby/$lobbyIdOpt/player/$playerIdOpt")
       (lobbyIdOpt, playerIdOpt) match
         case (Some(lobbyId), Some(playerId)) =>
           lobbyStatePort.getLobby(lobbyId.toString).onComplete:
