@@ -14,8 +14,6 @@ import GameError._
 
 //import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons.*
 
-
-
 /**
  * The GameEngine is responsible for processing game actions and managing the game state.
  * It takes a GameState and a GameAction as input and produces either a new GameEngine or a GameError.
