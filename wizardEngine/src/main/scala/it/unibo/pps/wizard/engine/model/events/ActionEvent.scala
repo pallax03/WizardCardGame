@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.events
+package it.unibo.pps.wizard.engine.model.events
 
 import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bid

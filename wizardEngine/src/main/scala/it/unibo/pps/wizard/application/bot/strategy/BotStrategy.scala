@@ -1,9 +1,9 @@
 package it.unibo.pps.wizard.application.bot.strategy
 
-import it.unibo.pps.wizard.engine.events.FailureEvent
-import it.unibo.pps.wizard.engine.events.InvitationEvent
+import it.unibo.pps.wizard.engine.lobby.BotsDifficulty
 import it.unibo.pps.wizard.engine.model.core.GameAction
-import it.unibo.pps.wizard.engine.model.lobby.BotsDifficulty
+import it.unibo.pps.wizard.engine.model.events.FailureEvent
+import it.unibo.pps.wizard.engine.model.events.InvitationEvent
 import it.unibo.pps.wizard.engine.ports.AIPort
 
 import scala.concurrent.Future

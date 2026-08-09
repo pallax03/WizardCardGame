@@ -5,7 +5,7 @@ import it.unibo.pps.wizard.engine.model.basic._
 
 object BiddingCodecs:
   import bidding._
-  import PlayerCodecs.given
+  import PlayerIdCodecs.given
 
   given Encoder[Bids] = Encoder.encodeMap[PlayerId, Bid].asInstanceOf[Encoder[Bids]]
   given Decoder[Bids] = Decoder.decodeMap[PlayerId, Bid].asInstanceOf[Decoder[Bids]]

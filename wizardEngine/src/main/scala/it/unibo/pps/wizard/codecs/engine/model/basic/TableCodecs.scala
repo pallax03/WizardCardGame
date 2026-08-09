@@ -8,7 +8,7 @@ import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 
 object TableCodecs:
   import CardCodecs.given
-  import PlayerCodecs.given
+  import PlayerIdCodecs.given
 
   given Encoder[(PlayerId, Card)] = Encoder.forProduct2("playerId", "card")(identity)
   given Decoder[(PlayerId, Card)] =

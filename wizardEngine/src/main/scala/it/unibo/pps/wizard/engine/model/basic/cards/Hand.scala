@@ -42,3 +42,5 @@ object Hands:
     def remove(player: PlayerId, card: Card): Option[Hands] =
       hands.get(player).map(hand => hands.updated(player, Hand.without(hand, card)))
     def areEmpty: Boolean = hands.values.forall(_.isEmpty)
+    // todo: to resee
+//    private[wizard] def toMap: Map[PlayerId, Hand] = hands

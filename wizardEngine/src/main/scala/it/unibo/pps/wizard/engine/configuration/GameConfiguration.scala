@@ -1,6 +1,6 @@
-package it.unibo.pps.wizard.engine.model.configuration
+package it.unibo.pps.wizard.engine.configuration
 
-import it.unibo.pps.wizard.engine.model.lobby.LobbyPlayer
+import it.unibo.pps.wizard.engine.lobby.LobbyPlayer
 
 /**
  * Represents the configuration of a game.

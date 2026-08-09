@@ -11,4 +11,4 @@ object Round:
     /** Returns the next consecutive round. */
     def next: Round = r + 1
 
-export Round.*
+export Round._

@@ -1,6 +1,7 @@
 package it.unibo.pps.wizard.engine.adapters
 
-import it.unibo.pps.wizard.engine.events.WizardEvent
+import it.unibo.pps.wizard.engine.lobby.LobbyId
+import it.unibo.pps.wizard.engine.model.events.WizardEvent
 import it.unibo.pps.wizard.engine.ports.GameEngineOutboundPort
 import it.unibo.pps.wizard.engine.ports.RedisPubSubPort
 
@@ -17,7 +18,7 @@ import scala.concurrent.Future
  * @param pubSubPort The internal port/client used to interact with Redis Pub/Sub.
  */
 class RedisGameEngineOutboundAdapter(
-    val lobbyId: String,
+    val lobbyId: LobbyId,
     val pubSubPort: RedisPubSubPort
 ) extends GameEngineOutboundPort:
 

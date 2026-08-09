@@ -7,13 +7,12 @@ import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
-class TestPlayerCodecs extends AnyWordSpec with Matchers:
+class TestPlayerIdCodecs extends AnyWordSpec with Matchers:
 
-  "PlayerCodecs" should:
-    import PlayerCodecs.given
+  "PlayerIdCodecs" should:
+    import PlayerIdCodecs.given
+    val p1 = PlayerId(1)
     "encode and decode PlayerId correctly" in:
-      val pId = PlayerId(42)
-      val jsonString = pId.asJson.noSpaces
-
-      jsonString shouldBe "42"
-      decode[PlayerId](jsonString).value shouldBe pId
+      val jsonString = p1.asJson.noSpaces
+      jsonString shouldBe "1"
+      decode[PlayerId](jsonString).value shouldBe p1

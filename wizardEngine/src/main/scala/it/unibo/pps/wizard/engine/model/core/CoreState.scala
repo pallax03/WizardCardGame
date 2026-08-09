@@ -9,7 +9,7 @@ import it.unibo.pps.wizard.engine.model.rules.RoundManager.firstPlayer
 /**
  * Holds the immutable state of the game.
  *
- * @param players    the collection of players participating in the game.
+ * @param playersIds    the collection of players participating in the game.
  * @param hands      the current cards held by each player.
  * @param trump      the trump determined for the current round.
  * @param round      the current round.
@@ -32,7 +32,7 @@ object CoreState:
   /**
    * Initializes a new core instance with default values, for the round specified.
    *
-   * @param players total participants, players and bots.
+   * @param playersIds total participants, players and bots.
    * @param round   usually used for [[Round.start]].
    * @return A starting [[CoreState]] with empty hands, Absent trump, and empty scoreboard.
    */

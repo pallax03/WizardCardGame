@@ -38,11 +38,11 @@ enum GameError:
   /** The bid placed does not respect the game rules. (lastBid must be sumOfAllBids != round ) */
   case InvalidBid
 
-  /** The card played is not allowed based on current table rules. */
-  case CardNotAllowed(reason: CardNotAllowedReasons)
-
   /** The action is not permitted in the current [[GameState]]. */
   case InvalidAction
+
+  /** The card played is not allowed based on current table rules. */
+  case CardNotAllowed(reason: CardNotAllowedReasons)
 
   /**
    * Indicates an internal system error where the game state became corrupted or inconsistent.

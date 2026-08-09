@@ -1,13 +1,15 @@
-package it.unibo.pps.wizard.codecs.engine.model.lobby
+package it.unibo.pps.wizard.codecs.engine.lobby
 
 import io.circe._
-import it.unibo.pps.wizard.engine.model.lobby.BotsDifficulty
-import it.unibo.pps.wizard.engine.model.lobby.Lobby
-import it.unibo.pps.wizard.engine.model.lobby.LobbyPlayer
-import it.unibo.pps.wizard.engine.model.lobby.LobbyStatus
+import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
+import it.unibo.pps.wizard.engine.lobby._
+
+import scala.util.Try
 
 object LobbyCodecs:
-  import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerCodecs.given
+
+  given Encoder[LobbyId] = Encoder.encodeString.contramap(_.toString)
+  given Decoder[LobbyId] = Decoder.decodeString.emapTry(s => Try(LobbyId(s)))
 
   given Encoder[LobbyStatus] = Encoder.encodeString.contramap(_.toString)
   given Decoder[LobbyStatus] =
