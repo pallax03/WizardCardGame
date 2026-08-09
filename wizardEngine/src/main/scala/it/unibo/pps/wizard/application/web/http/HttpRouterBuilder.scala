@@ -2,8 +2,12 @@ package it.unibo.pps.wizard.application.web.http
 
 import io.circe.Json
 import io.vertx.core.Vertx
-import io.vertx.ext.web.{Router, RoutingContext}
-import io.vertx.ext.web.handler.{BodyHandler, CorsHandler, LoggerHandler, TimeoutHandler}
+import io.vertx.ext.web.Router
+import io.vertx.ext.web.RoutingContext
+import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.ext.web.handler.CorsHandler
+import io.vertx.ext.web.handler.LoggerHandler
+import io.vertx.ext.web.handler.TimeoutHandler
 
 class HttpRouterBuilder(val vertx: Vertx, val routes: Seq[Router => Unit]):
   private val bodyLimit: Long = 1024 * 1024

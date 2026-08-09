@@ -30,7 +30,7 @@ opaque type Hands = Map[PlayerId, Hand]
 object Hands:
   def empty: Hands = Map.empty
   def apply(hands: Map[PlayerId, Hand]): Hands = hands
-  
+
   extension (hands: Hands)
     def getHand(player: PlayerId): Option[Hand] = hands.get(player)
 

@@ -1,6 +1,7 @@
 package it.unibo.pps.wizard.engine.ports
 
 import it.unibo.pps.wizard.engine.model.events.WizardEvent
+
 import scala.concurrent.Future
 
 /**

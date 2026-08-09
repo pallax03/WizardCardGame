@@ -1,15 +1,12 @@
 package it.unibo.pps.wizard.engine.adapters
 
 import io.vertx.core.Vertx
-
 import it.unibo.pps.wizard.engine.configuration._
-
-import it.unibo.pps.wizard.engine.model.events._
 import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core._
-
-import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, GameEngineOutboundPort}
-
+import it.unibo.pps.wizard.engine.model.events._
+import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
+import it.unibo.pps.wizard.engine.ports.GameEngineOutboundPort
 import it.unibo.pps.wizard.util.VerticleExecutor
 
 import scala.concurrent.Future
@@ -64,7 +61,7 @@ class GameInboundAdapter(
                   this.currentState = WizardGameState.Running(newState.state)
                   this.outboundPort.publishAllEvents(newState.events)
         case _ =>
-        
+
   /**
    * Runs a given activity on the Vert.x event loop, ensuring thread safety and proper execution context.
    *

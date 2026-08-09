@@ -1,6 +1,7 @@
 package it.unibo.pps.wizard.engine.model.events
 
-import it.unibo.pps.wizard.engine.model.basic.{PlayerId, Scoreboard}
+import it.unibo.pps.wizard.engine.model.basic.PlayerId
+import it.unibo.pps.wizard.engine.model.basic.Scoreboard
 
 /** Represents high-level game lifecycle transitions. */
 sealed trait LifecycleEvent extends WizardEvent

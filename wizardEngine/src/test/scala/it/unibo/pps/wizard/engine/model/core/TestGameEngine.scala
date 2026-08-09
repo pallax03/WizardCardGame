@@ -2,7 +2,9 @@ package it.unibo.pps.wizard.engine.model.core
 
 import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core.GameError._
-import it.unibo.pps.wizard.engine.model.events.{ActionEvent, LifecycleEvent, ProgressEvent}
+import it.unibo.pps.wizard.engine.model.events.ActionEvent
+import it.unibo.pps.wizard.engine.model.events.LifecycleEvent
+import it.unibo.pps.wizard.engine.model.events.ProgressEvent
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

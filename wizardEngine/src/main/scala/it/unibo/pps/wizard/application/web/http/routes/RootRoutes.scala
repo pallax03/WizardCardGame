@@ -1,13 +1,14 @@
 package it.unibo.pps.wizard.application.web.http.routes
 
-import io.vertx.ext.web.{Router, RoutingContext}
+import io.vertx.ext.web.Router
+import io.vertx.ext.web.RoutingContext
 
 object RootRoutes:
   def mount(router: Router): Unit =
     router.get("/").handler(handleRoot)
 
   private def handleRoot(ctx: RoutingContext): Unit =
-    ctx.response()
+    ctx
+      .response()
       .putHeader("Content-Type", "text/plain")
       .end("Wizard engine up!")
-

@@ -7,7 +7,7 @@ enum LobbyStatus:
 opaque type LobbyId = String
 
 object LobbyId:
-  def apply(id: String): LobbyId = id  
+  def apply(id: String): LobbyId = id
 
 /**
  * Represents a game lobby in the application layer.

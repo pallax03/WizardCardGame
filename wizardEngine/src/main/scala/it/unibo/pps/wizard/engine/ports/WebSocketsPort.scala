@@ -6,7 +6,6 @@ import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
 import scala.concurrent.Future
 
-
 trait WebSocketsPort:
 
   /**
@@ -16,15 +15,18 @@ trait WebSocketsPort:
    * @param lobbyId       the unique identifier of the lobby.
    * @param playerId      the unique identifier of the player.
    * @param ws            the WebSocket connection.
-   * 
+   *
    * @return a Future completing when the subscription is successfully established.
    */
-  def subscribeToLobbyEvents(lobbyId: LobbyId, playerId: PlayerId, ws: ServerWebSocket): Future[Unit]
-
+  def subscribeToLobbyEvents(
+      lobbyId: LobbyId,
+      playerId: PlayerId,
+      ws: ServerWebSocket
+  ): Future[Unit]
 
   /**
    * Close socket.
-   * 
+   *
    * @return a Future completing when the socket is successfully closed.
    */
   def close: Future[Unit]

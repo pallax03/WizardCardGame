@@ -1,19 +1,20 @@
 package it.unibo.pps.wizard.engine.model.core
 
-import it.unibo.pps.wizard.engine.model.events._
-
-import it.unibo.pps.wizard.engine.model.basic.*
-import it.unibo.pps.wizard.engine.model.basic.bidding.{Bid, Bids, Tricks}
-
-import it.unibo.pps.wizard.engine.model.basic.cards.*
-
+import it.unibo.pps.wizard.engine.model.basic._
+import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
+import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
+import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
+import it.unibo.pps.wizard.engine.model.basic.cards._
 import it.unibo.pps.wizard.engine.model.basic.gameplay._
+import it.unibo.pps.wizard.engine.model.events._
+import it.unibo.pps.wizard.engine.model.rules._
+
+import GameError._
 //import it.unibo.pps.wizard.engine.model.basic.gameplay.Round.next
 
 //import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons.*
 
-import it.unibo.pps.wizard.engine.model.rules._
-import GameError.*
+
 
 /**
  * The GameEngine is responsible for processing game actions and managing the game state.
@@ -184,7 +185,11 @@ object GameEngine:
       hand <- currentState.core.hands
         .getHand(firstPlayer)
         .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(firstPlayer)))
-      _ <- Either.cond(!hand.isEmpty, (), GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(firstPlayer)))
+      _ <- Either.cond(
+        !hand.isEmpty,
+        (),
+        GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(firstPlayer))
+      )
       nextState = GameState.Playing(
         core = currentState.core,
         bids = completedBids,

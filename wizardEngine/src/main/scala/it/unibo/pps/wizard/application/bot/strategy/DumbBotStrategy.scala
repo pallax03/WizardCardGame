@@ -6,7 +6,8 @@ import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round._
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.model.events.{FailureEvent, InvitationEvent}
+import it.unibo.pps.wizard.engine.model.events.FailureEvent
+import it.unibo.pps.wizard.engine.model.events.InvitationEvent
 
 import scala.concurrent.Future
 import scala.util.Random

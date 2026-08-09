@@ -2,7 +2,8 @@ package it.unibo.pps.wizard.application.bot.strategy
 
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.model.events.{FailureEvent, InvitationEvent}
+import it.unibo.pps.wizard.engine.model.events.FailureEvent
+import it.unibo.pps.wizard.engine.model.events.InvitationEvent
 import it.unibo.pps.wizard.engine.ports.AIPort
 
 import scala.concurrent.ExecutionContext.Implicits.global
