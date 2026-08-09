@@ -1,11 +1,11 @@
 package it.unibo.pps.wizard.codecs.engine.model.core
 
-import io.circe.parser.*
-import io.circe.syntax.*
+import io.circe.parser._, io.circe.syntax._
+
 import it.unibo.pps.wizard.engine.model.basic.*
 import it.unibo.pps.wizard.engine.model.core.*
 
-import org.scalatest.EitherValues.*
+import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

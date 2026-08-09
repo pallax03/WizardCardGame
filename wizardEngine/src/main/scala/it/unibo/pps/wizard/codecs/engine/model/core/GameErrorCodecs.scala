@@ -4,13 +4,12 @@ import io.circe.*
 import io.circe.syntax.*
 import it.unibo.pps.wizard.codecs.combinators.DiscriminatedCodecs.*
 import it.unibo.pps.wizard.engine.model.core.{CardNotAllowedReasons, GameError, InconsistentStateReasons}
+
 import it.unibo.pps.wizard.codecs.engine.model.basic.CardCodecs.given
 import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 
 object GameErrorCodecs:
-  // ponytail: written explicitly instead of using auto-derivation to ensure the JSON structure is exactly what we want without macro black magic.
-  
   given Encoder[CardNotAllowedReasons] = Encoder.instance:
     case CardNotAllowedReasons.CardNotInHand(cards) =>
       Json.obj("legalCards" -> cards.asJson).withTag("type", "CardNotInHand")

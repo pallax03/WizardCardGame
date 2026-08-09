@@ -30,7 +30,7 @@ opaque type Hands = Map[PlayerId, Hand]
 object Hands:
   def empty: Hands = Map.empty
   def apply(hands: Map[PlayerId, Hand]): Hands = hands
-
+  
   extension (hands: Hands)
     def getHand(player: PlayerId): Option[Hand] = hands.get(player)
 
@@ -42,3 +42,5 @@ object Hands:
     def remove(player: PlayerId, card: Card): Option[Hands] =
       hands.get(player).map(hand => hands.updated(player, Hand.without(hand, card)))
     def areEmpty: Boolean = hands.values.forall(_.isEmpty)
+    // todo: to resee
+//    private[wizard] def toMap: Map[PlayerId, Hand] = hands

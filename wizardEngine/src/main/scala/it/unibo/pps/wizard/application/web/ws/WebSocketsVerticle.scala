@@ -40,7 +40,7 @@ class WebSocketsVerticle(
             case _ =>
               req.response().setStatusCode(403).end("Forbidden")
         case _ =>
-          req.response().setStatusCode(400).end("Missing lobbyId or playerId")
+          req.response().setStatusCode(400).end("Missing lobbyId")
     }
 
     vertx.createHttpServer().requestHandler(router).listen(port)

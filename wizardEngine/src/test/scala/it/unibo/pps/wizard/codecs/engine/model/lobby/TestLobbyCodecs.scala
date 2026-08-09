@@ -1,9 +1,10 @@
 package it.unibo.pps.wizard.codecs.engine.model.lobby
 
-import io.circe.parser._
-import io.circe.syntax._
+import io.circe.parser._, io.circe.syntax._
+
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.lobby._
+
 import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
