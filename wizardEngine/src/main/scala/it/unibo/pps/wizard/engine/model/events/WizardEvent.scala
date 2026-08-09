@@ -1,7 +1,7 @@
-package it.unibo.pps.wizard.engine.events
+package it.unibo.pps.wizard.engine.model.events
 
 /** Base trait for all Wizard-specific game events. */
-trait WizardEvent extends Event
+trait WizardEvent
 
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 

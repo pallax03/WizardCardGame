@@ -1,19 +1,19 @@
 package it.unibo.pps.wizard.engine.model.core
 
-import it.unibo.pps.wizard.engine.events._
-import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
-import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
-import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
-import it.unibo.pps.wizard.engine.model.basic.cards._
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Round._
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
-import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
-import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons._
-import it.unibo.pps.wizard.engine.model.rules._
+import it.unibo.pps.wizard.engine.model.events._
 
-import GameError._
+import it.unibo.pps.wizard.engine.model.basic.*
+import it.unibo.pps.wizard.engine.model.basic.bidding.{Bid, Bids, Tricks}
+
+import it.unibo.pps.wizard.engine.model.basic.cards.*
+
+import it.unibo.pps.wizard.engine.model.basic.gameplay._
+//import it.unibo.pps.wizard.engine.model.basic.gameplay.Round.next
+
+//import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons.*
+
+import it.unibo.pps.wizard.engine.model.rules._
+import GameError.*
 
 /**
  * The GameEngine is responsible for processing game actions and managing the game state.
@@ -87,7 +87,7 @@ object GameEngine:
       _ <- card.validateAgainst(currentState.table, playerHand)
       updatedHands <- currentState.core.hands
         .remove(playerId, card)
-        .toRight(GameError.InconsistentState(HandNotFoundFor(playerId)))
+        .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(playerId)))
 
       updatedCore = currentState.core.copy(hands = updatedHands)
       updatedTable = currentState.table + (playerId, card)
@@ -129,7 +129,7 @@ object GameEngine:
 
     updatedCore.hands
       .getHand(nextPlayer)
-      .toRight(GameError.InconsistentState(HandNotFoundFor(nextPlayer)))
+      .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(nextPlayer)))
       .map: nextHand =>
         val nextState = currentState.copy(
           core = updatedCore,
@@ -183,8 +183,8 @@ object GameEngine:
     for
       hand <- currentState.core.hands
         .getHand(firstPlayer)
-        .toRight(GameError.InconsistentState(HandNotFoundFor(firstPlayer)))
-      _ <- Either.cond(!hand.isEmpty, (), GameError.InconsistentState(HandNotFoundFor(firstPlayer)))
+        .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(firstPlayer)))
+      _ <- Either.cond(!hand.isEmpty, (), GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(firstPlayer)))
       nextState = GameState.Playing(
         core = currentState.core,
         bids = completedBids,
@@ -265,11 +265,11 @@ object GameEngine:
     for
       winningCard <- completedTable
         .evaluateTrick(updatedCore.trump)
-        .toRight(GameError.InconsistentState(TableNoWinner))
+        .toRight(GameError.InconsistentState(InconsistentStateReasons.TableNoWinner))
 
       winnerId <- completedTable
         .playerOf(winningCard)
-        .toRight(GameError.InconsistentState(TableNoWinner))
+        .toRight(GameError.InconsistentState(InconsistentStateReasons.TableNoWinner))
 
       updatedTricks = state.tricksWon addTrickTo winnerId
 
@@ -305,7 +305,7 @@ object GameEngine:
   ): Either[GameError, GameEngine] =
     updatedCore.hands
       .getHand(winnerId)
-      .toRight(GameError.InconsistentState(HandNotFoundFor(winnerId)))
+      .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(winnerId)))
       .map: hand =>
         val nextState = state.copy(
           core = updatedCore,

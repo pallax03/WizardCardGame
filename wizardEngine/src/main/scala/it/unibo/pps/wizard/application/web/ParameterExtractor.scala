@@ -1,8 +1,8 @@
 package it.unibo.pps.wizard.application.web
 
 import io.vertx.core.http.HttpServerRequest
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.lobby.LobbyId
 
 
 /**

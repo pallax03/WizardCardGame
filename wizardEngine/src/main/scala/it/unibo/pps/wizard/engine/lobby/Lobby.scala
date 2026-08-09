@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.model.lobby
+package it.unibo.pps.wizard.engine.lobby
 
 /** Represents the status of a Lobby. */
 enum LobbyStatus:

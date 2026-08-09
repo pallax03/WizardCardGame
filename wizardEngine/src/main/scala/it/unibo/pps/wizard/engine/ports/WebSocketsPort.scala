@@ -1,8 +1,8 @@
 package it.unibo.pps.wizard.engine.ports
 
 import io.vertx.core.http.ServerWebSocket
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.lobby.LobbyId
 
 import scala.concurrent.Future
 

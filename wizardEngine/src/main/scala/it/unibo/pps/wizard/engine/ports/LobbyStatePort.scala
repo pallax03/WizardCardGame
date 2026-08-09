@@ -1,7 +1,6 @@
 package it.unibo.pps.wizard.engine.ports
 
-import it.unibo.pps.wizard.engine.model.lobby.Lobby
-
+import it.unibo.pps.wizard.engine.lobby.Lobby
 import scala.concurrent.Future
 
 /**

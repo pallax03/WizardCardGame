@@ -1,13 +1,11 @@
 package it.unibo.pps.wizard.engine.ports
 
 import it.unibo.pps.wizard.engine.adapters.WizardGameState
-import it.unibo.pps.wizard.engine.events.Event
+import it.unibo.pps.wizard.engine.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.model.core.GameAction
 
 import scala.concurrent.Future
-import scala.reflect.ClassTag
 
 /**
  * Inbound port for the Wizard game engine.
@@ -38,19 +36,3 @@ trait GameEngineInboundPort:
    * @return a Future indicating the completion of the action submission
    */
   def submitAction(action: GameAction): Future[Unit]
-
-  /**
-   * Subscribes to events of a specific type.
-   *
-   * @param handler the handler for processing events
-   * @return a Future containing the subscription ID
-   */
-  def subscribe[T <: Event: ClassTag](handler: T => Unit): Future[String]
-
-  /**
-   * Unsubscribes from events using the provided subscription IDs.
-   *
-   * @param subscriptionIds the IDs of the subscriptions to remove
-   * @return a Future indicating the completion of the unsubscription process
-   */
-  def unsubscribe(subscriptionIds: String*): Future[Unit]
