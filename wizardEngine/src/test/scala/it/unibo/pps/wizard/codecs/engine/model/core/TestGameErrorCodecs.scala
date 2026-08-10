@@ -11,8 +11,8 @@ import org.scalatest.wordspec.AnyWordSpec
 class TestGameErrorCodecs extends AnyWordSpec with Matchers:
 
   import GameErrorCodecs.given
-  "GameErrorCodecs" should:
 
+  "GameErrorCodecs" should:
     "encode and decode GameError.NotYourTurn correctly" in:
       val error: GameError = GameError.NotYourTurn
       val jsonString = error.asJson.noSpaces

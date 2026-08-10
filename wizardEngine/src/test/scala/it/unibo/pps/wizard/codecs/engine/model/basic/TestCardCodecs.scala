@@ -9,9 +9,9 @@ import org.scalatest.wordspec.AnyWordSpec
 class TestCardCodecs extends AnyWordSpec with Matchers:
 
   import Card.*
+  import CardCodecs.given
 
   "CardCodecs" should:
-    import CardCodecs.given
     "encode and decode Card.Color correctly" in:
       val color = Color.Red
       val json = color.asJson

@@ -9,8 +9,9 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestPlayerIdCodecs extends AnyWordSpec with Matchers:
 
+  import PlayerIdCodecs.given
+  
   "PlayerIdCodecs" should:
-    import PlayerIdCodecs.given
     val p1 = PlayerId(1)
     "encode and decode PlayerId correctly" in:
       val jsonString = p1.asJson.noSpaces

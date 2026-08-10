@@ -12,10 +12,9 @@ class TestTableCodecs extends AnyWordSpec with Matchers:
   import cards.Card.*
   import gameplay.Table
   import BasicTestDSL.plays
+  import TableCodecs.given
 
   "TableCodecs" should:
-    import TableCodecs.given
-
     "encode and decode empty Table correctly" in:
       val table = Table.empty
       val jsonString = table.asJson.noSpaces

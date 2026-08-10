@@ -10,9 +10,9 @@ import org.scalatest.wordspec.AnyWordSpec
 class TestBiddingCodecs extends AnyWordSpec with Matchers:
 
   import bidding.{Bids, Tricks}
+  import BiddingCodecs.given
 
   "BiddingCodecs" should:
-    import BiddingCodecs.given
     val p1: PlayerId = PlayerId(1)
     val p2: PlayerId = PlayerId(2)
     "encode and decode Bids map correctly" in:

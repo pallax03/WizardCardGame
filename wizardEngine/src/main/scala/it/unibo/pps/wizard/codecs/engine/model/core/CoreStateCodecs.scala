@@ -6,22 +6,9 @@ import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core.CoreState
 
 object CoreStateCodecs:
-//  import PlayerIdCodecs.given
-//  import HandsCodecs.given
-//  import TrumpCodecs.given
-//  import RoundCodecs.given
-//  import ScoreboardCodecs.given
-  import CardCodecs.given
-  import cards.{Hand, Card}
+  import PlayerIdCodecs.given
+  import HandsCodecs.given
+  import TrumpCodecs.given
+  import ScoreboardCodecs.given
 
-  given Codec[Hand] = Codec.from(
-    Decoder[List[Card]].map(Hand.apply),
-    Encoder[List[Card]].contramap(_.toList)
-  )
-
-//  given Codec[Hands] = Codec.from(
-//    Decoder[Map[PlayerId, Hand]].map(Hands.apply),
-//    Encoder[Map[PlayerId, Hand]].contramap(_.getHand())
-//  )
-
-  given Codec[CoreState] = ??? // Codec.AsObject.derived[CoreState]
+  given Codec[CoreState] = Codec.AsObject.derived[CoreState]

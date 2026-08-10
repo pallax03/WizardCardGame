@@ -11,8 +11,9 @@ import org.scalatest.wordspec.AnyWordSpec
 class TestGameActionCodecs extends AnyWordSpec with Matchers:
 
   import cards.Card.*
+  import GameActionCodecs.given
+
   "GameActionCodecs" should:
-    import GameActionCodecs.given
     "encode and decode ResolveTrumpColor correctly" in:
       val action: GameAction = GameAction.ResolveTrumpColor(PlayerId(1), Color.Red)
       val jsonString = action.asJson.noSpaces

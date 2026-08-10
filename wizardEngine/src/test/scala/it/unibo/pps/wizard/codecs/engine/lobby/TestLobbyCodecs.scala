@@ -9,6 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestLobbyCodecs extends AnyWordSpec with Matchers:
+  
   import LobbyCodecs.given
 
   "LobbyCodecs" should:

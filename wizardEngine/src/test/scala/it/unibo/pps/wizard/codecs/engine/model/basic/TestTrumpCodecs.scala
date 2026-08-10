@@ -11,8 +11,9 @@ class TestTrumpCodecs extends AnyWordSpec with Matchers:
 
   import cards.Card.*
   import gameplay.Trump
+  import TrumpCodecs.given
+
   "TrumpCodecs" should:
-    import TrumpCodecs.given
     "encode and decode Trump.Absent correctly" in:
       val trump: Trump = Trump.Absent
       val jsonString = trump.asJson.noSpaces
