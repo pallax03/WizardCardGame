@@ -336,14 +336,14 @@ object GameEngine:
     val next = nextRoundOrEnd(updatedCore.copy(scoreboard = updatedScoreboard))
     (
       next.state,
-      ProgressEvent.RoundScored(updatedScoreboard, updatedCore.playersIds) +: next.events
+      ProgressEvent.RoundScored(updatedCore.playersIds, updatedScoreboard) +: next.events
     )
 
   private def nextRoundOrEnd(core: CoreState): GameEngine =
     if core.round.isLastRound(core.playersIds) then
       (
         GameState.Ended(core.playersIds, core.scoreboard),
-        List(LifecycleEvent.GameEnded(core.scoreboard, core.playersIds))
+        List(LifecycleEvent.GameEnded(core.playersIds, core.scoreboard))
       )
     else
       val nextRound = core.round.next
