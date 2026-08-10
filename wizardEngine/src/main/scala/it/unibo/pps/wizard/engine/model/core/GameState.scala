@@ -21,18 +21,18 @@ object GameState:
   ) extends GameState
 
   /** Players are currently placing their bids for the round. */
-  case class Bidding(core: CoreState, currentBids: Bids, currentPlayer: PlayerId) extends GameState
+  case class Bidding(core: CoreState, bids: Bids, playerTurn: PlayerId) extends GameState
 
   /**
    * Cards are being played on the table.
    * This is the main phase where tricks are resolved and winners are determined.
    */
   case class Playing(
-      core: CoreState,
-      bids: Bids,
-      table: Table,
-      currentPlayerTurn: PlayerId,
-      tricksWon: Tricks
+                      core: CoreState,
+                      bids: Bids,
+                      table: Table,
+                      playerTurn: PlayerId,
+                      tricksWon: Tricks
   ) extends GameState
 
   /** The final state of the game, containing the definitive scoreboard. */

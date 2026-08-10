@@ -92,7 +92,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
           .value match
           case biddingState: GameState.Bidding =>
             biddingState.core.hands.getHand(p1).value.toList should have length 1
-            biddingState.currentPlayer shouldBe p1
+            biddingState.playerTurn shouldBe p1
             biddingState.core.trump shouldBe TrumpResolved
           case _ => ()
 

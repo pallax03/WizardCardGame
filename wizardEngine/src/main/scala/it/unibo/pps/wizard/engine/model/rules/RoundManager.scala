@@ -81,8 +81,8 @@ object RoundManager:
         case _ =>
           GameState.Bidding(
             core = newCore,
-            currentBids = Bids.empty,
-            currentPlayer = round.firstPlayer(core.playersIds)
+            bids = Bids.empty,
+            playerTurn = round.firstPlayer(core.playersIds)
           )
 
   extension (expectedPlayer: PlayerId)
