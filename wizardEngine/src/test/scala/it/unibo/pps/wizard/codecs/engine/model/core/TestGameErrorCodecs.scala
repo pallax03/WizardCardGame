@@ -16,19 +16,19 @@ class TestGameErrorCodecs extends AnyWordSpec with Matchers:
     "encode and decode GameError.NotYourTurn correctly" in:
       val error: GameError = GameError.NotYourTurn
       val jsonString = error.asJson.noSpaces
-      jsonString shouldBe """{"type":"NotYourTurn"}"""
+      jsonString shouldBe """{"error":"NotYourTurn"}"""
       decode[GameError](jsonString).value shouldBe error
 
     "encode and decode GameError.InvalidBid correctly" in:
       val error: GameError = GameError.InvalidBid
       val jsonString = error.asJson.noSpaces
-      jsonString shouldBe """{"type":"InvalidBid"}"""
+      jsonString shouldBe """{"error":"InvalidBid"}"""
       decode[GameError](jsonString).value shouldBe error
 
     "encode and decode GameError.InvalidAction correctly" in:
       val error: GameError = GameError.InvalidAction
       val jsonString = error.asJson.noSpaces
-      jsonString shouldBe """{"type":"InvalidAction"}"""
+      jsonString shouldBe """{"error":"InvalidAction"}"""
       decode[GameError](jsonString).value shouldBe error
 
     "encode and decode GameError.CardNotAllowed (CardNotInHand) correctly" in:
@@ -36,7 +36,7 @@ class TestGameErrorCodecs extends AnyWordSpec with Matchers:
       val error: GameError =
         GameError.CardNotAllowed(CardNotAllowedReasons.CardNotInHand(List(Ten of Blue)))
       val jsonString = error.asJson.noSpaces
-      jsonString shouldBe """{"type":"CardNotAllowed","reason":{"type":"CardNotInHand","legalCards":[{"type":"Standard","color":"Blue","rank":10}]}}"""
+      jsonString shouldBe """{"error":"CardNotAllowed","reason":{"type":"CardNotInHand","legalCards":[{"type":"Standard","color":"Blue","rank":10}]}}"""
       decode[GameError](jsonString).value shouldBe error
 
     "encode and decode GameError.CardNotAllowed (MustFollowColor) correctly" in:
@@ -44,18 +44,18 @@ class TestGameErrorCodecs extends AnyWordSpec with Matchers:
       val error: GameError =
         GameError.CardNotAllowed(CardNotAllowedReasons.MustFollowColor(Red, List(Ten of Blue)))
       val jsonString = error.asJson.noSpaces
-      jsonString shouldBe """{"type":"CardNotAllowed","reason":{"type":"MustFollowColor","requiredColor":"Red","legalCards":[{"type":"Standard","color":"Blue","rank":10}]}}"""
+      jsonString shouldBe """{"error":"CardNotAllowed","reason":{"type":"MustFollowColor","requiredColor":"Red","legalCards":[{"type":"Standard","color":"Blue","rank":10}]}}"""
       decode[GameError](jsonString).value shouldBe error
 
     "encode and decode GameError.InconsistentState (TableNoWinner) correctly" in:
       val error: GameError = GameError.InconsistentState(InconsistentStateReasons.TableNoWinner)
       val jsonString = error.asJson.noSpaces
-      jsonString shouldBe """{"type":"InconsistentState","reason":{"type":"TableNoWinner"}}"""
+      jsonString shouldBe """{"error":"InconsistentState","reason":{"type":"TableNoWinner"}}"""
       decode[GameError](jsonString).value shouldBe error
 
     "encode and decode GameError.InconsistentState (HandNotFoundFor) correctly" in:
       val error: GameError =
         GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(PlayerId(1)))
       val jsonString = error.asJson.noSpaces
-      jsonString shouldBe """{"type":"InconsistentState","reason":{"type":"HandNotFoundFor","playerId":1}}"""
+      jsonString shouldBe """{"error":"InconsistentState","reason":{"type":"HandNotFoundFor","playerId":1}}"""
       decode[GameError](jsonString).value shouldBe error
