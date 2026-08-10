@@ -20,5 +20,5 @@ class TestScoreboardCodecs extends AnyWordSpec with Matchers:
         .addScore(p1, 1, 20, 0)
         .addScore(p2, 1, -10, 1)
       val jsonString = scoreboard.asJson.noSpaces
-      jsonString shouldBe """{"1":{"1":[20,0]},"2":{"1":[-10,1]}}"""
+      jsonString shouldBe """{"1":[{"round":1,"score":20,"bid":0}],"2":[{"round":1,"score":-10,"bid":1}]}"""
       decode[Scoreboard](jsonString).value shouldBe scoreboard
