@@ -3,7 +3,7 @@ updates:
   - package-ecosystem: "npm"
     directory: "/application"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     target-branch: "develop"
     labels:
       - "dependencies"
@@ -19,7 +19,7 @@ updates:
   - package-ecosystem: "sbt"
     directory: "/wizardEngine"
     schedule:
-      interval: "weekly"
+      interval: "monthly"
     target-branch: "develop"
     labels:
       - "dependencies"
