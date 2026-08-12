@@ -15,9 +15,9 @@ import scala.util.{Failure, Success}
 class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: GameEngineInboundPort):
   
   def mount(router: Router): Unit =
-    router.post("/api/lobby/:uuid/player/:id/choose").handler(handleSubmitAction)
-    router.post("/api/lobby/:uuid/player/:id/place").handler(handleSubmitAction)
-    router.post("/api/lobby/:uuid/player/:id/play").handler(handleSubmitAction)
+    router.post("/api/lobby/:lobbyId/player/:playerId/choose").handler(handleSubmitAction)
+    router.post("/api/lobby/:lobbyId/player/:playerId/place").handler(handleSubmitAction)
+    router.post("/api/lobby/:lobbyId/player/:playerId/play").handler(handleSubmitAction)
     
   private def handleSubmitAction(ctx: RoutingContext): Unit =
     val uuid = ctx.pathParam("uuid")
@@ -27,7 +27,7 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: GameEngineInb
     rawJson.decodeAs[GameAction] match
       case Left(error) => respondJson(ctx, 400, Json.obj("error" -> s"Invalid JSON body: ${error.getMessage}".asJson))
       case Right(action) =>
-        lobbyStatePort.getLobby(uuid).onComplete:
+        lobbyStatePort.getLobby(LobbyId(uuid)).onComplete:
           case Success(Some(lobby)) =>
             gameEnginePort.submitAction(LobbyId(uuid), action)
             respondJson(ctx, 200, Json.obj("message" -> "Action submitted successfully".asJson))

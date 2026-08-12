@@ -32,7 +32,7 @@ class WebSocketsVerticle(
       (lobbyIdOpt, playerIdOpt) match
         case (Some(lobbyId), Some(playerId)) =>
           lobbyStatePort
-            .getLobby(lobbyId.toString)
+            .getLobby(lobbyId)
             .onComplete:
               case Success(Some(lobby)) if lobby.players.exists(_.id == playerId) =>
                 req.toWebSocket.onComplete: res =>

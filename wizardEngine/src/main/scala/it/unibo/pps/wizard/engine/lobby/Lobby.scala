@@ -23,4 +23,5 @@ case class Lobby(
     uuid: LobbyId,
     players: List[LobbyPlayer],
     status: LobbyStatus
-)
+):
+  def addPlayer(lobbyPlayer: LobbyPlayer): Lobby = copy(players = this.players :+ lobbyPlayer) 

@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.engine.ports
 
-import it.unibo.pps.wizard.engine.lobby.{Lobby, LobbyPlayer}
+import it.unibo.pps.wizard.engine.lobby.{Lobby, LobbyId, Player}
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
 import scala.concurrent.Future
@@ -37,7 +37,7 @@ trait LobbyStatePort:
    * @param lobbyId the UUID of the lobby.
    * @return a Future containing the Lobby object if found, or None if the lobby does not exist.
    */
-  def getLobby(lobbyId: String): Future[Option[Lobby]]
+  def getLobby(lobbyId: LobbyId): Future[Option[Lobby]]
 
   /**
    * Atomically adds a player to the lobby, returning the assigned PlayerId if successful.
@@ -47,7 +47,7 @@ trait LobbyStatePort:
    * @param player the player to add (without the final ID, which is assigned and returned).
    * @return a Future containing the assigned PlayerId, or None if the lobby is full.
    */
-  def addPlayer(lobbyId: String, player: LobbyPlayer): Future[Option[PlayerId]]
+  def addPlayer(lobbyId: LobbyId, player: Player): Future[Option[PlayerId]]
 
   /**
    * Atomically removes a player from the lobby by ID.
@@ -56,4 +56,4 @@ trait LobbyStatePort:
    * @param playerId the ID of the player to remove.
    * @return a Future containing true if the player was removed, false otherwise.
    */
-  def removePlayer(lobbyId: String, playerId: PlayerId): Future[Boolean]
+  def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]

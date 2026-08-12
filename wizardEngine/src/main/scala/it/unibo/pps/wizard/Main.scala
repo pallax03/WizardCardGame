@@ -3,7 +3,7 @@ package it.unibo.pps.wizard
 import io.vertx.core.{AbstractVerticle, Vertx}
 import io.vertx.ext.web.Router
 import it.unibo.pps.wizard.application.web.http.HttpServerVerticle
-import it.unibo.pps.wizard.application.web.http.routes.{ActionRoutes, HealthRoutes, LobbyRoutes, RootRoutes}
+import it.unibo.pps.wizard.application.web.http.routes._
 import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
 import it.unibo.pps.wizard.engine.adapters.inmemory.{LocalGameInboundAdapter, LocalLobbyStatePort, LocalPubSubAdapter, LocalGameOutboundAdapter}
 import it.unibo.pps.wizard.engine.adapters.redis.{RedisGameEngineOutboundAdapter, RedisLobbyStateAdapter, RedisPubSubAdapter}
@@ -42,8 +42,6 @@ object Main:
 
   private def runHTTPServer(vertx: Vertx, gameEngineInPort: GameEngineInboundPort, lobbyStatePort: LobbyStatePort): Unit =
     val routes: Seq[Router => Unit] = Seq(
-      RootRoutes.mount,
-      HealthRoutes.mount,
       LobbyRoutes(lobbyStatePort, gameEngineInPort).mount,
       ActionRoutes(lobbyStatePort, gameEngineInPort).mount
     )
@@ -59,5 +57,5 @@ object Main:
     vertx
       .deployVerticle(verticle)
       .onComplete: ar =>
-        if ar.succeeded() then println(s"$name server deployed ($ar) on port $port")
+        if ar.succeeded() then println(s"$name server deployed on port $port")
         else println(s"$name Deploy failed: ${ar.cause().getMessage}")
