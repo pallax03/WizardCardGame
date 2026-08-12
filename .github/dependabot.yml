@@ -5,6 +5,7 @@ updates:
     schedule:
       interval: "monthly"
     target-branch: "develop"
+
     labels:
       - "dependencies"
       - "application"
@@ -15,6 +16,8 @@ updates:
         update-types:
           - "patch"
           - "minor"
+    commit-message:
+      prefix: "chore(npm deps)"
 
   - package-ecosystem: "sbt"
     directory: "/wizardEngine"
@@ -31,3 +34,15 @@ updates:
         update-types:
           - "patch"
           - "minor"
+    commit-message:
+      prefix: "chore(sbt deps)"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(ci)"
