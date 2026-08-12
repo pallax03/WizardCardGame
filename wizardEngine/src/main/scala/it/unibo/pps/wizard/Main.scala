@@ -6,24 +6,36 @@ import it.unibo.pps.wizard.application.web.http.HttpServerVerticle
 import it.unibo.pps.wizard.application.web.http.routes.{ActionRoutes, HealthRoutes, LobbyRoutes, RootRoutes}
 import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
 import it.unibo.pps.wizard.engine.adapters.inmemory.{LocalGameInboundAdapter, LocalLobbyStatePort, LocalPubSubAdapter, LocalGameOutboundAdapter}
+import it.unibo.pps.wizard.engine.adapters.redis.{RedisGameEngineOutboundAdapter, RedisLobbyStateAdapter, RedisPubSubAdapter}
 import it.unibo.pps.wizard.engine.adapters.VertxWebSocketsAdapter
-import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, GameEngineOutboundPort}
+import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, GameEngineOutboundPort, LobbyStatePort, PubSubPort}
 
 object Main:
   val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
-  val wsPort: Int = sys.env.getOrElse("PORT", "8081").toInt
+  val wsPort: Int = sys.env.getOrElse("WS_PORT", "8081").toInt
 
   def main(args: Array[String]): Unit =
     val vertx = Vertx.vertx()
-    val pubSubAdapter = LocalPubSubAdapter(vertx)
-    val gameEngineOutPort: GameEngineOutboundPort = LocalGameOutboundAdapter(pubSubAdapter)
+    val useRedis = args.contains("-redis")
+
+    val (pubSubPort: PubSubPort, lobbyStatePort: LobbyStatePort) = if useRedis then
+      println("Starting Redis...")
+      (RedisPubSubAdapter(), RedisLobbyStateAdapter())
+    else
+      println("Starting In-Memory...")
+      (LocalPubSubAdapter(vertx), LocalLobbyStatePort())
+
+    val gameEngineOutPort: GameEngineOutboundPort = if useRedis then
+      RedisGameEngineOutboundAdapter(pubSubPort)
+    else
+      LocalGameOutboundAdapter(pubSubPort)
+
     val gameEngineInPort: GameEngineInboundPort = LocalGameInboundAdapter(vertx, gameEngineOutPort)
-    val lobbyStatePort = LocalLobbyStatePort()
     
     runHTTPServer(vertx, gameEngineInPort, lobbyStatePort)
-    runWSServer(vertx, lobbyStatePort, pubSubAdapter)
+    runWSServer(vertx, lobbyStatePort, pubSubPort)
 
-  private def runHTTPServer(vertx: Vertx, gameEngineInPort: GameEngineInboundPort, lobbyStatePort: LocalLobbyStatePort): Unit =
+  private def runHTTPServer(vertx: Vertx, gameEngineInPort: GameEngineInboundPort, lobbyStatePort: LobbyStatePort): Unit =
     val routes: Seq[Router => Unit] = Seq(
       RootRoutes.mount,
       HealthRoutes.mount,
@@ -33,8 +45,8 @@ object Main:
     val verticle = HttpServerVerticle(routes, httpPort)
     deploy(vertx, verticle, "HTTP", httpPort)
 
-  private def runWSServer(vertx: Vertx, lobbyStatePort: LocalLobbyStatePort, pubSubAdapter: LocalPubSubAdapter): Unit =
-    val wsAdapter = VertxWebSocketsAdapter(pubSubAdapter)
+  private def runWSServer(vertx: Vertx, lobbyStatePort: LobbyStatePort, pubSubPort: PubSubPort): Unit =
+    val wsAdapter = VertxWebSocketsAdapter(pubSubPort)
     val verticle = WebSocketsVerticle(wsAdapter, lobbyStatePort, wsPort)
     deploy(vertx, verticle, "WebSocket", wsPort)
 
