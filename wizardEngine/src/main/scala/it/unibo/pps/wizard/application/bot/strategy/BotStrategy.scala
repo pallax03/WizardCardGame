@@ -1,6 +1,7 @@
 package it.unibo.pps.wizard.application.bot.strategy
 
 import it.unibo.pps.wizard.engine.lobby.BotsDifficulty
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.events.FailureEvent
 import it.unibo.pps.wizard.engine.model.events.InvitationEvent
@@ -17,18 +18,20 @@ trait BotStrategy:
   /**
    * Processes an invitation event to decide the bot's next move.
    *
+   * @param lobbyId the identifier of the lobby.
    * @param invitation the specific invitation event (e.g., bid, play card).
    * @return A [[Future]] containing the calculated [[GameAction]].
    */
-  def resolveInvitationEvents(invitation: InvitationEvent): Future[GameAction]
+  def resolveInvitationEvents(lobbyId: LobbyId, invitation: InvitationEvent): Future[GameAction]
 
   /**
    * Handles failure events to attempt a recovery or a fallback action.
    *
+   * @param lobbyId the identifier of the lobby.
    * @param failure the error event describing the failed action.
    * @return A [[Future]] containing the recovery [[GameAction]].
    */
-  def resolveFailedEvents(failure: FailureEvent): Future[GameAction]
+  def resolveFailedEvents(lobbyId: LobbyId, failure: FailureEvent): Future[GameAction]
 
 object BotStrategy:
   /**

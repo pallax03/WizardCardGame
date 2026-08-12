@@ -1,9 +1,11 @@
 package it.unibo.pps.wizard.application.web.http.routes;
 
 import io.circe.Json
+import io.circe.syntax.*
 import io.vertx.ext.web.{Router, RoutingContext}
 import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, LobbyStatePort}
 import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.codecs.engine.model.core.GameActionCodecs.given
 
@@ -23,18 +25,18 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: GameEngineInb
     val rawJson = ctx.body().asString()
 
     rawJson.decodeAs[GameAction] match
-      case Left(error) => respondJson(ctx, 400, Json.obj("error" -> s"Invalid JSON body: ${error.getMessage}".toJson))
+      case Left(error) => respondJson(ctx, 400, Json.obj("error" -> s"Invalid JSON body: ${error.getMessage}".asJson))
       case Right(action) =>
         lobbyStatePort.getLobby(uuid).onComplete:
           case Success(Some(lobby)) =>
-            gameEnginePort.submitAction(action)
-            respondJson(ctx, 200, Json.obj("message" -> "Action submitted successfully".toJson))
+            gameEnginePort.submitAction(LobbyId(uuid), action)
+            respondJson(ctx, 200, Json.obj("message" -> "Action submitted successfully".asJson))
             println(s"$playerId, $gameEnginePort, $lobby")
           case Success(None)        => respondJson(ctx, 404, notFound(uuid))
           case Failure(exception)   => ctx.fail(500, exception)
 
   private def notFound(uuid: String): Json =
-    Json.obj("error" -> s"Lobby $uuid not found".toJson)
+    Json.obj("error" -> s"Lobby $uuid not found".asJson)
 
   def respondJson(ctx: RoutingContext, status: Int, body: Json): Unit =
     ctx

@@ -2,6 +2,7 @@ package it.unibo.pps.wizard.engine.adapters.inmemory
 
 import io.vertx.core.Vertx
 import it.unibo.pps.wizard.engine.configuration.*
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.*
 import it.unibo.pps.wizard.engine.model.core.*
 import it.unibo.pps.wizard.engine.model.events.*
@@ -25,41 +26,45 @@ class LocalGameInboundAdapter(
     private val vertx: Vertx,
     private val outboundPort: GameEngineOutboundPort
 ) extends GameEngineInboundPort:
-  private var currentState: WizardGameState = WizardGameState.NotConfigured
+  private val activeGames = scala.collection.concurrent.TrieMap[LobbyId, WizardGameState]()
   private val verticleExecutor: VerticleExecutor = VerticleExecutor(this.vertx)
 
-  override def getState: Future[WizardGameState] =
-    runOnVerticle("State Retrieval"):
-      this.currentState
+  override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[GameState] =
+    runOnVerticle(s"State Retrieval for $lobbyId"):
+      this.activeGames.get(lobbyId) match
+        case Some(WizardGameState.Running(state)) => state
+        case _ => throw new IllegalStateException("Game not running")
 
-  override def startGame(players: List[PlayerId], config: GameConfiguration): Future[Unit] =
-    runOnVerticle("Game Start"):
-      this.currentState match
-        case WizardGameState.NotConfigured =>
+  override def startGame(lobbyId: LobbyId, players: List[PlayerId], config: GameConfiguration): Future[Unit] =
+    runOnVerticle(s"Game Start for $lobbyId"):
+      this.activeGames.get(lobbyId) match
+        case Some(WizardGameState.Running(_)) =>
+          // Already running
+        case _ =>
           val playersAndBots = config.players.map(_.id)
           val initialState = GameEngine.initializeGame(playersAndBots)
-          this.currentState = WizardGameState.Running(initialState.state)
-          this.outboundPort.publishEvent(LifecycleEvent.GameStarted(playersAndBots))
-          this.outboundPort.publishAllEvents(initialState.events)
-        case _ =>
+          this.activeGames.put(lobbyId, WizardGameState.Running(initialState.state))
+          this.outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersAndBots))
+          this.outboundPort.publish(lobbyId, initialState.events*)
 
-  override def submitAction(action: GameAction): Future[Unit] =
-    runOnVerticle(s"Action Submission: $action"):
-      this.currentState match
-        case WizardGameState.Running(oldState) =>
+  override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Unit] =
+    runOnVerticle(s"Action Submission for $lobbyId: $action"):
+      this.activeGames.get(lobbyId) match
+        case Some(WizardGameState.Running(oldState)) =>
           GameEngine.processAction(oldState, action) match
             case Left(error) =>
-              println(s"Error processing action: $error")
-              this.outboundPort.publishEvent(FailureEvent.ActionFailed(action.playerId, error))
+              println(s"Error processing action in $lobbyId: $error")
+              this.outboundPort.publish(lobbyId, FailureEvent.ActionFailed(action.playerId, error))
             case Right(newState) =>
               newState.state match
                 case _: GameState.Ended =>
-                  this.currentState = WizardGameState.NotConfigured
-                  this.outboundPort.publishAllEvents(newState.events)
+                  this.activeGames.remove(lobbyId)
+                  this.outboundPort.publish(lobbyId, newState.events*)
                 case _ =>
-                  this.currentState = WizardGameState.Running(newState.state)
-                  this.outboundPort.publishAllEvents(newState.events)
+                  this.activeGames.put(lobbyId, WizardGameState.Running(newState.state))
+                  this.outboundPort.publish(lobbyId, newState.events*)
         case _ =>
+          // Game not found or not running
 
   /**
    * Runs a given activity on the Vert.x event loop, ensuring thread safety and proper execution context.

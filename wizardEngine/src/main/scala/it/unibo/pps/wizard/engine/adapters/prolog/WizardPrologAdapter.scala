@@ -1,7 +1,8 @@
 package it.unibo.pps.wizard.engine.adapters.prolog
 
-import it.unibo.pps.wizard.engine.adapters.inmemory.WizardGameState
+
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
@@ -34,16 +35,15 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
 
   private val engine = WizardPrologEngine()
 
-  private def onRunningPhase[T](actionName: String)(
+  private def onRunningPhase[T](lobbyId: LobbyId, actionName: String)(playerId: PlayerId)(
       phaseLogic: PartialFunction[GameState, Future[T]]
   ): Future[T] =
-    inboundPort.getState.flatMap:
-      case WizardGameState.Running(state) =>
+    inboundPort.getState(lobbyId, playerId).flatMap:
+      state =>
         phaseLogic.applyOrElse(
           state,
           _ => Future.failed(IllegalStateException(s"Cannot $actionName: invalid game phase"))
         )
-      case _ => Future.failed(IllegalStateException("Game is not running"))
 
   private def withHand[T](handOpt: Option[Hand])(prologLogic: Hand => T): Future[T] =
     handOpt match
@@ -56,8 +56,8 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
    * @return the best Color to resolve trump
    * @note falls back to the first Card.Color.values
    */
-  override def resolvedTrumpColor(playerId: PlayerId): Future[Card.Color] =
-    onRunningPhase("choose trump color"):
+  override def resolvedTrumpColor(lobbyId: LobbyId, playerId: PlayerId): Future[Card.Color] =
+    onRunningPhase(lobbyId, "choose trump color")(playerId):
       case GameState.ChoosingTrump(core) =>
         withHand(core.hands.getHand(playerId)): hand =>
           engine.chooseTrumpColor(hand).getOrElse(Card.Color.values.head)
@@ -69,8 +69,8 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
    * @see [[adjustBid]] for adjest teh suggested bid to a valid bid, based on the suggested.
    * @note falls back to [[firstValidBid]].
    */
-  override def placeBid(playerId: PlayerId): Future[Bid] =
-    onRunningPhase("place bid"):
+  override def placeBid(lobbyId: LobbyId, playerId: PlayerId): Future[Bid] =
+    onRunningPhase(lobbyId, "place bid")(playerId):
       case GameState.Bidding(core, currentBids, _) =>
         withHand(core.hands.getHand(playerId)): hand =>
           engine
@@ -83,8 +83,8 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
    * @return A valid [[Bid]] that satisfies game constraints.
    * @note falls back to [[firstValidBid]].
    */
-  override def adjustBid(playerId: PlayerId): Future[Bid] =
-    onRunningPhase("adjust bid"):
+  override def adjustBid(lobbyId: LobbyId, playerId: PlayerId): Future[Bid] =
+    onRunningPhase(lobbyId, "adjust bid")(playerId):
       case GameState.Bidding(core, currentBids, _) =>
         withHand(core.hands.getHand(playerId)): hand =>
           val rejectedBid = core.round - currentBids.total
@@ -100,8 +100,8 @@ class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extend
    * @note If Prolog fails or suggests a card not in `legalCards`, it falls back to
    *       playing the first legal card available.
    */
-  override def bestCard(playerId: PlayerId): Future[Card] =
-    onRunningPhase("play best card"):
+  override def bestCard(lobbyId: LobbyId, playerId: PlayerId): Future[Card] =
+    onRunningPhase(lobbyId, "play best card")(playerId):
       case GameState.Playing(core, bids, table, _, tricks) =>
         withHand(core.hands.getHand(playerId)): hand =>
           val legalCards = hand.legalCards(table)

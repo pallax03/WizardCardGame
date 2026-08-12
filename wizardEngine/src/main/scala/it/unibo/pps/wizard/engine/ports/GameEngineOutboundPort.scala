@@ -1,5 +1,6 @@
 package it.unibo.pps.wizard.engine.ports
 
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.events.WizardEvent
 
 import scala.concurrent.Future
@@ -11,17 +12,10 @@ import scala.concurrent.Future
 trait GameEngineOutboundPort:
 
   /**
-   * Publishes a single event.
+   * Publishes events to the external infrastructure.
    *
-   * @param event the event to publish
+   * @param lobbyId the identifier of the lobby
+   * @param events the events to publish
    * @return a Future indicating the completion of the publish process
    */
-  def publishEvent(event: WizardEvent): Future[Unit]
-
-  /**
-   * Publishes all events in the list.
-   *
-   * @param events the list of events to publish
-   * @return a Future indicating the completion of the publish process
-   */
-  def publishAllEvents(events: List[WizardEvent]): Future[Unit]
+  def publish(lobbyId: LobbyId, events: WizardEvent*): Future[Unit]
