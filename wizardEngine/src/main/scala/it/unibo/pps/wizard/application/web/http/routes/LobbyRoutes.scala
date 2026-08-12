@@ -24,23 +24,18 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: GameEngineInboundP
     router.post("/api/lobby/:lobbyId/start").handler(handleStartGame)
   
   private def handleLobby(ctx: RoutingContext): Unit =
-//     missing JSON OF Player username
-//    val name = ctx.body().asString()
+    // missing JSON OF Player username and BotsDifficulty
+    // val name = ctx.body().asString()
+    val name = "name"
+    val bot = Option.empty[BotsDifficulty]
+
     val lobbyId = ctx.request().extractLobbyId.getOrElse(LobbyId.generate)
-    val player = Player.human("name")
-    lobbyStatePort.addPlayer(lobbyId, player).onComplete:
-      case Success(playerIdOpt) => playerIdOpt match
-        case Some(playerId) =>
-          val lobbyPlayer = LobbyPlayer(playerId, player)
-          lobbyStatePort.getLobby(lobbyId).onComplete:
-            case Success(lobbyOpt) => 
-              val lobby = lobbyOpt match
-                case Some(value) => value.addPlayer(lobbyPlayer)
-                case None => Lobby(lobbyId, List(lobbyPlayer), LobbyStatus.WAITING)
-              lobbyStatePort.saveLobby(lobby)
-              respondJson(ctx, 201, Json.obj("lobbyId" -> lobbyId.asJson, "playerId" -> playerId.asJson)) // todo: perchè 201?
-            case Failure(exception) => ???
-        case None => ??? //ctx.fail(401 (unauthorized), "lobby is full")
+    
+    lobbyStatePort.addPlayer(lobbyId, name, bot).onComplete:
+      case Success(Some(player)) =>
+        respondJson(ctx, 201, Json.obj("lobbyId" -> lobbyId.asJson, "playerId" -> player.id.asJson))
+      case Success(None) =>
+        ctx.fail(401) // lobby is full
       case Failure(exception) => ctx.fail(500, exception)
 
   private def handleMissingLobby(ctx: RoutingContext): Unit =

@@ -7,8 +7,12 @@ import scala.concurrent.Future
 import io.vertx.redis.client.Redis
 
 class RedisPubSubAdapter(val redis: Redis) extends PubSubPort:
+
+  /** @inheritdoc */
   override def publish(channel: String, jsonMessage: String): Future[Unit] = ???
 
+  /** @inheritdoc */
   override def subscribe(channel: String, onMessage: String => Unit): Future[Unit] = ???
 
+  /** @inheritdoc */
   override def unsubscribe(channel: String): Future[Unit] = ???

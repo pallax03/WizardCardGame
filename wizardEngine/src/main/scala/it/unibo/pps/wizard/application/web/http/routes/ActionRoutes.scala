@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.application.web.http.routes;
+package it.unibo.pps.wizard.application.web.http.routes
 
 import io.circe.Json
 import io.circe.syntax.*

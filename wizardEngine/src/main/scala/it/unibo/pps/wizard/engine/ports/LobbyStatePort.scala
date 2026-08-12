@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.engine.ports
 
-import it.unibo.pps.wizard.engine.lobby.{Lobby, LobbyId, Player}
+import it.unibo.pps.wizard.engine.lobby.*
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
 import scala.concurrent.Future
@@ -40,14 +40,15 @@ trait LobbyStatePort:
   def getLobby(lobbyId: LobbyId): Future[Option[Lobby]]
 
   /**
-   * Atomically adds a player to the lobby, returning the assigned PlayerId if successful.
+   * Atomically adds a player to the lobby, returning the assigned Player if successful.
    * Fails (returns None) if the lobby is full (max 6 players).
    *
    * @param lobbyId the UUID of the lobby.
-   * @param player the player to add (without the final ID, which is assigned and returned).
-   * @return a Future containing the assigned PlayerId, or None if the lobby is full.
+   * @param name the player's name
+   * @param bot the bot difficulty, if any
+   * @return a Future containing the assigned Player, or None if the lobby is full.
    */
-  def addPlayer(lobbyId: LobbyId, player: Player): Future[Option[PlayerId]]
+  def addPlayer(lobbyId: LobbyId, name: String, bot: Option[BotsDifficulty] = None): Future[Option[Player]]
 
   /**
    * Atomically removes a player from the lobby by ID.

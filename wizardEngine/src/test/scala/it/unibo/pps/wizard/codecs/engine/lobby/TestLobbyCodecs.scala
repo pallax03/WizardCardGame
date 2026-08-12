@@ -13,8 +13,8 @@ class TestLobbyCodecs extends AnyWordSpec with Matchers:
 
   "LobbyCodecs" should:
     val players = List(
-      LobbyPlayer(PlayerId(1), "Alice", None),
-      LobbyPlayer(PlayerId(2), "Bot-1", Some(BotsDifficulty.Dumb))
+      Player(PlayerId(1), "Alice", None),
+      Player(PlayerId(2), "Bot-1", Some(BotsDifficulty.Dumb))
     )
     val lobby = Lobby(LobbyId("uuid-1234"), players, LobbyStatus.WAITING)
     "encode and decode Lobby correctly" in:

@@ -1,7 +1,10 @@
 package it.unibo.pps.wizard.engine.lobby
 
-type Player = (name: String, bot: Option[BotsDifficulty])
+import it.unibo.pps.wizard.engine.model.basic.PlayerId
+
+case class Player(id: PlayerId, name: String, bot: Option[BotsDifficulty] = None)
 
 object Player:
-  def human(name: String): Player = (name, Option.empty)
-  def bot(botsDifficulty: BotsDifficulty): Player = ("", Option(botsDifficulty))
+  def human(id: PlayerId, name: String): Player = Player(id, name, Option.empty)
+  def bot(id: PlayerId, difficulty: BotsDifficulty): Player =
+    Player(id, s"Bot-$difficulty-${id.toInt}", Some(difficulty))

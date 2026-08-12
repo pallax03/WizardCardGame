@@ -11,11 +11,6 @@ import it.unibo.pps.wizard.util.VerticleExecutor
 
 import scala.concurrent.Future
 
-/** Represents the state of the Wizard game. */
-enum WizardGameState:
-  case NotConfigured
-  case Running(state: GameState)
-
 /**
  * An adapter that implements the [[GameEngineInboundPort]] interface, allowing interaction with the Wizard game engine.
  *
@@ -29,12 +24,14 @@ class LocalGameInboundAdapter(
   private val activeGames = scala.collection.concurrent.TrieMap[LobbyId, WizardGameState]()
   private val verticleExecutor: VerticleExecutor = VerticleExecutor(this.vertx)
 
+  /** @inheritdoc */
   override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[GameState] =
     runOnVerticle(s"State Retrieval for $lobbyId"):
       this.activeGames.get(lobbyId) match
         case Some(WizardGameState.Running(state)) => state
         case _ => throw new IllegalStateException("Game not running")
 
+  /** @inheritdoc */
   override def startGame(lobbyId: LobbyId, players: List[PlayerId], config: GameConfiguration): Future[Unit] =
     runOnVerticle(s"Game Start for $lobbyId"):
       this.activeGames.get(lobbyId) match
@@ -47,6 +44,7 @@ class LocalGameInboundAdapter(
           this.outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersAndBots))
           this.outboundPort.publish(lobbyId, initialState.events*)
 
+  /** @inheritdoc */
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Unit] =
     runOnVerticle(s"Action Submission for $lobbyId: $action"):
       this.activeGames.get(lobbyId) match
@@ -74,7 +72,6 @@ class LocalGameInboundAdapter(
    * @tparam T The return type of the activity.
    * @return A Future containing the result of the activity.
    */
-  // todo: will be removed
   private def runOnVerticle[T](activityName: String)(activity: => T): Future[T] =
     this.verticleExecutor.runLater:
       println(s"Running activity '$activityName' on verticle...")

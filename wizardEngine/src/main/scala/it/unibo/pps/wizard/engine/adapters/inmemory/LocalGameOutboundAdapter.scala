@@ -7,7 +7,8 @@ import scala.concurrent.{Future, ExecutionContext}
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 
 class LocalGameOutboundAdapter(pubSubPort: PubSubPort) extends GameEngineOutboundPort:
-
+  
+  /** @inheritdoc  */
   override def publish(lobbyId: LobbyId, events: WizardEvent*): Future[Unit] =
     val channel = s"lobby-$lobbyId"
     import it.unibo.pps.wizard.codecs.engine.model.WizardEventsCodecs.given

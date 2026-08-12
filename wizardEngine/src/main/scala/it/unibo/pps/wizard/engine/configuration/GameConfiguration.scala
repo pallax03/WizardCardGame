@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.engine.configuration
 
-import it.unibo.pps.wizard.engine.lobby.LobbyPlayer
+import it.unibo.pps.wizard.engine.lobby.Player
 
 /**
  * Represents the configuration of a game.
@@ -10,5 +10,5 @@ import it.unibo.pps.wizard.engine.lobby.LobbyPlayer
  */
 case class GameConfiguration(
     timer: Long, // todo: to be implemented during heartbeat pattern issue#3
-    players: List[LobbyPlayer]
+    players: List[Player]
 )
