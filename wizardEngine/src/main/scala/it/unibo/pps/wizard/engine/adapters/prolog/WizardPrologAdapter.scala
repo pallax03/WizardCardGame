@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.engine.adapters.prolog
 
-import it.unibo.pps.wizard.engine.adapters.WizardGameState
+import it.unibo.pps.wizard.engine.adapters.inmemory.WizardGameState
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bid

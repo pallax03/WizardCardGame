@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.adapters
+package it.unibo.pps.wizard.engine.adapters.inmemory
 
 import it.unibo.pps.wizard.engine.lobby.Lobby
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
@@ -6,7 +6,7 @@ import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.Future
 
-class InMemoryLobbyStatePort extends LobbyStatePort:
+class LocalLobbyStatePort extends LobbyStatePort:
   private val store = TrieMap[String, Lobby]()
 
   override def saveLobby(lobby: Lobby): Future[Unit] =

@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.engine.ports
 
-import it.unibo.pps.wizard.engine.adapters.WizardGameState
+import it.unibo.pps.wizard.engine.adapters.inmemory.WizardGameState
 import it.unibo.pps.wizard.engine.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.core.GameAction

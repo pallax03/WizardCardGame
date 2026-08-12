@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.adapters
+package it.unibo.pps.wizard.engine.adapters.redis
 
 import it.unibo.pps.wizard.engine.lobby.Lobby
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
