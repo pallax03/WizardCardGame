@@ -5,7 +5,7 @@ import io.vertx.ext.web.Router
 import it.unibo.pps.wizard.application.web.http.HttpServerVerticle
 import it.unibo.pps.wizard.application.web.http.routes._
 import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
-import it.unibo.pps.wizard.engine.adapters.inmemory.{LocalGameInboundAdapter, LocalLobbyStatePort, LocalPubSubAdapter, LocalGameOutboundAdapter}
+import it.unibo.pps.wizard.engine.adapters.LocalGameInboundAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.{RedisGameEngineOutboundAdapter, RedisLobbyStateAdapter, RedisPubSubAdapter}
 import it.unibo.pps.wizard.engine.adapters.VertxWebSocketsAdapter
 import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, GameEngineOutboundPort, LobbyStatePort, PubSubPort}
@@ -17,24 +17,17 @@ object Main:
 
   def main(args: Array[String]): Unit =
     val vertx = Vertx.vertx()
-    val useRedis = args.contains("-redis")
 
-    val (pubSubPort: PubSubPort, lobbyStatePort: LobbyStatePort) = if useRedis then
-      println("Starting Redis...")
-      val redisHost = sys.env.getOrElse("REDIS_HOST", "localhost")
-      val redisPortStr = sys.env.getOrElse("REDIS_PORT", "6379")
-      val redisOptions = RedisOptions().setConnectionString(s"redis://$redisHost:$redisPortStr")
-      val redisClient = Redis.createClient(vertx, redisOptions)
-      (RedisPubSubAdapter(redisClient), RedisLobbyStateAdapter())
-    else
-      println("Starting In-Memory...")
-      (LocalPubSubAdapter(vertx), LocalLobbyStatePort())
-
-    val gameEngineOutPort: GameEngineOutboundPort = if useRedis then
-      RedisGameEngineOutboundAdapter(pubSubPort)
-    else
-      LocalGameOutboundAdapter(pubSubPort)
-
+    println("Starting Redis...")
+    val redisHost = sys.env.getOrElse("REDIS_HOST", "localhost")
+    val redisPortStr = sys.env.getOrElse("REDIS_PORT", "6379")
+    val redisOptions = RedisOptions().setConnectionString(s"redis://$redisHost:$redisPortStr")
+    val redisClient = Redis.createClient(vertx, redisOptions)
+    
+    val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
+    val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
+    
+    val gameEngineOutPort: GameEngineOutboundPort = RedisGameEngineOutboundAdapter(pubSubPort)
     val gameEngineInPort: GameEngineInboundPort = LocalGameInboundAdapter(vertx, gameEngineOutPort)
     
     runHTTPServer(vertx, gameEngineInPort, lobbyStatePort)

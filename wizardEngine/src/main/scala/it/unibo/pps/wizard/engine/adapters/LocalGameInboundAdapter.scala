@@ -1,4 +1,4 @@
-package it.unibo.pps.wizard.engine.adapters.inmemory
+package it.unibo.pps.wizard.engine.adapters
 
 import io.vertx.core.Vertx
 import it.unibo.pps.wizard.engine.configuration.*

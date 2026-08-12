@@ -43,7 +43,7 @@ trait LobbyStatePort:
    * Atomically adds a player to the lobby, returning the assigned Player if successful.
    * Fails (returns None) if the lobby is full (max 6 players).
    *
-   * @param lobbyId the UUID of the lobby.
+   * @param lobbyId the UUID of the lobby if retrieve fail automatically create a new lobby.
    * @param name the player's name
    * @param bot the bot difficulty, if any
    * @return a Future containing the assigned Player, or None if the lobby is full.
