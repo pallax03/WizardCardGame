@@ -1,12 +1,11 @@
-package it.unibo.pps.wizard.engine.adapters
+package it.unibo.pps.wizard.engine.adapters.inmemory
 
 import io.vertx.core.Vertx
-import it.unibo.pps.wizard.engine.configuration._
-import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.core._
-import it.unibo.pps.wizard.engine.model.events._
-import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
-import it.unibo.pps.wizard.engine.ports.GameEngineOutboundPort
+import it.unibo.pps.wizard.engine.configuration.*
+import it.unibo.pps.wizard.engine.model.basic.*
+import it.unibo.pps.wizard.engine.model.core.*
+import it.unibo.pps.wizard.engine.model.events.*
+import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, GameEngineOutboundPort}
 import it.unibo.pps.wizard.util.VerticleExecutor
 
 import scala.concurrent.Future
@@ -22,7 +21,7 @@ enum WizardGameState:
  * @param vertx the Vert.x instance used for event handling
  * @param outboundPort the outbound port used to publish events
  */
-class GameInboundAdapter(
+class LocalGameInboundAdapter(
     private val vertx: Vertx,
     private val outboundPort: GameEngineOutboundPort
 ) extends GameEngineInboundPort:

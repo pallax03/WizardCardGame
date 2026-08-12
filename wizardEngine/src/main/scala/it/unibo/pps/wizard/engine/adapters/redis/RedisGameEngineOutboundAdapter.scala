@@ -1,9 +1,8 @@
-package it.unibo.pps.wizard.engine.adapters
+package it.unibo.pps.wizard.engine.adapters.redis
 
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.events.WizardEvent
-import it.unibo.pps.wizard.engine.ports.GameEngineOutboundPort
-import it.unibo.pps.wizard.engine.ports.RedisPubSubPort
+import it.unibo.pps.wizard.engine.ports.{GameEngineOutboundPort, RedisPubSubPort}
 
 import scala.concurrent.Future
 
