@@ -25,7 +25,7 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
     )
     "encode and decode GameState.ChoosingTrump correctly" in:
       val state = GameState.ChoosingTrump(core.updateTrump(WizardUnresolved(wizard)))
-      val jsonString = state.toJsonString
+      val jsonString = state.toJson
       jsonString should fullyMatch regex """\{"core":\{"playersIds":\[1,2\],"hands":\{\},"trump":\{"type":"WizardUnresolved","card":\{"type":"Wizard","id":[0-3]\}\},"round":1,"dealerId":1,"scoreboard":\{\}\}\}"""
       jsonString.decodeAs[GameState.ChoosingTrump].value shouldBe state
     "encode and decode GameState.Bidding correctly" in :
@@ -34,7 +34,7 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
         bids = Bids.empty + (p1 place 1) + (p2 place 1),
         playerTurn = p1
       )
-      val jsonString = state.toJsonString
+      val jsonString = state.toJson
       jsonString shouldBe """{"core":{"playersIds":[1,2],"hands":{},"trump":{"type":"Absent"},"round":1,"dealerId":1,"scoreboard":{}},"bids":{"1":1,"2":1},"playerTurn":1}"""
       jsonString.decodeAs[GameState.Bidding].value shouldBe state
     "encode and decode GameState.Playing correctly" in :
@@ -45,7 +45,7 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
         playerTurn = p2,
         tricksWon = Tricks.empty.addTrickTo(p1)
       )
-      val jsonString = state.toJsonString
+      val jsonString = state.toJson
       jsonString shouldBe """{"core":{"playersIds":[1,2],"hands":{},"trump":{"type":"Absent"},"round":1,"dealerId":1,"scoreboard":{}},"bids":{"1":1,"2":1},"table":{"playedCards":[{"playerId":1,"card":{"type":"Standard","color":"Blue","rank":10}}],"followingColor":"Blue"},"playerTurn":2,"tricksWon":{"1":1}}"""
       jsonString.decodeAs[GameState.Playing].value shouldBe state
     "encode and decode GameState.Ended correctly" in :
@@ -55,6 +55,6 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
           .addScore(p1, 1, 20, 0)
           .addScore(p2, 1, -10, 1)
       )
-      val jsonString = state.toJsonString
+      val jsonString = state.toJson
       jsonString shouldBe """{"playersIds":[1,2],"scoreboard":{"1":[{"round":1,"score":20,"bid":0}],"2":[{"round":1,"score":-10,"bid":1}]}}"""
       jsonString.decodeAs[GameState.Ended].value shouldBe state

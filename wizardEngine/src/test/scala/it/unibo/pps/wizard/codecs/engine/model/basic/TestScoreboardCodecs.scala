@@ -18,6 +18,6 @@ class TestScoreboardCodecs extends AnyWordSpec with Matchers:
       val scoreboard = Scoreboard.empty
         .addScore(p1, 1, 20, 0)
         .addScore(p2, 1, -10, 1)
-      val jsonString = scoreboard.toJsonString
+      val jsonString = scoreboard.toJson
       jsonString shouldBe """{"1":[{"round":1,"score":20,"bid":0}],"2":[{"round":1,"score":-10,"bid":1}]}"""
       jsonString.decodeAs[Scoreboard].value shouldBe scoreboard

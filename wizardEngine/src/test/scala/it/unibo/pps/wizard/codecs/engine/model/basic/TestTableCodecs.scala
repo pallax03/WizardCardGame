@@ -16,7 +16,7 @@ class TestTableCodecs extends AnyWordSpec with Matchers:
   "TableCodecs" should:
     "encode and decode empty Table correctly" in:
       val table = Table.empty
-      val jsonString = table.toJsonString
+      val jsonString = table.toJson
 
       jsonString shouldBe """{"playedCards":[]}"""
       jsonString.decodeAs[Table].value shouldBe table
@@ -24,7 +24,7 @@ class TestTableCodecs extends AnyWordSpec with Matchers:
     "encode and decode Table with played cards and followingColor correctly" in:
       val p1 = PlayerId(1)
       val table = Table.empty + (p1 plays (Seven of Blue))
-      val jsonString = table.toJsonString
+      val jsonString = table.toJson
 
       jsonString shouldBe """{"playedCards":[{"playerId":1,"card":{"type":"Standard","color":"Blue","rank":7}}],"followingColor":"Blue"}"""
       jsonString.decodeAs[Table].value shouldBe table

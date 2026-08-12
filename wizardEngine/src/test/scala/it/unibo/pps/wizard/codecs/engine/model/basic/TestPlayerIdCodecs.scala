@@ -13,6 +13,6 @@ class TestPlayerIdCodecs extends AnyWordSpec with Matchers:
   "PlayerIdCodecs" should:
     val p1 = PlayerId(1)
     "encode and decode PlayerId correctly" in:
-      val jsonString = p1.toJsonString
+      val jsonString = p1.toJson
       jsonString shouldBe "1"
       jsonString.decodeAs[PlayerId].value shouldBe p1
