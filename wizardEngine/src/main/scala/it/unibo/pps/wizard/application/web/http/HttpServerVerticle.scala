@@ -1,25 +1,13 @@
 package it.unibo.pps.wizard.application.web.http
 
 import io.vertx.core.AbstractVerticle
-import io.vertx.core.http.HttpServer
-import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
+import io.vertx.ext.web.handler.LoggerHandler
 
-class HttpServerVerticle(routes: Seq[Router => Unit]) extends AbstractVerticle:
-  private var httpServer: HttpServer | Null = null
+class HttpServerVerticle(routes: Seq[Router => Unit], port: Int) extends AbstractVerticle:
 
   override def start(): Unit =
-    val port = config().getInteger("http.port").intValue()
-    val router = HttpRouterBuilder(vertx, routes).build()
-    val options = HttpServerOptions().setHost("0.0.0.0")
-    httpServer = vertx.createHttpServer(options).requestHandler(router)
-    httpServer
-      .listen(port)
-      .onComplete: ar =>
-        if (ar.succeeded()) println(s"HTTP server listening on port $port")
-        else
-          println(s"Failed to start HTTP server on port $port: ${ar.cause().getMessage}")
-          vertx.close()
-
-  override def stop(): Unit =
-    if httpServer != null then httpServer.close()
+    val router = Router.router(vertx)
+    router.route().handler(LoggerHandler.create())
+    routes.foreach(_(router))
+    vertx.createHttpServer().requestHandler(router).listen(port)
