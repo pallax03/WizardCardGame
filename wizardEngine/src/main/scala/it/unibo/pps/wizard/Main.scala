@@ -9,6 +9,7 @@ import it.unibo.pps.wizard.engine.adapters.inmemory.{LocalGameInboundAdapter, Lo
 import it.unibo.pps.wizard.engine.adapters.redis.{RedisGameEngineOutboundAdapter, RedisLobbyStateAdapter, RedisPubSubAdapter}
 import it.unibo.pps.wizard.engine.adapters.VertxWebSocketsAdapter
 import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, GameEngineOutboundPort, LobbyStatePort, PubSubPort}
+import io.vertx.redis.client.{Redis, RedisOptions}
 
 object Main:
   val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
@@ -20,7 +21,11 @@ object Main:
 
     val (pubSubPort: PubSubPort, lobbyStatePort: LobbyStatePort) = if useRedis then
       println("Starting Redis...")
-      (RedisPubSubAdapter(), RedisLobbyStateAdapter())
+      val redisHost = sys.env.getOrElse("REDIS_HOST", "localhost")
+      val redisPortStr = sys.env.getOrElse("REDIS_PORT", "6379")
+      val redisOptions = RedisOptions().setConnectionString(s"redis://$redisHost:$redisPortStr")
+      val redisClient = Redis.createClient(vertx, redisOptions)
+      (RedisPubSubAdapter(redisClient), RedisLobbyStateAdapter())
     else
       println("Starting In-Memory...")
       (LocalPubSubAdapter(vertx), LocalLobbyStatePort())

@@ -4,11 +4,9 @@ import it.unibo.pps.wizard.engine.ports.PubSubPort
 
 import scala.concurrent.Future
 
-/**
- * @param redisClient The driver/client used to execute commands against the Redis server.
- *                    (see io.vertx.redis.client.RedisAPI)
- */
-class RedisPubSubAdapter( /* redisClient: RedisAPI */ ) extends PubSubPort:
+import io.vertx.redis.client.Redis
+
+class RedisPubSubAdapter(val redis: Redis) extends PubSubPort:
   override def publish(channel: String, jsonMessage: String): Future[Unit] = ???
 
   override def subscribe(channel: String, onMessage: String => Unit): Future[Unit] = ???
