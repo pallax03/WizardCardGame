@@ -6,7 +6,7 @@ import io.vertx.ext.web.{Router, RoutingContext}
 import it.unibo.pps.wizard.codecs.engine.lobby.LobbyCodecs.given
 import it.unibo.pps.wizard.engine.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.lobby.*
-import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, LobbyStatePort}
+import it.unibo.pps.wizard.engine.ports.{InboundPort, LobbyStatePort}
 import it.unibo.pps.wizard.application.web.*
 import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerIdCodecs.given 
 
@@ -14,7 +14,7 @@ import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
-class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: GameEngineInboundPort):
+class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort):
 
   def mount(router: Router): Unit =
     router.post("/api/lobby").handler(handleLobby)

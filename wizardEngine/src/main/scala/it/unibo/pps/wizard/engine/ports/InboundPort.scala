@@ -11,7 +11,7 @@ import scala.concurrent.Future
  * Inbound port for the Wizard game engine.
  * This trait defines the methods that can be called by external components to interact with the game engine.
  */
-trait GameEngineInboundPort:
+trait InboundPort:
 
   /**
    * Retrieves the current state of the game.

@@ -3,7 +3,7 @@ package it.unibo.pps.wizard.application.web.http.routes
 import io.circe.Json
 import io.circe.syntax.*
 import io.vertx.ext.web.{Router, RoutingContext}
-import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, LobbyStatePort}
+import it.unibo.pps.wizard.engine.ports.{InboundPort, LobbyStatePort}
 import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.core.GameAction
@@ -12,7 +12,7 @@ import it.unibo.pps.wizard.codecs.engine.model.core.GameActionCodecs.given
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.{Failure, Success}
 
-class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: GameEngineInboundPort):
+class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort):
   
   def mount(router: Router): Unit =
     router.post("/api/lobby/:lobbyId/player/:playerId/choose").handler(handleSubmitAction)

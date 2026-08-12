@@ -14,7 +14,7 @@ import it.unibo.pps.wizard.engine.model.core.GameState
 import it.unibo.pps.wizard.engine.model.rules.BiddingRules._
 import it.unibo.pps.wizard.engine.model.rules.TableRules._
 import it.unibo.pps.wizard.engine.ports.AIPort
-import it.unibo.pps.wizard.engine.ports.GameEngineInboundPort
+import it.unibo.pps.wizard.engine.ports.InboundPort
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -31,7 +31,7 @@ import scala.concurrent.Future
  * 2. Manages interactions with the [[WizardPrologEngine]].
  * 3. Provides robust fallbacks: if Prolog fails to return a valid move, this adapter ensures the game continues by providing a valid default move.
  */
-class WizardPrologAdapter(private val inboundPort: GameEngineInboundPort) extends AIPort:
+class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
 
   private val engine = WizardPrologEngine()
 

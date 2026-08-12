@@ -11,12 +11,8 @@ import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import scala.concurrent.{Future, Promise}
 import scala.concurrent.ExecutionContext.Implicits.global
 
-/**
- * Adapter that implements LobbyStatePort to persist Lobby state in a Redis Key-Value store.
- */
 class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
-
-  // ponytail: utilità per non impazzire coi Future di Java
+  
   extension [T](vFuture: io.vertx.core.Future[T])
     def asScala: Future[T] =
       val p = Promise[T]()

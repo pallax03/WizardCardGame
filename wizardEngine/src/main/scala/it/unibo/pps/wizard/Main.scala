@@ -3,13 +3,12 @@ package it.unibo.pps.wizard
 import io.vertx.core.{AbstractVerticle, Vertx}
 import io.vertx.ext.web.Router
 import it.unibo.pps.wizard.application.web.http.HttpServerVerticle
-import it.unibo.pps.wizard.application.web.http.routes._
+import it.unibo.pps.wizard.application.web.http.routes.*
 import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
-import it.unibo.pps.wizard.engine.adapters.LocalGameInboundAdapter
-import it.unibo.pps.wizard.engine.adapters.redis.{RedisGameEngineOutboundAdapter, RedisLobbyStateAdapter, RedisPubSubAdapter}
 import it.unibo.pps.wizard.engine.adapters.VertxWebSocketsAdapter
-import it.unibo.pps.wizard.engine.ports.{GameEngineInboundPort, GameEngineOutboundPort, LobbyStatePort, PubSubPort}
+import it.unibo.pps.wizard.engine.ports.{InboundPort, LobbyStatePort, OutboundPort, PubSubPort}
 import io.vertx.redis.client.{Redis, RedisOptions}
+import it.unibo.pps.wizard.engine.adapters.redis.{RedisInboundAdapter, RedisLobbyStateAdapter, RedisOutboundAdapter, RedisPubSubAdapter}
 
 object Main:
   val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
@@ -27,13 +26,13 @@ object Main:
     val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
     
-    val gameEngineOutPort: GameEngineOutboundPort = RedisGameEngineOutboundAdapter(pubSubPort)
-    val gameEngineInPort: GameEngineInboundPort = LocalGameInboundAdapter(vertx, gameEngineOutPort)
+    val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort)
+    val inPort: InboundPort = RedisInboundAdapter(outPort)
     
-    runHTTPServer(vertx, gameEngineInPort, lobbyStatePort)
+    runHTTPServer(vertx, inPort, lobbyStatePort)
     runWSServer(vertx, lobbyStatePort, pubSubPort)
 
-  private def runHTTPServer(vertx: Vertx, gameEngineInPort: GameEngineInboundPort, lobbyStatePort: LobbyStatePort): Unit =
+  private def runHTTPServer(vertx: Vertx, gameEngineInPort: InboundPort, lobbyStatePort: LobbyStatePort): Unit =
     val routes: Seq[Router => Unit] = Seq(
       LobbyRoutes(lobbyStatePort, gameEngineInPort).mount,
       ActionRoutes(lobbyStatePort, gameEngineInPort).mount
