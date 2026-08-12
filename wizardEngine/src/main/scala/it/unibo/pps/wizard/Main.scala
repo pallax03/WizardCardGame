@@ -27,7 +27,7 @@ object Main:
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
     
     val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort)
-    val inPort: InboundPort = RedisInboundAdapter(outPort)
+    val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort)
     
     runHTTPServer(vertx, inPort, lobbyStatePort)
     runWSServer(vertx, lobbyStatePort, pubSubPort)

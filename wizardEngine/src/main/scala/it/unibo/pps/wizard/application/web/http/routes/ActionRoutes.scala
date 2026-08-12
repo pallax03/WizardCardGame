@@ -9,25 +9,24 @@ import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.codecs.engine.model.core.GameActionCodecs.given
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import it.unibo.pps.wizard.util.FutureSyntax.onVertxComplete
 import scala.util.{Failure, Success}
 
 class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort):
-  
   def mount(router: Router): Unit =
     router.post("/api/lobby/:lobbyId/player/:playerId/choose").handler(handleSubmitAction)
     router.post("/api/lobby/:lobbyId/player/:playerId/place").handler(handleSubmitAction)
     router.post("/api/lobby/:lobbyId/player/:playerId/play").handler(handleSubmitAction)
     
   private def handleSubmitAction(ctx: RoutingContext): Unit =
-    val uuid = ctx.pathParam("uuid")
-    val playerId = ctx.pathParam("id")
+    val uuid = ctx.pathParam("lobbyId")
+    val playerId = ctx.pathParam("playerId")
     val rawJson = ctx.body().asString()
 
     rawJson.decodeAs[GameAction] match
       case Left(error) => respondJson(ctx, 400, Json.obj("error" -> s"Invalid JSON body: ${error.getMessage}".asJson))
       case Right(action) =>
-        lobbyStatePort.getLobby(LobbyId(uuid)).onComplete:
+        lobbyStatePort.getLobby(LobbyId(uuid)).onVertxComplete(ctx):
           case Success(Some(lobby)) =>
             gameEnginePort.submitAction(LobbyId(uuid), action)
             respondJson(ctx, 200, Json.obj("message" -> "Action submitted successfully".asJson))

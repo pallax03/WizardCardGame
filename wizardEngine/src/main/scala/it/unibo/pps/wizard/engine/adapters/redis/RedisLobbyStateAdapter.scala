@@ -1,42 +1,35 @@
 package it.unibo.pps.wizard.engine.adapters.redis
 
 import io.vertx.redis.client.{Command, Redis, Request}
-import io.circe.parser.*
-import io.circe.syntax.*
 import it.unibo.pps.wizard.codecs.engine.lobby.LobbyCodecs.given
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 import it.unibo.pps.wizard.engine.lobby.*
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
+import it.unibo.pps.wizard.util.FutureSyntax.*
 
 class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
-  
-  extension [T](vFuture: io.vertx.core.Future[T])
-    def asScala: Future[T] =
-      val p = Promise[T]()
-      vFuture.onComplete(ar => if ar.succeeded() then p.success(ar.result()) else p.failure(ar.cause()))
-      p.future
 
-  private def key(id: LobbyId): String = s"lobby:${id.toString}"
 
   override def saveLobby(lobby: Lobby): Future[Unit] =
-    val req = Request.cmd(Command.SET).arg(key(lobby.uuid)).arg(lobby.asJson.noSpaces)
+    val req = Request.cmd(Command.SET).arg(RedisKeys.lobby(lobby.uuid)).arg(lobby.toJson)
     redisClient.send(req).asScala.map(_ => ())
 
   override def getLobby(lobbyId: LobbyId): Future[Option[Lobby]] =
-    val req = Request.cmd(Command.GET).arg(key(lobbyId))
+    val req = Request.cmd(Command.GET).arg(RedisKeys.lobby(lobbyId))
     redisClient.send(req).asScala.map:
       case null => None
-      case response => decode[Lobby](response.toString).toOption
+      case response => response.toString.decodeAs[Lobby].toOption
 
   private val addPlayerScript =
     """
       |local lobbyStr = redis.call('GET', KEYS[1])
       |local lobby
       |if not lobbyStr then
-      |  lobby = { uuid = ARGV[3], players = {}, status = "WAITING" }
+      |  lobby = { lobbyId = ARGV[3], players = {}, status = "WAITING" }
       |else
       |  lobby = cjson.decode(lobbyStr)
       |end
@@ -60,12 +53,12 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
   override def addPlayer(lobbyId: LobbyId, name: String, bot: Option[BotsDifficulty]): Future[Option[Player]] =
     val botArg = bot.map(_.toString).getOrElse("")
     val req = Request.cmd(Command.EVAL)
-      .arg(addPlayerScript).arg("1").arg(key(lobbyId))
+      .arg(addPlayerScript).arg("1").arg(RedisKeys.lobby(lobbyId))
       .arg(name).arg(botArg).arg(lobbyId.toString)
       
     redisClient.send(req).asScala.map:
       case null => None
-      case response => decode[Player](response.toString).toOption
+      case response => response.toString.decodeAs[Player].toOption
 
   override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
     getLobby(lobbyId).flatMap:
