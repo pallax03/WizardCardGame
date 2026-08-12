@@ -1,7 +1,6 @@
 package it.unibo.pps.wizard.codecs.engine.model.core
 
-import io.circe.parser._
-import io.circe.syntax._
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import org.scalatest.EitherValues._
@@ -16,21 +15,21 @@ class TestGameActionCodecs extends AnyWordSpec with Matchers:
   "GameActionCodecs" should:
     "encode and decode ResolveTrumpColor correctly" in:
       val action: GameAction = GameAction.ResolveTrumpColor(PlayerId(1), Color.Red)
-      val jsonString = action.asJson.noSpaces
+      val jsonString = action.toJsonString
 
       jsonString shouldBe """{"action":"ResolveTrumpColor","playerId":1,"color":"Red"}"""
-      decode[GameAction](jsonString).value shouldBe action
+      jsonString.decodeAs[GameAction].value shouldBe action
 
     "encode and decode PlaceBid correctly" in:
       val action: GameAction = GameAction.PlaceBid(PlayerId(2), 3)
-      val jsonString = action.asJson.noSpaces
+      val jsonString = action.toJsonString
 
       jsonString shouldBe """{"action":"PlaceBid","playerId":2,"bid":3}"""
-      decode[GameAction](jsonString).value shouldBe action
+      jsonString.decodeAs[GameAction].value shouldBe action
 
     "encode and decode PlayCard correctly" in:
       val action: GameAction = GameAction.PlayCard(PlayerId(1), Seven of Blue)
-      val jsonString = action.asJson.noSpaces
+      val jsonString = action.toJsonString
 
       jsonString shouldBe """{"action":"PlayCard","playerId":1,"card":{"type":"Standard","color":"Blue","rank":7}}"""
-      decode[GameAction](jsonString).value shouldBe action
+      jsonString.decodeAs[GameAction].value shouldBe action

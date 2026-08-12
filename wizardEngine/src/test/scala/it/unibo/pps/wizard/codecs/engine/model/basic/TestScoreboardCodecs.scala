@@ -1,7 +1,6 @@
 package it.unibo.pps.wizard.codecs.engine.model.basic
 
-import io.circe.parser.*
-import io.circe.syntax.*
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 import it.unibo.pps.wizard.engine.model.basic.*
 
 import org.scalatest.EitherValues.*
@@ -19,6 +18,6 @@ class TestScoreboardCodecs extends AnyWordSpec with Matchers:
       val scoreboard = Scoreboard.empty
         .addScore(p1, 1, 20, 0)
         .addScore(p2, 1, -10, 1)
-      val jsonString = scoreboard.asJson.noSpaces
+      val jsonString = scoreboard.toJsonString
       jsonString shouldBe """{"1":[{"round":1,"score":20,"bid":0}],"2":[{"round":1,"score":-10,"bid":1}]}"""
-      decode[Scoreboard](jsonString).value shouldBe scoreboard
+      jsonString.decodeAs[Scoreboard].value shouldBe scoreboard

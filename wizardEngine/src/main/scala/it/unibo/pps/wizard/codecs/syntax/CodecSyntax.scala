@@ -6,7 +6,6 @@ import io.circe.syntax._
 
 object CodecSyntax:
   extension [A: Encoder](a: A)
-    def toJson: Json = a.asJson
     def toJsonString: String = a.asJson.noSpaces
 
   extension (jsonStr: String) def decodeAs[A: Decoder]: Either[Error, A] = decode[A](jsonStr)

@@ -1,7 +1,6 @@
 package it.unibo.pps.wizard.codecs.engine.lobby
 
-import io.circe.parser._
-import io.circe.syntax._
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 import it.unibo.pps.wizard.engine.lobby._
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import org.scalatest.EitherValues._
@@ -19,6 +18,6 @@ class TestLobbyCodecs extends AnyWordSpec with Matchers:
     )
     val lobby = Lobby(LobbyId("uuid-1234"), players, LobbyStatus.WAITING)
     "encode and decode Lobby correctly" in:
-      val jsonString = lobby.asJson.noSpaces
+      val jsonString = lobby.toJsonString
       jsonString shouldBe """{"uuid":"uuid-1234","players":[{"id":1,"name":"Alice","bot":null},{"id":2,"name":"Bot-1","bot":"Dumb"}],"status":"WAITING"}"""
-      decode[Lobby](jsonString).value shouldBe lobby
+      jsonString.decodeAs[Lobby].value shouldBe lobby

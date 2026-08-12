@@ -14,7 +14,6 @@ object LobbyId:
 
 /**
  * Represents a game lobby in the application layer.
- * todo: This object is typically serialized and persisted in Redis.
  *
  * @param uuid the globally unique identifier of the lobby.
  * @param players the list of players currently in the lobby.

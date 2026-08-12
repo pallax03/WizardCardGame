@@ -1,7 +1,6 @@
 package it.unibo.pps.wizard.codecs.engine.model.core
 
-import io.circe.parser.*
-import io.circe.syntax.*
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 import it.unibo.pps.wizard.engine.model.*
 
 import org.scalatest.EitherValues.*
@@ -39,6 +38,6 @@ class TestCoreStateCodecs extends AnyWordSpec with Matchers:
           .addScore(p1, 1, 20, 0)
           .addScore(p2, 1, -10, 1)
       )
-      val jsonString = core.asJson.noSpaces
+      val jsonString = core.toJsonString
       jsonString shouldBe """{"playersIds":[1,2],"hands":{"1":[{"type":"Standard","color":"Blue","rank":10},{"type":"Standard","color":"Red","rank":1}],"2":[{"type":"Standard","color":"Green","rank":2}]},"trump":{"type":"Absent"},"round":2,"dealerId":2,"scoreboard":{"1":[{"round":1,"score":20,"bid":0}],"2":[{"round":1,"score":-10,"bid":1}]}}"""
-      decode[CoreState](jsonString).value shouldBe core
+      jsonString.decodeAs[CoreState].value shouldBe core
