@@ -1,6 +1,7 @@
 package it.unibo.pps.wizard.engine.adapters
 
-import it.unibo.pps.wizard.engine.lobby.Lobby
+import it.unibo.pps.wizard.engine.lobby.{Lobby, LobbyPlayer}
+import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 
 import scala.concurrent.Future
@@ -30,3 +31,22 @@ class RedisLobbyStateAdapter( /* redisClient: RedisAPI */ ) extends LobbyStatePo
     // 3. If it returns a string, deserialize it using `LobbyCodecs.given`
     // 4. Return Future.successful(Some(parsedLobby))
     ???
+
+  /**
+   * Atomically adds a player to the lobby, returning the assigned PlayerId if successful.
+   * Fails (returns None) if the lobby is full (max 6 players).
+   *
+   * @param lobbyId the UUID of the lobby.
+   * @param player  the player to add (without the final ID, which is assigned and returned).
+   * @return a Future containing the assigned PlayerId, or None if the lobby is full.
+   */
+  override def addPlayer(lobbyId: String, player: LobbyPlayer): Future[Option[PlayerId]] = ???
+
+  /**
+   * Atomically removes a player from the lobby by ID.
+   *
+   * @param lobbyId  the UUID of the lobby.
+   * @param playerId the ID of the player to remove.
+   * @return a Future containing true if the player was removed, false otherwise.
+   */
+  override def removePlayer(lobbyId: String, playerId: PlayerId): Future[Boolean] = ???

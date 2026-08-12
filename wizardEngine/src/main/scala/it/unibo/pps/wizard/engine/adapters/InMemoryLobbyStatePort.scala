@@ -15,3 +15,7 @@ class InMemoryLobbyStatePort extends LobbyStatePort:
 
   override def getLobby(lobbyId: String): Future[Option[Lobby]] =
     Future.successful(store.get(lobbyId))
+
+  override def addPlayer(lobbyId: String, player: it.unibo.pps.wizard.engine.lobby.LobbyPlayer): Future[Option[it.unibo.pps.wizard.engine.model.basic.PlayerId]] = ???
+
+  override def removePlayer(lobbyId: String, playerId: it.unibo.pps.wizard.engine.model.basic.PlayerId): Future[Boolean] = ???

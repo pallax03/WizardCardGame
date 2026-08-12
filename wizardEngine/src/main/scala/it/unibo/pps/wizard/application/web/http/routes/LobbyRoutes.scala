@@ -1,9 +1,9 @@
 package it.unibo.pps.wizard.application.web.http.routes
 
 import io.circe.Json
+import io.circe.syntax.*
 import io.vertx.ext.web.{Router, RoutingContext}
 import it.unibo.pps.wizard.codecs.engine.lobby.LobbyCodecs.given
-import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 import it.unibo.pps.wizard.engine.lobby.{Lobby, LobbyId, LobbyPlayer, LobbyStatus}
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
@@ -27,17 +27,17 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort):
         respondJson(
           ctx,
           201,
-          Json.obj("lobbyId" -> lobbyId.toJson, "playerId" -> 0.toJson)
+          Json.obj("lobbyId" -> lobbyId.asJson, "playerId" -> 0.asJson)
         )
       case Failure(exception) => ctx.fail(500, exception)
 
   private def handleMissingLobby(ctx: RoutingContext): Unit =
-    respondJson(ctx, 400, Json.obj("error" -> "Missing lobby id".toJson))
+    respondJson(ctx, 400, Json.obj("error" -> "Missing lobby id".asJson))
 
   private def handleLobbyInfo(ctx: RoutingContext): Unit =
     val uuid = ctx.pathParam("uuid")
     lobbyStatePort.getLobby(uuid).onComplete:
-      case Success(Some(lobby)) => respondJson(ctx, 200, lobby.toJson)
+      case Success(Some(lobby)) => respondJson(ctx, 200, lobby.asJson)
       case Success(None)        => respondJson(ctx, 404, notFound(uuid))
       case Failure(exception)   => ctx.fail(500, exception)
 
@@ -50,7 +50,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort):
           .saveLobby(lobby.copy(players = lobby.players :+ player(playerId)))
           .onComplete:
             case Success(_) =>
-              respondJson(ctx, 200, Json.obj("playerId" -> playerId.toInt.toJson))
+              respondJson(ctx, 200, Json.obj("playerId" -> playerId.toInt.asJson))
             case Failure(exception) => ctx.fail(500, exception)
       case Success(None)      => respondJson(ctx, 404, notFound(uuid))
       case Failure(exception) => ctx.fail(500, exception)
@@ -59,7 +59,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort):
     LobbyPlayer(id, s"Player-${id.toInt}", None)
 
   private def notFound(uuid: String): Json =
-    Json.obj("error" -> s"Lobby $uuid not found".toJson)
+    Json.obj("error" -> s"Lobby $uuid not found".asJson)
 
   def respondJson(ctx: RoutingContext, status: Int, body: Json): Unit =
     ctx
