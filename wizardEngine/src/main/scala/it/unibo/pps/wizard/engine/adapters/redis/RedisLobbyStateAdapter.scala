@@ -43,7 +43,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       |  newPlayer.difficulty = cjson.null
       |else
       |  newPlayer.difficulty = ARGV[2]
-      |  newPlayer.name = 'Bot-' .. newId
+      |  newPlayer.name = 'Bot-' .. (newId+1)
       |end
       |
       |table.insert(lobby.players, newPlayer)

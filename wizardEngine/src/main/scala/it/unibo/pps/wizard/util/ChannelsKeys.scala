@@ -4,6 +4,8 @@ import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
 object ChannelsKeys:
+  val SPAWN_BOT_CHANNEL: String = "bots:spawn"
+  
   def lobby(id: LobbyId): String = s"lobby:${id.toString}"
   def game(id: LobbyId): String = s"game:${id.toString}"
   

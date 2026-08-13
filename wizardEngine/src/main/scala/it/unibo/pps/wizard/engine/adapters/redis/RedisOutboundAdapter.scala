@@ -24,7 +24,7 @@ class RedisOutboundAdapter(
         case scoped: DestinationScoped =>
           pubSubPort.publish(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, scoped.destinationId), jsonMsg)
         case _: LifecycleEvent.GameStarted =>
-          pubSubPort.publish("bots:global:spawn", lobbyId.toString)
+          pubSubPort.publish(ChannelsKeys.SPAWN_BOT_CHANNEL, lobbyId.toString)
           pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)
         case _ =>
           pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)

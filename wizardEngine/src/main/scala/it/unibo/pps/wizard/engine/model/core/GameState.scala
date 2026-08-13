@@ -4,12 +4,6 @@ import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
 import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
-
-/** Represents the state of the Wizard game. */
-enum WizardGameState:
-  case NotConfigured
-  case Running(state: GameState)
-
 /**
  * Represents the various phases and states of the Wizard card game.
  *
