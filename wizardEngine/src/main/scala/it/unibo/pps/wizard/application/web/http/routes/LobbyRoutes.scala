@@ -28,7 +28,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort):
     // missing JSON OF Player username and BotsDifficulty
     // val name = ctx.body().asString()
     val name = "name"
-    val bot = Option.empty[BotsDifficulty]
+    val bot = Option(BotsDifficulty.Dumb)
 
     val lobbyId = ctx.request().extractLobbyId.getOrElse(LobbyId.generate)
     print(lobbyId)

@@ -8,9 +8,8 @@ import it.unibo.pps.wizard.engine.model.core.*
 import it.unibo.pps.wizard.engine.model.events.*
 import it.unibo.pps.wizard.engine.ports.{InboundPort, OutboundPort}
 import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
-
-
 import it.unibo.pps.wizard.codecs.engine.model.core.GameStateCodecs.given
+import it.unibo.pps.wizard.util.ChannelsKeys
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -23,13 +22,13 @@ class RedisInboundAdapter(
 
 
   override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[GameState] =
-    val req = Request.cmd(Command.GET).arg(RedisKeys.game(lobbyId))
+    val req = Request.cmd(Command.GET).arg(ChannelsKeys.game(lobbyId))
     redisClient.send(req).asScala.map:
       case null => throw new IllegalStateException("Game not running")
       case response => response.toString.decodeAs[GameState].toOption.get
 
   override def startGame(lobbyId: LobbyId, players: List[PlayerId], config: GameConfiguration): Future[Unit] =
-    val key = RedisKeys.game(lobbyId)
+    val key = ChannelsKeys.game(lobbyId)
     val req = Request.cmd(Command.GET).arg(key)
     redisClient.send(req).asScala.flatMap:
       case null => 
@@ -42,7 +41,7 @@ class RedisInboundAdapter(
       case _ => Future.successful(())
 
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Unit] =
-    val key = RedisKeys.game(lobbyId)
+    val key = ChannelsKeys.game(lobbyId)
     
     def attempt(): Future[Unit] =
       redisClient.send(Request.cmd(Command.WATCH).arg(key)).asScala.flatMap: _ =>

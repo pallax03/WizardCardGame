@@ -1,0 +1,11 @@
+package it.unibo.pps.wizard.util
+
+import it.unibo.pps.wizard.engine.lobby.LobbyId
+import it.unibo.pps.wizard.engine.model.basic.PlayerId
+
+object ChannelsKeys:
+  def lobby(id: LobbyId): String = s"lobby:${id.toString}"
+  def game(id: LobbyId): String = s"game:${id.toString}"
+  
+  def pubSubLobbyChannel(id: LobbyId): String = s"channel:${id.toString}"
+  def pubSubLobbyPlayerChannel(id: LobbyId, playerId: PlayerId): String = s"channel:${id.toString}:${playerId.toInt}"

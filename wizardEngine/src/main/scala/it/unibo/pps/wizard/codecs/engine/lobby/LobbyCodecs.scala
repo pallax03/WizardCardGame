@@ -19,8 +19,8 @@ object LobbyCodecs:
   given Decoder[BotsDifficulty] =
     Decoder.decodeString.emapTry(s => scala.util.Try(BotsDifficulty.valueOf(s)))
 
-  given Encoder[Player] = Encoder.forProduct3("id", "name", "bot")(p => (p.id, p.name, p.bot))
-  given Decoder[Player] = Decoder.forProduct3("id", "name", "bot")(Player.apply)
+  given Encoder[Player] = Encoder.forProduct3("id", "name", "difficulty")(p => (p.id, p.name, p.difficulty))
+  given Decoder[Player] = Decoder.forProduct3("id", "name", "difficulty")(Player.apply)
 
   given Encoder[Lobby] = Encoder.forProduct3("lobbyId", "players", "status")(l => (l.uuid, l.players, l.status))
   given Decoder[Lobby] = Decoder.forProduct3("lobbyId", "players", "status")(Lobby.apply)

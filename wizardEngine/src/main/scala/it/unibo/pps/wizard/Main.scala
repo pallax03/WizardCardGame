@@ -8,11 +8,13 @@ import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
 import it.unibo.pps.wizard.engine.adapters.VertxWebSocketsAdapter
 import it.unibo.pps.wizard.engine.ports.{InboundPort, LobbyStatePort, OutboundPort, PubSubPort}
 import io.vertx.redis.client.{Redis, RedisOptions}
+import it.unibo.pps.wizard.application.bot.BotManagerVerticle
+import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.{RedisInboundAdapter, RedisLobbyStateAdapter, RedisOutboundAdapter, RedisPubSubAdapter}
 
 object Main:
-  val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
-  val wsPort: Int = sys.env.getOrElse("WS_PORT", "8081").toInt
+  private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
+  private val wsPort: Int = sys.env.getOrElse("WS_PORT", "8081").toInt
 
   def main(args: Array[String]): Unit =
     val vertx = Vertx.vertx()
@@ -28,7 +30,9 @@ object Main:
     
     val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort)
     val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort)
-    
+    val prologPort = WizardPrologAdapter(inPort)
+
+    deploy(vertx, BotManagerVerticle(pubSubPort, prologPort, lobbyStatePort, inPort), "bot verticle", 0)
     runHTTPServer(vertx, inPort, lobbyStatePort)
     runWSServer(vertx, lobbyStatePort, pubSubPort)
 

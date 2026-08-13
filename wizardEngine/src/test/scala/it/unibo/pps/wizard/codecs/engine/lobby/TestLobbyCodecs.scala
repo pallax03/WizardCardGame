@@ -19,5 +19,5 @@ class TestLobbyCodecs extends AnyWordSpec with Matchers:
     val lobby = Lobby(LobbyId("uuid-1234"), players, LobbyStatus.WAITING)
     "encode and decode Lobby correctly" in:
       val jsonString = lobby.toJson
-      jsonString shouldBe """{"lobbyId":"uuid-1234","players":[{"id":1,"name":"Alice","bot":null},{"id":2,"name":"Bot-1","bot":"Dumb"}],"status":"WAITING"}"""
+      jsonString shouldBe """{"lobbyId":"uuid-1234","players":[{"id":1,"name":"Alice","difficulty":null},{"id":2,"name":"Bot-1","difficulty":"Dumb"}],"status":"WAITING"}"""
       jsonString.decodeAs[Lobby].value shouldBe lobby
