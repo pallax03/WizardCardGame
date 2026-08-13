@@ -3,8 +3,13 @@ package it.unibo.pps.wizard.codecs.engine.model
 import io.circe.*
 import io.circe.syntax.*
 import it.unibo.pps.wizard.engine.model.events.*
+import it.unibo.pps.wizard.engine.model.basic.*
+import it.unibo.pps.wizard.engine.model.core.GameError
 
 object WizardEventsCodecs:
+
+  import gameplay.Round
+  import cards.Card
   import basic.PlayerIdCodecs.given
   import basic.HandsCodecs.given
   import basic.TrumpCodecs.given
@@ -39,3 +44,30 @@ object WizardEventsCodecs:
     )
 
     Json.obj("event" -> Json.obj(eventFields*))
+
+  given Decoder[WizardEvent] = Decoder.instance { c =>
+    val ev = c.downField("event")
+    val fields = ev.downField("fields")
+    
+    ev.downField("action").as[String].flatMap {
+      case "GameStarted" => fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameStarted.apply)
+      case "WaitingForTrump" => ev.get[PlayerId]("playerId").map(InvitationEvent.WaitingForTrump.apply)
+      case "WaitingForBid" => 
+        for {
+          p <- ev.get[PlayerId]("playerId")
+          r <- fields.get[Round]("round")
+        } yield InvitationEvent.WaitingForBid(p, r)
+      case "WaitingForCard" =>
+        for {
+          p <- ev.get[PlayerId]("playerId")
+          cards <- fields.get[List[Card]]("legalCards")   
+        } yield InvitationEvent.WaitingForCard(p, cards)
+      case "ActionFailed" =>
+        for {
+          p <- fields.get[PlayerId]("playerId")
+          err <- fields.get[GameError]("reason")
+        } yield FailureEvent.ActionFailed(p, err)
+      case other =>
+        Left(DecodingFailure(s"No decoding for $other.", c.history))
+    }
+  }

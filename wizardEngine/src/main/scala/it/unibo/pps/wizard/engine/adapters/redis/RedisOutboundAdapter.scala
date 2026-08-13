@@ -21,7 +21,7 @@ class RedisOutboundAdapter(
       val jsonMsg = ev.asJson.noSpaces
       ev match
         case scoped: DestinationScoped =>
-          pubSubPort.publish(RedisKeys.pubSubPlayerChannel(lobbyId, scoped.destinationId), jsonMsg)
+          pubSubPort.publish(RedisKeys.pubLobbyPlayerChannel(lobbyId, scoped.destinationId), jsonMsg)
         case _ =>
-          pubSubPort.publish(RedisKeys.pubSubChannel(lobbyId), jsonMsg)
+          pubSubPort.publish(RedisKeys.pubLobbyChannel(lobbyId), jsonMsg)
     }).map(_ => ())
