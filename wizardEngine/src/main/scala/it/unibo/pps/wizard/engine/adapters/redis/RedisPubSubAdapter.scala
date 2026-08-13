@@ -18,7 +18,10 @@ class RedisPubSubAdapter(val redis: Redis) extends PubSubPort:
   override def subscribe(channel: String, onMessage: String => Unit): Future[Unit] =
     val p = Promise[Unit]()
     redis.connect().onSuccess { conn =>
-      conn.handler((resp: Response) => if resp.size() == 3 && resp.get(1).toString == channel then onMessage(resp.get(2).toString))
+      conn.handler((resp: Response) => 
+        if resp.size() == 3 && resp.get(0).toString == "message" && resp.get(1).toString == channel then 
+          onMessage(resp.get(2).toString)
+      )
       conn.send(Request.cmd(Command.SUBSCRIBE).arg(channel)).onSuccess(_ => p.success(())).onFailure(p.failure)
     }.onFailure(p.failure)
     p.future
