@@ -1,12 +1,15 @@
 package it.unibo.pps.wizard.engine.adapters.redis
 
 import it.unibo.pps.wizard.engine.lobby.LobbyId
-import it.unibo.pps.wizard.engine.model.events.WizardEvent
+import it.unibo.pps.wizard.engine.model.events.{WizardEvent, DestinationScoped}
 import it.unibo.pps.wizard.engine.ports.OutboundPort
 import it.unibo.pps.wizard.engine.ports.PubSubPort
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, ExecutionContext}
+import it.unibo.pps.wizard.codecs.engine.model.WizardEventsCodecs.given
+import io.circe.syntax.*
 
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class RedisOutboundAdapter(
     val pubSubPort: PubSubPort
@@ -14,6 +17,11 @@ class RedisOutboundAdapter(
 
   /** @inheritdoc */
   override def publish(lobbyId: LobbyId, events: WizardEvent*): Future[Unit] =
-    // 1. Serialize the WizardEvent to a JSON `codecs.engine.events.WizardEvent`
-    // 2. Check if the event is DestinationScoped or global
-    ???
+    Future.sequence(events.map { ev =>
+      val jsonMsg = ev.asJson.noSpaces
+      ev match
+        case scoped: DestinationScoped =>
+          pubSubPort.publish(RedisKeys.pubSubPlayerChannel(lobbyId, scoped.destinationId), jsonMsg)
+        case _ =>
+          pubSubPort.publish(RedisKeys.pubSubChannel(lobbyId), jsonMsg)
+    }).map(_ => ())

@@ -71,7 +71,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort):
                   case Failure(exception) => ctx.fail(500, exception)
             else
               respondJson(ctx, 400, Json.obj("error" -> "Game already started or finished".asJson))
-          case Success(None)      => ??? // respondJson(ctx, 404, notFound(lobbyId.asJson)) todo: missing import codec
+          case Success(None)      => respondJson(ctx, 404, notFound(lobbyId.toString))
           case Failure(exception) => ctx.fail(500, exception)
       case None => ???
 

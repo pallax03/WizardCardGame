@@ -362,9 +362,8 @@ object GameEngine:
         List(InvitationEvent.WaitingForBid(bidding.playerTurn, round))
       case _ => Nil
 
-    val commonProgressEvents = List(
-      ProgressEvent.CardsDealt(newCore.dealerId, newCore.hands, newCore.trump, newCore.round),
-      ProgressEvent.PhaseChanged(gameState.getClass.getSimpleName)
+    val cardsDeals: List[ProgressEvent.CardsDealt] = newCore.playersIds.foldLeft(List())(
+      (events, pId) => events :+ ProgressEvent.CardsDealt(pId, newCore.hands.getHand(pId).get, newCore.trump, newCore.round)
     )
 
-    (gameState, commonProgressEvents ++ phaseSpecificEvents)
+    (gameState, (cardsDeals :+ ProgressEvent.PhaseChanged(gameState.getClass.getSimpleName)) ++ phaseSpecificEvents)
