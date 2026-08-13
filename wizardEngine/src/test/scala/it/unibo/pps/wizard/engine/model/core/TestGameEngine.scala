@@ -57,7 +57,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         core = core,
         bids = Bids.empty,
         table = currentTable,
-        currentPlayerTurn = p4,
+        playerTurn = p4,
         tricksWon = Tricks.empty
       )
 
@@ -94,7 +94,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         core = core,
         bids = Bids.empty,
         table = currentTable,
-        currentPlayerTurn = p4,
+        playerTurn = p4,
         tricksWon = Tricks.empty
       )
 
@@ -136,8 +136,8 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       result.foreach: engine =>
         engine.state match
           case nextState: GameState.Bidding =>
-            nextState.currentBids(p1) shouldBe 1
-            nextState.currentPlayer shouldBe p2
+            nextState.bids(p1) shouldBe 1
+            nextState.playerTurn shouldBe p2
           case _ => fail("Expected GameState.Bidding")
 
         engine.events should contain(ActionEvent.BidPlaced(p1, 1))
@@ -168,7 +168,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         engine.state match
           case playingState: GameState.Playing =>
             playingState.table.playedCards.isEmpty shouldBe true
-            playingState.currentPlayerTurn shouldBe p1
+            playingState.playerTurn shouldBe p1
           case _ => fail("Expected GameState.Playing")
 
         engine.events.exists(_.isInstanceOf[ProgressEvent.PhaseChanged]) shouldBe true
@@ -185,7 +185,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         core = core,
         bids = Bids.empty,
         table = Table.empty,
-        currentPlayerTurn = p1,
+        playerTurn = p1,
         tricksWon = Tricks.empty
       )
 
@@ -197,7 +197,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         engine.state match
           case nextState: GameState.Playing =>
             nextState.table.playedCards should contain(c1)
-            nextState.currentPlayerTurn shouldBe p2
+            nextState.playerTurn shouldBe p2
           case _ => fail("Expected GameState.Playing")
 
     "evaluate the trick winner and reset the table when the trick is complete" in:
@@ -221,7 +221,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
         core = core,
         bids = Bids.empty,
         table = currentTable,
-        currentPlayerTurn = p4,
+        playerTurn = p4,
         tricksWon = Tricks.empty
       )
 
@@ -234,7 +234,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
           case nextState: GameState.Playing =>
             nextState.table.playedCards.isEmpty shouldBe true
             nextState.tricksWon(p2) shouldBe 1
-            nextState.currentPlayerTurn shouldBe p2
+            nextState.playerTurn shouldBe p2
           case _ => fail("Expected GameState.Playing")
 
     "fail with InvalidAction when does not match the current game state" in:

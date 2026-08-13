@@ -43,9 +43,9 @@ object GameErrorCodecs:
       case GameError.CardNotAllowed(reason)    => Some(reason.asJson)
       case GameError.InconsistentState(reason) => Some(reason.asJson)
       case _                                   => None
-    reason.fold(Json.obj())(r => Json.obj("reason" -> r)).withTag("type", t.productPrefix)
+    reason.fold(Json.obj())(r => Json.obj("reason" -> r)).withTag("error", t.productPrefix)
 
-  given Decoder[GameError] = decodeByTag("type"):
+  given Decoder[GameError] = decodeByTag("error"):
     case "NotYourTurn"       => Decoder.const(GameError.NotYourTurn)
     case "InvalidBid"        => Decoder.const(GameError.InvalidBid)
     case "InvalidAction"     => Decoder.const(GameError.InvalidAction)

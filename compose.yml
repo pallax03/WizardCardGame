@@ -29,7 +29,11 @@ services:
       context: ./wizardEngine
     container_name: ${PROJECT_NAME}-wizard-engine
     environment:
-      - PORT=${ENGINE_PORT}
+      - HTTP_PORT=${ENGINE_PORT}
+      - WS_PORT=${ENGINE_PORT}
+      - REDIS_HOST=redis
+      - REDIS_PORT=${REDIS_PORT:-6379}
+    command: ["-redis"]
     depends_on:
       - redis
     restart: on-failure

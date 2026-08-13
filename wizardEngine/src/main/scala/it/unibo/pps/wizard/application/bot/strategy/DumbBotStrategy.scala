@@ -6,6 +6,7 @@ import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round._
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameError
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.events.FailureEvent
 import it.unibo.pps.wizard.engine.model.events.InvitationEvent
 
@@ -24,7 +25,7 @@ class DumbBotStrategy(random: Random = Random()) extends BotStrategy:
   private def asyncWrapper(gameAction: GameAction): Future[GameAction] =
     Future.successful(gameAction)
 
-  override def resolveInvitationEvents(invitation: InvitationEvent): Future[GameAction] =
+  override def resolveInvitationEvents(lobbyId: LobbyId, invitation: InvitationEvent): Future[GameAction] =
     asyncWrapper:
       invitation match
         case InvitationEvent.WaitingForBid(playerId, round) =>
@@ -41,7 +42,7 @@ class DumbBotStrategy(random: Random = Random()) extends BotStrategy:
           val colors = Card.Color.values
           GameAction.ResolveTrumpColor(playerId, colors(random.nextInt(colors.length)))
 
-  override def resolveFailedEvents(failure: FailureEvent): Future[GameAction] =
+  override def resolveFailedEvents(lobbyId: LobbyId, failure: FailureEvent): Future[GameAction] =
     asyncWrapper:
       failure match
         case FailureEvent.ActionFailed(playerId, reason) =>

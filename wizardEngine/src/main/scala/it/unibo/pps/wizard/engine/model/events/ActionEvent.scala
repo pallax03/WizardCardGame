@@ -5,7 +5,7 @@ import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 
 /** Represents successful game actions performed by players. */
-sealed trait ActionEvent extends WizardEvent
+sealed trait ActionEvent extends WizardEvent, PlayerScoped
 
 object ActionEvent:
   /** Emitted when the dealer resolves a Wizard trump card into a color. */

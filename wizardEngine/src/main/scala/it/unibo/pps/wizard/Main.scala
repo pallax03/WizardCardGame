@@ -1,46 +1,53 @@
 package it.unibo.pps.wizard
 
-import io.vertx.core.DeploymentOptions
-import io.vertx.core.Vertx
-import io.vertx.core.json.JsonObject
+import io.vertx.core.{AbstractVerticle, Vertx}
 import io.vertx.ext.web.Router
 import it.unibo.pps.wizard.application.web.http.HttpServerVerticle
-import it.unibo.pps.wizard.application.web.http.routes.HealthRoutes
-import it.unibo.pps.wizard.application.web.http.routes.RootRoutes
+import it.unibo.pps.wizard.application.web.http.routes.*
 import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
-import it.unibo.pps.wizard.engine.adapters.RedisLobbyStateAdapter
-import it.unibo.pps.wizard.engine.adapters.RedisPubSubAdapter
 import it.unibo.pps.wizard.engine.adapters.VertxWebSocketsAdapter
-
-import scala.annotation.nowarn
+import it.unibo.pps.wizard.engine.ports.{InboundPort, LobbyStatePort, OutboundPort, PubSubPort}
+import io.vertx.redis.client.{Redis, RedisOptions}
+import it.unibo.pps.wizard.engine.adapters.redis.{RedisInboundAdapter, RedisLobbyStateAdapter, RedisOutboundAdapter, RedisPubSubAdapter}
 
 object Main:
-  val port: Int = sys.env.getOrElse("PORT", "8080").toInt
+  val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
+  val wsPort: Int = sys.env.getOrElse("WS_PORT", "8081").toInt
 
   def main(args: Array[String]): Unit =
     val vertx = Vertx.vertx()
-//    runHTTPServer(vertx)
-    runWSServer(vertx)
 
-  @nowarn
-  private def runHTTPServer(vertx: Vertx): Unit =
-    val routes: Seq[Router => Unit] = Seq(RootRoutes.mount, HealthRoutes.mount)
-    val options = DeploymentOptions().setConfig(JsonObject().put("http.port", port))
+    println("Starting Redis...")
+    val redisHost = sys.env.getOrElse("REDIS_HOST", "localhost")
+    val redisPortStr = sys.env.getOrElse("REDIS_PORT", "6379")
+    val redisOptions = RedisOptions().setConnectionString(s"redis://$redisHost:$redisPortStr")
+    val redisClient = Redis.createClient(vertx, redisOptions)
+    
+    val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
+    val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
+    
+    val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort)
+    val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort)
+    
+    runHTTPServer(vertx, inPort, lobbyStatePort)
+    runWSServer(vertx, lobbyStatePort, pubSubPort)
 
+  private def runHTTPServer(vertx: Vertx, gameEngineInPort: InboundPort, lobbyStatePort: LobbyStatePort): Unit =
+    val routes: Seq[Router => Unit] = Seq(
+      LobbyRoutes(lobbyStatePort, gameEngineInPort).mount,
+      ActionRoutes(lobbyStatePort, gameEngineInPort).mount
+    )
+    val verticle = HttpServerVerticle(routes, httpPort)
+    deploy(vertx, verticle, "HTTP", httpPort)
+
+  private def runWSServer(vertx: Vertx, lobbyStatePort: LobbyStatePort, pubSubPort: PubSubPort): Unit =
+    val wsAdapter = VertxWebSocketsAdapter(pubSubPort)
+    val verticle = WebSocketsVerticle(wsAdapter, lobbyStatePort, wsPort)
+    deploy(vertx, verticle, "WebSocket", wsPort)
+
+  private def deploy(vertx: Vertx,  verticle: AbstractVerticle, name: String, port: Int): Unit =
     vertx
-      .deployVerticle(HttpServerVerticle(routes), options)
+      .deployVerticle(verticle)
       .onComplete: ar =>
-        if (ar.succeeded()) println(s"HTTP server deployed ($ar) on port $port")
-        else
-          println(s"Deploy failed: ${ar.cause().getMessage}")
-          vertx.close()
-
-  private def runWSServer(vertx: Vertx): Unit =
-    val lobbyStatePort = RedisLobbyStateAdapter()
-    val redisPubSub = RedisPubSubAdapter()
-    val wsAdapter = VertxWebSocketsAdapter(redisPubSub)
-    vertx
-      .deployVerticle(WebSocketsVerticle(wsAdapter, lobbyStatePort, port))
-      .onComplete: ar =>
-        if ar.succeeded() then println(s"WebSocket server deployed ($ar) on port $port")
-        else println(s"WebSocket Deploy failed: ${ar.cause().getMessage}")
+        if ar.succeeded() then println(s"$name server deployed on port $port")
+        else println(s"$name Deploy failed: ${ar.cause().getMessage}")

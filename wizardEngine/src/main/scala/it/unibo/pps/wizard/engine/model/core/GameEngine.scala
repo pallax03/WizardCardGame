@@ -82,7 +82,7 @@ object GameEngine:
     val playerHand = currentState.core.hands.getHand(playerId).getOrElse(Hand.empty)
 
     for
-      _ <- currentState.currentPlayerTurn.validateTurnOf(playerId)
+      _ <- currentState.playerTurn.validateTurnOf(playerId)
       _ <- card.validateAgainst(currentState.table, playerHand)
       updatedHands <- currentState.core.hands
         .remove(playerId, card)
@@ -124,7 +124,7 @@ object GameEngine:
     val nextPlayer =
       currentState.core.playersIds
         .nextAfter(currentPlayerId)
-        .getOrElse(currentState.currentPlayerTurn)
+        .getOrElse(currentState.playerTurn)
 
     updatedCore.hands
       .getHand(nextPlayer)
@@ -133,7 +133,7 @@ object GameEngine:
         val nextState = currentState.copy(
           core = updatedCore,
           table = updatedTable,
-          currentPlayerTurn = nextPlayer
+          playerTurn = nextPlayer
         )
         val invitationEvent =
           InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable))
@@ -157,10 +157,10 @@ object GameEngine:
     val totalPlayers = currentState.core.playersIds.size
 
     for
-      _ <- currentState.currentPlayer.validateTurnOf(playerId)
+      _ <- currentState.playerTurn.validateTurnOf(playerId)
       updatedBids <- BiddingRules.processBid(
         bid,
-        currentState.currentBids,
+        currentState.bids,
         playerId,
         currentState.core.round,
         currentState.core.playersIds.size
@@ -192,7 +192,7 @@ object GameEngine:
         core = currentState.core,
         bids = completedBids,
         table = Table.empty,
-        currentPlayerTurn = firstPlayer,
+        playerTurn = firstPlayer,
         tricksWon = Tricks.empty
       )
       events = List(
@@ -209,11 +209,11 @@ object GameEngine:
       bidPlacedEvent: ActionEvent.BidPlaced
   ): Either[GameError, GameEngine] =
     val nextPlayer =
-      currentState.core.playersIds.nextAfter(currentPlayerId).getOrElse(currentState.currentPlayer)
+      currentState.core.playersIds.nextAfter(currentPlayerId).getOrElse(currentState.playerTurn)
 
     val nextState = currentState.copy(
-      currentBids = updatedBids,
-      currentPlayer = nextPlayer
+      bids = updatedBids,
+      playerTurn = nextPlayer
     )
     val events = List(
       bidPlacedEvent,
@@ -256,7 +256,7 @@ object GameEngine:
     val events = List(
       trumpResolvedEvent,
       ProgressEvent.PhaseChanged(GameState.Bidding.toString),
-      InvitationEvent.WaitingForBid(nextState.currentPlayer, nextState.core.round)
+      InvitationEvent.WaitingForBid(nextState.playerTurn, nextState.core.round)
     )
     (nextState, events)
 
@@ -313,7 +313,7 @@ object GameEngine:
         val nextState = state.copy(
           core = updatedCore,
           table = Table.empty,
-          currentPlayerTurn = winnerId,
+          playerTurn = winnerId,
           tricksWon = updatedTricks
         )
         val legalCards = hand.toList.filter(_.validateAgainst(Table.empty, hand).isRight)
@@ -336,14 +336,14 @@ object GameEngine:
     val next = nextRoundOrEnd(updatedCore.copy(scoreboard = updatedScoreboard))
     (
       next.state,
-      ProgressEvent.RoundScored(updatedScoreboard, updatedCore.playersIds) +: next.events
+      ProgressEvent.RoundScored(updatedCore.playersIds, updatedScoreboard) +: next.events
     )
 
   private def nextRoundOrEnd(core: CoreState): GameEngine =
     if core.round.isLastRound(core.playersIds) then
       (
         GameState.Ended(core.playersIds, core.scoreboard),
-        List(LifecycleEvent.GameEnded(core.scoreboard, core.playersIds))
+        List(LifecycleEvent.GameEnded(core.playersIds, core.scoreboard))
       )
     else
       val nextRound = core.round.next
@@ -359,12 +359,11 @@ object GameEngine:
       case _: GameState.ChoosingTrump =>
         List(InvitationEvent.WaitingForTrump(newCore.dealerId))
       case bidding: GameState.Bidding =>
-        List(InvitationEvent.WaitingForBid(bidding.currentPlayer, round))
+        List(InvitationEvent.WaitingForBid(bidding.playerTurn, round))
       case _ => Nil
 
-    val commonProgressEvents = List(
-      ProgressEvent.CardsDealt(newCore.dealerId, newCore.hands, newCore.trump, newCore.round),
-      ProgressEvent.PhaseChanged(gameState.getClass.getSimpleName)
+    val cardsDeals: List[ProgressEvent.CardsDealt] = newCore.playersIds.foldLeft(List())(
+      (events, pId) => events :+ ProgressEvent.CardsDealt(pId, newCore.hands.getHand(pId).get, newCore.trump, newCore.round)
     )
 
-    (gameState, commonProgressEvents ++ phaseSpecificEvents)
+    (gameState, (cardsDeals :+ ProgressEvent.PhaseChanged(gameState.getClass.getSimpleName)) ++ phaseSpecificEvents)
