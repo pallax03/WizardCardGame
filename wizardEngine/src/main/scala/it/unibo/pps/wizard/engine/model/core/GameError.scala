@@ -29,6 +29,9 @@ enum InconsistentStateReasons:
   /** Occurs when the system expects a hand for a player that does not exist in the state. */
   case HandNotFoundFor(playerId: PlayerId)
 
+  /** Occurs when the serialized state (e.g., from Redis) cannot be decoded properly. */
+  case CorruptedState(message: String)
+
 /** Represents all possible errors that can occur during the execution of a [[GameAction]]. */
 enum GameError:
 
@@ -49,3 +52,6 @@ enum GameError:
    * This suggests a logic error in the engine's transition handling.
    */
   case InconsistentState(reason: InconsistentStateReasons)
+
+/** Exception wrapper for GameError, useful to fail Futures with specific domain errors */
+case class GameException(error: GameError) extends Exception(error.toString)

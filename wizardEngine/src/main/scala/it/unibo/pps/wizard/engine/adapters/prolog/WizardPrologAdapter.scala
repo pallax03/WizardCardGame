@@ -1,6 +1,5 @@
 package it.unibo.pps.wizard.engine.adapters.prolog
 
-
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
@@ -10,7 +9,9 @@ import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.basic.cards.Hand
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
-import it.unibo.pps.wizard.engine.model.core.GameState
+import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.PlayerCoreState
+import it.unibo.pps.wizard.engine.model.core.state.PlayerGameState
 import it.unibo.pps.wizard.engine.model.rules.BiddingRules._
 import it.unibo.pps.wizard.engine.model.rules.TableRules._
 import it.unibo.pps.wizard.engine.ports.AIPort
@@ -36,10 +37,11 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
   private val engine = WizardPrologEngine()
 
   private def onRunningPhase[T](lobbyId: LobbyId, actionName: String)(playerId: PlayerId)(
-      phaseLogic: PartialFunction[GameState, Future[T]]
+      phaseLogic: PartialFunction[PlayerGameState, Future[T]]
   ): Future[T] =
-    inboundPort.getState(lobbyId, playerId).flatMap:
-      state =>
+    inboundPort
+      .getState(lobbyId, playerId)
+      .flatMap: state =>
         phaseLogic.applyOrElse(
           state,
           _ => Future.failed(IllegalStateException(s"Cannot $actionName: invalid game phase"))
@@ -58,8 +60,8 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
    */
   override def resolvedTrumpColor(lobbyId: LobbyId, playerId: PlayerId): Future[Card.Color] =
     onRunningPhase(lobbyId, "choose trump color")(playerId):
-      case GameState.ChoosingTrump(core) =>
-        withHand(core.hands.getHand(playerId)): hand =>
+      case state: GameState.ChoosingTrump[PlayerCoreState] @unchecked =>
+        withHand(Some(state.core.hand)): hand =>
           engine.chooseTrumpColor(hand).getOrElse(Card.Color.values.head)
 
   /**
@@ -71,11 +73,11 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
    */
   override def placeBid(lobbyId: LobbyId, playerId: PlayerId): Future[Bid] =
     onRunningPhase(lobbyId, "place bid")(playerId):
-      case GameState.Bidding(core, currentBids, _) =>
-        withHand(core.hands.getHand(playerId)): hand =>
+      case state: GameState.Bidding[PlayerCoreState] @unchecked =>
+        withHand(Some(state.core.hand)): hand =>
           engine
-            .placeBid(hand, core.trump)
-            .getOrElse(firstValidBid(core.round, currentBids, core.playersIds.size))
+            .placeBid(hand, state.core.trump)
+            .getOrElse(firstValidBid(state.core.round, state.bids, state.core.playersIds.size))
 
   /**
    * @inheritdoc
@@ -85,13 +87,13 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
    */
   override def adjustBid(lobbyId: LobbyId, playerId: PlayerId): Future[Bid] =
     onRunningPhase(lobbyId, "adjust bid")(playerId):
-      case GameState.Bidding(core, currentBids, _) =>
-        withHand(core.hands.getHand(playerId)): hand =>
-          val rejectedBid = core.round - currentBids.total
+      case state: GameState.Bidding[PlayerCoreState] @unchecked =>
+        withHand(Some(state.core.hand)): hand =>
+          val rejectedBid = state.core.round - state.bids.total
           engine
             .adjustBid(hand, rejectedBid)
-            .filter(_.validateBid(core.round, currentBids, core.playersIds.size).isRight)
-            .getOrElse(firstValidBid(core.round, currentBids, core.playersIds.size))
+            .filter(_.validateBid(state.core.round, state.bids, state.core.playersIds.size).isRight)
+            .getOrElse(firstValidBid(state.core.round, state.bids, state.core.playersIds.size))
 
   /**
    * @inheritdoc
@@ -102,17 +104,17 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
    */
   override def bestCard(lobbyId: LobbyId, playerId: PlayerId): Future[Card] =
     onRunningPhase(lobbyId, "play best card")(playerId):
-      case GameState.Playing(core, bids, table, _, tricks) =>
-        withHand(core.hands.getHand(playerId)): hand =>
-          val legalCards = hand.legalCards(table)
+      case state: GameState.Playing[PlayerCoreState] @unchecked =>
+        withHand(Some(state.core.hand)): hand =>
+          val legalCards = hand.legalCards(state.table)
           engine
             .bestPlayableCard(
               hand = hand,
-              winningCard = table.evaluateTrick(core.trump),
-              followingColor = table.followingColor,
-              trump = core.trump,
-              playerBid = bids(playerId),
-              playerTrick = tricks(playerId)
+              winningCard = state.table.evaluateTrick(state.core.trump),
+              followingColor = state.table.followingColor,
+              trump = state.core.trump,
+              playerBid = state.bids(playerId),
+              playerTrick = state.tricksWon(playerId)
             )
             .filter(legalCards.contains)
             .getOrElse(legalCards.head)

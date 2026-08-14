@@ -1,9 +1,9 @@
 package it.unibo.pps.wizard.engine.model.rules
 
 import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.core.CoreState
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.model.core.GameState
+import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.ServerCoreState
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -88,9 +88,9 @@ class TestRoundManager extends AnyWordSpec with Matchers:
 
         round
           .initialize(customDeck_TrumpResolved)
-          .runA(CoreState.initialize(playersIds, round))
+          .runA(ServerCoreState.initialize(playersIds, round))
           .value match
-          case biddingState: GameState.Bidding =>
+          case biddingState: GameState.Bidding[?] =>
             biddingState.core.hands.getHand(p1).value.toList should have length 1
             biddingState.playerTurn shouldBe p1
             biddingState.core.trump shouldBe TrumpResolved
@@ -104,9 +104,9 @@ class TestRoundManager extends AnyWordSpec with Matchers:
 
         round
           .initialize(customDeck_TrumpUnresolved)
-          .runA(CoreState.initialize(playersIds, round))
+          .runA(ServerCoreState.initialize(playersIds, round))
           .value match
-          case choosingState: GameState.ChoosingTrump =>
+          case choosingState: GameState.ChoosingTrump[?] =>
             choosingState.core.hands.getHand(p1).value.toList should have length 1
             choosingState.core.trump shouldBe TrumpUnResolved
           case _ => ()

@@ -1,8 +1,8 @@
 package it.unibo.pps.wizard.application.bot.strategy
 
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.events.FailureEvent
 import it.unibo.pps.wizard.engine.model.events.InvitationEvent
 import it.unibo.pps.wizard.engine.ports.AIPort
@@ -19,7 +19,10 @@ import scala.concurrent.Future
  */
 class PrologBotStrategy(port: AIPort) extends BotStrategy:
 
-  override def resolveInvitationEvents(lobbyId: LobbyId, invitation: InvitationEvent): Future[GameAction] =
+  override def resolveInvitationEvents(
+      lobbyId: LobbyId,
+      invitation: InvitationEvent
+  ): Future[GameAction] =
     invitation match
       case InvitationEvent.WaitingForCard(playerId, _) =>
         port.bestCard(lobbyId, playerId).map(card => GameAction.PlayCard(playerId, card))
@@ -32,14 +35,15 @@ class PrologBotStrategy(port: AIPort) extends BotStrategy:
           .resolvedTrumpColor(lobbyId, playerId)
           .map(color => GameAction.ResolveTrumpColor(playerId, color))
 
-  override def resolveFailedEvents(lobbyId: LobbyId, failure: FailureEvent): Future[GameAction] = failure match
-    case FailureEvent.ActionFailed(playerId, reason) =>
-      reason match
-        case GameError.InvalidBid =>
-          port.adjustBid(lobbyId, playerId).map(bid => GameAction.PlaceBid(playerId, bid))
+  override def resolveFailedEvents(lobbyId: LobbyId, failure: FailureEvent): Future[GameAction] =
+    failure match
+      case FailureEvent.ActionFailed(playerId, reason) =>
+        reason match
+          case GameError.InvalidBid =>
+            port.adjustBid(lobbyId, playerId).map(bid => GameAction.PlaceBid(playerId, bid))
 
-        case GameError.CardNotAllowed(notAllowedReason) =>
-          Future.successful(GameAction.PlayCard(playerId, notAllowedReason.legitCards.head))
+          case GameError.CardNotAllowed(notAllowedReason) =>
+            Future.successful(GameAction.PlayCard(playerId, notAllowedReason.legitCards.head))
 
-        case _ =>
-          Future.failed(IllegalStateException(s"AI cannot recover from $reason"))
+          case _ =>
+            Future.failed(IllegalStateException(s"AI cannot recover from $reason"))

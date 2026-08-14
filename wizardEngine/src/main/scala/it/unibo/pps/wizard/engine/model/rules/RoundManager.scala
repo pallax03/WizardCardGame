@@ -6,9 +6,9 @@ import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
 import it.unibo.pps.wizard.engine.model.basic.cards._
 import it.unibo.pps.wizard.engine.model.basic.gameplay._
-import it.unibo.pps.wizard.engine.model.core.CoreState
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.model.core.GameState
+import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.ServerCoreState
 
 /** Manages game round lifecycle operations, player turns, card dealing, and state initialization. */
 object RoundManager:
@@ -64,25 +64,25 @@ object RoundManager:
      * @param deck the current [[Deck]] to draw from.
      * @return a state transition resulting in the initial [[GameState]] for the round.
      */
-    def initialize(deck: Deck): State[CoreState, GameState] =
+    def initialize(deck: Deck): State[ServerCoreState, GameState[ServerCoreState]] =
       for
-        core <- State.get[CoreState]
-
-        (hands, trump) = round.deal(core.playersIds).runA(deck).value
+        core <- State.get[ServerCoreState]
+        (dealtHands, roundTrump) = round.deal(core.playersIds).runA(deck).value
 
         newCore = core.copy(
-          hands = hands,
-          trump = trump
+          hands = dealtHands,
+          trump = roundTrump,
+          dealerId = core.round.firstPlayer(core.playersIds)
         )
 
         _ <- State.set(newCore)
-      yield trump match
+      yield roundTrump match
         case _: Trump.WizardUnresolved => GameState.ChoosingTrump(newCore)
         case _ =>
           GameState.Bidding(
             core = newCore,
             bids = Bids.empty,
-            playerTurn = round.firstPlayer(core.playersIds)
+            playerTurn = newCore.round.firstPlayer(newCore.playersIds)
           )
 
   extension (expectedPlayer: PlayerId)
