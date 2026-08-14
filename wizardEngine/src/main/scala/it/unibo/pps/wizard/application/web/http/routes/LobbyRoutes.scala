@@ -1,12 +1,14 @@
 package it.unibo.pps.wizard.application.web.http.routes
 
 import io.circe.Json, io.circe.syntax._
+import io.circe.generic.auto.*
 import io.vertx.ext.web.{Router, RoutingContext}
 
 import it.unibo.pps.wizard.engine.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.lobby.*
 import it.unibo.pps.wizard.engine.ports.{InboundPort, LobbyStatePort}
 import it.unibo.pps.wizard.application.web.*
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 
 import it.unibo.pps.wizard.util.FutureSyntax.onVertxComplete
 import it.unibo.pps.wizard.codecs.engine.lobby.LobbyCodecs.given
@@ -25,13 +27,11 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort):
     router.get("/api/lobby/").handler(handleMissingLobby) // todo: it's really needed? just do a refactor and put in a general Router...
   
   private def handleLobby(ctx: RoutingContext): Unit =
-    // missing JSON OF Player username and BotsDifficulty
-    // val name = ctx.body().asString()
-    val name = "name"
-    val bot = Option.empty[BotsDifficulty]
-
+    case class AddPlayerPayload(name: String, bot: Option[BotsDifficulty])
+    val body = ctx.body().asString().decodeAs[AddPlayerPayload]
+    val name: String = body.fold(_ => "Player", _.name)
+    val bot: Option[BotsDifficulty] = body.fold(_ => None, _.bot)
     val lobbyId = ctx.request().extractLobbyId.getOrElse(LobbyId.generate)
-    print(lobbyId)
     lobbyStatePort.addPlayer(lobbyId, name, bot).onVertxComplete(ctx):
       case Success(Some(player)) =>
         respondJson(ctx, 201, Json.obj("lobbyId" -> lobbyId.asJson, "playerId" -> player.id.asJson))
@@ -79,10 +79,6 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort):
     Json.obj("error" -> s"Lobby $uuid not found".asJson)
 
   def respondJson(ctx: RoutingContext, status: Int, message: Json): Unit =
-//    val body = status match
-//      case 200 | 201 => ???
-//      case _         => ???
-
     ctx
       .response()
       .setStatusCode(status)
