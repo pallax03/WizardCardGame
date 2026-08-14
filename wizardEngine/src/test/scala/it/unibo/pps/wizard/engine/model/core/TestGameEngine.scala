@@ -1,7 +1,8 @@
 package it.unibo.pps.wizard.engine.model.core
 
-import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.core.GameError._
+import it.unibo.pps.wizard.engine.model.basic.*
+import it.unibo.pps.wizard.engine.model.core.GameError.*
+import it.unibo.pps.wizard.engine.model.core.state.{ServerCoreState, GameState}
 import it.unibo.pps.wizard.engine.model.events.ActionEvent
 import it.unibo.pps.wizard.engine.model.events.LifecycleEvent
 import it.unibo.pps.wizard.engine.model.events.ProgressEvent
@@ -25,16 +26,16 @@ class TestGameEngine extends AnyWordSpec with Matchers:
 
   val mockPlayersIds: List[PlayerId] = List(p1, p2, p3, p4)
 
-  def createMockCore(round: Round): CoreState =
-    CoreState.initialize(mockPlayersIds, round)
+  def createMockCore(round: Round): ServerCoreState =
+    ServerCoreState.initialize(mockPlayersIds, round)
 
   "A GameEngine" should:
     "initialize a new game correctly via initializeGame" in:
-      val engine = GameEngine.initializeGame(mockPlayersIds)
+      val engine = GameEngine.initializeGame(mockPlayersIds).toOption.get
 
       engine.state match
-        case _: GameState.Bidding       =>
-        case _: GameState.ChoosingTrump =>
+        case _: GameState.Bidding[?]       =>
+        case _: GameState.ChoosingTrump[?] =>
         case _ => fail("Expected GameState.Bidding or GameState.ChoosingTrump")
 
       engine.events.exists(_.isInstanceOf[ProgressEvent.CardsDealt]) shouldBe true
@@ -67,9 +68,9 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       result.isRight shouldBe true
       result.foreach: engine =>
         engine.state match
-          case bidding: GameState.Bidding =>
+          case bidding: GameState.Bidding[?] =>
             bidding.core.round shouldBe 2
-          case choosing: GameState.ChoosingTrump =>
+          case choosing: GameState.ChoosingTrump[?] =>
             choosing.core.round shouldBe 2
           case _ => fail("Expected transition to Round 2 (Bidding or ChoosingTrump)")
 
@@ -120,7 +121,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       result.isRight shouldBe true
       result.foreach: engine =>
         engine.state match
-          case nextState: GameState.Bidding =>
+          case nextState: GameState.Bidding[?] =>
             nextState.core.trump.effectiveColor shouldBe Some(Color.Red)
           case _ => fail("Expected GameState.Bidding")
         engine.events should contain(ActionEvent.TrumpColorResolved(p1, Color.Red))
@@ -135,9 +136,9 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       result.isRight shouldBe true
       result.foreach: engine =>
         engine.state match
-          case nextState: GameState.Bidding =>
-            nextState.bids(p1) shouldBe 1
+          case nextState: GameState.Bidding[?] =>
             nextState.playerTurn shouldBe p2
+            nextState.bids(p1) shouldBe 1
           case _ => fail("Expected GameState.Bidding")
 
         engine.events should contain(ActionEvent.BidPlaced(p1, 1))
@@ -166,7 +167,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       result.isRight shouldBe true
       result.foreach: engine =>
         engine.state match
-          case playingState: GameState.Playing =>
+          case playingState: GameState.Playing[?] =>
             playingState.table.playedCards.isEmpty shouldBe true
             playingState.playerTurn shouldBe p1
           case _ => fail("Expected GameState.Playing")
@@ -195,7 +196,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       result.isRight shouldBe true
       result.foreach: engine =>
         engine.state match
-          case nextState: GameState.Playing =>
+          case nextState: GameState.Playing[?] =>
             nextState.table.playedCards should contain(c1)
             nextState.playerTurn shouldBe p2
           case _ => fail("Expected GameState.Playing")
@@ -231,7 +232,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       result.isRight shouldBe true
       result.foreach: engine =>
         engine.state match
-          case nextState: GameState.Playing =>
+          case nextState: GameState.Playing[?] =>
             nextState.table.playedCards.isEmpty shouldBe true
             nextState.tricksWon(p2) shouldBe 1
             nextState.playerTurn shouldBe p2

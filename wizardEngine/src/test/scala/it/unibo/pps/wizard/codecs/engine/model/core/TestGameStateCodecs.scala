@@ -3,6 +3,7 @@ package it.unibo.pps.wizard.codecs.engine.model.core
 import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
 import it.unibo.pps.wizard.engine.model.*
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump.WizardUnresolved
+import it.unibo.pps.wizard.engine.model.core.state.{ServerCoreState, GameState}
 import org.scalatest.EitherValues.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -10,7 +11,6 @@ import org.scalatest.wordspec.AnyWordSpec
 class TestGameStateCodecs extends AnyWordSpec with Matchers:
 
   import GameStateCodecs.given
-  import core.{CoreState, GameState}
   import basic._
   import basic.gameplay._
   import basic.bidding._
@@ -19,7 +19,7 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
   "GameStateCodecs" should:
     val p1 = PlayerId(1)
     val p2 = PlayerId(2)
-    val core = CoreState.initialize(
+    val core = ServerCoreState.initialize(
       List(p1, p2),
       Round.start
     )
@@ -27,7 +27,7 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
       val state = GameState.ChoosingTrump(core.updateTrump(WizardUnresolved(wizard)))
       val jsonString = state.toJson
       jsonString should fullyMatch regex """\{"core":\{"playersIds":\[1,2\],"hands":\{\},"trump":\{"type":"WizardUnresolved","card":\{"type":"Wizard","id":[0-3]\}\},"round":1,"dealerId":1,"scoreboard":\{\}\}\}"""
-      jsonString.decodeAs[GameState.ChoosingTrump].value shouldBe state
+      jsonString.decodeAs[GameState.ChoosingTrump[ServerCoreState]].value shouldBe state
     "encode and decode GameState.Bidding correctly" in :
       val state = GameState.Bidding(
         core,
@@ -36,7 +36,7 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
       )
       val jsonString = state.toJson
       jsonString shouldBe """{"core":{"playersIds":[1,2],"hands":{},"trump":{"type":"Absent"},"round":1,"dealerId":1,"scoreboard":{}},"bids":{"1":1,"2":1},"playerTurn":1}"""
-      jsonString.decodeAs[GameState.Bidding].value shouldBe state
+      jsonString.decodeAs[GameState.Bidding[ServerCoreState]].value shouldBe state
     "encode and decode GameState.Playing correctly" in :
       val state = GameState.Playing(
         core,
@@ -47,7 +47,7 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
       )
       val jsonString = state.toJson
       jsonString shouldBe """{"core":{"playersIds":[1,2],"hands":{},"trump":{"type":"Absent"},"round":1,"dealerId":1,"scoreboard":{}},"bids":{"1":1,"2":1},"table":{"playedCards":[{"playerId":1,"card":{"type":"Standard","color":"Blue","rank":10}}],"followingColor":"Blue"},"playerTurn":2,"tricksWon":{"1":1}}"""
-      jsonString.decodeAs[GameState.Playing].value shouldBe state
+      jsonString.decodeAs[GameState.Playing[ServerCoreState]].value shouldBe state
     "encode and decode GameState.Ended correctly" in :
       val state = GameState.Ended(
         playersIds = core.playersIds,

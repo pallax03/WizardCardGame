@@ -8,7 +8,7 @@ import it.unibo.pps.wizard.codecs.engine.model.WizardEventsCodecs.given
 import it.unibo.pps.wizard.engine.lobby.{Lobby, LobbyId}
 import it.unibo.pps.wizard.engine.lobby.LobbyStatus.IN_GAME
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.core.GameState
+import it.unibo.pps.wizard.engine.model.core.state.{GameState, PlayerCoreState}
 import it.unibo.pps.wizard.engine.model.events.{FailureEvent, InvitationEvent, WizardEvent}
 import it.unibo.pps.wizard.util.ChannelsKeys
 import org.slf4j.LoggerFactory
@@ -63,11 +63,11 @@ class BotManagerVerticle(pubSubPort: PubSubPort, prologPort: AIPort, lobbyStateP
     gameInboundPort.getState(lobbyId, botId).onComplete:
       case Success(state) =>
         val invitationOpt = state match
-          case GameState.Bidding(core, _, turn) if turn == botId =>
+          case GameState.Bidding(core: PlayerCoreState, _, turn) if turn == botId =>
             Some(InvitationEvent.WaitingForBid(botId, core.round))
-          case GameState.Playing(core, _, _, turn, _) if turn == botId =>
-            Some(InvitationEvent.WaitingForCard(botId, core.hands.getHand(botId).get.toList))
-          case GameState.ChoosingTrump(core) if core.dealerId == botId =>
+          case GameState.Playing(core: PlayerCoreState, _, _, turn, _) if turn == botId =>
+            Some(InvitationEvent.WaitingForCard(botId, core.hand.toList))
+          case GameState.ChoosingTrump(core: PlayerCoreState) if core.dealerId == botId =>
             Some(InvitationEvent.WaitingForTrump(botId))
           case _ => None
 
