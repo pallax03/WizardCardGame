@@ -72,7 +72,9 @@ class BotManagerVerticle(pubSubPort: PubSubPort, prologPort: AIPort, lobbyStateP
         strategy.resolveFailedEvents(lobbyId, failure).onComplete:
           case Success(action) => 
             logger.warn(s"Bot $playerId submitting fallback action: $action")
-            gameInboundPort.submitAction(lobbyId, action)
+            gameInboundPort.submitAction(lobbyId, action).onComplete:
+              case Success(_) => logger.warn(s"Bot $playerId fallback action processed successfully")
+              case Failure(e) => logger.error(s"Bot $playerId fallback action failed in inbound adapter", e)
           case Failure(e) => logger.error(s"Bot $playerId fallback failed", e)
       case Right(_) => // Ignore Other Events
       case Left(error) => logger.error("", error)
@@ -81,6 +83,8 @@ class BotManagerVerticle(pubSubPort: PubSubPort, prologPort: AIPort, lobbyStateP
     strategy.resolveInvitationEvents(lobbyId, invitation).onComplete:
       case Success(action) => 
         logger.warn(s"Bot $playerId submitting action: $action")
-        gameInboundPort.submitAction(lobbyId, action)
+        gameInboundPort.submitAction(lobbyId, action).onComplete:
+          case Success(_) => logger.warn(s"Bot $playerId action processed successfully")
+          case Failure(e) => logger.error(s"Bot $playerId action failed in inbound adapter", e)
       case Failure(e) => 
         logger.error(s"Bot $playerId strategy failed", e)

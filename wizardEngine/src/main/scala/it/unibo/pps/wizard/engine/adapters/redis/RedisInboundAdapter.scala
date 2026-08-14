@@ -41,35 +41,18 @@ class RedisInboundAdapter(
 
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Unit] =
     val key = ChannelsKeys.game(lobbyId)
-    
-    redisClient.connect().asScala.flatMap: conn =>
-      def attempt(): Future[Unit] =
-        conn.send(Request.cmd(Command.WATCH).arg(key)).asScala.flatMap: _ =>
-          conn.send(Request.cmd(Command.GET).arg(key)).asScala.flatMap: 
-            case null => 
-              conn.send(Request.cmd(Command.UNWATCH)).asScala.map(_ => ())
-            case response =>
-              val oldState = response.toString.decodeAs[GameState].toOption.get
-              GameEngine.processAction(oldState, action) match
-                case Left(error) =>
-                  conn.send(Request.cmd(Command.UNWATCH)).asScala.map: _ =>
-                    outboundPort.publish(lobbyId, FailureEvent.ActionFailed(action.playerId, error))
-                case Right(newState) =>
-                  conn.send(Request.cmd(Command.MULTI)).asScala.flatMap: _ =>
-                    conn.send(Request.cmd(Command.SET).arg(key).arg(newState.state.toJson)).asScala.flatMap: _ =>
-                      conn.send(Request.cmd(Command.EXEC)).asScala.flatMap:
-                        case null => attempt()
-                        case _ => 
-                          newState.state match
-                            case _: GameState.Ended =>
-                              redisClient.send(Request.cmd(Command.DEL).arg(key))
-                              outboundPort.publish(lobbyId, newState.events*)
-                              Future.successful(())
-                            case _ =>
-                              outboundPort.publish(lobbyId, newState.events*)
-                              Future.successful(())
-      
-      attempt().transform(
-        res => { conn.close(); res },
-        err => { conn.close(); err }
-      )
+    redisClient.send(Request.cmd(Command.GET).arg(key)).asScala.flatMap:
+      case null => Future.successful(())
+      case response =>
+        val oldState = response.toString.decodeAs[GameState].toOption.get
+        GameEngine.processAction(oldState, action) match
+          case Left(error) =>
+            outboundPort.publish(lobbyId, FailureEvent.ActionFailed(action.playerId, error))
+            Future.successful(())
+          case Right(newState) =>
+            val saveReq = newState.state match
+              case _: GameState.Ended => Request.cmd(Command.DEL).arg(key)
+              case _ => Request.cmd(Command.SET).arg(key).arg(newState.state.toJson)
+            
+            redisClient.send(saveReq).asScala.map: _ =>
+              outboundPort.publish(lobbyId, newState.events*)
