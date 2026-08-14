@@ -3,7 +3,8 @@ package it.unibo.pps.wizard.engine.ports
 import it.unibo.pps.wizard.engine.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
-import it.unibo.pps.wizard.engine.model.core.{GameAction, GameState}
+import it.unibo.pps.wizard.engine.model.core.GameAction
+import it.unibo.pps.wizard.engine.model.core.state.PlayerGameState
 
 import scala.concurrent.Future
 
@@ -18,7 +19,7 @@ trait InboundPort:
    *
    * @return a Future containing the current GameState for the given player
    */
-  def getState(lobbyId: LobbyId, playerId: PlayerId): Future[GameState]
+  def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState]
 
   /**
    * Starts a new game with the specified players and configuration.

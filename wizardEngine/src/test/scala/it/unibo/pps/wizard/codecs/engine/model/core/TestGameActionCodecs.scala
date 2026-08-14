@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.codecs.engine.model.core
 
-import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax._
 import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import org.scalatest.EitherValues._

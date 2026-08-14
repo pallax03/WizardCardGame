@@ -11,7 +11,7 @@ import scala.concurrent.Future
  * Defines the interface for an AI component capable of making decisions within the Wizard game.
  *
  * Implementations of this port are responsible for querying game logic
- * to provide valid actions based on the current [[it.unibo.pps.wizard.engine.model.core.GameState]].
+ * to provide valid actions based on the current [[GameState]].
  *
  * Each method is asynchronous, returning a [[Future]] to ensure the game engine
  * remains responsive while the AI computes its strategy.

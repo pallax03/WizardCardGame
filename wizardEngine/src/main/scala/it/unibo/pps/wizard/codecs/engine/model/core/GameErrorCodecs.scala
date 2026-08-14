@@ -32,11 +32,15 @@ object GameErrorCodecs:
       Json.obj().withTag("type", "TableNoWinner")
     case InconsistentStateReasons.HandNotFoundFor(playerId) =>
       Json.obj("playerId" -> playerId.asJson).withTag("type", "HandNotFoundFor")
+    case InconsistentStateReasons.CorruptedState(message) =>
+      Json.obj("message" -> message.asJson).withTag("type", "CorruptedState")
 
   given Decoder[InconsistentStateReasons] = decodeByTag("type"):
     case "TableNoWinner" => Decoder.const(InconsistentStateReasons.TableNoWinner)
     case "HandNotFoundFor" =>
       Decoder.forProduct1("playerId")(InconsistentStateReasons.HandNotFoundFor.apply)
+    case "CorruptedState" =>
+      Decoder.forProduct1("message")(InconsistentStateReasons.CorruptedState.apply)
 
   given Encoder[GameError] = Encoder.instance: t =>
     val reason = t match

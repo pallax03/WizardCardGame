@@ -62,4 +62,4 @@ jobs:
 
       - name: SBT Compile, Test & Coverage
         working-directory: ./wizardEngine
-        run: sbt "; clean; coverage; test; coverageReport"
+        run: sbt "; coverage; test; coverageReport"

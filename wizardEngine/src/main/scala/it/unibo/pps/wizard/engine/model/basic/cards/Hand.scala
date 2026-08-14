@@ -32,14 +32,11 @@ object Hands:
   def apply(hands: Map[PlayerId, Hand]): Hands = hands
 
   extension (hands: Hands)
-    def getHand(player: PlayerId): Option[Hand] = hands.get(player)
+    def getHand(player: PlayerId): Option[Hand] =
+      hands.get(player)
 
-    /**
-     * Removes a specific card from a player's hand.
-     *
-     * @return Some(Hands) if the player exists, None otherwise.
-     */
     def remove(player: PlayerId, card: Card): Option[Hands] =
-      hands.get(player).map(hand => hands.updated(player, Hand.without(hand, card)))
+      hands.getHand(player).map(hand => hands.updated(player, Hand.without(hand, card)))
+
     def areEmpty: Boolean = hands.values.forall(_.isEmpty)
     private[wizard] def toMap: Map[PlayerId, Hand] = hands

@@ -2,7 +2,6 @@ package it.unibo.pps.wizard.engine.ports
 
 import scala.concurrent.Future
 
-
 trait PubSubPort:
 
   /**

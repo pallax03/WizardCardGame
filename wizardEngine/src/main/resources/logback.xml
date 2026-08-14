@@ -10,6 +10,8 @@
 
     <logger name="io.vertx.ext.web.handler.LoggerHandler" level="INFO" />
 
+    <logger name="it.unibo.pps.wizard" level="DEBUG" />
+
     <root level="WARN">
         <appender-ref ref="STDOUT" />
     </root>

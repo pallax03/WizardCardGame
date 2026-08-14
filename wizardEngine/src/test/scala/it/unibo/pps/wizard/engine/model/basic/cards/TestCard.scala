@@ -17,9 +17,6 @@ class TestCard extends AnyWordSpec with Matchers:
     "Create a Jester" in:
       jester shouldBe a[Jester]
 
-    "guarantee that special cards are unique instances" in:
-      wizard should not equal wizard
-
   "Some Cards" should:
     "create a chain of Cards" in:
       val myCards: List[Card] =

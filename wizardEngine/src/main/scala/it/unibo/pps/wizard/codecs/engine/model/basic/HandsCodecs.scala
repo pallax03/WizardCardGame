@@ -5,7 +5,7 @@ import it.unibo.pps.wizard.engine.model.basic._
 
 object HandsCodecs:
   import CardCodecs.given
-  import PlayerIdCodecs.given 
+  import PlayerIdCodecs.given
   import cards.{Hands, Hand, Card}
 
   given Codec[Hand] = Codec.from(
