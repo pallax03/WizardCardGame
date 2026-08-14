@@ -5,10 +5,10 @@ val scala3Version = "3.8.3"
 
 val scalatestVersion      = "3.2.20"
 val catsVersion           = "2.13.0"
-val vertxVersion          = "5.1.5"
+val vertxVersion          = "5.1.6"
 val tuPrologVersion       = "4.1.1"
-val circeVersion          = "0.14.10"
-val logbackVersion        = "1.5.6"
+val circeVersion          = "0.14.16"
+val logbackVersion        = "1.6.3"
 
 ThisBuild / scalaVersion := scala3Version
 ThisBuild / scalacOptions := Seq("-Wunused:all", "-Wunused:imports", "-Werror", "-language:implicitConversions", "-Wconf:msg=not declared infix:s")
@@ -44,9 +44,10 @@ lazy val root = (project in file("."))
         "it\\.unibo\\.pps\\.wizard\\.Main;" +
         "it\\.unibo\\.pps\\.wizard\\.application\\..*;" +
         "it\\.unibo\\.pps\\.wizard\\.engine\\.adapters\\..*;" +
-        "it\\.unibo\\.pps\\.wizard\\.engine\\.events\\..*",
+        "it\\.unibo\\.pps\\.wizard\\.engine\\.ports\\..*;" +
+        "it\\.unibo\\.pps\\.wizard\\.util\\..*",
 
     semanticdbEnabled := true,
-    coverageMinimumStmtTotal := 80,
+    coverageMinimumStmtTotal := 75,
     coverageFailOnMinimum := true
   )

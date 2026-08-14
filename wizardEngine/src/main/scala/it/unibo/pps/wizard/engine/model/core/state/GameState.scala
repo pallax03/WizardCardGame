@@ -8,8 +8,7 @@ import it.unibo.pps.wizard.engine.model.core.GameError
 /**
  * Represents the various phases and states of the Wizard card game.
  */
-sealed trait GameState[+C]:
-  def core: C
+sealed trait GameState[+C]
 
 object GameState:
 
@@ -27,8 +26,7 @@ object GameState:
       tricksWon: Tricks
   ) extends GameState[C]
 
-  case class Ended(playersIds: List[PlayerId], scoreboard: Scoreboard) extends GameState[Nothing]:
-    def core: Nothing = throw new NoSuchElementException("Ended state does not contain a core state")
+  case class Ended(playersIds: List[PlayerId], scoreboard: Scoreboard) extends GameState[Nothing]
 
 type ServerGameState = GameState[ServerCoreState]
 type PlayerGameState = GameState[PlayerCoreState]
