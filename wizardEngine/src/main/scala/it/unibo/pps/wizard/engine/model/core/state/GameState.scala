@@ -1,13 +1,12 @@
 package it.unibo.pps.wizard.engine.model.core.state
 
-import it.unibo.pps.wizard.engine.model.basic.*
-import it.unibo.pps.wizard.engine.model.basic.bidding.{Bids, Tricks}
+import it.unibo.pps.wizard.engine.model.basic._
+import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
+import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 import it.unibo.pps.wizard.engine.model.core.GameError
 
-/**
- * Represents the various phases and states of the Wizard card game.
- */
+/** Represents the various phases and states of the Wizard card game. */
 sealed trait GameState[+C]
 
 object GameState:
@@ -32,7 +31,10 @@ type ServerGameState = GameState[ServerCoreState]
 type PlayerGameState = GameState[PlayerCoreState]
 
 object PlayerGameState:
-  def from(serverGameState: ServerGameState, playerId: PlayerId): Either[GameError, PlayerGameState] =
+  def from(
+      serverGameState: ServerGameState,
+      playerId: PlayerId
+  ): Either[GameError, PlayerGameState] =
     serverGameState match
       case GameState.ChoosingTrump(core) =>
         PlayerCoreState.from(core, playerId).map(GameState.ChoosingTrump(_))

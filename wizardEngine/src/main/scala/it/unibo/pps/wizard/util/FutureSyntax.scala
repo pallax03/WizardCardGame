@@ -3,13 +3,16 @@ package it.unibo.pps.wizard.util
 import io.vertx.ext.web.RoutingContext
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, Promise}
+import scala.concurrent.Future
+import scala.concurrent.Promise
 
 object FutureSyntax:
   extension [T](vFuture: io.vertx.core.Future[T])
     def asScala: Future[T] =
       val p = Promise[T]()
-      vFuture.onComplete(ar => if ar.succeeded() then p.success(ar.result()) else p.failure(ar.cause()))
+      vFuture.onComplete(ar =>
+        if ar.succeeded() then p.success(ar.result()) else p.failure(ar.cause())
+      )
       p.future
 
   extension [T](future: scala.concurrent.Future[T])

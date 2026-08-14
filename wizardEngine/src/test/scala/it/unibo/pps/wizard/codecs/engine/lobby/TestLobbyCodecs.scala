@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.codecs.engine.lobby
 
-import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax._
 import it.unibo.pps.wizard.engine.lobby._
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import org.scalatest.EitherValues._
@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestLobbyCodecs extends AnyWordSpec with Matchers:
-  
+
   import LobbyCodecs.given
 
   "LobbyCodecs" should:

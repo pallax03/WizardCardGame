@@ -2,7 +2,8 @@ package it.unibo.pps.wizard.engine.model.rules
 
 import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.model.core.state.{ServerCoreState, GameState}
+import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.ServerCoreState
 import org.scalatest.OptionValues.convertOptionToValuable
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

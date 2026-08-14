@@ -1,6 +1,5 @@
 package it.unibo.pps.wizard.engine.adapters.prolog
 
-
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologEngine
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
@@ -10,7 +9,9 @@ import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.basic.cards.Hand
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
-import it.unibo.pps.wizard.engine.model.core.state.{GameState, PlayerCoreState, PlayerGameState}
+import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.PlayerCoreState
+import it.unibo.pps.wizard.engine.model.core.state.PlayerGameState
 import it.unibo.pps.wizard.engine.model.rules.BiddingRules._
 import it.unibo.pps.wizard.engine.model.rules.TableRules._
 import it.unibo.pps.wizard.engine.ports.AIPort
@@ -38,8 +39,9 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
   private def onRunningPhase[T](lobbyId: LobbyId, actionName: String)(playerId: PlayerId)(
       phaseLogic: PartialFunction[PlayerGameState, Future[T]]
   ): Future[T] =
-    inboundPort.getState(lobbyId, playerId).flatMap:
-      state =>
+    inboundPort
+      .getState(lobbyId, playerId)
+      .flatMap: state =>
         phaseLogic.applyOrElse(
           state,
           _ => Future.failed(IllegalStateException(s"Cannot $actionName: invalid game phase"))

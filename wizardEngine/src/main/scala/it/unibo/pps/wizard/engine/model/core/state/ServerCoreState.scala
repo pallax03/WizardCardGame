@@ -1,9 +1,11 @@
 package it.unibo.pps.wizard.engine.model.core.state
 
-import it.unibo.pps.wizard.engine.model.basic.*
+import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.basic.cards.Hands
-import it.unibo.pps.wizard.engine.model.basic.gameplay.{Round, Trump}
-import it.unibo.pps.wizard.engine.model.core.{GameError, InconsistentStateReasons}
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
+import it.unibo.pps.wizard.engine.model.core.GameError
+import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons
 import it.unibo.pps.wizard.engine.model.rules.RoundManager.firstPlayer
 
 case class ServerCoreState(
@@ -31,8 +33,17 @@ object ServerCoreState:
     )
 
   extension (hands: Hands)
-    def getHandSafe(player: PlayerId): Either[GameError, it.unibo.pps.wizard.engine.model.basic.cards.Hand] =
-      hands.getHand(player).toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(player)))
-      
-    def removeSafe(player: PlayerId, card: it.unibo.pps.wizard.engine.model.basic.cards.Card): Either[GameError, Hands] =
-      hands.remove(player, card).toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(player)))
+    def getHandSafe(
+        player: PlayerId
+    ): Either[GameError, it.unibo.pps.wizard.engine.model.basic.cards.Hand] =
+      hands
+        .getHand(player)
+        .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(player)))
+
+    def removeSafe(
+        player: PlayerId,
+        card: it.unibo.pps.wizard.engine.model.basic.cards.Card
+    ): Either[GameError, Hands] =
+      hands
+        .remove(player, card)
+        .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(player)))

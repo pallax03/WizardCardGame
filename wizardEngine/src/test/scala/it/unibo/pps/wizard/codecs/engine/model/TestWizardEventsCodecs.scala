@@ -1,10 +1,8 @@
 package it.unibo.pps.wizard.codecs.engine.model
 
-import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
-import it.unibo.pps.wizard.engine.model.*
-
-import org.scalatest.EitherValues.*
-
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax._
+import it.unibo.pps.wizard.engine.model._
+import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -36,7 +34,7 @@ class TestWizardEventsCodecs extends AnyWordSpec with Matchers:
         val jsonString = event.toJson
         jsonString shouldBe """{"event":{"type":"LifecycleEvent","action":"GameStarted","fields":{"playersIds":[1,2]}}}"""
         jsonString.decodeAs[WizardEvent].value shouldBe event
-      "encode GameEnded correctly" in :
+      "encode GameEnded correctly" in:
         val event: WizardEvent = LifecycleEvent.GameEnded(playersIds, scoreboard)
         val jsonString = event.toJson
         jsonString shouldBe """{"event":{"type":"LifecycleEvent","action":"GameEnded","fields":{"playersIds":[1,2],"finalScores":{"1":[{"round":1,"score":20,"bid":0}],"2":[{"round":1,"score":-10,"bid":0}]}}}}"""
@@ -67,21 +65,22 @@ class TestWizardEventsCodecs extends AnyWordSpec with Matchers:
         val jsonString = event.toJson
         jsonString shouldBe """{"event":{"type":"ActionEvent","action":"BidPlaced","playerId":1,"fields":{"playerId":1,"bid":1}}}"""
       "encode CardPlayed correctly" in:
-        val event: WizardEvent = ActionEvent.CardPlayed(p2, playedCard, Option(playedCard), Option(Color.Red))
+        val event: WizardEvent =
+          ActionEvent.CardPlayed(p2, playedCard, Option(playedCard), Option(Color.Red))
         val jsonString = event.toJson
         jsonString shouldBe """{"event":{"type":"ActionEvent","action":"CardPlayed","playerId":2,"fields":{"playerId":2,"card":{"type":"Standard","color":"Yellow","rank":8},"winningCard":{"type":"Standard","color":"Yellow","rank":8},"followingColor":"Red"}}}"""
     "InvitationEvent" should:
-      "encode WaitingForTrump correctly" in :
+      "encode WaitingForTrump correctly" in:
         val event: WizardEvent = InvitationEvent.WaitingForTrump(p1)
         val jsonString = event.toJson
         jsonString shouldBe """{"event":{"type":"InvitationEvent","action":"WaitingForTrump","playerId":1,"fields":{"playerId":1}}}"""
         jsonString.decodeAs[WizardEvent].value shouldBe event
-    "encode WaitingForBid correctly" in :
+    "encode WaitingForBid correctly" in:
       val event: WizardEvent = InvitationEvent.WaitingForBid(p2, round)
       val jsonString = event.toJson
       jsonString shouldBe """{"event":{"type":"InvitationEvent","action":"WaitingForBid","playerId":2,"fields":{"playerId":2,"round":2}}}"""
       jsonString.decodeAs[WizardEvent].value shouldBe event
-    "encode WaitingForCard correctly" in :
+    "encode WaitingForCard correctly" in:
       val event: WizardEvent = InvitationEvent.WaitingForCard(p1, p1Cards)
       val jsonString = event.toJson
       jsonString shouldBe """{"event":{"type":"InvitationEvent","action":"WaitingForCard","playerId":1,"fields":{"playerId":1,"legalCards":[{"type":"Standard","color":"Green","rank":1},{"type":"Standard","color":"Yellow","rank":5}]}}}"""

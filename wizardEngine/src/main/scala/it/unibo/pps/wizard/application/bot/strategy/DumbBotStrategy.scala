@@ -1,12 +1,12 @@
 package it.unibo.pps.wizard.application.bot.strategy
 
+import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bid
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round._
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.events.FailureEvent
 import it.unibo.pps.wizard.engine.model.events.InvitationEvent
 
@@ -25,7 +25,10 @@ class DumbBotStrategy(random: Random = Random()) extends BotStrategy:
   private def asyncWrapper(gameAction: GameAction): Future[GameAction] =
     Future.successful(gameAction)
 
-  override def resolveInvitationEvents(lobbyId: LobbyId, invitation: InvitationEvent): Future[GameAction] =
+  override def resolveInvitationEvents(
+      lobbyId: LobbyId,
+      invitation: InvitationEvent
+  ): Future[GameAction] =
     asyncWrapper:
       invitation match
         case InvitationEvent.WaitingForBid(playerId, round) =>

@@ -4,10 +4,11 @@ import cats.data.State
 import cats.syntax.traverse.toTraverseOps
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
-import it.unibo.pps.wizard.engine.model.basic.cards.*
-import it.unibo.pps.wizard.engine.model.basic.gameplay.*
+import it.unibo.pps.wizard.engine.model.basic.cards._
+import it.unibo.pps.wizard.engine.model.basic.gameplay._
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.model.core.state.{ServerCoreState, GameState}
+import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.ServerCoreState
 
 /** Manages game round lifecycle operations, player turns, card dealing, and state initialization. */
 object RoundManager:
@@ -67,7 +68,7 @@ object RoundManager:
       for
         core <- State.get[ServerCoreState]
         (dealtHands, roundTrump) = round.deal(core.playersIds).runA(deck).value
-        
+
         newCore = core.copy(
           hands = dealtHands,
           trump = roundTrump,

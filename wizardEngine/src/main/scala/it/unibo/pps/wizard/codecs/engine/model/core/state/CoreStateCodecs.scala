@@ -1,8 +1,8 @@
 package it.unibo.pps.wizard.codecs.engine.model.core.state
 
-import io.circe.*
-import it.unibo.pps.wizard.codecs.engine.model.basic.*
-import it.unibo.pps.wizard.engine.model.basic.*
+import io.circe._
+import it.unibo.pps.wizard.codecs.engine.model.basic._
+import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core.state._
 
 object CoreStateCodecs:

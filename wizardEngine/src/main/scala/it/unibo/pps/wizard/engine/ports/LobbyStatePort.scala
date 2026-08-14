@@ -1,6 +1,6 @@
 package it.unibo.pps.wizard.engine.ports
 
-import it.unibo.pps.wizard.engine.lobby.*
+import it.unibo.pps.wizard.engine.lobby._
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
 import scala.concurrent.Future
@@ -38,14 +38,14 @@ trait LobbyStatePort:
    * @return a Future containing the Lobby object if found, or None if the lobby does not exist.
    */
   def getLobby(lobbyId: LobbyId): Future[Option[Lobby]]
-  
+
   /**
    * Retrieves the current state of the lobby, if it exists.
    *
-   R* @return a Future containing a list of Lobbies, [[List.empty]] if no lobby found.
+   *   R* @return a Future containing a list of Lobbies, [[List.empty]] if no lobby found.
    */
   def getAllLobbies: Future[List[Lobby]]
-  
+
   /**
    * Atomically adds a player to the lobby, returning the assigned Player if successful.
    * Fails (returns None) if the lobby is full (max 6 players).
@@ -55,7 +55,11 @@ trait LobbyStatePort:
    * @param bot the bot difficulty, if any
    * @return a Future containing the assigned Player, or None if the lobby is full.
    */
-  def addPlayer(lobbyId: LobbyId, name: String, bot: Option[BotsDifficulty] = None): Future[Option[Player]]
+  def addPlayer(
+      lobbyId: LobbyId,
+      name: String,
+      bot: Option[BotsDifficulty] = None
+  ): Future[Option[Player]]
 
   /**
    * Atomically removes a player from the lobby by ID.
@@ -65,10 +69,10 @@ trait LobbyStatePort:
    * @return a Future containing true if the player was removed, false otherwise.
    */
   def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]
-  
+
   /**
    * Attempts to acquire the distributed lock for managing bots in this lobby.
-   * 
+   *
    * @param lobbyId the UUID of the lobby.
    * @param podId unique identifier for the current pod/container.
    * @param ttlSeconds lock expiration time to prevent deadlocks if the pod crashes.

@@ -1,8 +1,9 @@
 package it.unibo.pps.wizard.engine.model.core
 
-import it.unibo.pps.wizard.engine.model.basic.*
-import it.unibo.pps.wizard.engine.model.core.GameError.*
-import it.unibo.pps.wizard.engine.model.core.state.{ServerCoreState, GameState}
+import it.unibo.pps.wizard.engine.model.basic._
+import it.unibo.pps.wizard.engine.model.core.GameError._
+import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.ServerCoreState
 import it.unibo.pps.wizard.engine.model.events.ActionEvent
 import it.unibo.pps.wizard.engine.model.events.LifecycleEvent
 import it.unibo.pps.wizard.engine.model.events.ProgressEvent

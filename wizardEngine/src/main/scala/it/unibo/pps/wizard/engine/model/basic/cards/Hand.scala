@@ -2,7 +2,6 @@ package it.unibo.pps.wizard.engine.model.basic.cards
 
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 
-
 /**
  * Represents the set of cards currently held by a single player.
  * Implemented as an opaque type over List[Card] to provide domain-specific
@@ -35,9 +34,9 @@ object Hands:
   extension (hands: Hands)
     def getHand(player: PlayerId): Option[Hand] =
       hands.get(player)
-      
+
     def remove(player: PlayerId, card: Card): Option[Hands] =
       hands.getHand(player).map(hand => hands.updated(player, Hand.without(hand, card)))
-      
+
     def areEmpty: Boolean = hands.values.forall(_.isEmpty)
     private[wizard] def toMap: Map[PlayerId, Hand] = hands

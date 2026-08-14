@@ -15,7 +15,7 @@ opaque type Scoreboard = Map[PlayerId, Map[Round, (Score, Bid)]]
 object Scoreboard:
   def empty: Scoreboard = Map.empty
   def apply(map: Map[PlayerId, Map[Round, (Score, Bid)]]): Scoreboard = map
-  
+
   extension (sb: Scoreboard)
     /**
      * Returns the round-by-round history for a specific player.
@@ -46,5 +46,5 @@ object Scoreboard:
      */
     def getStatsForRound(r: Round, pId: PlayerId): (Score, Bid) =
       sb.getOrElse(pId, Map.empty).getOrElse(r, (0, 0))
-    
+
     def toMap: Map[PlayerId, Map[Round, (Score, Bid)]] = sb
