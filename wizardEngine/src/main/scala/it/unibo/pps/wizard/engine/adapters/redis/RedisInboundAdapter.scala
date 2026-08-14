@@ -8,7 +8,7 @@ import it.unibo.pps.wizard.engine.model.core.*
 import it.unibo.pps.wizard.engine.model.events.*
 import it.unibo.pps.wizard.engine.ports.{InboundPort, OutboundPort}
 import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
-import it.unibo.pps.wizard.codecs.engine.model.core.GameStateCodecs.given
+import it.unibo.pps.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import it.unibo.pps.wizard.engine.model.core.state.{GameState, ServerGameState, PlayerGameState}
 import it.unibo.pps.wizard.util.ChannelsKeys
 
