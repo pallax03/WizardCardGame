@@ -14,11 +14,12 @@ import it.unibo.pps.wizard.util.FutureSyntax.*
 
 class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
-
+  /** @inheritdoc  */
   override def saveLobby(lobby: Lobby): Future[Unit] =
     val req = Request.cmd(Command.SET).arg(ChannelsKeys.lobby(lobby.uuid)).arg(lobby.toJson)
     redisClient.send(req).asScala.map(_ => ())
 
+  /** @inheritdoc */
   override def getLobby(lobbyId: LobbyId): Future[Option[Lobby]] =
     val req = Request.cmd(Command.GET).arg(ChannelsKeys.lobby(lobbyId))
     redisClient.send(req).asScala.map:
@@ -52,6 +53,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       |return cjson.encode(newPlayer)
       |""".stripMargin
 
+  /** @inheritdoc */
   override def addPlayer(lobbyId: LobbyId, name: String, difficulty: Option[BotsDifficulty]): Future[Option[Player]] =
     val req = Request.cmd(Command.EVAL)
       .arg(addPlayerScript).arg("1").arg(ChannelsKeys.lobby(lobbyId))
@@ -61,6 +63,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       case null => None
       case response => response.toString.decodeAs[Player].toOption
 
+  /** @inheritdoc */
   override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
     getLobby(lobbyId).flatMap:
       case Some(lobby) =>
@@ -68,3 +71,28 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         if newPlayers.size == lobby.players.size then Future.successful(false)
         else saveLobby(lobby.copy(players = newPlayers)).map(_ => true)
       case None => Future.successful(false)
+
+  /** @inheritdoc */
+  override def getAllLobbies: Future[List[Lobby]] =
+    redisClient.send(Request.cmd(Command.KEYS).arg(ChannelsKeys.LOBBY_CHANNEL)).asScala.flatMap:
+      case null => Future.successful(List.empty)
+      case keysResp =>
+        import scala.jdk.CollectionConverters.*
+        val keys = keysResp.asScala.map(_.toString).toList
+        if keys.isEmpty then Future.successful(List.empty)
+        else
+          val mgetReq = Request.cmd(Command.MGET)
+          keys.foreach(mgetReq.arg)
+          redisClient.send(mgetReq).asScala.map:
+            case null => List.empty
+            case valsResp => 
+              valsResp.asScala.flatMap(v => if v != null then v.toString.decodeAs[Lobby].toOption else None).toList
+
+  /** @inheritdoc */
+  override def tryAcquireBotLock(lobbyId: LobbyId, podId: String, ttlSeconds: Long = 30): Future[Boolean] =
+    val req = Request.cmd(Command.SET)
+      .arg(ChannelsKeys.botLock(lobbyId))
+      .arg(podId)
+      .arg("NX")
+      .arg("EX").arg(ttlSeconds.toString)
+    redisClient.send(req).asScala.map(_ != null)
