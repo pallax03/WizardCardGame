@@ -1,6 +1,14 @@
 package it.unibo.pps.wizard.engine.ports
 
+import it.unibo.pps.wizard.engine.lobby.LobbyId
+import it.unibo.pps.wizard.engine.model.basic.PlayerId
+import it.unibo.pps.wizard.util.ChannelsKeys
+
 import scala.concurrent.Future
+
+trait Subscription:
+  /** Cancels this specific subscription. */
+  def cancel(): Future[Unit]
 
 trait PubSubPort:
 
@@ -17,15 +25,19 @@ trait PubSubPort:
    * Subscribes to a specific channel to receive real-time messages.
    *
    * @param channel   the channel name to listen to.
-   * @param onMessage the callback invoked whenever a new message is received on this channel.
-   * @return a Future completing when the subscription is successfully established.
+   * @param onMessage the callback invoked whenever a new message is received.
+   * @return a Future completing with a Subscription to cancel it later.
    */
-  def subscribe(channel: String, onMessage: String => Unit): Future[Unit]
+  def subscribe(channel: String, onMessage: String => Unit): Future[Subscription]
 
-  /**
-   * Removes the subscription from a specific channel.
-   *
-   * @param channel the channel name to unsubscribe from.
-   * @return a Future completing when the subscription is removed.
-   */
-  def unsubscribe(channel: String): Future[Unit]
+  /** Subscribes to the global lobby channel. */
+  def subscribeToLobby(lobbyId: LobbyId, onMessage: String => Unit): Future[Subscription] =
+    subscribe(ChannelsKeys.pubSubLobbyChannel(lobbyId), onMessage)
+
+  /** Subscribes to a specific player's channel within a lobby. */
+  def subscribeToPlayer(
+      lobbyId: LobbyId,
+      playerId: PlayerId,
+      onMessage: String => Unit
+  ): Future[Subscription] =
+    subscribe(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, playerId), onMessage)
