@@ -5,13 +5,12 @@ import io.vertx.redis.client.Redis
 import io.vertx.redis.client.RedisConnection
 import io.vertx.redis.client.Request
 import it.unibo.pps.wizard.engine.ports.PubSubPort
+import it.unibo.pps.wizard.engine.ports.Subscription
 import it.unibo.pps.wizard.util.FutureSyntax._
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
-import it.unibo.pps.wizard.engine.ports.Subscription
 
 class RedisPubSubAdapter(redis: Redis) extends PubSubPort:
   private val handlers = mutable.Map.empty[String, mutable.Set[String => Unit]]
@@ -36,18 +35,19 @@ class RedisPubSubAdapter(redis: Redis) extends PubSubPort:
   override def subscribe(channel: String, onMessage: String => Unit): Future[Subscription] =
     synchronized(handlers.getOrElseUpdate(channel, mutable.Set.empty).add(onMessage))
     connection.flatMap: c =>
-      c.send(Request.cmd(Command.SUBSCRIBE).arg(channel)).asScala.map: _ =>
-        new Subscription:
-          override def cancel(): Future[Unit] =
-            val shouldUnsubscribe = synchronized:
-              val callbacks = handlers.getOrElse(channel, mutable.Set.empty)
-              callbacks.remove(onMessage)
-              val empty = callbacks.isEmpty
-              if empty then handlers.remove(channel)
-              empty
-            if shouldUnsubscribe then
-              connection.flatMap(conn =>
-                conn.send(Request.cmd(Command.UNSUBSCRIBE).arg(channel)).asScala.map(_ => ())
-              )
-            else
-              Future.unit
+      c.send(Request.cmd(Command.SUBSCRIBE).arg(channel))
+        .asScala
+        .map: _ =>
+          new Subscription:
+            override def cancel(): Future[Unit] =
+              val shouldUnsubscribe = synchronized:
+                val callbacks = handlers.getOrElse(channel, mutable.Set.empty)
+                callbacks.remove(onMessage)
+                val empty = callbacks.isEmpty
+                if empty then handlers.remove(channel)
+                empty
+              if shouldUnsubscribe then
+                connection.flatMap(conn =>
+                  conn.send(Request.cmd(Command.UNSUBSCRIBE).arg(channel)).asScala.map(_ => ())
+                )
+              else Future.unit

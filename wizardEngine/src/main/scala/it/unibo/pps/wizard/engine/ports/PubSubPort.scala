@@ -30,14 +30,14 @@ trait PubSubPort:
    */
   def subscribe(channel: String, onMessage: String => Unit): Future[Subscription]
 
-  /**
-   * Subscribes to the global lobby channel.
-   */
+  /** Subscribes to the global lobby channel. */
   def subscribeToLobby(lobbyId: LobbyId, onMessage: String => Unit): Future[Subscription] =
     subscribe(ChannelsKeys.pubSubLobbyChannel(lobbyId), onMessage)
 
-  /**
-   * Subscribes to a specific player's channel within a lobby.
-   */
-  def subscribeToPlayer(lobbyId: LobbyId, playerId: PlayerId, onMessage: String => Unit): Future[Subscription] =
+  /** Subscribes to a specific player's channel within a lobby. */
+  def subscribeToPlayer(
+      lobbyId: LobbyId,
+      playerId: PlayerId,
+      onMessage: String => Unit
+  ): Future[Subscription] =
     subscribe(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, playerId), onMessage)
