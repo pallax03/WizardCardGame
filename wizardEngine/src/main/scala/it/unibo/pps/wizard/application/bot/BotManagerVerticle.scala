@@ -115,9 +115,11 @@ class BotManagerVerticle(
               gameInboundPort.submitAction(lobbyId, action)
             case Failure(e) => logger.error(s"Bot $playerId fallback failed", e)
       case Right(LifecycleEvent.GameEnded(_, _)) =>
-        activeSubscriptions.remove((lobbyId, playerId)).foreach: (playerSub, lobbySub) =>
-          playerSub.cancel()
-          lobbySub.cancel()
+        activeSubscriptions
+          .remove((lobbyId, playerId))
+          .foreach: (playerSub, lobbySub) =>
+            playerSub.cancel()
+            lobbySub.cancel()
       case Right(_) => ()
       case Left(_)  => ()
 
