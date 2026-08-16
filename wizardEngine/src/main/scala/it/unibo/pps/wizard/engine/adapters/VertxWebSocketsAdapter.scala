@@ -6,13 +6,20 @@ import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.ports.PubSubPort
 import it.unibo.pps.wizard.engine.ports.WebSocketsPort
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import scala.collection.concurrent.TrieMap
+import it.unibo.pps.wizard.engine.ports.Subscription
+import scala.util.Try
+
+case class ClientSession(ws: ServerWebSocket, lobbySub: Subscription, playerSub: Subscription)
 
 class VertxWebSocketsAdapter(
     val pubSubPort: PubSubPort
 ) extends WebSocketsPort:
 
-  val sockets: Map[LobbyId, Map[PlayerId, ServerWebSocket]] = Map.empty
+  private val sessions: TrieMap[(LobbyId, PlayerId), ClientSession] = TrieMap.empty
 
   /** @inheritdoc */
   override def subscribeToLobbyEvents(
@@ -20,9 +27,33 @@ class VertxWebSocketsAdapter(
       playerId: PlayerId,
       ws: ServerWebSocket
   ): Future[Unit] =
-    val _ = pubSubPort
-    ???
+    ws.closeHandler: _ =>
+      this.close(lobbyId, playerId)
+    ws.exceptionHandler: _ =>
+      this.close(lobbyId, playerId)
+
+    for
+      lobbySub <- pubSubPort.subscribeToLobby(
+        lobbyId,
+        rawJson => ws.writeTextMessage(rawJson)
+      )
+      playerSub <- pubSubPort.subscribeToPlayer(
+        lobbyId,
+        playerId,
+        rawJson => ws.writeTextMessage(rawJson)
+      )
+    yield 
+      sessions.put((lobbyId, playerId), ClientSession(ws, lobbySub, playerSub))
+      ()
 
   /** @inheritdoc */
-  override def close: Future[Unit] =
-    ???
+  override def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    sessions.remove((lobbyId, playerId)) match
+      case Some(session) =>
+        Try(session.ws.close())
+        for
+          _ <- session.lobbySub.cancel()
+          _ <- session.playerSub.cancel()
+        yield ()
+      case None =>
+        Future.unit

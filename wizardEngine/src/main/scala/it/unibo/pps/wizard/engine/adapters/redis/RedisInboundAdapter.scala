@@ -27,6 +27,8 @@ class RedisInboundAdapter(
 ) extends InboundPort:
 
   // todo: related issue https://github.com/pallax03/WizardCardGame/issues/39
+
+  /** @inheritdoc */
   override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState] =
     val key = ChannelsKeys.game(lobbyId)
     redisClient
@@ -45,6 +47,7 @@ class RedisInboundAdapter(
             case Right(state) => state
             case Left(err)    => throw GameException(err)
 
+  /** @inheritdoc */
   override def startGame(
       lobbyId: LobbyId,
       players: List[PlayerId],
@@ -67,15 +70,16 @@ class RedisInboundAdapter(
                 .map: _ =>
                   outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersIds))
                   outboundPort.publish(lobbyId, initialState.events*)
-            case Left(_) => Future.successful(())
+            case Left(_) => Future.unit
 
+  /** @inheritdoc */
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Unit] =
     val key = ChannelsKeys.game(lobbyId)
     redisClient
       .send(Request.cmd(Command.GET).arg(key))
       .asScala
       .flatMap:
-        case null => Future.successful(())
+        case null => Future.unit
         case response =>
           val oldState = response.toString.decodeAs[ServerGameState] match
             case Right(state) => state
@@ -86,7 +90,7 @@ class RedisInboundAdapter(
           GameEngine.processAction(oldState, action) match
             case Left(error) =>
               outboundPort.publish(lobbyId, FailureEvent.ActionFailed(action.playerId, error))
-              Future.successful(())
+              Future.unit
             case Right(newState) =>
               val saveReq = newState.state match
                 case _: GameState.Ended => Request.cmd(Command.DEL).arg(key)
