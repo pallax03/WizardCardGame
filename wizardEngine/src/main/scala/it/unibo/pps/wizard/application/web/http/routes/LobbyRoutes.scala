@@ -21,16 +21,11 @@ import scala.util.Success
 class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort):
 
   def mount(router: Router): Unit =
-    router.post("/api/lobby").handler(handleLobby)
-    router.post("/api/lobby/:lobbyId").handler(handleLobby)
-    router.get("/api/lobby/:lobbyId").handler(handleLobbyInfo)
+    router.post("/lobby").handler(handleLobby)
+    router.post("/lobby/:lobbyId").handler(handleLobby)
+    router.get("/lobby/:lobbyId").handler(handleLobbyInfo)
 //    router.delete("/api/lobby/:lobbyId/player/:playerId").handler(handleRemovePlayer) // todo: no host check?
-    router.post("/api/lobby/:lobbyId/start").handler(handleStartGame)
-    router
-      .get("/api/lobby/")
-      .handler(
-        handleMissingLobby
-      ) // todo: it's really needed? just do a refactor and put in a general Router...
+    router.post("/lobby/:lobbyId/start").handler(handleStartGame)
 
   private def handleLobby(ctx: RoutingContext): Unit =
     case class AddPlayerPayload(name: String, bot: Option[BotsDifficulty])
@@ -43,9 +38,6 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort):
         respondJson(ctx, 201, Json.obj("lobbyId" -> lobbyId.asJson, "playerId" -> player.id.asJson))
       case Success(None) => ctx.fail(401) //lobby is full
       case Failure(exception) => ctx.fail(500, exception)
-
-  private def handleMissingLobby(ctx: RoutingContext): Unit =
-    respondJson(ctx, 400, Json.obj("error" -> "Missing lobby id".asJson))
 
   private def handleLobbyInfo(ctx: RoutingContext): Unit =
     ctx.request().extractLobbyId match
