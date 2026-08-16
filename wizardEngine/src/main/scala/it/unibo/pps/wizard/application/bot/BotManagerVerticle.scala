@@ -12,14 +12,17 @@ import it.unibo.pps.wizard.engine.model.core.state.GameState
 import it.unibo.pps.wizard.engine.model.core.state.PlayerCoreState
 import it.unibo.pps.wizard.engine.model.events.FailureEvent
 import it.unibo.pps.wizard.engine.model.events.InvitationEvent
+import it.unibo.pps.wizard.engine.model.events.LifecycleEvent
 import it.unibo.pps.wizard.engine.model.events.WizardEvent
 import it.unibo.pps.wizard.engine.ports.AIPort
 import it.unibo.pps.wizard.engine.ports.InboundPort
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import it.unibo.pps.wizard.engine.ports.PubSubPort
+import it.unibo.pps.wizard.engine.ports.Subscription
 import it.unibo.pps.wizard.util.ChannelsKeys
 import org.slf4j.LoggerFactory
 
+import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Failure
 import scala.util.Success
@@ -32,7 +35,7 @@ class BotManagerVerticle(
 ) extends AbstractVerticle:
 
   private val logger = LoggerFactory.getLogger(classOf[BotManagerVerticle])
-  private var activeSubscriptions = Set.empty[(LobbyId, PlayerId)]
+  private val activeSubscriptions = TrieMap.empty[(LobbyId, PlayerId), (Subscription, Subscription)]
 
   private val podId = java.util.UUID.randomUUID().toString
 
@@ -66,16 +69,14 @@ class BotManagerVerticle(
               val strategy = BotStrategy(bot.difficulty.get, prologPort)
 
               if !activeSubscriptions.contains((lobby.uuid, bot.id)) then
-                activeSubscriptions += (lobby.uuid -> bot.id)
-                val channel = ChannelsKeys.pubSubLobbyChannel(lobby.uuid)
-                val privateChannel = ChannelsKeys.pubSubLobbyPlayerChannel(lobby.uuid, bot.id)
-                logger.warn(s"Subscribing bot ${bot.id} to channel: $channel")
-                pubSubPort.subscribe(privateChannel, handleGameEvents(lobby.uuid, bot.id, strategy))
-                pubSubPort.subscribe(channel, handleGameEvents(lobby.uuid, bot.id, strategy))
-              logger.warn("syncing State")
+                val handler = handleGameEvents(lobby.uuid, bot.id, strategy)
+                for
+                  playerSub <- pubSubPort.subscribeToPlayer(lobby.uuid, bot.id, handler)
+                  lobbySub <- pubSubPort.subscribeToLobby(lobby.uuid, handler)
+                yield activeSubscriptions.put((lobby.uuid, bot.id), (playerSub, lobbySub))
               syncStateAndPlay(lobby.uuid, bot.id, strategy)
         case _ =>
-          logger.info(s"Lobby ${lobby.uuid} bots are managed by another pod. Ignoring.")
+          logger.info(s"Lobby ${lobby.uuid} bots are managed by another pod.")
   }
 
   private def syncStateAndPlay(lobbyId: LobbyId, botId: PlayerId, strategy: BotStrategy): Unit =
@@ -105,25 +106,20 @@ class BotManagerVerticle(
   ): Unit =
     rawJson.decodeAs[WizardEvent] match
       case Right(invitation: InvitationEvent) if playerId == invitation.playerId =>
-        logger.warn(s"Bot $playerId received invitation: ${invitation.getClass.getSimpleName}")
         executeInvitationStrategy(lobbyId, playerId, strategy, invitation)
       case Right(failure: FailureEvent) if playerId == failure.destinationId =>
-        logger.warn(s"Bot $playerId received failure event: $failure")
         strategy
           .resolveFailedEvents(lobbyId, failure)
           .onComplete:
             case Success(action) =>
-              logger.warn(s"Bot $playerId submitting fallback action: $action")
-              gameInboundPort
-                .submitAction(lobbyId, action)
-                .onComplete:
-                  case Success(_) =>
-                    logger.warn(s"Bot $playerId fallback action processed successfully")
-                  case Failure(e) =>
-                    logger.error(s"Bot $playerId fallback action failed in inbound adapter", e)
+              gameInboundPort.submitAction(lobbyId, action)
             case Failure(e) => logger.error(s"Bot $playerId fallback failed", e)
-      case Right(_) => // Ignore Other Events
-      case Left(_)  => () // no decoding or other errors
+      case Right(LifecycleEvent.GameEnded(_, _)) =>
+        activeSubscriptions.remove((lobbyId, playerId)).foreach: (playerSub, lobbySub) =>
+          playerSub.cancel()
+          lobbySub.cancel()
+      case Right(_) => ()
+      case Left(_)  => ()
 
   private def executeInvitationStrategy(
       lobbyId: LobbyId,
@@ -135,11 +131,6 @@ class BotManagerVerticle(
       .resolveInvitationEvents(lobbyId, invitation)
       .onComplete:
         case Success(action) =>
-          logger.warn(s"Bot $playerId submitting action: $action")
-          gameInboundPort
-            .submitAction(lobbyId, action)
-            .onComplete:
-              case Success(_) => logger.warn(s"Bot $playerId action processed successfully")
-              case Failure(e) => logger.error(s"Bot $playerId action failed in inbound adapter", e)
+          gameInboundPort.submitAction(lobbyId, action)
         case Failure(e) =>
           logger.error(s"Bot $playerId strategy failed", e)

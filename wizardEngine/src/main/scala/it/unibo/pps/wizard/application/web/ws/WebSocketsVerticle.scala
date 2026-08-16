@@ -2,12 +2,13 @@ package it.unibo.pps.wizard.application.web.ws
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.ext.web.Router
-import it.unibo.pps.wizard.application.web._
+import it.unibo.pps.wizard.application.web.*
+import it.unibo.pps.wizard.engine.lobby.Lobby
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import it.unibo.pps.wizard.engine.ports.WebSocketsPort
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Success
+import it.unibo.pps.wizard.util.FutureSyntax.*
 
 /**
  * Verticle responsible for managing WebSocket connections.
@@ -24,25 +25,18 @@ class WebSocketsVerticle(
 
   override def start(): Unit =
     val router = Router.router(vertx)
-    router.route("/socket.io/lobby/:lobbyId/player/:playerId").handler { ctx =>
+    router.route("/lobby/:lobbyId/player/:playerId").handler: ctx =>
       val req = ctx.request()
-      val lobbyIdOpt = req.extractLobbyId
-      val playerIdOpt = req.extractPlayerId
-      println(s"request received from /lobby/$lobbyIdOpt/player/$playerIdOpt")
-      (lobbyIdOpt, playerIdOpt) match
+      (req.extractLobbyId, req.extractPlayerId) match
         case (Some(lobbyId), Some(playerId)) =>
-          lobbyStatePort
-            .getLobby(lobbyId)
-            .onComplete:
-              case Success(Some(lobby)) if lobby.players.exists(_.id == playerId) =>
-                req.toWebSocket.onComplete: res =>
-                  if res.succeeded() then
-                    wsPortAdapter.subscribeToLobbyEvents(lobbyId, playerId, res.result())
-                  else ctx.fail(res.cause())
-              case _ =>
-                req.response().setStatusCode(403).end("Forbidden")
+          req.toWebSocket.onComplete: res =>
+            if res.succeeded() then
+              val ws = res.result()
+              lobbyStatePort.getLobby(lobbyId).onVertxComplete(ctx):
+                case Success(Some(lobby: Lobby)) if lobby.players.exists(_.id == playerId) =>
+                  wsPortAdapter.subscribeToLobbyEvents(lobbyId, playerId, ws)
+                case _ => ws.close(403, "Forbidden")
         case _ =>
           req.response().setStatusCode(400).end("Missing lobbyId")
-    }
 
     vertx.createHttpServer().requestHandler(router).listen(port)
