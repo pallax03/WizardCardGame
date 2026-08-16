@@ -1,5 +1,6 @@
 package it.unibo.pps.wizard.engine.adapters.redis
 
+import cats.syntax.all._
 import io.vertx.redis.client.Command
 import io.vertx.redis.client.Redis
 import io.vertx.redis.client.Request
@@ -19,7 +20,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
   /** @inheritdoc */
   override def saveLobby(lobby: Lobby): Future[Unit] =
     val req = Request.cmd(Command.SET).arg(ChannelsKeys.lobby(lobby.uuid)).arg(lobby.toJson)
-    redisClient.send(req).asScala.map(_ => ())
+    redisClient.send(req).asScala.void
 
   /** @inheritdoc */
   override def getLobby(lobbyId: LobbyId): Future[Option[Lobby]] =
@@ -86,7 +87,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       case Some(lobby) =>
         val newPlayers = lobby.players.filterNot(_.id == playerId)
         if newPlayers.size == lobby.players.size then Future.successful(false)
-        else saveLobby(lobby.copy(players = newPlayers)).map(_ => true)
+        else saveLobby(lobby.copy(players = newPlayers)).as(true)
       case None => Future.successful(false)
 
   /** @inheritdoc */

@@ -1,5 +1,6 @@
 package it.unibo.pps.wizard.engine.adapters.redis
 
+import cats.syntax.all._
 import io.circe.syntax._
 import it.unibo.pps.wizard.codecs.engine.model.WizardEventsCodecs.given
 import it.unibo.pps.wizard.engine.lobby.LobbyId
@@ -35,4 +36,4 @@ class RedisOutboundAdapter(
           case _ =>
             pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)
       )
-      .map(_ => ())
+      .void
