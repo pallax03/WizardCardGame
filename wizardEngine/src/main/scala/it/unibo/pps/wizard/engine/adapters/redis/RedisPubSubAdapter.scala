@@ -1,5 +1,6 @@
 package it.unibo.pps.wizard.engine.adapters.redis
 
+import cats.syntax.all._
 import io.vertx.redis.client.Command
 import io.vertx.redis.client.Redis
 import io.vertx.redis.client.RedisConnection
@@ -29,7 +30,7 @@ class RedisPubSubAdapter(redis: Redis) extends PubSubPort:
 
   /** @inheritdoc */
   override def publish(channel: String, jsonMessage: String): Future[Unit] =
-    redis.send(Request.cmd(Command.PUBLISH).arg(channel).arg(jsonMessage)).asScala.map(_ => ())
+    redis.send(Request.cmd(Command.PUBLISH).arg(channel).arg(jsonMessage)).asScala.void
 
   /** @inheritdoc */
   override def subscribe(channel: String, onMessage: String => Unit): Future[Subscription] =
@@ -48,6 +49,6 @@ class RedisPubSubAdapter(redis: Redis) extends PubSubPort:
                 empty
               if shouldUnsubscribe then
                 connection.flatMap(conn =>
-                  conn.send(Request.cmd(Command.UNSUBSCRIBE).arg(channel)).asScala.map(_ => ())
+                  conn.send(Request.cmd(Command.UNSUBSCRIBE).arg(channel)).asScala.void
                 )
               else Future.unit
