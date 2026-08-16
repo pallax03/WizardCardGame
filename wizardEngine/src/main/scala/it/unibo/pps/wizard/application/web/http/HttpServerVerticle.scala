@@ -2,8 +2,8 @@ package it.unibo.pps.wizard.application.web.http
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.ext.web.Router
-import io.vertx.ext.web.handler.LoggerHandler
 import io.vertx.ext.web.handler.BodyHandler
+import io.vertx.ext.web.handler.LoggerHandler
 
 class HttpServerVerticle(routes: Seq[Router => Unit], port: Int) extends AbstractVerticle:
 

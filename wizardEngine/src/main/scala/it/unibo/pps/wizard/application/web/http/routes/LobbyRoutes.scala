@@ -1,14 +1,14 @@
 package it.unibo.pps.wizard.application.web.http.routes
 
-import io.circe.Json, io.circe.syntax._
-import io.circe.generic.auto.*
-import io.vertx.ext.web.{Router, RoutingContext}
-
-import it.unibo.pps.wizard.application.web.*
-import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
-
+import io.circe.Json
+import io.circe.generic.auto._
+import io.circe.syntax._
+import io.vertx.ext.web.Router
+import io.vertx.ext.web.RoutingContext
+import it.unibo.pps.wizard.application.web._
 import it.unibo.pps.wizard.codecs.engine.lobby.LobbyCodecs.given
 import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax._
 import it.unibo.pps.wizard.engine.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.lobby._
 import it.unibo.pps.wizard.engine.ports.InboundPort
@@ -33,11 +33,17 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort):
     val name: String = body.fold(_ => "Player", _.name)
     val bot: Option[BotsDifficulty] = body.fold(_ => None, _.bot)
     val lobbyId = ctx.request().extractLobbyId.getOrElse(LobbyId.generate)
-    lobbyStatePort.addPlayer(lobbyId, name, bot).onVertxComplete(ctx):
-      case Success(Some(player)) =>
-        respondJson(ctx, 201, Json.obj("lobbyId" -> lobbyId.asJson, "playerId" -> player.id.asJson))
-      case Success(None) => ctx.fail(401) //lobby is full
-      case Failure(exception) => ctx.fail(500, exception)
+    lobbyStatePort
+      .addPlayer(lobbyId, name, bot)
+      .onVertxComplete(ctx):
+        case Success(Some(player)) =>
+          respondJson(
+            ctx,
+            201,
+            Json.obj("lobbyId" -> lobbyId.asJson, "playerId" -> player.id.asJson)
+          )
+        case Success(None)      => ctx.fail(401) // lobby is full
+        case Failure(exception) => ctx.fail(500, exception)
 
   private def handleLobbyInfo(ctx: RoutingContext): Unit =
     ctx.request().extractLobbyId match
