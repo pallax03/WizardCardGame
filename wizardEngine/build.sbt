@@ -38,9 +38,11 @@ ThisBuild / libraryDependencies ++= Seq(
 assembly / assemblyJarName := s"${name.value}.jar"
 assembly / mainClass := Some("it.unibo.pps.wizard.Main")
 assembly / assemblyMergeStrategy := {
-  case x if x.endsWith("module-info.class")            => MergeStrategy.discard
-  case x if x.endsWith("io.netty.versions.properties") => MergeStrategy.first
-  case x                                               => (assembly / assemblyMergeStrategy).value(x)
+  case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") => MergeStrategy.singleOrError
+  case PathList("META-INF", "resources", "webjars", "swagger-ui", _*)                => MergeStrategy.singleOrError
+  case x if x.endsWith("module-info.class")                                          => MergeStrategy.discard
+  case x if x.endsWith("io.netty.versions.properties")                               => MergeStrategy.first
+  case x                                                                             => (assembly / assemblyMergeStrategy).value(x)
 }
 
 lazy val root = (project in file("."))

@@ -1,21 +1,20 @@
 package it.unibo.pps.wizard.application.web.http.endpoints
 
-import io.circe.generic.auto.*
+import io.circe.generic.auto._
 import it.unibo.pps.wizard.codecs.engine.model.core.GameActionCodecs.given
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import sttp.model.StatusCode
-import sttp.tapir.*
-import sttp.tapir.generic.auto.*
-import sttp.tapir.json.circe.*
+import sttp.tapir._
+import sttp.tapir.generic.auto._
+import sttp.tapir.json.circe._
 
 case class ActionSuccessResponse(message: String)
 given Schema[Card] = Schema.derived
 
 object ActionEndpoints:
 
-  private val baseActionEndpoint = endpoint
-    .post
+  private val baseActionEndpoint = endpoint.post
     .in("lobby" / path[String]("lobbyId") / "player" / path[String]("playerId"))
     .in(jsonBody[GameAction])
     .out(jsonBody[ActionSuccessResponse])
@@ -27,6 +26,12 @@ object ActionEndpoints:
       )
     )
 
-  val chooseAction = baseActionEndpoint.in("choose")
-  val placeAction = baseActionEndpoint.in("place")
-  val playAction = baseActionEndpoint.in("play")
+  val chooseAction
+      : Endpoint[Unit, (String, String, GameAction), ErrorResponse, ActionSuccessResponse, Any] =
+    baseActionEndpoint.in("choose")
+  val placeAction
+      : Endpoint[Unit, (String, String, GameAction), ErrorResponse, ActionSuccessResponse, Any] =
+    baseActionEndpoint.in("place")
+  val playAction
+      : Endpoint[Unit, (String, String, GameAction), ErrorResponse, ActionSuccessResponse, Any] =
+    baseActionEndpoint.in("play")

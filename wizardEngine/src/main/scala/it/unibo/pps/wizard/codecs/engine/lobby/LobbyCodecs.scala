@@ -1,8 +1,8 @@
 package it.unibo.pps.wizard.codecs.engine.lobby
 
-import io.circe.*
+import io.circe._
 import it.unibo.pps.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
-import it.unibo.pps.wizard.engine.lobby.*
+import it.unibo.pps.wizard.engine.lobby._
 
 import scala.util.Try
 
