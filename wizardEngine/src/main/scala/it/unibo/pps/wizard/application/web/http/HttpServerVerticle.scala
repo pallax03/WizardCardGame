@@ -9,19 +9,21 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 import scala.concurrent.Future
 
-class HttpServerVerticle(endpoints: List[ServerEndpoint[Any, Future]], port: Int) extends AbstractVerticle:
+class HttpServerVerticle(endpoints: List[ServerEndpoint[Any, Future]], port: Int)
+    extends AbstractVerticle:
 
   override def start(): Unit =
     val router = Router.router(vertx)
     router.route().handler(LoggerHandler.create())
-    val swaggerEndpoints = SwaggerInterpreter().fromServerEndpoints(
-      endpoints,
-      "Wizard Game Engine API",
-      "1.0.0"
-    )
+    val isProduction = sys.env.getOrElse("APP_ENV", "development") == "production"
+    val swaggerEndpoints =
+      if (!isProduction)
+        SwaggerInterpreter().fromServerEndpoints(endpoints, "Wizard Game Engine API", "1.0.0")
+      else List.empty
     val allEndpoints = endpoints ++ swaggerEndpoints
     val interpreter = VertxFutureServerInterpreter()
     allEndpoints.foreach(endpoint => interpreter.route(endpoint)(router))
-    vertx.createHttpServer()
+    vertx
+      .createHttpServer()
       .requestHandler(router)
       .listen(port)

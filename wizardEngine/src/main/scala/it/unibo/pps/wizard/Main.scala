@@ -6,7 +6,7 @@ import io.vertx.redis.client.Redis
 import io.vertx.redis.client.RedisOptions
 import it.unibo.pps.wizard.application.bot.BotManagerVerticle
 import it.unibo.pps.wizard.application.web.http.HttpServerVerticle
-import it.unibo.pps.wizard.application.web.http.routes.*
+import it.unibo.pps.wizard.application.web.http.routes._
 import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
 import it.unibo.pps.wizard.engine.adapters.VertxWebSocketsAdapter
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologAdapter
