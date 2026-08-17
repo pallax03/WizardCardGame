@@ -14,7 +14,11 @@ import it.unibo.pps.wizard.engine.adapters.redis.RedisInboundAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisLobbyStateAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisOutboundAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisPubSubAdapter
-import it.unibo.pps.wizard.engine.ports.{AIPort, InboundPort, LobbyStatePort, OutboundPort, PubSubPort}
+import it.unibo.pps.wizard.engine.ports.AIPort
+import it.unibo.pps.wizard.engine.ports.InboundPort
+import it.unibo.pps.wizard.engine.ports.LobbyStatePort
+import it.unibo.pps.wizard.engine.ports.OutboundPort
+import it.unibo.pps.wizard.engine.ports.PubSubPort
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global

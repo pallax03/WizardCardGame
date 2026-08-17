@@ -1,20 +1,25 @@
 package it.unibo.pps.wizard.application.web.http.endpoints
 
-import io.circe.generic.auto.*
+import io.circe.generic.auto._
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import sttp.model.StatusCode
-import sttp.tapir.*
-import sttp.tapir.generic.auto.*
-import sttp.tapir.json.circe.*
+import sttp.tapir._
+import sttp.tapir.generic.auto._
+import sttp.tapir.json.circe._
+import it.unibo.pps.wizard.engine.lobby
+import it.unibo.pps.wizard.engine.model.basic
+import it.unibo.pps.wizard.engine.lobby
+import it.unibo.pps.wizard.engine.model.basic
+import it.unibo.pps.wizard.engine.lobby
+import it.unibo.pps.wizard.engine.model.basic
 
 object AIEndpoints:
 
   private val lobbyIdPath = path[String]("lobbyId").map(s => LobbyId(s))(_.toString)
   private val playerIdPath = path[String]("playerId").map(s => PlayerId(s.toInt))(_.toString)
 
-  private val baseAIEndpoint = endpoint
-    .get
+  private val baseAIEndpoint = endpoint.get
     .in("lobby" / lobbyIdPath / "player" / playerIdPath / "hint")
     .out(jsonBody[ActionSuccessResponse])
     .errorOut(
@@ -25,6 +30,6 @@ object AIEndpoints:
       )
     )
 
-  val bestTrump = baseAIEndpoint.in("choose")
-  val bestBid = baseAIEndpoint.in("bid")
-  val bestCard = baseAIEndpoint.in("card")
+  val bestTrump: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] = baseAIEndpoint.in("choose")
+  val bestBid: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] = baseAIEndpoint.in("bid")
+  val bestCard: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] = baseAIEndpoint.in("card")
