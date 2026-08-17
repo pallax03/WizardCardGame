@@ -1,8 +1,10 @@
 package it.unibo.pps.wizard.application.web.http.routes
 
 import it.unibo.pps.wizard.application.web.http._
+import it.unibo.pps.wizard.application.web.http.endpoints.CreateLobbyRequest
 import it.unibo.pps.wizard.application.web.http.endpoints.ErrorResponse
 import it.unibo.pps.wizard.application.web.http.endpoints.GameStartedResponse
+import it.unibo.pps.wizard.application.web.http.endpoints.JoinLobbyRequest
 import it.unibo.pps.wizard.application.web.http.endpoints.LobbyCreatedResponse
 import it.unibo.pps.wizard.application.web.http.endpoints.LobbyEndpoints
 import it.unibo.pps.wizard.application.web.http.endpoints.LobbyStateResponse
@@ -14,14 +16,15 @@ import sttp.tapir.server.ServerEndpoint
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
-import it.unibo.pps.wizard.application.web.http.endpoints.CreateLobbyRequest
-import it.unibo.pps.wizard.application.web.http.endpoints.JoinLobbyRequest
 
 class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
     ec: ExecutionContext
 ):
 
-  val createLobbyServerEndpoint: ServerEndpoint[Any, Future]{type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = CreateLobbyRequest; type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyCreatedResponse} = LobbyEndpoints.createLobby
+  val createLobbyServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = CreateLobbyRequest;
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyCreatedResponse
+  } = LobbyEndpoints.createLobby
     .serverLogic: req =>
       val lobbyId = LobbyId.generate
       lobbyStatePort
@@ -32,7 +35,10 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
           case None =>
             Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
 
-  val joinLobbyServerEndpoint: ServerEndpoint[Any, Future]{type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, JoinLobbyRequest); type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyStateResponse} = LobbyEndpoints.joinLobby
+  val joinLobbyServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, JoinLobbyRequest);
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyStateResponse
+  } = LobbyEndpoints.joinLobby
     .serverLogic:
       case (rawLobbyId, req) =>
         val lobbyId = LobbyId(rawLobbyId)
@@ -44,7 +50,10 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
             case None =>
               Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
 
-  val getLobbyInfoServerEndpoint: ServerEndpoint[Any, Future]{type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = String; type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyStateResponse} = LobbyEndpoints.getLobbyInfo
+  val getLobbyInfoServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = String;
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyStateResponse
+  } = LobbyEndpoints.getLobbyInfo
     .serverLogic: rawLobbyId =>
       val lobbyId = LobbyId(rawLobbyId)
       lobbyStatePort
@@ -55,7 +64,10 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
           case None =>
             Left(ErrorResponse(s"Lobby $rawLobbyId not found", "LOBBY_NOT_FOUND"))
 
-  val startGameServerEndpoint: ServerEndpoint[Any, Future]{type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = String; type ERROR_OUTPUT = ErrorResponse; type OUTPUT = GameStartedResponse} = LobbyEndpoints.startGame
+  val startGameServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = String;
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = GameStartedResponse
+  } = LobbyEndpoints.startGame
     .serverLogic: rawLobbyId =>
       val lobbyId = LobbyId(rawLobbyId)
       lobbyStatePort

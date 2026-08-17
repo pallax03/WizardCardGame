@@ -41,15 +41,24 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
         case ex: Throwable =>
           Left(ErrorResponse(s"Internal error: ${ex.getMessage}", "INTERNAL_ERROR"))
 
-  val chooseServerEndpoint: ServerEndpoint[Any, Future]{type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction); type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse} = ActionEndpoints.chooseAction
+  val chooseServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction);
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse
+  } = ActionEndpoints.chooseAction
     .serverLogic:
       case (lobbyId, playerId, action) => handleAction(lobbyId, playerId, action)
 
-  val placeServerEndpoint: ServerEndpoint[Any, Future]{type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction); type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse} = ActionEndpoints.placeAction
+  val placeServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction);
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse
+  } = ActionEndpoints.placeAction
     .serverLogic:
       case (lobbyId, playerId, action) => handleAction(lobbyId, playerId, action)
 
-  val playServerEndpoint: ServerEndpoint[Any, Future]{type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction); type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse} = ActionEndpoints.playAction
+  val playServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction);
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse
+  } = ActionEndpoints.playAction
     .serverLogic:
       case (lobbyId, playerId, action) => handleAction(lobbyId, playerId, action)
 

@@ -7,12 +7,6 @@ import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
-import it.unibo.pps.wizard.engine.lobby
-import it.unibo.pps.wizard.engine.model.basic
-import it.unibo.pps.wizard.engine.lobby
-import it.unibo.pps.wizard.engine.model.basic
-import it.unibo.pps.wizard.engine.lobby
-import it.unibo.pps.wizard.engine.model.basic
 
 object AIEndpoints:
 
@@ -30,6 +24,9 @@ object AIEndpoints:
       )
     )
 
-  val bestTrump: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] = baseAIEndpoint.in("choose")
-  val bestBid: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] = baseAIEndpoint.in("bid")
-  val bestCard: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] = baseAIEndpoint.in("card")
+  val bestTrump: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
+    baseAIEndpoint.in("choose")
+  val bestBid: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
+    baseAIEndpoint.in("bid")
+  val bestCard: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
+    baseAIEndpoint.in("card")
