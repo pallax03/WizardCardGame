@@ -1,51 +1,69 @@
 package it.unibo.pps.wizard.application.web.http.routes
 
-import io.circe.Json
-import io.circe.syntax._
-import io.vertx.ext.web.Router
-import io.vertx.ext.web.RoutingContext
-import it.unibo.pps.wizard.codecs.engine.model.core.GameActionCodecs.given
-import it.unibo.pps.wizard.codecs.syntax.CodecSyntax._
+import it.unibo.pps.wizard.application.web.http._
+import it.unibo.pps.wizard.application.web.http.endpoints.ActionEndpoints
+import it.unibo.pps.wizard.application.web.http.endpoints.ActionSuccessResponse
+import it.unibo.pps.wizard.application.web.http.endpoints.ErrorResponse
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.core.GameAction
 import it.unibo.pps.wizard.engine.ports.InboundPort
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
-import it.unibo.pps.wizard.util.FutureSyntax.onVertxComplete
+import sttp.tapir.server.ServerEndpoint
 
-import scala.util.Failure
-import scala.util.Success
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
-class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort):
-  def mount(router: Router): Unit =
-    router.post("/api/lobby/:lobbyId/player/:playerId/choose").handler(handleSubmitAction)
-    router.post("/api/lobby/:lobbyId/player/:playerId/place").handler(handleSubmitAction)
-    router.post("/api/lobby/:lobbyId/player/:playerId/play").handler(handleSubmitAction)
+class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(using
+    ec: ExecutionContext
+):
 
-  private def handleSubmitAction(ctx: RoutingContext): Unit =
-    val uuid = ctx.pathParam("lobbyId")
-    val playerId = ctx.pathParam("playerId")
-    val rawJson = ctx.body().asString()
+  private def handleAction(
+      lobbyIdStr: String,
+      playerId: String,
+      action: GameAction
+  ): Future[Either[ErrorResponse, ActionSuccessResponse]] =
+    val lobbyId = LobbyId(lobbyIdStr)
+    lobbyStatePort
+      .getLobby(lobbyId)
+      .flatMap:
+        case Some(lobby) =>
+          gameEnginePort
+            .submitAction(lobbyId, action)
+            .map: _ =>
+              Right(
+                ActionSuccessResponse(
+                  s"Action submitted successfully from player $playerId in lobby ${lobby.uuid}"
+                )
+              )
+        case None =>
+          Future.successful(Left(ErrorResponse(s"Lobby $lobbyIdStr not found", "LOBBY_NOT_FOUND")))
+      .recover:
+        case ex: Throwable =>
+          Left(ErrorResponse(s"Internal error: ${ex.getMessage}", "INTERNAL_ERROR"))
 
-    rawJson.decodeAs[GameAction] match
-      case Left(error) =>
-        respondJson(ctx, 400, Json.obj("error" -> s"Invalid JSON body: ${error.getMessage}".asJson))
-      case Right(action) =>
-        lobbyStatePort
-          .getLobby(LobbyId(uuid))
-          .onVertxComplete(ctx):
-            case Success(Some(lobby)) =>
-              gameEnginePort.submitAction(LobbyId(uuid), action)
-              respondJson(ctx, 200, Json.obj("message" -> "Action submitted successfully".asJson))
-              println(s"$playerId, $gameEnginePort, $lobby")
-            case Success(None)      => respondJson(ctx, 404, notFound(uuid))
-            case Failure(exception) => ctx.fail(500, exception)
+  val chooseServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction);
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse
+  } = ActionEndpoints.chooseAction
+    .serverLogic:
+      case (lobbyId, playerId, action) => handleAction(lobbyId, playerId, action)
 
-  private def notFound(uuid: String): Json =
-    Json.obj("error" -> s"Lobby $uuid not found".asJson)
+  val placeServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction);
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse
+  } = ActionEndpoints.placeAction
+    .serverLogic:
+      case (lobbyId, playerId, action) => handleAction(lobbyId, playerId, action)
 
-  def respondJson(ctx: RoutingContext, status: Int, body: Json): Unit =
-    ctx
-      .response()
-      .setStatusCode(status)
-      .putHeader("Content-Type", "application/json")
-      .end(body.noSpaces)
+  val playServerEndpoint: ServerEndpoint[Any, Future] {
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction);
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = ActionSuccessResponse
+  } = ActionEndpoints.playAction
+    .serverLogic:
+      case (lobbyId, playerId, action) => handleAction(lobbyId, playerId, action)
+
+  val all: List[ServerEndpoint[Any, Future]] = List(
+    chooseServerEndpoint,
+    placeServerEndpoint,
+    playServerEndpoint
+  )

@@ -5,7 +5,8 @@ services:
     ports:
       - "80:80"
     environment:
-      - ENGINE_PORT=${ENGINE_PORT}
+      - HTTP_PORT=${HTTP_PORT}
+      - WS_PORT=${WS_PORT}
       - APPLICATION_PORT=${APPLICATION_PORT}
     volumes:
       - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
@@ -29,8 +30,9 @@ services:
       context: ./wizardEngine
     container_name: ${PROJECT_NAME}-wizard-engine
     environment:
-      - HTTP_PORT=${ENGINE_PORT}
-      - WS_PORT=${ENGINE_PORT}
+      - APP_ENV=${APP_ENV}
+      - HTTP_PORT=${HTTP_PORT}
+      - WS_PORT=${WS_PORT}
       - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT:-6379}
     command: ["-redis"]
