@@ -2,7 +2,6 @@ package it.unibo.pps.wizard
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
-import io.vertx.ext.web.Router
 import io.vertx.redis.client.Redis
 import io.vertx.redis.client.RedisOptions
 import it.unibo.pps.wizard.application.bot.BotManagerVerticle
@@ -15,10 +14,14 @@ import it.unibo.pps.wizard.engine.adapters.redis.RedisInboundAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisLobbyStateAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisOutboundAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisPubSubAdapter
+import it.unibo.pps.wizard.engine.ports.AIPort
 import it.unibo.pps.wizard.engine.ports.InboundPort
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import it.unibo.pps.wizard.engine.ports.OutboundPort
 import it.unibo.pps.wizard.engine.ports.PubSubPort
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main:
   private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
@@ -48,19 +51,20 @@ object Main:
       "bot verticle",
       0
     )
-    runHTTPServer(vertx, inPort, lobbyStatePort)
+    runHTTPServer(vertx, inPort, lobbyStatePort, prologPort)
     runWSServer(vertx, lobbyStatePort, pubSubPort)
 
   private def runHTTPServer(
       vertx: Vertx,
       gameEngineInPort: InboundPort,
-      lobbyStatePort: LobbyStatePort
-  ): Unit =
-    val routes: Seq[Router => Unit] = Seq(
-      LobbyRoutes(lobbyStatePort, gameEngineInPort).mount,
-      ActionRoutes(lobbyStatePort, gameEngineInPort).mount
-    )
-    val verticle = HttpServerVerticle(routes, httpPort)
+      lobbyStatePort: LobbyStatePort,
+      prologPort: AIPort
+  )(using ec: ExecutionContext): Unit =
+    val lobbyRoutes = LobbyRoutes(lobbyStatePort, gameEngineInPort)
+    val actionRoutes = ActionRoutes(lobbyStatePort, gameEngineInPort)
+    val aiRoutes = AIRoutes(lobbyStatePort, prologPort)
+    val allEndpoints = lobbyRoutes.all ++ actionRoutes.all ++ aiRoutes.all
+    val verticle = HttpServerVerticle(allEndpoints, httpPort)
     deploy(vertx, verticle, "HTTP", httpPort)
 
   private def runWSServer(
