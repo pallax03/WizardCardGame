@@ -9,6 +9,8 @@ val vertxVersion          = "5.1.6"
 val tuPrologVersion       = "4.1.1"
 val circeVersion          = "0.14.16"
 val logbackVersion        = "1.6.3"
+val tapirVersion          = "1.13.31"
+val tapirCirceVersion     = "3.11.0"
 
 ThisBuild / scalaVersion := scala3Version
 ThisBuild / scalacOptions := Seq("-Wunused:all", "-Wunused:imports", "-Werror", "-language:implicitConversions", "-Wconf:msg=not declared infix:s")
@@ -26,7 +28,11 @@ ThisBuild / libraryDependencies ++= Seq(
   "io.circe"                  %%    "circe-core"              % circeVersion,
   "io.circe"                  %%    "circe-generic"           % circeVersion,
   "io.circe"                  %%    "circe-parser"            % circeVersion,
-  "ch.qos.logback"             %    "logback-classic"         % logbackVersion
+  "ch.qos.logback"             %    "logback-classic"         % logbackVersion,
+  "com.softwaremill.sttp.tapir" %%    "tapir-core"            % tapirVersion,
+  "com.softwaremill.sttp.tapir" %%    "tapir-vertx-server"    % tapirVersion,
+  "com.softwaremill.sttp.tapir" %%    "tapir-json-circe"      % tapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle"  % tapirVersion,
 )
 
 assembly / assemblyJarName := s"${name.value}.jar"

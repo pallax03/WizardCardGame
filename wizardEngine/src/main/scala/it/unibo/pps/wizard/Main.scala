@@ -2,12 +2,11 @@ package it.unibo.pps.wizard
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
-import io.vertx.ext.web.Router
 import io.vertx.redis.client.Redis
 import io.vertx.redis.client.RedisOptions
 import it.unibo.pps.wizard.application.bot.BotManagerVerticle
 import it.unibo.pps.wizard.application.web.http.HttpServerVerticle
-import it.unibo.pps.wizard.application.web.http.routes._
+import it.unibo.pps.wizard.application.web.http.routes.*
 import it.unibo.pps.wizard.application.web.ws.WebSocketsVerticle
 import it.unibo.pps.wizard.engine.adapters.VertxWebSocketsAdapter
 import it.unibo.pps.wizard.engine.adapters.prolog.WizardPrologAdapter
@@ -19,6 +18,9 @@ import it.unibo.pps.wizard.engine.ports.InboundPort
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import it.unibo.pps.wizard.engine.ports.OutboundPort
 import it.unibo.pps.wizard.engine.ports.PubSubPort
+
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main:
   private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
@@ -55,12 +57,11 @@ object Main:
       vertx: Vertx,
       gameEngineInPort: InboundPort,
       lobbyStatePort: LobbyStatePort
-  ): Unit =
-    val routes: Seq[Router => Unit] = Seq(
-      LobbyRoutes(lobbyStatePort, gameEngineInPort).mount,
-      ActionRoutes(lobbyStatePort, gameEngineInPort).mount
-    )
-    val verticle = HttpServerVerticle(routes, httpPort)
+  )(using ec: ExecutionContext): Unit =
+    val lobbyRoutes = LobbyRoutes(lobbyStatePort, gameEngineInPort)
+    val actionRoutes = ActionRoutes(lobbyStatePort, gameEngineInPort)
+    val allEndpoints = lobbyRoutes.all ++ actionRoutes.all
+    val verticle = HttpServerVerticle(allEndpoints, httpPort)
     deploy(vertx, verticle, "HTTP", httpPort)
 
   private def runWSServer(
