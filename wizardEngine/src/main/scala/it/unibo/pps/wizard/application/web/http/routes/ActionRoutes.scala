@@ -10,18 +10,18 @@ import sttp.tapir.server.ServerEndpoint
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(implicit ec: ExecutionContext):
+class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(using ec: ExecutionContext):
 
   private def handleAction(lobbyIdStr: String, playerId: String, action: GameAction): Future[Either[ErrorResponse, ActionSuccessResponse]] =
     val lobbyId = LobbyId(lobbyIdStr)
     lobbyStatePort
       .getLobby(lobbyId)
-      .map:
+      .flatMap:
         case Some(lobby) =>
-          gameEnginePort.submitAction(lobbyId, action)
-          Right(ActionSuccessResponse(s"Action submitted successfully from player $playerId in lobby ${lobby.uuid}"))
+          gameEnginePort.submitAction(lobbyId, action).map: _ =>
+            Right(ActionSuccessResponse(s"Action submitted successfully from player $playerId in lobby ${lobby.uuid}"))
         case None =>
-          Left(ErrorResponse(s"Lobby $lobbyIdStr not found", "LOBBY_NOT_FOUND"))
+          Future.successful(Left(ErrorResponse(s"Lobby $lobbyIdStr not found", "LOBBY_NOT_FOUND")))
       .recover:
         case ex: Throwable =>
           Left(ErrorResponse(s"Internal error: ${ex.getMessage}", "INTERNAL_ERROR"))

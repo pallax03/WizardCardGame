@@ -10,7 +10,7 @@ import sttp.tapir.server.ServerEndpoint
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(implicit ec: ExecutionContext):
+class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using ec: ExecutionContext):
 
   val createLobbyServerEndpoint = LobbyEndpoints.createLobby
     .serverLogic: req =>

@@ -14,10 +14,7 @@ import it.unibo.pps.wizard.engine.adapters.redis.RedisInboundAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisLobbyStateAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisOutboundAdapter
 import it.unibo.pps.wizard.engine.adapters.redis.RedisPubSubAdapter
-import it.unibo.pps.wizard.engine.ports.InboundPort
-import it.unibo.pps.wizard.engine.ports.LobbyStatePort
-import it.unibo.pps.wizard.engine.ports.OutboundPort
-import it.unibo.pps.wizard.engine.ports.PubSubPort
+import it.unibo.pps.wizard.engine.ports.{AIPort, InboundPort, LobbyStatePort, OutboundPort, PubSubPort}
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -50,17 +47,19 @@ object Main:
       "bot verticle",
       0
     )
-    runHTTPServer(vertx, inPort, lobbyStatePort)
+    runHTTPServer(vertx, inPort, lobbyStatePort, prologPort)
     runWSServer(vertx, lobbyStatePort, pubSubPort)
 
   private def runHTTPServer(
       vertx: Vertx,
       gameEngineInPort: InboundPort,
-      lobbyStatePort: LobbyStatePort
+      lobbyStatePort: LobbyStatePort,
+      prologPort: AIPort
   )(using ec: ExecutionContext): Unit =
     val lobbyRoutes = LobbyRoutes(lobbyStatePort, gameEngineInPort)
     val actionRoutes = ActionRoutes(lobbyStatePort, gameEngineInPort)
-    val allEndpoints = lobbyRoutes.all ++ actionRoutes.all
+    val aiRoutes = AIRoutes(lobbyStatePort, prologPort)
+    val allEndpoints = lobbyRoutes.all ++ actionRoutes.all ++ aiRoutes.all
     val verticle = HttpServerVerticle(allEndpoints, httpPort)
     deploy(vertx, verticle, "HTTP", httpPort)
 
