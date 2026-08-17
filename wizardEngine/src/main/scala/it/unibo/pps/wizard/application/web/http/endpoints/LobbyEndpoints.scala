@@ -27,6 +27,7 @@ given Schema[Player] = Schema.derived
 object LobbyEndpoints:
 
   val baseEndpoint: Endpoint[Unit, Unit, ErrorResponse, Unit, Any] = endpoint
+    .in("api")
     .in("lobby")
     .errorOut(jsonBody[ErrorResponse])
 

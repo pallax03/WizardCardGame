@@ -8,7 +8,6 @@ server {
     # Route per il backend (motore di gioco)
     location /api {
         set $backend "http://wizard-engine:${HTTP_PORT}";
-        rewrite ^/api/?(.*)$ /$1 break;
         proxy_pass $backend;
         
         proxy_set_header Host $host;
