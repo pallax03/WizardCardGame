@@ -7,7 +7,7 @@ server {
 
     # Route per il backend (motore di gioco)
     location /api {
-        set $backend "http://wizard-engine:${ENGINE_PORT}";
+        set $backend "http://wizard-engine:${HTTP_PORT}";
         proxy_pass $backend;
         
         proxy_set_header Host $host;
@@ -18,7 +18,7 @@ server {
 
     # Route per WebSockets (se usati dal backend)
     location /socket.io {
-        set $backend "http://wizard-engine:${ENGINE_PORT}";
+        set $backend "http://wizard-engine:${WS_PORT}";
         proxy_pass $backend;
         
         proxy_set_header Upgrade $http_upgrade;

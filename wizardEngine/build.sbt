@@ -9,6 +9,8 @@ val vertxVersion          = "5.1.6"
 val tuPrologVersion       = "4.1.1"
 val circeVersion          = "0.14.16"
 val logbackVersion        = "1.6.3"
+val tapirVersion          = "1.13.31"
+val tapirCirceVersion     = "3.11.0"
 
 ThisBuild / scalaVersion := scala3Version
 ThisBuild / scalacOptions := Seq("-Wunused:all", "-Wunused:imports", "-Werror", "-language:implicitConversions", "-Wconf:msg=not declared infix:s")
@@ -26,15 +28,21 @@ ThisBuild / libraryDependencies ++= Seq(
   "io.circe"                  %%    "circe-core"              % circeVersion,
   "io.circe"                  %%    "circe-generic"           % circeVersion,
   "io.circe"                  %%    "circe-parser"            % circeVersion,
-  "ch.qos.logback"             %    "logback-classic"         % logbackVersion
+  "ch.qos.logback"             %    "logback-classic"         % logbackVersion,
+  "com.softwaremill.sttp.tapir" %%    "tapir-core"            % tapirVersion,
+  "com.softwaremill.sttp.tapir" %%    "tapir-vertx-server"    % tapirVersion,
+  "com.softwaremill.sttp.tapir" %%    "tapir-json-circe"      % tapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle"  % tapirVersion,
 )
 
 assembly / assemblyJarName := s"${name.value}.jar"
 assembly / mainClass := Some("it.unibo.pps.wizard.Main")
 assembly / assemblyMergeStrategy := {
-  case x if x.endsWith("module-info.class")            => MergeStrategy.discard
-  case x if x.endsWith("io.netty.versions.properties") => MergeStrategy.first
-  case x                                               => (assembly / assemblyMergeStrategy).value(x)
+  case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") => MergeStrategy.singleOrError
+  case PathList("META-INF", "resources", "webjars", "swagger-ui", _*)                => MergeStrategy.singleOrError
+  case x if x.endsWith("module-info.class")                                          => MergeStrategy.discard
+  case x if x.endsWith("io.netty.versions.properties")                               => MergeStrategy.first
+  case x                                                                             => (assembly / assemblyMergeStrategy).value(x)
 }
 
 lazy val root = (project in file("."))
