@@ -7,6 +7,9 @@ import it.unibo.pps.wizard.engine.ports.PubSubPort
 import it.unibo.pps.wizard.engine.ports.Subscription
 import it.unibo.pps.wizard.engine.ports.WebSocketsPort
 
+import it.unibo.pps.wizard.util.ChannelsKeys
+import io.vertx.core.json.JsonObject
+
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -30,6 +33,15 @@ class VertxWebSocketsAdapter(
       this.close(lobbyId, playerId)
     ws.exceptionHandler: _ =>
       this.close(lobbyId, playerId)
+
+    ws.textMessageHandler: text =>
+      Try:
+        val json = new JsonObject(text)
+        if json.containsKey("destinationId") then
+          val destId = PlayerId(json.getInteger("destinationId"))
+          pubSubPort.publish(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, destId), text)
+        else
+          pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), text)
 
     for
       lobbySub <- pubSubPort.subscribeToLobby(
