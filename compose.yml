@@ -1,20 +1,4 @@
 services:
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: ${PROJECT_NAME}-nginx
-    ports:
-      - "80:80"
-    environment:
-      - HTTP_PORT=${HTTP_PORT}
-      - WS_PORT=${WS_PORT}
-      - APPLICATION_PORT=${APPLICATION_PORT}
-    volumes:
-      - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-    depends_on:
-      - application
-      - wizard-engine
-    restart: always
-
   redis:
     image: redis:7-alpine
     container_name: ${PROJECT_NAME}-redis
@@ -29,6 +13,9 @@ services:
     build:
       context: ./wizardEngine
     container_name: ${PROJECT_NAME}-wizard-engine
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${WS_PORT}:${WS_PORT}"
     environment:
       - APP_ENV=${APP_ENV}
       - HTTP_PORT=${HTTP_PORT}
@@ -44,9 +31,12 @@ services:
     build:
       context: ./application
     container_name: ${PROJECT_NAME}-application
+    ports:
+      - "${APPLICATION_PORT}:${APPLICATION_PORT}"
     environment:
       - PORT=${APPLICATION_PORT}
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost
+      - NEXT_PUBLIC_BACKEND_URL=http://localhost:${HTTP_PORT}
+      - NEXT_PUBLIC_WS_URL=ws://localhost:${WS_PORT}
     depends_on:
       - wizard-engine
     restart: always

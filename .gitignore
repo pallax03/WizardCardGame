@@ -32,6 +32,7 @@ out/
 /**/*.gif
 
 ### Environment Secrets ###
-*.env
+.env*
+!application/.env.local
 **/CLAUDE.md
 **/AGENTS.md
