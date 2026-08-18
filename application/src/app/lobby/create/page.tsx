@@ -7,7 +7,7 @@ export default function LobbyCreate() {
         const name = formData.get("name")?.toString();
         if (!name) return;
 
-        const res = await fetch(`http://wizard-engine:${process.env.ENGINE_PORT || 5000}/lobby`, {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/api/lobby`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ name, bot: null })
