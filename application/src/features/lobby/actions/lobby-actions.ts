@@ -1,0 +1,93 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { LobbyApiResponse } from "@/features/lobby/types/lobby-types";
+
+export async function createLobbyAction(username: string) {
+  if (!username || !username.trim()) {
+    return { error: "Inserisci un nome utente per continuare." };
+  }
+
+  const baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+  let destination = "";
+
+  try {
+    const res = await fetch(`${baseUrl}/api/lobby`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: username.trim(), bot: null }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return { error: errorData.message || `Errore server: ${res.status}` };
+    }
+
+    const data = await res.json();
+    destination = `/lobby/${data.lobbyId}?playerId=${data.playerId}`;
+  } catch (err: any) {
+    return { error: "Errore di connessione al server backend." };
+  }
+
+  // Esegui il redirect fuori dal try-catch
+  redirect(destination);
+}
+
+export async function joinLobbyAction(username: string, lobbyId: string) {
+  if (!username || !username.trim()) {
+    return { error: "Inserisci il tuo nome prima di unirti." };
+  }
+  if (!lobbyId || !lobbyId.trim()) {
+    return { error: "Inserisci il codice della stanza." };
+  }
+
+  const baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+  let destination = "";
+
+  try {
+    const res = await fetch(`${baseUrl}/api/lobby/${lobbyId.trim()}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: username.trim(), bot: null }),
+    });
+
+    if (!res.ok) {
+      return { error: "Stanza non trovata o piena." };
+    }
+
+    const data = await res.json();
+    
+    // Se data.playerId esiste usalo, altrimenti passa username come fallback
+    const pId = data.playerId ? `&playerId=${data.playerId}` : "";
+    const pName = `&playerName=${encodeURIComponent(username.trim())}`;
+
+    destination = `/lobby/${data.lobbyId || lobbyId}?${pId}${pName}`;
+  } catch (err: any) {
+    return { error: "Errore durante l'accesso alla stanza." };
+  }
+
+  redirect(destination);
+}
+
+export async function getLobbyAction(lobbyId: string): Promise<{ data?: LobbyApiResponse; error?: string }> {
+  const baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/lobby/${lobbyId}`, {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+      // Facoltativo: disabilita la cache se vuoi sempre i dati aggiornati
+      cache: "no-store", 
+    });
+
+    if (!res.ok) {
+      return { error: `Errore server backend (${res.status})` };
+    }
+
+    const data: LobbyApiResponse = await res.json();
+    return { data };
+  } catch (err: any) {
+    console.error("Fetch lobby error:", err);
+    return { error: "Impossibile connettersi al server backend." };
+  }
+}
