@@ -21,7 +21,7 @@ export const chatI18n = {
   send: "Invia",
   sent: "inviato",
   actionsFor: (playerName: string) => `Azioni per ${playerName}`,
-  joined: "ha eseguito l'accesso.",
+  joined: "è entrato nella lobby.",
   left: "ha abbandonato la lobby.",
   fallbackPlayer: "Giocatore",
 };

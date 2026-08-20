@@ -139,7 +139,7 @@ export function ChatSheet() {
         </AnimatePresence>
       </SheetTrigger>
 
-      <SheetContent side="bottom" showCloseButton={false} className="inset-x-0 bottom-0 !h-[min(88dvh,46rem)] max-h-[calc(100dvh-env(safe-area-inset-top))] w-full origin-bottom overflow-hidden rounded-t-[1.75rem] border-white/10 bg-zinc-950/98 p-0 text-white shadow-2xl sm:!right-6 sm:!left-auto sm:bottom-24 sm:!h-[min(72dvh,40rem)] sm:max-h-[calc(100dvh-7rem)] sm:w-[26rem] sm:origin-bottom-right sm:rounded-[1.75rem] sm:border sm:data-ending-style:translate-x-8 sm:data-ending-style:translate-y-0 sm:data-starting-style:translate-x-8 sm:data-starting-style:translate-y-0">
+      <SheetContent side="bottom" showCloseButton={false} className="inset-x-0 bottom-0 h-[min(88dvh,46rem)]! max-h-[calc(100dvh-env(safe-area-inset-top))] w-full origin-bottom overflow-hidden rounded-t-[1.75rem] border-white/10 bg-zinc-950/98 p-0 text-white shadow-2xl sm:right-6! sm:left-auto! sm:bottom-24 ssm:h-[min(72dvh,40rem)] sm:max-h-[calc(100dvh-7rem)] sm:w-104 sm:origin-bottom-right sm:rounded-[1.75rem] sm:border sm:data-ending-style:translate-x-8 sm:data-ending-style:translate-y-0 sm:data-starting-style:translate-x-8 sm:data-starting-style:translate-y-0">
         <SheetHeader className="shrink-0 gap-0 border-b border-white/8 px-4 py-3">
           <div className="flex min-w-0 items-center gap-2">
             {activePrivateId !== null ? (

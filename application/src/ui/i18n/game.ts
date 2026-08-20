@@ -1,4 +1,4 @@
-export const appI18n = {
+export const gameI18n = {
   locale: "it",
   metadata: {
     title: "Wizard Card Game | Gioca online",
@@ -22,11 +22,5 @@ export const appI18n = {
     title: "Wizard Lobby",
     subtitle: "Codice lobby",
     description: "La lobby è pronta. Condividi il codice e attendi gli altri giocatori.",
-    online: "Online",
-    sharedTitle: "Lobby condivisa",
-    sharedDescription: "Gioca con i tuoi amici",
-    chatTitle: "Chat integrata",
-    chatDescription: "Lobby e messaggi privati",
-    chatHint: "Apri la chat dal pulsante in basso a destra.",
   }
 };
