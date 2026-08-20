@@ -1,34 +1,69 @@
-import Link from "next/link";
+import { redirect } from 'next/navigation';
+import { ArrowRight, Sparkles, Users } from 'lucide-react';
+import { gameI18n } from '@/i18n/game';
+import { Badge } from '@/ui/components/badge';
+import { Button } from '@/ui/components/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card';
+import { Input } from '@/ui/components/input';
 
-export default function Home() {
-  return (
-    <main className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-8 selection:bg-purple-500/30">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950"></div>
+export default function LobbyCreate() {
+    async function createLobby(formData: FormData) {
+        "use server";
+        
+        const name = formData.get("name")?.toString();
+        const customLobbyId = formData.get("lobby")?.toString();
+        
+        if (!name) return;
 
-      <div className="relative z-10 flex flex-col items-center gap-6">
-        <h1 className="text-6xl md:text-8xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-indigo-300 via-purple-300 to-pink-300 drop-shadow-sm">
-          Wizard
-        </h1>
-        <p className="text-xl md:text-2xl text-zinc-400 font-light tracking-wide max-w-2xl text-center">
-          Lobby in costruzione...
-        </p>
+        const url = customLobbyId 
+            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/lobby/${customLobbyId}`
+            : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/lobby`;
 
-        <div className="mt-8 flex gap-4">
-          <Link
-            href="/lobby/create"
-            className="px-8 py-3 rounded-full bg-white/10 hover:bg-white/15 border border-white/10 backdrop-blur-sm transition-all duration-300 font-medium text-sm tracking-wide flex items-center justify-center"
-          >
-            Crea Partita
-          </Link>
-          <Link
-            href="/lobby/1"
-            className="px-8 py-3 rounded-full bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/25 transition-all duration-300 font-medium text-sm tracking-wide flex items-center justify-center"
-          >
-            Unisciti
-          </Link>
-        </div>
-      </div>
-    </main>
-  );
+        const res = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ name, bot: null })
+        });
+        
+        if (!res.ok) {
+            throw new Error(gameI18n.errors.createLobby);
+        }
+        
+        const data = await res.json();
+
+        redirect(`/lobby/${data.lobbyId}?playerId=${data.playerId}`);
+    }
+    return (
+        <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-zinc-950 px-4 py-10 text-white selection:bg-indigo-400/30">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-15%,rgba(99,102,241,0.28),transparent_42%)]" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.025] bg-[linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] bg-size-[48px_48px]" />
+
+            <section className="relative z-10 flex w-full max-w-md flex-col items-center gap-7">
+                <Badge variant="outline" className="gap-1.5 border-indigo-300/15 bg-indigo-400/8 px-3 text-indigo-200">
+                    <Sparkles className="size-3" /> {gameI18n.home.eyebrow}
+                </Badge>
+                <div className="space-y-3 text-center">
+                    <h1 className="text-gradient-primary text-5xl font-bold sm:text-6xl">{gameI18n.home.title}</h1>
+                    <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-400 sm:text-base">{gameI18n.home.description}</p>
+                </div>
+
+                <Card className="w-full gap-5 border border-white/8 bg-zinc-900/70 py-6 shadow-2xl shadow-black/30 backdrop-blur-xl">
+                    <CardHeader>
+                        <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-300"><Users className="size-5" /></div>
+                        <CardTitle className="text-lg text-white">{gameI18n.home.formTitle}</CardTitle>
+                        <CardDescription className="text-zinc-400">{gameI18n.home.formDescription}</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form action={createLobby} className="flex flex-col gap-3">
+                            <Input type="text" name="name" placeholder={gameI18n.home.namePlaceholder} aria-label={gameI18n.home.namePlaceholder} required autoComplete="nickname" className="h-11 border-white/8 bg-white/5 px-4 text-white placeholder:text-zinc-600 focus-visible:border-indigo-400/50 focus-visible:ring-indigo-400/15" />
+                            <Input type="text" name="lobby" placeholder={gameI18n.home.lobbyPlaceholder} aria-label={gameI18n.home.lobbyPlaceholder} autoComplete="off" className="h-11 border-white/8 bg-white/5 px-4 text-white placeholder:text-zinc-600 focus-visible:border-indigo-400/50 focus-visible:ring-indigo-400/15" />
+                            <Button type="submit" size="lg" className="mt-2 h-11 w-full bg-indigo-500 text-white shadow-lg shadow-indigo-950/40 hover:bg-indigo-400">
+                                {gameI18n.home.createButton}<ArrowRight data-icon="inline-end" />
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+            </section>
+        </main>
+    );
 }
-
