@@ -1,6 +1,7 @@
 import { Geist, Geist_Mono, Inter } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils";
+import { appI18n } from "@/i18n/game";
 
 const inter = Inter({subsets:['latin'],variable:'--font-sans'});
 
@@ -15,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: 'Wizard Card Game | Play Online',
-  description: 'Play Wizard Card Game online with your friends',
+  title: appI18n.metadata.title,
+  description: appI18n.metadata.description,
   openGraph: {
     images: ['/app.png'] // todo: add a real image
   }
@@ -28,7 +29,7 @@ export default function RootLayout({
 }>) {
   return (
     <html
-      lang="it"
+      lang={appI18n.locale}
       className={cn("dark h-full", "antialiased", geistSans.variable, geistMono.variable, "font-sans", inter.variable)}
     >
       <body className="min-h-full flex flex-col">{children}</body>

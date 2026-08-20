@@ -26,7 +26,7 @@ export default function LobbyCreate() {
         });
         
         if (!res.ok) {
-            throw new Error("Failed to create lobby");
+            throw new Error(appI18n.errors.createLobby);
         }
         
         const data = await res.json();
@@ -40,18 +40,18 @@ export default function LobbyCreate() {
 
             <section className="relative z-10 flex w-full max-w-md flex-col items-center gap-7">
                 <Badge variant="outline" className="gap-1.5 border-indigo-300/15 bg-indigo-400/8 px-3 text-indigo-200">
-                    <Sparkles className="size-3" /> Il classico gioco di prese online
+                    <Sparkles className="size-3" /> {appI18n.home.eyebrow}
                 </Badge>
                 <div className="space-y-3 text-center">
                     <h1 className="text-gradient-primary text-5xl font-bold sm:text-6xl">{appI18n.home.title}</h1>
-                    <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-400 sm:text-base">Crea una lobby o raggiungi i tuoi amici con un codice. Bastano pochi secondi.</p>
+                    <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-400 sm:text-base">{appI18n.home.description}</p>
                 </div>
 
                 <Card className="w-full gap-5 border border-white/8 bg-zinc-900/70 py-6 shadow-2xl shadow-black/30 backdrop-blur-xl">
                     <CardHeader>
                         <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-300"><Users className="size-5" /></div>
-                        <CardTitle className="text-lg text-white">Entra in partita</CardTitle>
-                        <CardDescription className="text-zinc-400">Scegli il nome che vedranno gli altri giocatori.</CardDescription>
+                        <CardTitle className="text-lg text-white">{appI18n.home.formTitle}</CardTitle>
+                        <CardDescription className="text-zinc-400">{appI18n.home.formDescription}</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <form action={createLobby} className="flex flex-col gap-3">
