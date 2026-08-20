@@ -35,8 +35,7 @@ object LobbyEndpoints:
       .in(jsonBody[JoinLobbyRequest])
       .out(jsonBody[LobbyJoinResponse])
 
-  val joinLobby
-      : Endpoint[Unit, (String, JoinLobbyRequest), ErrorResponse, LobbyJoinResponse, Any] =
+  val joinLobby: Endpoint[Unit, (String, JoinLobbyRequest), ErrorResponse, LobbyJoinResponse, Any] =
     baseEndpoint.post
       .in(path[String]("lobbyId"))
       .in(jsonBody[JoinLobbyRequest])

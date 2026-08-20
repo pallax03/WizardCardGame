@@ -17,7 +17,9 @@ class HttpServerVerticle(endpoints: List[ServerEndpoint[Any, Future]], port: Int
     router.route().handler(LoggerHandler.create())
     val isProduction = sys.env.getOrElse("APP_ENV", "development") == "production"
     val swaggerEndpoints =
-      if (!isProduction) SwaggerInterpreter().fromServerEndpoints(endpoints, "Wizard Game Engine API", "1.0.0") else List.empty
+      if (!isProduction)
+        SwaggerInterpreter().fromServerEndpoints(endpoints, "Wizard Game Engine API", "1.0.0")
+      else List.empty
     val allEndpoints = endpoints ++ swaggerEndpoints
     val interpreter = VertxFutureServerInterpreter()
     allEndpoints.foreach(endpoint => interpreter.route(endpoint)(router))

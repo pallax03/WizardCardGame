@@ -43,7 +43,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
               Right(LobbyJoinResponse(lobbyId, player.id))
             case None =>
               Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
-  
+
   val getLobbyInfoServerEndpoint: ServerEndpoint[Any, Future] {
     type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = String;
     type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyStateResponse
