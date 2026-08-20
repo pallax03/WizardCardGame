@@ -14,9 +14,8 @@ import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
 case class ErrorResponse(message: String, code: String)
-case class CreateLobbyRequest(name: String, bot: Option[BotsDifficulty])
-case class LobbyCreatedResponse(lobbyId: LobbyId, playerId: PlayerId)
 case class JoinLobbyRequest(name: String, bot: Option[BotsDifficulty])
+case class LobbyJoinResponse(lobbyId: LobbyId, playerId: PlayerId)
 case class LobbyStateResponse(lobbyId: LobbyId, players: List[Player])
 case class GameStartedResponse(message: String)
 
@@ -31,17 +30,17 @@ object LobbyEndpoints:
     .in("lobby")
     .errorOut(jsonBody[ErrorResponse])
 
-  val createLobby: Endpoint[Unit, CreateLobbyRequest, ErrorResponse, LobbyCreatedResponse, Any] =
+  val createLobby: Endpoint[Unit, JoinLobbyRequest, ErrorResponse, LobbyJoinResponse, Any] =
     baseEndpoint.post
-      .in(jsonBody[CreateLobbyRequest])
-      .out(jsonBody[LobbyCreatedResponse])
+      .in(jsonBody[JoinLobbyRequest])
+      .out(jsonBody[LobbyJoinResponse])
 
   val joinLobby
-      : Endpoint[Unit, (String, JoinLobbyRequest), ErrorResponse, LobbyStateResponse, Any] =
+      : Endpoint[Unit, (String, JoinLobbyRequest), ErrorResponse, LobbyJoinResponse, Any] =
     baseEndpoint.post
       .in(path[String]("lobbyId"))
       .in(jsonBody[JoinLobbyRequest])
-      .out(jsonBody[LobbyStateResponse])
+      .out(jsonBody[LobbyJoinResponse])
 
   val getLobbyInfo: Endpoint[Unit, String, ErrorResponse, LobbyStateResponse, Any] =
     baseEndpoint.get

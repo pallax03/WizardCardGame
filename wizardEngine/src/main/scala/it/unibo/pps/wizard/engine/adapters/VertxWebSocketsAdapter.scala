@@ -6,7 +6,6 @@ import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.ports.PubSubPort
 import it.unibo.pps.wizard.engine.ports.Subscription
 import it.unibo.pps.wizard.engine.ports.WebSocketsPort
-
 import it.unibo.pps.wizard.util.ChannelsKeys
 import io.vertx.core.json.JsonObject
 
@@ -55,13 +54,17 @@ class VertxWebSocketsAdapter(
       )
     yield
       sessions.put((lobbyId, playerId), ClientSession(ws, lobbySub, playerSub))
+      val joinMsg = new JsonObject().put("type", "system").put("playerId", playerId.toInt).put("action", "joined")
+      pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), joinMsg.encode())
       ()
 
   /** @inheritdoc */
   override def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
     sessions.remove((lobbyId, playerId)) match
-      case Some(session) =>
+      case Some(session) =>      
         Try(session.ws.close())
+        val leaveMsg = new JsonObject().put("type", "system").put("playerId", playerId.toInt).put("action", "left")
+        pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), leaveMsg.encode())
         for
           _ <- session.lobbySub.cancel()
           _ <- session.playerSub.cancel()
