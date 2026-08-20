@@ -1,13 +1,12 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { ArrowLeft, Check, LockKeyhole, MessageCircle, Send, Users, X } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 
 import { useChat } from "../hooks/useChat";
 import { ChatMessage } from "../types";
-import { getLobbyState } from "@/features/lobby/hooks/useLobby";
+import { useLobbySession } from "@/features/lobby-session";
 import { chatI18n } from "@/i18n/chat";
 import { Avatar, AvatarFallback } from "@/ui/components/avatar";
 import { Badge } from "@/ui/components/badge";
@@ -19,51 +18,19 @@ import { ScrollArea } from "@/ui/components/scroll-area";
 import { Sheet, SheetClose, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/ui/components/sheet";
 import { Skeleton } from "@/ui/components/skeleton";
 
-function initials(name: string) {
-  return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
-}
-
 export function ChatSheet() {
-  const params = useParams();
-  const searchParams = useSearchParams();
-  const router = useRouter();
-  const lobbyId = params.id as string;
-  const [playerId, setPlayerId] = useState<number | null>(null);
-  const [playersMap, setPlayersMap] = useState<Record<number, string>>({});
+  const { playerId, lobby, connectedPlayerIds } = useLobbySession();
   const [input, setInput] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const [activePrivateId, setActivePrivateId] = useState<number | null>(null);
   const [seenMessageCount, setSeenMessageCount] = useState(0);
   const [seenPrivateCount, setSeenPrivateCount] = useState<Record<number, number>>({});
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { messages, sendMessage, connectionState } = useChat(lobbyId, playerId);
-
-  useEffect(() => {
-    const urlPlayerId = searchParams.get("playerId");
-    const storedPlayerId = localStorage.getItem("wizard_playerId");
-    const storedLobbyId = localStorage.getItem("wizard_lobbyId");
-    const candidate = urlPlayerId ?? (storedLobbyId === lobbyId ? storedPlayerId : null);
-    const resolvedPlayerId = candidate === null ? Number.NaN : Number.parseInt(candidate, 10);
-    if (Number.isNaN(resolvedPlayerId)) {
-      router.replace("/");
-      return;
-    }
-    if (urlPlayerId) {
-      localStorage.setItem("wizard_playerId", urlPlayerId);
-      localStorage.setItem("wizard_lobbyId", lobbyId);
-      router.replace(`/lobby/${lobbyId}`);
-    }
-    getLobbyState(lobbyId)
-      .then((data) => {
-        if (!data?.players) {
-          router.replace("/");
-          return;
-        }
-        setPlayerId(resolvedPlayerId);
-        setPlayersMap(Object.fromEntries(data.players.map((player: { id: number; name: string }) => [player.id, player.name])));
-      })
-      .catch(() => router.replace("/"));
-  }, [lobbyId, router, searchParams]);
+  const { messages, sendMessage, connectionState } = useChat();
+  const playersMap = useMemo(
+    () => Object.fromEntries((lobby?.players ?? []).map((player) => [player.id, player.name])),
+    [lobby?.players],
+  );
 
   const chatMessages = useMemo(
     () => messages.filter((message): message is ChatMessage => message.type === "message"),
@@ -158,7 +125,7 @@ export function ChatSheet() {
               </AnimatePresence>
               <SheetDescription className="flex items-center gap-1.5 truncate text-[11px] text-zinc-500">
                 <span className={`size-1.5 rounded-full ${connectionState === "open" ? "bg-emerald-400" : "bg-amber-400"}`} />
-                {activePrivateId === null ? `${chatI18n.playersOnline(Object.keys(playersMap).length)} · ${connectionState === "open" ? chatI18n.connected : chatI18n.connecting}` : `${chatI18n.privateWith} ${privateName ?? chatI18n.fallbackPlayer}`}
+                {activePrivateId === null ? `${chatI18n.playersOnline(connectedPlayerIds.length)} · ${connectionState === "open" ? chatI18n.connected : chatI18n.connecting}` : `${chatI18n.privateWith} ${privateName ?? chatI18n.fallbackPlayer}`}
               </SheetDescription>
             </div>
             <SheetClose aria-label={chatI18n.close} className="grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 transition hover:bg-white/8 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none"><X className="size-4" /></SheetClose>
@@ -195,7 +162,7 @@ export function ChatSheet() {
                   {!isMe && (
                     <Popover>
                       <PopoverTrigger aria-label={chatI18n.actionsFor(name)} className="shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
-                        <Avatar className="cursor-pointer ring-2 ring-transparent transition hover:ring-indigo-400/60"><AvatarFallback className="bg-zinc-800 text-[10px] font-semibold text-zinc-300">{initials(name)}</AvatarFallback></Avatar>
+                        <Avatar className="cursor-pointer ring-2 ring-transparent transition hover:ring-indigo-400/60"><AvatarFallback className="bg-zinc-800 text-[10px] font-semibold text-zinc-300">P{message.playerId}</AvatarFallback></Avatar>
                       </PopoverTrigger>
                       <PopoverContent side="top" align="start" className="w-64 gap-3 rounded-2xl border border-white/8 bg-zinc-900 p-3 text-white">
                         <PopoverHeader><PopoverTitle className="text-sm">{name}</PopoverTitle><PopoverDescription className="text-xs text-zinc-400">{chatI18n.privateDescription}</PopoverDescription></PopoverHeader>
@@ -204,12 +171,17 @@ export function ChatSheet() {
                     </Popover>
                   )}
                   <div className={`flex min-w-0 max-w-full flex-col ${isMe ? "items-end" : "flex-1 items-start"}`}>
-                    {!isMe && <span className="mb-1 px-1 text-[10px] font-medium text-zinc-500">{name}</span>}
+                    <span className="mb-1 px-1 text-[10px] font-medium text-zinc-500">{name}</span>
                     <Bubble align={isMe ? "end" : "start"} variant={isMe ? "default" : "secondary"} className="max-w-full">
                       <BubbleContent className={isMe ? "bg-indigo-500 text-white" : "bg-zinc-800/90 text-zinc-100"}>{message.text}</BubbleContent>
                     </Bubble>
                     {isMe && <span className="mt-1 flex items-center gap-0.5 px-1 text-[9px] text-zinc-600"><Check className="size-2.5" /> {chatI18n.sent}</span>}
                   </div>
+                  {isMe && (
+                    <Avatar title={name} className="shrink-0">
+                      <AvatarFallback className="bg-indigo-500/15 text-[10px] font-semibold text-indigo-200">P{message.playerId}</AvatarFallback>
+                    </Avatar>
+                  )}
                 </motion.div>
               );
             })}
