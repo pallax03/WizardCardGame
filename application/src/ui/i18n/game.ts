@@ -2,12 +2,12 @@ export const appI18n = {
   home: {
     title: "Wizard Lobby",
     namePlaceholder: "Il tuo nome",
-    lobbyPlaceholder: "Optional lobby name",
-    createButton: "Create Lobby",
-    joinButton: "Join Lobby",
+    lobbyPlaceholder: "Codice lobby (opzionale)",
+    createButton: "Continua",
+    joinButton: "Entra nella lobby",
   },
   lobby: {
     title: "Wizard Lobby",
-    subtitle: "Lobby:",
+    subtitle: "Codice lobby",
   }
 };

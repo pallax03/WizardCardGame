@@ -1,5 +1,10 @@
 import { redirect } from 'next/navigation';
+import { ArrowRight, Sparkles, Users } from 'lucide-react';
 import { appI18n } from '@/i18n/game';
+import { Badge } from '@/ui/components/badge';
+import { Button } from '@/ui/components/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card';
+import { Input } from '@/ui/components/input';
 
 export default function LobbyCreate() {
     async function createLobby(formData: FormData) {
@@ -29,37 +34,36 @@ export default function LobbyCreate() {
         redirect(`/lobby/${data.lobbyId}?playerId=${data.playerId}`);
     }
     return (
-        <main className="min-h-screen bg-zinc-950 text-white flex flex-col items-center justify-center p-8 selection:bg-purple-500/30">
-            <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950"></div>
+        <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-zinc-950 px-4 py-10 text-white selection:bg-indigo-400/30">
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-15%,rgba(99,102,241,0.28),transparent_42%)]" />
+            <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.025] [background-image:linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] [background-size:48px_48px]" />
 
-            <div className="relative z-10 flex flex-col items-center gap-6">
-                <h1 className="text-6xl md:text-8xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-indigo-300 via-purple-300 to-pink-300 drop-shadow-sm">
-                    {appI18n.home.title}
-                </h1>
-                
-                <form action={createLobby} className="flex flex-col gap-4 w-full max-w-sm mt-8">
-                    
-                    <input 
-                        type="text" 
-                        name="name"
-                        placeholder={appI18n.home.namePlaceholder} 
-                        required
-                        className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500/50 focus:outline-none transition-colors"
-                    />
-                    <input 
-                        type="text" 
-                        name="lobby"
-                        placeholder={appI18n.home.lobbyPlaceholder} 
-                        className="px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500/50 focus:outline-none transition-colors"
-                    />
-                    <button 
-                        type="submit"
-                        className="px-8 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/25 transition-all duration-300 font-medium tracking-wide"
-                    >
-                        {appI18n.home.createButton}
-                    </button>
-                </form>
-            </div>
+            <section className="relative z-10 flex w-full max-w-md flex-col items-center gap-7">
+                <Badge variant="outline" className="gap-1.5 border-indigo-300/15 bg-indigo-400/8 px-3 text-indigo-200">
+                    <Sparkles className="size-3" /> Il classico gioco di prese online
+                </Badge>
+                <div className="space-y-3 text-center">
+                    <h1 className="text-gradient-primary text-5xl font-bold sm:text-6xl">{appI18n.home.title}</h1>
+                    <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-400 sm:text-base">Crea una lobby o raggiungi i tuoi amici con un codice. Bastano pochi secondi.</p>
+                </div>
+
+                <Card className="w-full gap-5 border border-white/8 bg-zinc-900/70 py-6 shadow-2xl shadow-black/30 backdrop-blur-xl">
+                    <CardHeader>
+                        <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-300"><Users className="size-5" /></div>
+                        <CardTitle className="text-lg text-white">Entra in partita</CardTitle>
+                        <CardDescription className="text-zinc-400">Scegli il nome che vedranno gli altri giocatori.</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <form action={createLobby} className="flex flex-col gap-3">
+                            <Input type="text" name="name" placeholder={appI18n.home.namePlaceholder} aria-label={appI18n.home.namePlaceholder} required autoComplete="nickname" className="h-11 border-white/8 bg-white/5 px-4 text-white placeholder:text-zinc-600 focus-visible:border-indigo-400/50 focus-visible:ring-indigo-400/15" />
+                            <Input type="text" name="lobby" placeholder={appI18n.home.lobbyPlaceholder} aria-label={appI18n.home.lobbyPlaceholder} autoComplete="off" className="h-11 border-white/8 bg-white/5 px-4 text-white placeholder:text-zinc-600 focus-visible:border-indigo-400/50 focus-visible:ring-indigo-400/15" />
+                            <Button type="submit" size="lg" className="mt-2 h-11 w-full bg-indigo-500 text-white shadow-lg shadow-indigo-950/40 hover:bg-indigo-400">
+                                {appI18n.home.createButton}<ArrowRight data-icon="inline-end" />
+                            </Button>
+                        </form>
+                    </CardContent>
+                </Card>
+            </section>
         </main>
     );
 }
