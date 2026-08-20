@@ -21,6 +21,7 @@
     "paths": {
       "@/*": ["./src/*"],
       "@/ui/*": ["./src/ui/*"],
+      "@/i18n/*": ["./src/ui/i18n/*"],
       "@/features/*": ["./src/features/*"]
     }
   },

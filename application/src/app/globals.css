@@ -128,3 +128,9 @@
     @apply font-sans;
   }
 }
+
+@layer components {
+  .text-gradient-primary {
+    @apply tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-indigo-300 via-purple-300 to-pink-300 drop-shadow-sm;
+  }
+}

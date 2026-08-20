@@ -1,3 +1,5 @@
+import { appI18n } from '@/i18n/game';
+
 export default async function LobbyPage({
     params,
 }: {
@@ -10,12 +12,11 @@ export default async function LobbyPage({
 
             <div className="relative z-10 flex flex-col items-center gap-6">
                 <h1 className="text-6xl md:text-8xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-indigo-300 via-purple-300 to-pink-300 drop-shadow-sm">
-                    Wizard Lobby
+                    {appI18n.lobby.title}
                 </h1>
                 <p className="text-xl md:text-2xl text-zinc-400 font-light tracking-wide max-w-2xl text-center">
-                    Lobby: {id}
+                    {appI18n.lobby.subtitle} {id}
                 </p>
-
             </div>
         </main>
     );
