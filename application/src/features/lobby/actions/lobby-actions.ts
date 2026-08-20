@@ -91,3 +91,28 @@ export async function getLobbyAction(lobbyId: string): Promise<{ data?: LobbyApi
     return { error: "Impossibile connettersi al server backend." };
   }
 }
+
+export async function addBotAction(
+  lobbyId: string,
+  botDifficulty: "Dumb" | "Prolog"
+): Promise<{ success?: boolean; error?: string }> {
+  const baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+  console.log(`Adding bot to lobby ${lobbyId} with difficulty ${botDifficulty}`);
+  try {
+    const res = await fetch(`${baseUrl}/api/lobby/${lobbyId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({name: "", bot: botDifficulty }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return { error: errorData.message || `Errore nell'aggiunta del bot (${res.status})` };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Add bot error:", err);
+    return { error: "Errore di connessione al server backend durante l'aggiunta del bot." };
+  }
+}
