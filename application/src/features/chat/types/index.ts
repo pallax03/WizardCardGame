@@ -19,6 +19,7 @@ export type EventMessage = {
         type: string;
         action: string;
         playerId?: number;
+        destinationId?: number;
         fields?: Record<string, unknown>;
     };
     timestamp: string;

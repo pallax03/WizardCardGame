@@ -1,7 +1,5 @@
 import { gameI18n } from '@/i18n/game';
-import { uiI18n } from '@/i18n/ui';
 import { Sparkles } from 'lucide-react';
-import { Badge } from '@/ui/components/badge';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/ui/components/card';
 
 export default async function LobbyPage({
