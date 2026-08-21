@@ -6,6 +6,22 @@ import { Input } from "@/ui/components/input";
 import { Button } from "@/ui/components/button";
 import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/lobby-actions";
+import { redirect } from 'next/navigation';
+import { ArrowRight, Sparkles, Users } from 'lucide-react';
+import { gameI18n } from '@/i18n/game';
+import { Badge } from '@/ui/components/badge';
+import { Button } from '@/ui/components/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card';
+import { Input } from '@/ui/components/input';
+
+export default function LobbyCreate() {
+    async function createLobby(formData: FormData) {
+        "use server";
+
+        const name = formData.get("name")?.toString();
+        const customLobbyId = formData.get("lobby")?.toString();
+
+        if (!name) return;
 
 export default function Home() {
   // State form
@@ -49,7 +65,7 @@ export default function Home() {
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950 pointer-events-none" />
 
       <div className="relative z-10 w-full max-w-md space-y-8">
-        
+
         {/* Title / Hero */}
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium backdrop-blur-md">
@@ -90,7 +106,7 @@ export default function Home() {
             {/* Pulsanti Azione */}
             <div className="space-y-3 pt-2">
               <div className="grid grid-cols-2 gap-3">
-                
+
                 {/* Botton Crea Partita */}
                 <Button
                   onClick={handleCreateLobby}
@@ -171,3 +187,4 @@ export default function Home() {
     </main>
   );
 }
+

@@ -1,13 +1,7 @@
 package it.unibo.pps.wizard.application.web.http.routes
 
 import it.unibo.pps.wizard.application.web.http._
-import it.unibo.pps.wizard.application.web.http.endpoints.CreateLobbyRequest
-import it.unibo.pps.wizard.application.web.http.endpoints.ErrorResponse
-import it.unibo.pps.wizard.application.web.http.endpoints.GameStartedResponse
-import it.unibo.pps.wizard.application.web.http.endpoints.JoinLobbyRequest
-import it.unibo.pps.wizard.application.web.http.endpoints.LobbyCreatedResponse
-import it.unibo.pps.wizard.application.web.http.endpoints.LobbyEndpoints
-import it.unibo.pps.wizard.application.web.http.endpoints.LobbyStateResponse
+import it.unibo.pps.wizard.application.web.http.endpoints._
 import it.unibo.pps.wizard.engine.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.lobby._
 import it.unibo.pps.wizard.engine.ports.InboundPort
@@ -22,8 +16,8 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
 ):
 
   val createLobbyServerEndpoint: ServerEndpoint[Any, Future] {
-    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = CreateLobbyRequest;
-    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyCreatedResponse
+    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = JoinLobbyRequest;
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyJoinResponse
   } = LobbyEndpoints.createLobby
     .serverLogic: req =>
       val lobbyId = LobbyId.generate
@@ -31,13 +25,13 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
         .addPlayer(lobbyId, req.name, req.bot)
         .map:
           case Some(player) =>
-            Right(LobbyCreatedResponse(lobbyId, player.id))
+            Right(LobbyJoinResponse(lobbyId, player.id))
           case None =>
             Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
 
   val joinLobbyServerEndpoint: ServerEndpoint[Any, Future] {
     type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, JoinLobbyRequest);
-    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyStateResponse
+    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyJoinResponse
   } = LobbyEndpoints.joinLobby
     .serverLogic:
       case (rawLobbyId, req) =>
@@ -46,7 +40,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
           .addPlayer(lobbyId, req.name, req.bot)
           .map:
             case Some(player) =>
-              Right(LobbyStateResponse(lobbyId, List(player)))
+              Right(LobbyJoinResponse(lobbyId, player.id))
             case None =>
               Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
 
