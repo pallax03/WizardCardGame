@@ -7,6 +7,7 @@ import it.unibo.pps.wizard.engine.lobby.Lobby
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import it.unibo.pps.wizard.engine.ports.WebSocketsPort
 import it.unibo.pps.wizard.util.FutureSyntax._
+import io.vertx.core.http.HttpServerOptions
 
 import scala.util.Success
 
@@ -43,4 +44,5 @@ class WebSocketsVerticle(
           case _ =>
             req.response().setStatusCode(400).end("Missing lobbyId")
 
-    vertx.createHttpServer().requestHandler(router).listen(port)
+    val options = HttpServerOptions().setIdleTimeout(60)
+    vertx.createHttpServer(options).requestHandler(router).listen(port)

@@ -52,7 +52,7 @@ class VertxWebSocketsAdapter(
         rawJson => ws.writeTextMessage(rawJson)
       )
     yield
-      sessions.put((lobbyId, playerId), ClientSession(ws, lobbySub, playerSub))
+      sessions.put((lobbyId, playerId), ClientSession(ws, lobbySub, playerSub, onDisconnect))
       val joinMsg = new JsonObject()
         .put("type", "system")
         .put("playerId", playerId.toInt)

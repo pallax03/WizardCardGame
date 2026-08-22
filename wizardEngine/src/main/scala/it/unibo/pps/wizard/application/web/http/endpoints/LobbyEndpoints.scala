@@ -15,7 +15,7 @@ import sttp.tapir.json.circe._
 
 case class ErrorResponse(message: String, code: String)
 case class JoinLobbyRequest(name: String, bot: Option[BotsDifficulty])
-case class LobbyJoinResponse(lobbyId: LobbyId, playerId: PlayerId)
+case class LobbyPlayerResponse(lobbyId: LobbyId, playerId: PlayerId)
 case class LobbyStateResponse(lobbyId: LobbyId, players: List[Player])
 case class GameStartedResponse(message: String)
 
@@ -30,16 +30,16 @@ object LobbyEndpoints:
     .in("lobby")
     .errorOut(jsonBody[ErrorResponse])
 
-  val createLobby: Endpoint[Unit, JoinLobbyRequest, ErrorResponse, LobbyJoinResponse, Any] =
+  val createLobby: Endpoint[Unit, JoinLobbyRequest, ErrorResponse, LobbyPlayerResponse, Any] =
     baseEndpoint.post
       .in(jsonBody[JoinLobbyRequest])
-      .out(jsonBody[LobbyJoinResponse])
+      .out(jsonBody[LobbyPlayerResponse])
 
-  val joinLobby: Endpoint[Unit, (String, JoinLobbyRequest), ErrorResponse, LobbyJoinResponse, Any] =
+  val joinLobby: Endpoint[Unit, (String, JoinLobbyRequest), ErrorResponse, LobbyPlayerResponse, Any] =
     baseEndpoint.post
       .in(path[String]("lobbyId"))
       .in(jsonBody[JoinLobbyRequest])
-      .out(jsonBody[LobbyJoinResponse])
+      .out(jsonBody[LobbyPlayerResponse])
 
   val getLobbyInfo: Endpoint[Unit, String, ErrorResponse, LobbyStateResponse, Any] =
     baseEndpoint.get
@@ -50,6 +50,6 @@ object LobbyEndpoints:
     .in(path[String]("lobbyId") / "start")
     .out(jsonBody[GameStartedResponse])
 
-  val removePlayer: Endpoint[Unit, (String, String), ErrorResponse, Unit, Any] = baseEndpoint.delete
-    .in(path[String]("lobbyId") / "player" / path[String]("playerId"))
+  val removePlayer: Endpoint[Unit, LobbyPlayerResponse, ErrorResponse, Unit, Any] = baseEndpoint.delete
+    .in(jsonBody[LobbyPlayerResponse])
     .out(statusCode(StatusCode.NoContent))
