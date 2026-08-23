@@ -8,7 +8,7 @@ export const gameI18n = {
     createLobby: "Impossibile creare la lobby",
   },
   home: {
-    title: "Wizard Lobby",
+    title: "Wizard Card Game",
     eyebrow: "Il classico gioco di prese online",
     description: "Crea una lobby o raggiungi i tuoi amici con un codice. Bastano pochi secondi.",
     formTitle: "Entra in partita",
@@ -19,7 +19,7 @@ export const gameI18n = {
     joinButton: "Entra nella lobby",
   },
   lobby: {
-    title: "Wizard Lobby",
+    title: "Wizard Card Game",
     subtitle: "Codice lobby",
     description: "La lobby è pronta. Condividi il codice e attendi gli altri giocatori.",
   }

@@ -1,4 +1,4 @@
-import { ChatSheet } from "@/features/chat";
+import { ChatSheet } from "@/features/chat/components/ChatSheet";
 import { LobbySessionProvider } from "@/features/lobby-session";
 import { Suspense } from "react";
 import { Skeleton } from "@/ui/components/skeleton";

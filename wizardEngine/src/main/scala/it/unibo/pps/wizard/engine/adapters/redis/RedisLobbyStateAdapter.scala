@@ -19,7 +19,12 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
   override def saveLobby(lobby: Lobby): Future[Unit] =
-    val req = Request.cmd(Command.SET).arg(ChannelsKeys.lobby(lobby.uuid)).arg(lobby.toJson)
+    val req = Request
+      .cmd(Command.SET)
+      .arg(ChannelsKeys.lobby(lobby.uuid))
+      .arg(lobby.toJson)
+      .arg("EX")
+      .arg("86400")
     redisClient.send(req).asScala.void
 
   /** @inheritdoc */
@@ -54,7 +59,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       |end
       |
       |table.insert(lobby.players, newPlayer)
-      |redis.call('SET', KEYS[1], cjson.encode(lobby))
+      |redis.call('SET', KEYS[1], cjson.encode(lobby), 'EX', 86400)
       |
       |return cjson.encode(newPlayer)
       |""".stripMargin
@@ -87,6 +92,9 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       case Some(lobby) =>
         val newPlayers = lobby.players.filterNot(_.id == playerId)
         if newPlayers.size == lobby.players.size then Future.successful(false)
+        else if newPlayers.isEmpty then
+          val req = Request.cmd(Command.DEL).arg(ChannelsKeys.lobby(lobbyId))
+          redisClient.send(req).asScala.as(true)
         else saveLobby(lobby.copy(players = newPlayers)).as(true)
       case None => Future.successful(false)
 
