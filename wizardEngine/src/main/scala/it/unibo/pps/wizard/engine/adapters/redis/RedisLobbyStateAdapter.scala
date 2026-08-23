@@ -19,7 +19,12 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
   override def saveLobby(lobby: Lobby): Future[Unit] =
-    val req = Request.cmd(Command.SET).arg(ChannelsKeys.lobby(lobby.uuid)).arg(lobby.toJson).arg("EX").arg("86400")
+    val req = Request
+      .cmd(Command.SET)
+      .arg(ChannelsKeys.lobby(lobby.uuid))
+      .arg(lobby.toJson)
+      .arg("EX")
+      .arg("86400")
     redisClient.send(req).asScala.void
 
   /** @inheritdoc */

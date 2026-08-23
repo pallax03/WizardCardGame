@@ -35,7 +35,8 @@ object LobbyEndpoints:
       .in(jsonBody[JoinLobbyRequest])
       .out(jsonBody[LobbyPlayerResponse])
 
-  val joinLobby: Endpoint[Unit, (String, JoinLobbyRequest), ErrorResponse, LobbyPlayerResponse, Any] =
+  val joinLobby
+      : Endpoint[Unit, (String, JoinLobbyRequest), ErrorResponse, LobbyPlayerResponse, Any] =
     baseEndpoint.post
       .in(path[String]("lobbyId"))
       .in(jsonBody[JoinLobbyRequest])
@@ -50,6 +51,7 @@ object LobbyEndpoints:
     .in(path[String]("lobbyId") / "start")
     .out(jsonBody[GameStartedResponse])
 
-  val removePlayer: Endpoint[Unit, LobbyPlayerResponse, ErrorResponse, Unit, Any] = baseEndpoint.delete
-    .in(jsonBody[LobbyPlayerResponse])
-    .out(statusCode(StatusCode.NoContent))
+  val removePlayer: Endpoint[Unit, LobbyPlayerResponse, ErrorResponse, Unit, Any] =
+    baseEndpoint.delete
+      .in(jsonBody[LobbyPlayerResponse])
+      .out(statusCode(StatusCode.NoContent))

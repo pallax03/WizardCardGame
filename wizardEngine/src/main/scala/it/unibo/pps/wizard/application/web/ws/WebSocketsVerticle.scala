@@ -1,13 +1,13 @@
 package it.unibo.pps.wizard.application.web.ws
 
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
 import it.unibo.pps.wizard.application.web._
 import it.unibo.pps.wizard.engine.lobby.Lobby
 import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import it.unibo.pps.wizard.engine.ports.WebSocketsPort
 import it.unibo.pps.wizard.util.FutureSyntax._
-import io.vertx.core.http.HttpServerOptions
 
 import scala.util.Success
 

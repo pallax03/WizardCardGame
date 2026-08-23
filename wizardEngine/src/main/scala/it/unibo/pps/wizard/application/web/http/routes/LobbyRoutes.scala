@@ -93,11 +93,11 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
     type ERROR_OUTPUT = ErrorResponse; type OUTPUT = Unit
   } = LobbyEndpoints.removePlayer
     .serverLogic: req =>
-        lobbyStatePort
-            .removePlayer(req.lobbyId, req.playerId)
-            .map: success =>
-              if success then Right(())
-              else Left(ErrorResponse("Player or lobby not found", "NOT_FOUND"))
+      lobbyStatePort
+        .removePlayer(req.lobbyId, req.playerId)
+        .map: success =>
+          if success then Right(())
+          else Left(ErrorResponse("Player or lobby not found", "NOT_FOUND"))
 
   val all: List[ServerEndpoint[Any, Future]] = List(
     createLobbyServerEndpoint,
