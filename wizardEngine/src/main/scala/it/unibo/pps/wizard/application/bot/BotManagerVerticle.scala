@@ -57,7 +57,7 @@ class BotManagerVerticle(
         case Success(Some(lobby)) => spawnBotsForLobby(lobby)
         case _                    => logger.error(s"Failed to retrieve lobby $lobbyIdStr for spawn")
 
-  private def spawnBotsForLobby(lobby: Lobby): Unit = {
+  private def spawnBotsForLobby(lobby: Lobby): Unit =
     lobbyStatePort
       .tryAcquireBotLock(lobby.uuid, podId)
       .onComplete:
@@ -77,7 +77,6 @@ class BotManagerVerticle(
               syncStateAndPlay(lobby.uuid, bot.id, strategy)
         case _ =>
           logger.info(s"Lobby ${lobby.uuid} bots are managed by another pod.")
-  }
 
   private def syncStateAndPlay(lobbyId: LobbyId, botId: PlayerId, strategy: BotStrategy): Unit =
     gameInboundPort

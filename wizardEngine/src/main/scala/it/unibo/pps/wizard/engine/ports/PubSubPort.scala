@@ -4,7 +4,8 @@ import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.util.ChannelsKeys
 
-import scala.concurrent.{Future, ExecutionContext}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 trait Subscription:
   /** Cancels this specific subscription. */
@@ -44,11 +45,17 @@ trait PubSubPort:
     for
       lobbySub <- subscribe(ChannelsKeys.pubSubLobbyChannel(lobbyId), onMessage)
       playerSub <- subscribe(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, playerId), onMessage)
-      _ <- publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), s"""{"type":"system","playerId":${playerId.toInt},"action":"joined"}""")
+      _ <- publish(
+        ChannelsKeys.pubSubLobbyChannel(lobbyId),
+        s"""{"type":"system","playerId":${playerId.toInt},"action":"joined"}"""
+      )
     yield new Subscription:
       override def cancel(): Future[Unit] =
         for
-          _ <- publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), s"""{"type":"system","playerId":${playerId.toInt},"action":"left"}""")
+          _ <- publish(
+            ChannelsKeys.pubSubLobbyChannel(lobbyId),
+            s"""{"type":"system","playerId":${playerId.toInt},"action":"left"}"""
+          )
           _ <- lobbySub.cancel()
           _ <- playerSub.cancel()
         yield ()
