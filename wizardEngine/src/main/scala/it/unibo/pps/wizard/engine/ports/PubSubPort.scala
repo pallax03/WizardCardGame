@@ -4,7 +4,7 @@ import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.util.ChannelsKeys
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, ExecutionContext}
 
 trait Subscription:
   /** Cancels this specific subscription. */
@@ -30,22 +30,25 @@ trait PubSubPort:
    */
   def subscribe(channel: String, onMessage: String => Unit): Future[Subscription]
 
-  /** Subscribes to the global lobby channel. */
-  def subscribeToLobby(lobbyId: LobbyId, onMessage: String => Unit): Future[Subscription] =
-    subscribe(ChannelsKeys.pubSubLobbyChannel(lobbyId), onMessage)
-
-  /** Subscribes to a specific player's channel within a lobby. */
-  def subscribeToPlayer(
+  /**
+   * Subscribes a player to both the global lobby channel and their specific player channel,
+   * and publishes a system message indicating they joined.
+   * Returns a single Subscription that, when closed, unsubscribes from both channels
+   * and publishes a system message indicating the player left.
+   */
+  def subscribePlayer(
       lobbyId: LobbyId,
       playerId: PlayerId,
       onMessage: String => Unit
-  ): Future[Subscription] =
-    subscribe(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, playerId), onMessage)
-
-  /** Publishes a system message indicating a player joined the lobby. */
-  def publishPlayerJoined(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
-    publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), s"""{"type":"system","playerId":${playerId.toInt},"action":"joined"}""")
-
-  /** Publishes a system message indicating a player left the lobby. */
-  def publishPlayerLeft(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
-    publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), s"""{"type":"system","playerId":${playerId.toInt},"action":"left"}""")
+  )(using scala.concurrent.ExecutionContext): Future[Subscription] =
+    for
+      lobbySub <- subscribe(ChannelsKeys.pubSubLobbyChannel(lobbyId), onMessage)
+      playerSub <- subscribe(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, playerId), onMessage)
+      _ <- publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), s"""{"type":"system","playerId":${playerId.toInt},"action":"joined"}""")
+    yield new Subscription:
+      override def cancel(): Future[Unit] =
+        for
+          _ <- publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), s"""{"type":"system","playerId":${playerId.toInt},"action":"left"}""")
+          _ <- lobbySub.cancel()
+          _ <- playerSub.cancel()
+        yield ()

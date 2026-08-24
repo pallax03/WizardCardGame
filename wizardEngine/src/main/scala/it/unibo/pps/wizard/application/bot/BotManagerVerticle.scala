@@ -35,7 +35,7 @@ class BotManagerVerticle(
 ) extends AbstractVerticle:
 
   private val logger = LoggerFactory.getLogger(classOf[BotManagerVerticle])
-  private val activeSubscriptions = TrieMap.empty[(LobbyId, PlayerId), (Subscription, Subscription)]
+  private val activeSubscriptions = TrieMap.empty[(LobbyId, PlayerId), Subscription]
 
   private val podId = java.util.UUID.randomUUID().toString
 
@@ -70,12 +70,10 @@ class BotManagerVerticle(
 
               if !activeSubscriptions.contains((lobby.uuid, bot.id)) then
                 val handler = handleGameEvents(lobby.uuid, bot.id, strategy)
-                for
-                  playerSub <- pubSubPort.subscribeToPlayer(lobby.uuid, bot.id, handler)
-                  lobbySub <- pubSubPort.subscribeToLobby(lobby.uuid, handler)
-                yield
-                  activeSubscriptions.put((lobby.uuid, bot.id), (playerSub, lobbySub))
-                  pubSubPort.publishPlayerJoined(lobby.uuid, bot.id)
+                pubSubPort
+                  .subscribePlayer(lobby.uuid, bot.id, handler)
+                  .map: sub =>
+                    activeSubscriptions.put((lobby.uuid, bot.id), sub)
               syncStateAndPlay(lobby.uuid, bot.id, strategy)
         case _ =>
           logger.info(s"Lobby ${lobby.uuid} bots are managed by another pod.")
@@ -119,10 +117,8 @@ class BotManagerVerticle(
       case Right(LifecycleEvent.GameEnded(_, _)) =>
         activeSubscriptions
           .remove((lobbyId, playerId))
-          .foreach: (playerSub, lobbySub) =>
-            pubSubPort.publishPlayerLeft(lobbyId, playerId)
-            playerSub.cancel()
-            lobbySub.cancel()
+          .foreach: sub =>
+            sub.cancel()
       case Right(_) => ()
       case Left(_)  => ()
 

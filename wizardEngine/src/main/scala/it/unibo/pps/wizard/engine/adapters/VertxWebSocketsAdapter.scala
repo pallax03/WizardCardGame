@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 
-case class ClientSession(ws: ServerWebSocket, lobbySub: Subscription, playerSub: Subscription)
+case class ClientSession(ws: ServerWebSocket, sub: Subscription)
 
 class VertxWebSocketsAdapter(
     val pubSubPort: PubSubPort
@@ -41,30 +41,16 @@ class VertxWebSocketsAdapter(
           pubSubPort.publish(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, destId), text)
         else pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), text)
 
-    for
-      lobbySub <- pubSubPort.subscribeToLobby(
-        lobbyId,
-        rawJson => ws.writeTextMessage(rawJson)
-      )
-      playerSub <- pubSubPort.subscribeToPlayer(
-        lobbyId,
-        playerId,
-        rawJson => ws.writeTextMessage(rawJson)
-      )
-    yield
-      sessions.put((lobbyId, playerId), ClientSession(ws, lobbySub, playerSub))
-      pubSubPort.publishPlayerJoined(lobbyId, playerId)
-      ()
+    pubSubPort
+      .subscribePlayer(lobbyId, playerId, rawJson => ws.writeTextMessage(rawJson))
+      .map: sub =>
+        sessions.put((lobbyId, playerId), ClientSession(ws, sub))
 
   /** @inheritdoc */
   override def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
     sessions.remove((lobbyId, playerId)) match
       case Some(session) =>
         Try(session.ws.close())
-        pubSubPort.publishPlayerLeft(lobbyId, playerId)
-        for
-          _ <- session.lobbySub.cancel()
-          _ <- session.playerSub.cancel()
-        yield ()
+        session.sub.cancel()
       case None =>
         Future.unit
