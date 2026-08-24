@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import { SubmitEvent, useEffect, useMemo, useRef, useState } from "react";
 import { ArrowLeft, Check, LockKeyhole, MessageCircle, Send, Users, X } from "lucide-react";
 import { AnimatePresence, MotionConfig, motion } from "motion/react";
 
@@ -77,7 +77,7 @@ export function ChatSheet() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [visibleMessages.length, activePrivateId]);
 
-  const handleSend = (event: FormEvent) => {
+  const handleSend = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const text = input.trim();
     if (!text) return;
