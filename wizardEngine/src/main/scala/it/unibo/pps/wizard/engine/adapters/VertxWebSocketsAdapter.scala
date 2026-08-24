@@ -53,11 +53,7 @@ class VertxWebSocketsAdapter(
       )
     yield
       sessions.put((lobbyId, playerId), ClientSession(ws, lobbySub, playerSub))
-      val joinMsg = new JsonObject()
-        .put("type", "system")
-        .put("playerId", playerId.toInt)
-        .put("action", "joined")
-      pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), joinMsg.encode())
+      pubSubPort.publishPlayerJoined(lobbyId, playerId)
       ()
 
   /** @inheritdoc */
@@ -65,11 +61,7 @@ class VertxWebSocketsAdapter(
     sessions.remove((lobbyId, playerId)) match
       case Some(session) =>
         Try(session.ws.close())
-        val leaveMsg = new JsonObject()
-          .put("type", "system")
-          .put("playerId", playerId.toInt)
-          .put("action", "left")
-        pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), leaveMsg.encode())
+        pubSubPort.publishPlayerLeft(lobbyId, playerId)
         for
           _ <- session.lobbySub.cancel()
           _ <- session.playerSub.cancel()

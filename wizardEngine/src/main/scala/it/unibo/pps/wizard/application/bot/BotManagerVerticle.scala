@@ -73,7 +73,9 @@ class BotManagerVerticle(
                 for
                   playerSub <- pubSubPort.subscribeToPlayer(lobby.uuid, bot.id, handler)
                   lobbySub <- pubSubPort.subscribeToLobby(lobby.uuid, handler)
-                yield activeSubscriptions.put((lobby.uuid, bot.id), (playerSub, lobbySub))
+                yield
+                  activeSubscriptions.put((lobby.uuid, bot.id), (playerSub, lobbySub))
+                  pubSubPort.publishPlayerJoined(lobby.uuid, bot.id)
               syncStateAndPlay(lobby.uuid, bot.id, strategy)
         case _ =>
           logger.info(s"Lobby ${lobby.uuid} bots are managed by another pod.")
@@ -118,6 +120,7 @@ class BotManagerVerticle(
         activeSubscriptions
           .remove((lobbyId, playerId))
           .foreach: (playerSub, lobbySub) =>
+            pubSubPort.publishPlayerLeft(lobbyId, playerId)
             playerSub.cancel()
             lobbySub.cancel()
       case Right(_) => ()

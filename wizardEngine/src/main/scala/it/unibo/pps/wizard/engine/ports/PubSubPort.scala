@@ -41,3 +41,11 @@ trait PubSubPort:
       onMessage: String => Unit
   ): Future[Subscription] =
     subscribe(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, playerId), onMessage)
+
+  /** Publishes a system message indicating a player joined the lobby. */
+  def publishPlayerJoined(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), s"""{"type":"system","playerId":${playerId.toInt},"action":"joined"}""")
+
+  /** Publishes a system message indicating a player left the lobby. */
+  def publishPlayerLeft(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), s"""{"type":"system","playerId":${playerId.toInt},"action":"left"}""")
