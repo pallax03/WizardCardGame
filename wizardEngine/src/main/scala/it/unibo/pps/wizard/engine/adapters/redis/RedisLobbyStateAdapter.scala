@@ -88,7 +88,8 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       .flatMap:
         case Some(player) =>
           val msg = s"""{"type":"system","playerId":${player.id.toInt},"action":"joined"}"""
-          val pubReq = Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
+          val pubReq =
+            Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
           redisClient.send(pubReq).asScala.map(_ => Some(player))
         case None => Future.successful(None)
 
@@ -104,11 +105,12 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
               val req = Request.cmd(Command.DEL).arg(ChannelsKeys.lobby(lobbyId))
               redisClient.send(req).asScala.as(true)
             else saveLobby(lobby.copy(players = newPlayers)).as(true)
-          
+
           updateFuture.flatMap: success =>
             if success then
               val msg = s"""{"type":"system","playerId":${playerId.toInt},"action":"left"}"""
-              val pubReq = Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
+              val pubReq =
+                Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
               redisClient.send(pubReq).asScala.as(true)
             else Future.successful(false)
       case None => Future.successful(false)
