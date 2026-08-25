@@ -122,24 +122,27 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     queueMicrotask(() => dispatch({ type: "identity/resolved", playerId }));
   }, [lobbyId, router]);
 
-  const refreshLobby = useCallback(() => {
+  const refreshLobby = useCallback(async () => {
     if (lobbyRequestRef.current) {
       lobbyRefreshQueuedRef.current = true;
-      return lobbyRequestRef.current;
+      await lobbyRequestRef.current;
+      if (lobbyRefreshQueuedRef.current) {
+        return refreshLobby();
+      }
+      return;
     }
+
     const request = (async () => {
-      do {
-        lobbyRefreshQueuedRef.current = false;
-        try {
-          const lobby = await getLobbyState(lobbyId);
-          dispatch({ type: "lobby/loaded", lobby });
-        } catch (reason: unknown) {
-          const error = reason instanceof Error ? reason : new Error(String(reason));
-          dispatch({ type: "sync/failed", error });
-        }
-      } while (lobbyRefreshQueuedRef.current);
-      lobbyRequestRef.current = null;
-    })();
+      try {
+        const lobby = await getLobbyState(lobbyId);
+        dispatch({ type: "lobby/loaded", lobby });
+      } catch (reason: unknown) {
+        const error = reason instanceof Error ? reason : new Error(String(reason));
+        dispatch({ type: "sync/failed", error });
+      } finally {
+        lobbyRequestRef.current = null;
+      }
+  })();
     lobbyRequestRef.current = request;
     return request;
   }, [lobbyId]);
@@ -175,9 +178,11 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
 
   const handleServerEvent = useCallback((event: ServerEvent) => {
     dispatch({ type: "event/received", event });
-
+    console.log("Received server event:", event);
     if (event.type === "system") {
-      void refreshLobby();
+      setTimeout(() => {
+        void refreshLobby();
+      }, 100);
       return;
     }
 

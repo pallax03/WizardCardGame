@@ -29,7 +29,6 @@ export async function createLobbyAction(username: string) {
     return { error: "Errore di connessione al server backend." };
   }
 
-  // Esegui il redirect fuori dal try-catch
   redirect(destination);
 }
 
@@ -57,7 +56,6 @@ export async function joinLobbyAction(username: string, lobbyId: string) {
 
     const data = await res.json();
     
-    // Se data.playerId esiste usalo, altrimenti passa username come fallback
     const pId = data.playerId ? `&playerId=${data.playerId}` : "";
     const pName = `&playerName=${encodeURIComponent(username.trim())}`;
 
@@ -76,7 +74,6 @@ export async function getLobbyAction(lobbyId: string): Promise<{ data?: LobbyApi
     const res = await fetch(`${baseUrl}/api/lobby/${lobbyId}`, {
       method: "GET",
       headers: { "Content-Type": "application/json" },
-      // Facoltativo: disabilita la cache se vuoi sempre i dati aggiornati
       cache: "no-store", 
     });
 
@@ -114,5 +111,30 @@ export async function addBotAction(
   } catch (err: any) {
     console.error("Add bot error:", err);
     return { error: "Errore di connessione al server backend durante l'aggiunta del bot." };
+  }
+}
+
+export async function leaveLobbyAction(
+  lobbyId: string,
+  playerId: number
+): Promise<{ success?: boolean; error?: string }> {
+  const baseUrl = process.env.BACKEND_URL || process.env.NEXT_PUBLIC_BACKEND_URL;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/lobby`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ lobbyId, playerId }),
+    });
+
+    if (!res.ok) {
+      const errorData = await res.json().catch(() => ({}));
+      return { error: errorData.message || `Errore durante l'uscita dalla lobby (${res.status})` };
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    console.error("Leave lobby error:", err);
+    return { error: "Errore di connessione al server backend durante l'uscita." };
   }
 }
