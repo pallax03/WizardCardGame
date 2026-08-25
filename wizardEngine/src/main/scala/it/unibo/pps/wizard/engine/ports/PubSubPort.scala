@@ -32,10 +32,8 @@ trait PubSubPort:
   def subscribe(channel: String, onMessage: String => Unit): Future[Subscription]
 
   /**
-   * Subscribes a player to both the global lobby channel and their specific player channel,
-   * and publishes a system message indicating they joined.
-   * Returns a single Subscription that, when closed, unsubscribes from both channels
-   * and publishes a system message indicating the player left.
+   * Subscribes a player to both the global lobby channel and their specific player channel.
+   * Returns a single Subscription that, when closed, unsubscribes from both channels.
    */
   def subscribePlayer(
       lobbyId: LobbyId,
@@ -45,17 +43,9 @@ trait PubSubPort:
     for
       lobbySub <- subscribe(ChannelsKeys.pubSubLobbyChannel(lobbyId), onMessage)
       playerSub <- subscribe(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, playerId), onMessage)
-      _ <- publish(
-        ChannelsKeys.pubSubLobbyChannel(lobbyId),
-        s"""{"type":"system","playerId":${playerId.toInt},"action":"joined"}"""
-      )
     yield new Subscription:
       override def cancel(): Future[Unit] =
         for
-          _ <- publish(
-            ChannelsKeys.pubSubLobbyChannel(lobbyId),
-            s"""{"type":"system","playerId":${playerId.toInt},"action":"left"}"""
-          )
           _ <- lobbySub.cancel()
           _ <- playerSub.cancel()
         yield ()
