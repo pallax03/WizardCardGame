@@ -44,6 +44,8 @@ class VertxWebSocketsAdapter(
     pubSubPort
       .subscribePlayer(lobbyId, playerId, rawJson => ws.writeTextMessage(rawJson))
       .map: sub =>
+        val msg = s"""{"type":"system","playerId":${playerId.toInt},"action":"online"}"""
+        pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
         sessions.put((lobbyId, playerId), ClientSession(ws, sub))
 
   /** @inheritdoc */
@@ -51,6 +53,8 @@ class VertxWebSocketsAdapter(
     sessions.remove((lobbyId, playerId)) match
       case Some(session) =>
         Try(session.ws.close())
+        val msg = s"""{"type":"system","playerId":${playerId.toInt},"action":"offline"}"""
+        pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
         session.sub.cancel()
       case None =>
         Future.unit

@@ -85,6 +85,13 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       .map:
         case null     => None
         case response => response.toString.decodeAs[Player].toOption
+      .flatMap:
+        case Some(player) =>
+          val msg = s"""{"type":"system","playerId":${player.id.toInt},"action":"joined"}"""
+          val pubReq =
+            Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
+          redisClient.send(pubReq).asScala.map(_ => Some(player))
+        case None => Future.successful(None)
 
   /** @inheritdoc */
   override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
@@ -92,10 +99,20 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       case Some(lobby) =>
         val newPlayers = lobby.players.filterNot(_.id == playerId)
         if newPlayers.size == lobby.players.size then Future.successful(false)
-        else if newPlayers.isEmpty then
-          val req = Request.cmd(Command.DEL).arg(ChannelsKeys.lobby(lobbyId))
-          redisClient.send(req).asScala.as(true)
-        else saveLobby(lobby.copy(players = newPlayers)).as(true)
+        else
+          val updateFuture =
+            if newPlayers.isEmpty then
+              val req = Request.cmd(Command.DEL).arg(ChannelsKeys.lobby(lobbyId))
+              redisClient.send(req).asScala.as(true)
+            else saveLobby(lobby.copy(players = newPlayers)).as(true)
+
+          updateFuture.flatMap: success =>
+            if success then
+              val msg = s"""{"type":"system","playerId":${playerId.toInt},"action":"left"}"""
+              val pubReq =
+                Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
+              redisClient.send(pubReq).asScala.as(true)
+            else Future.successful(false)
       case None => Future.successful(false)
 
   /** @inheritdoc */
@@ -110,10 +127,10 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
           val keys = keysResp.asScala.map(_.toString).toList
           if keys.isEmpty then Future.successful(List.empty)
           else
-            val mgetReq = Request.cmd(Command.MGET)
-            keys.foreach(mgetReq.arg)
+            val getReq = Request.cmd(Command.MGET)
+            keys.foreach(getReq.arg)
             redisClient
-              .send(mgetReq)
+              .send(getReq)
               .asScala
               .map:
                 case null => List.empty

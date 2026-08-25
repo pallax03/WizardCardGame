@@ -58,9 +58,12 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
       let connectedPlayerIds = state.connectedPlayerIds;
       if (action.event.type === "system") {
         const playerId = action.event.playerId;
-        connectedPlayerIds = action.event.action === "joined"
-          ? Array.from(new Set([...state.connectedPlayerIds, playerId]))
-          : state.connectedPlayerIds.filter((id) => id !== playerId);
+        const evAction = action.event.action;
+        if (evAction === "joined" || evAction === "online") {
+          connectedPlayerIds = Array.from(new Set([...state.connectedPlayerIds, playerId]));
+        } else if (evAction === "left" || evAction === "offline") {
+          connectedPlayerIds = state.connectedPlayerIds.filter((id) => id !== playerId);
+        }
       }
       return {
         ...state,
@@ -177,7 +180,9 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     dispatch({ type: "event/received", event });
 
     if (event.type === "system") {
-      void refreshLobby();
+      if (event.action === "joined" || event.action === "left") {
+        void refreshLobby();
+      }
       return;
     }
 
