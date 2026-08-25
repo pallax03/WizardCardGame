@@ -79,7 +79,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
 
   if (!lobby && connectionState === "connecting") {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-400px">
         <p className="text-slate-400 animate-pulse font-medium">{lobbyI18n.loading}</p>
       </div>
     );
@@ -87,7 +87,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
 
   if (sessionError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+      <div className="flex flex-col items-center justify-center min-h-400px gap-4">
         <p className="text-red-400 font-medium">{sessionError.message}</p>
         <Button onClick={() => router.push("/")} variant="outline">
           {lobbyI18n.backToHome}
