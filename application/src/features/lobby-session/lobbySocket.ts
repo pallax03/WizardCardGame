@@ -42,7 +42,7 @@ function parseServerEvent(rawData: string): ServerEvent | null {
   if (
     raw.type === "system" &&
     typeof raw.playerId === "number" &&
-    (raw.action === "joined" || raw.action === "left")
+    (raw.action === "joined" || raw.action === "left" || raw.action === "online" || raw.action === "offline")
   ) {
     return {
       type: "system",

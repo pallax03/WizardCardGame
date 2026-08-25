@@ -9,7 +9,7 @@ export type ChatMessage = {
 export type SystemMessage = {
     type: 'system';
     playerId: number;
-    action: 'joined' | 'left';
+    action: 'joined' | 'left' | 'online' | 'offline';
     timestamp: string; // added by frontend when receiving if not provided
 };
 
