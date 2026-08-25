@@ -24,8 +24,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 
 object Main:
-  private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "8080").toInt
-  private val wsPort: Int = sys.env.getOrElse("WS_PORT", "8081").toInt
+  private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "5001").toInt
+  private val wsPort: Int = sys.env.getOrElse("WS_PORT", "5002").toInt
   private val redisHost = sys.env.getOrElse("REDIS_HOST", "localhost")
   private val redisPort = sys.env.getOrElse("REDIS_PORT", "6379").toInt
   private val redisPoolSize = sys.env.getOrElse("REDIS_POOL_SIZE", "6").toInt
