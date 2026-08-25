@@ -14,10 +14,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 
+import it.unibo.pps.wizard.engine.ports.LobbyStatePort
+
 case class ClientSession(ws: ServerWebSocket, sub: Subscription)
 
 class VertxWebSocketsAdapter(
-    val pubSubPort: PubSubPort
+    val pubSubPort: PubSubPort,
+    val lobbyStatePort: LobbyStatePort
 ) extends WebSocketsPort:
 
   private val sessions: TrieMap[(LobbyId, PlayerId), ClientSession] = TrieMap.empty
@@ -44,6 +47,7 @@ class VertxWebSocketsAdapter(
     pubSubPort
       .subscribePlayer(lobbyId, playerId, rawJson => ws.writeTextMessage(rawJson))
       .map: sub =>
+        lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, true)
         val msg = s"""{"type":"system","playerId":${playerId.toInt},"action":"online"}"""
         pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
         sessions.put((lobbyId, playerId), ClientSession(ws, sub))
@@ -53,6 +57,7 @@ class VertxWebSocketsAdapter(
     sessions.remove((lobbyId, playerId)) match
       case Some(session) =>
         Try(session.ws.close())
+        lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, false)
         val msg = s"""{"type":"system","playerId":${playerId.toInt},"action":"offline"}"""
         pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
         session.sub.cancel()

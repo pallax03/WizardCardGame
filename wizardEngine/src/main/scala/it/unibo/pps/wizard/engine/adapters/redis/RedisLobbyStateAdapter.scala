@@ -53,9 +53,11 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       |local newPlayer = { id = newId, name = ARGV[1] }
       |if ARGV[2] == '' then
       |  newPlayer.difficulty = cjson.null
+      |  newPlayer.isOnline = false
       |else
       |  newPlayer.difficulty = ARGV[2]
       |  newPlayer.name = 'Bot-' .. (newId+1)
+      |  newPlayer.isOnline = true
       |end
       |
       |table.insert(lobby.players, newPlayer)
@@ -138,6 +140,40 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
                   valsResp.asScala
                     .flatMap(v => if v != null then v.toString.decodeAs[Lobby].toOption else None)
                     .toList
+
+  private val setPlayerOnlineScript =
+    """
+      |local lobbyStr = redis.call('GET', KEYS[1])
+      |if not lobbyStr then return 0 end
+      |local lobby = cjson.decode(lobbyStr)
+      |local targetPlayerId = tonumber(ARGV[1])
+      |local isOnline = ARGV[2] == 'true'
+      |local found = false
+      |for i, player in ipairs(lobby.players) do
+      |  if player.id == targetPlayerId then
+      |    player.isOnline = isOnline
+      |    found = true
+      |    break
+      |  end
+      |end
+      |if found then
+      |  redis.call('SET', KEYS[1], cjson.encode(lobby), 'EX', 86400)
+      |  return 1
+      |else
+      |  return 0
+      |end
+      |""".stripMargin
+
+  /** @inheritdoc */
+  override def setPlayerOnlineStatus(lobbyId: LobbyId, playerId: PlayerId, isOnline: Boolean): Future[Boolean] =
+    val req = Request
+      .cmd(Command.EVAL)
+      .arg(setPlayerOnlineScript)
+      .arg("1")
+      .arg(ChannelsKeys.lobby(lobbyId))
+      .arg(playerId.toInt.toString)
+      .arg(isOnline.toString)
+    redisClient.send(req).asScala.map(resp => resp != null && resp.toInteger == 1)
 
   /** @inheritdoc */
   override def tryAcquireBotLock(

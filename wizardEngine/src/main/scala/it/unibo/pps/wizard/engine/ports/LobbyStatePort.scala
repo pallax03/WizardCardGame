@@ -79,3 +79,13 @@ trait LobbyStatePort:
    * @return a Future containing true if the lock was acquired, false otherwise.
    */
   def tryAcquireBotLock(lobbyId: LobbyId, podId: String, ttlSeconds: Long = 30): Future[Boolean]
+
+  /**
+   * Updates the online status of a specific player in the lobby.
+   *
+   * @param lobbyId the UUID of the lobby.
+   * @param playerId the ID of the player.
+   * @param isOnline the new online status.
+   * @return a Future containing true if the player was found and updated, false otherwise.
+   */
+  def setPlayerOnlineStatus(lobbyId: LobbyId, playerId: PlayerId, isOnline: Boolean): Future[Boolean]
