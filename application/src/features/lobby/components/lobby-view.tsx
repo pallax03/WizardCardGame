@@ -18,7 +18,7 @@ interface LobbyViewProps {
 export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   const router = useRouter();
   
-  const { lobby, playerId, connectionState, refreshLobby, error: sessionError } = useLobbySession();
+  const { lobby, playerId, connectionState, refreshLobby, connectedPlayerIds, error: sessionError } = useLobbySession();
   
   const [copied, setCopied] = useState<boolean>(false);
   const [isAddingBot, setIsAddingBot] = useState<boolean>(false);
@@ -79,7 +79,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
 
   if (!lobby && connectionState === "connecting") {
     return (
-      <div className="flex items-center justify-center min-h-400px">
+      <div className="flex items-center justify-center min-h-[400px]">
         <p className="text-slate-400 animate-pulse font-medium">{lobbyI18n.loading}</p>
       </div>
     );
@@ -87,7 +87,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
 
   if (sessionError) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-400px gap-4">
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <p className="text-red-400 font-medium">{sessionError.message}</p>
         <Button onClick={() => router.push("/")} variant="outline">
           {lobbyI18n.backToHome}
@@ -156,6 +156,9 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
               const isRemovingThisBot = removingBotId === player.id;
               const initials = player.name ? player.name.slice(0, 2).toUpperCase() : "P";
               
+              // Verifichiamo lo stato online
+              const isOnline = isBot || connectedPlayerIds.some((id) => Number(id) === Number(player.id));
+
               const difficultyLabel = isBot && player.difficulty
                 ? typeof player.difficulty === "object"
                   ? (player.difficulty as any).level || (player.difficulty as any).name || "Std"
@@ -172,11 +175,21 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <Avatar className={`h-10 w-10 ${isBot ? "border border-cyan-500/50" : ""}`}>
-                      <AvatarFallback className={isBot ? "bg-cyan-950 text-cyan-400" : "bg-slate-700 text-slate-200"}>
-                        {isBot ? <BotIcon className="w-5 h-5" /> : initials}
-                      </AvatarFallback>
-                    </Avatar>
+                    {/* Container per l'Avatar con Pallino di Stato visibile fuori dall'overflow dell'Avatar */}
+                    <div className="relative inline-block">
+                      <Avatar className={`h-10 w-10 ${isBot ? "border border-cyan-500/50" : ""}`}>
+                        <AvatarFallback className={isBot ? "bg-cyan-950 text-cyan-400" : "bg-slate-700 text-slate-200"}>
+                          {isBot ? <BotIcon className="w-5 h-5" /> : initials}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span
+                        className={`absolute -bottom-0.5 -right-0.5 z-10 block h-3 w-3 rounded-full ring-2 ring-slate-900 ${
+                          isOnline ? "bg-emerald-500" : "bg-red-500"
+                        }`}
+                        title={isOnline ? "Online" : "Offline"}
+                      />
+                    </div>
+
                     <div>
                       <p className="font-semibold text-sm text-slate-100 flex items-center gap-1.5">
                         {player.name}
@@ -213,9 +226,15 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                           )}
                         </Button>
                       </>
-                    ) : (
+                    ) : isOnline ? (
+                      /* Giocatore umano online: Pronto */
                       <Badge className="bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
                         {lobbyI18n.playersCard.readyBadge}
+                      </Badge>
+                    ) : (
+                      /* Giocatore umano offline: Non pronto / Disconnesso */
+                      <Badge variant="outline" className="bg-red-950/80 text-red-400 border border-red-800/60">
+                        {lobbyI18n.playersCard.notReadyBadge}
                       </Badge>
                     )}
                   </div>

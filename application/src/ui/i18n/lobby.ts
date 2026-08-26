@@ -15,6 +15,7 @@ export const lobbyI18n = {
     humanPlayer: "Umano",
     botBadge: "Bot ({difficulty})",
     readyBadge: "Pronto",
+    notReadyBadge: "Non pronto",
     removeBotTooltip: "Rimuovi bot",
   },
   botSelection: {
