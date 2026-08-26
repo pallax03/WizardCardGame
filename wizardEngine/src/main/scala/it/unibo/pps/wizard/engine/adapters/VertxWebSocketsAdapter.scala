@@ -4,6 +4,7 @@ import io.vertx.core.http.ServerWebSocket
 import io.vertx.core.json.JsonObject
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
+import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 import it.unibo.pps.wizard.engine.ports.PubSubPort
 import it.unibo.pps.wizard.engine.ports.Subscription
 import it.unibo.pps.wizard.engine.ports.WebSocketsPort
@@ -13,8 +14,6 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
-
-import it.unibo.pps.wizard.engine.ports.LobbyStatePort
 
 case class ClientSession(ws: ServerWebSocket, sub: Subscription)
 

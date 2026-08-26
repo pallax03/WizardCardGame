@@ -88,4 +88,8 @@ trait LobbyStatePort:
    * @param isOnline the new online status.
    * @return a Future containing true if the player was found and updated, false otherwise.
    */
-  def setPlayerOnlineStatus(lobbyId: LobbyId, playerId: PlayerId, isOnline: Boolean): Future[Boolean]
+  def setPlayerOnlineStatus(
+      lobbyId: LobbyId,
+      playerId: PlayerId,
+      isOnline: Boolean
+  ): Future[Boolean]

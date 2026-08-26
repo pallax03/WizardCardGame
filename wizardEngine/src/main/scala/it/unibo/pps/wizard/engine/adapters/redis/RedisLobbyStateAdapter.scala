@@ -165,7 +165,11 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       |""".stripMargin
 
   /** @inheritdoc */
-  override def setPlayerOnlineStatus(lobbyId: LobbyId, playerId: PlayerId, isOnline: Boolean): Future[Boolean] =
+  override def setPlayerOnlineStatus(
+      lobbyId: LobbyId,
+      playerId: PlayerId,
+      isOnline: Boolean
+  ): Future[Boolean] =
     val req = Request
       .cmd(Command.EVAL)
       .arg(setPlayerOnlineScript)
