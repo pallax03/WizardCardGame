@@ -25,8 +25,8 @@ export async function createLobbyAction(username: string) {
 
     const data = await res.json();
     destination = `/lobby/${data.lobbyId}?playerId=${data.playerId}`;
-  } catch (err: any) {
-    return { error: "Errore di connessione al server backend." };
+  } catch {
+    return { error: "Errore di connessione al server backend: "};
   }
 
   redirect(destination);
@@ -60,7 +60,7 @@ export async function joinLobbyAction(username: string, lobbyId: string) {
     const pName = `&playerName=${encodeURIComponent(username.trim())}`;
 
     destination = `/lobby/${data.lobbyId || lobbyId}?${pId}${pName}`;
-  } catch (err: any) {
+  } catch {
     return { error: "Errore durante l'accesso alla stanza." };
   }
 
@@ -83,7 +83,7 @@ export async function getLobbyAction(lobbyId: string): Promise<{ data?: LobbyApi
 
     const data: LobbyApiResponse = await res.json();
     return { data };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Fetch lobby error:", err);
     return { error: "Impossibile connettersi al server backend." };
   }
@@ -108,7 +108,7 @@ export async function addBotAction(
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Add bot error:", err);
     return { error: "Errore di connessione al server backend durante l'aggiunta del bot." };
   }
@@ -133,7 +133,7 @@ export async function leaveLobbyAction(
     }
 
     return { success: true };
-  } catch (err: any) {
+  } catch (err) {
     console.error("Leave lobby error:", err);
     return { error: "Errore di connessione al server backend durante l'uscita." };
   }

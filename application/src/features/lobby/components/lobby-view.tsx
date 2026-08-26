@@ -58,8 +58,8 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     
     const result = await leaveLobbyAction(lobby.lobbyId, botId);
 
-    if (result && (result as any).error) {
-      console.error((result as any).error);
+    if (result && "error" in result && typeof result.error === "string") {
+      console.error(result.error);
     } else {
       await refreshLobby();
     }
@@ -167,11 +167,15 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
               
               const isOnline = isBot || connectedPlayerIds.some((id) => Number(id) === Number(player.id));
 
-              const difficultyLabel = isBot && player.difficulty
-                ? typeof player.difficulty === "object"
-                  ? (player.difficulty as any).level || (player.difficulty as any).name || "Std"
-                  : String(player.difficulty)
-                : null;
+              let difficultyLabel: string | null = null;
+              if (isBot && player.difficulty) {
+                if (typeof player.difficulty === "object") {
+                  const botObj = player.difficulty as Record<string, unknown>;
+                  difficultyLabel = String(botObj.level || botObj.name || "Std");
+                } else {
+                  difficultyLabel = String(player.difficulty);
+                }
+              }
 
               return (
                 <div
@@ -337,13 +341,11 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                   {lobbyI18n.detailsCard.turnTimeLabel}
                 </span>
 
-                {/* Select Shadcn UI con padding e spacing corretti */}
-                <Select value={turnTime} onValueChange={setTurnTime}>
+                <Select value={turnTime ?? "30"} onValueChange={setTurnTime}>
                   <SelectTrigger className="w-27.5 h-8 bg-slate-800/80 border-slate-700 text-slate-200 focus:ring-1 focus:ring-indigo-500 focus:ring-offset-0 text-xs font-semibold rounded-lg hover:bg-slate-800 transition-colors">
                     <SelectValue placeholder="Seleziona" />
                   </SelectTrigger>
                   
-                  {/* Aggiunto padding p-1.5 per dare respiro al menu ed evitare che 15s e 60s tocchino il bordo */}
                   <SelectContent className="bg-slate-900 border-slate-800 text-slate-200 p-1.5 min-w-30">
                     <SelectItem 
                       value="15" 

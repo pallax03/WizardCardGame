@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, User, Users } from "lucide-react";
+import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/lobby-actions";
 import { homeI18n } from "@/i18n/home";
 import { Button } from "@/ui/components/button";
