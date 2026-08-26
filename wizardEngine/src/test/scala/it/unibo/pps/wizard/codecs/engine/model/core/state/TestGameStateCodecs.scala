@@ -4,6 +4,7 @@ import it.unibo.pps.wizard.codecs.syntax.CodecSyntax._
 import it.unibo.pps.wizard.engine.model._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump.WizardUnresolved
 import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.PlayerGameState
 import it.unibo.pps.wizard.engine.model.core.state.ServerCoreState
 import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
@@ -57,6 +58,8 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
       val serverStateJsonString = serverState.toJson
       serverStateJsonString shouldBe """{"core":{"playersIds":[1,2],"hands":{"1":[{"type":"Standard","color":"Blue","rank":10}],"2":[{"type":"Standard","color":"Yellow","rank":13}]},"trump":{"type":"Absent"},"round":1,"dealerId":1,"scoreboard":{}},"bids":{"1":1,"2":1},"table":{"playedCards":[{"playerId":1,"card":{"type":"Standard","color":"Blue","rank":10}}],"followingColor":"Blue"},"playerTurn":2,"tricksWon":{"1":1}}"""
       serverStateJsonString.decodeAs[GameState.Playing[ServerCoreState]].value shouldBe serverState
+      val playerStateJsonString = PlayerGameState.from(serverState, p1).value.toJson
+      playerStateJsonString shouldBe """{"Playing":{"core":{"playersIds":[1,2],"hand":[{"type":"Standard","color":"Blue","rank":10}],"trump":{"type":"Absent"},"round":1,"dealerId":1,"scoreboard":{}},"bids":{"1":1,"2":1},"table":{"playedCards":[{"playerId":1,"card":{"type":"Standard","color":"Blue","rank":10}}],"followingColor":"Blue"},"playerTurn":2,"tricksWon":{"1":1},"currentWinner":1}}"""
     "encode and decode GameState.Ended correctly" in:
       val serverState = GameState.Ended(
         playersIds = core.playersIds,

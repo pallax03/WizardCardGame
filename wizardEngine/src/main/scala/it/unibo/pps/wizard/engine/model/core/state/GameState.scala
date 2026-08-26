@@ -7,17 +7,17 @@ import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 import it.unibo.pps.wizard.engine.model.core.GameError
 
 /** Represents the various phases and states of the Wizard card game. */
-sealed trait GameState[+C]
+sealed trait GameState[+C <: CoreState]
 
 object GameState:
 
-  case class ChoosingTrump[C](
+  case class ChoosingTrump[C <: CoreState](
       core: C
   ) extends GameState[C]
 
-  case class Bidding[C](core: C, bids: Bids, playerTurn: PlayerId) extends GameState[C]
+  case class Bidding[C <: CoreState](core: C, bids: Bids, playerTurn: PlayerId) extends GameState[C]
 
-  case class Playing[C](
+  case class Playing[C <: CoreState](
       core: C,
       bids: Bids,
       table: Table,

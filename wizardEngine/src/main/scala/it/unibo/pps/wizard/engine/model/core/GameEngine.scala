@@ -52,18 +52,18 @@ object GameEngine:
    */
   def processAction(state: ServerGameState, action: GameAction): Either[GameError, GameEngine] =
     state match
-      case currentState: GameState.ChoosingTrump[ServerCoreState] @unchecked =>
+      case currentState @ GameState.ChoosingTrump(_) =>
         action match
           case GameAction.ResolveTrumpColor(playerId, color) =>
             handleResolveTrump(currentState, playerId, color)
           case _ => Left(GameError.InvalidAction)
 
-      case currentState: GameState.Bidding[ServerCoreState] @unchecked =>
+      case currentState @ GameState.Bidding(_, _, _) =>
         action match
           case GameAction.PlaceBid(playerId, bid) => handlePlaceBid(currentState, playerId, bid)
           case _                                  => Left(GameError.InvalidAction)
 
-      case currentState: GameState.Playing[ServerCoreState] @unchecked =>
+      case currentState @ GameState.Playing(_, _, _, _, _) =>
         action match
           case GameAction.PlayCard(playerId, card) => handlePlayCard(currentState, playerId, card)
           case _                                   => Left(GameError.InvalidAction)
@@ -355,10 +355,10 @@ object GameEngine:
     val (newCore, gameState) = round.initialize(Deck.create).run(coreContext).value
 
     val phaseSpecificEvents = gameState match
-      case _: GameState.ChoosingTrump[?] =>
+      case GameState.ChoosingTrump(_) =>
         List(InvitationEvent.WaitingForTrump(newCore.dealerId))
-      case bidding: GameState.Bidding[?] =>
-        List(InvitationEvent.WaitingForBid(bidding.playerTurn, round))
+      case GameState.Bidding(_, _, playerTurn) =>
+        List(InvitationEvent.WaitingForBid(playerTurn, round))
       case _ => Nil
 
     val cardsDealsEither =
