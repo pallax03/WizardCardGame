@@ -40,7 +40,7 @@ class TestWizardEventsCodecs extends AnyWordSpec with Matchers:
         jsonString shouldBe """{"event":{"type":"LifecycleEvent","action":"GameEnded","fields":{"playersIds":[1,2],"finalScores":{"1":[{"round":1,"score":20,"bid":0}],"2":[{"round":1,"score":-10,"bid":0}]}}}}"""
     "ProgressEvent" should:
       "encode CardsDealt correctly" in:
-        val event: WizardEvent = ProgressEvent.CardsDealt(p1, hands.getHand(p1).get, trump, round)
+        val event: WizardEvent = ProgressEvent.CardsDealt(p1, hands.getHand(p1), trump, round)
         val jsonString = event.toJson
         jsonString shouldBe """{"event":{"type":"ProgressEvent","action":"CardsDealt","destinationId":1,"fields":{"playerId":1,"hand":[{"type":"Standard","color":"Green","rank":1},{"type":"Standard","color":"Yellow","rank":5}],"trump":{"type":"Standard","card":{"type":"Standard","color":"Blue","rank":10},"color":"Blue"},"round":2}}}"""
       "encode TrickWon correctly" in:

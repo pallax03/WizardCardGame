@@ -18,6 +18,7 @@ trait InboundPort:
    * Retrieves the current state of the game.
    *
    * @return a Future containing the current GameState for the given player
+   * @throws GameException if the state cannot be retrieved because it's corrupted or inconsistent.
    */
   def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState]
 
@@ -28,6 +29,7 @@ trait InboundPort:
    * @param players the players participating in the game
    * @param config the configuration for the game
    * @return a Future indicating the completion of the game start process
+   * @throws GameException if the initialization logic fails due to an inconsistent state.
    */
   def startGame(lobbyId: LobbyId, players: List[PlayerId], config: GameConfiguration): Future[Unit]
 
@@ -37,5 +39,6 @@ trait InboundPort:
    * @param lobbyId the identifier of the lobby
    * @param action the game action to submit
    * @return a Future indicating the completion of the action submission
+   * @throws GameException if processing the action encounters a critical system error (corrupted state).
    */
   def submitAction(lobbyId: LobbyId, action: GameAction): Future[Unit]

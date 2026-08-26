@@ -1,17 +1,15 @@
 package it.unibo.pps.wizard.engine.model.rules
 
-import it.unibo.pps.wizard.engine.model.basic._
+import it.unibo.pps.wizard.engine.model.basic.*
 import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.model.core.state.GameState
-import it.unibo.pps.wizard.engine.model.core.state.ServerCoreState
-import org.scalatest.OptionValues.convertOptionToValuable
+import it.unibo.pps.wizard.engine.model.core.state.{GameState, ServerCoreState}
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestRoundManager extends AnyWordSpec with Matchers:
 
-  import cards._
-  import gameplay._
+  import cards.*
+  import gameplay.*
   "RoundManager" when:
     val p1: PlayerId = PlayerId(1)
     val p2: PlayerId = PlayerId(2)
@@ -51,7 +49,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
 
         val (deckAfter, (hands, trump)) = maxRound.deal(playersIds).run(initialDeck).value
 
-        hands.getHand(p1).value.toList should have length 20
+        hands.getHand(p1).toList should have length 20
         trump shouldBe Trump.Absent
         deckAfter.cards shouldBe empty
         maxRound.isLastRound(playersIds) shouldBe true
@@ -64,7 +62,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         trump.card.foreach { t =>
           deckAfter.cards should not contain t
           playersIds.foreach { player =>
-            hands.getHand(player).value.toList should not contain t
+            hands.getHand(player).toList should not contain t
           }
         }
 
@@ -91,7 +89,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
           .runA(ServerCoreState.initialize(playersIds, round))
           .value match
           case biddingState: GameState.Bidding[?] =>
-            biddingState.core.hands.getHand(p1).value.toList should have length 1
+            biddingState.core.hands.getHand(p1).toList should have length 1
             biddingState.playerTurn shouldBe p1
             biddingState.core.trump shouldBe TrumpResolved
           case _ => ()
@@ -107,6 +105,6 @@ class TestRoundManager extends AnyWordSpec with Matchers:
           .runA(ServerCoreState.initialize(playersIds, round))
           .value match
           case choosingState: GameState.ChoosingTrump[?] =>
-            choosingState.core.hands.getHand(p1).value.toList should have length 1
+            choosingState.core.hands.getHand(p1).toList should have length 1
             choosingState.core.trump shouldBe TrumpUnResolved
           case _ => ()

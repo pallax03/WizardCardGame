@@ -3,6 +3,7 @@ package it.unibo.pps.wizard.engine.model.basic.cards
 import it.unibo.pps.wizard.engine.model.basic._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
+import it.unibo.pps.wizard.engine.model.core.GameException
 
 import scala.language.postfixOps
 
@@ -55,40 +56,46 @@ class TestHand extends AnyWordSpec with Matchers:
     val p2 = PlayerId(2)
     val p3 = PlayerId(3)
     val c1 = Five of Red
-    val p2Wizard: Card = wizard
+    val c2 = jester
 
     "be correctly created empty" in:
       val emptyHands = Hands.empty
       emptyHands.areEmpty shouldBe true
-      emptyHands.getHand(p1) shouldBe None
 
-    "be correctly queried for players" in:
-      val hands = handsOf(
-        p1 holds (c1 - jester),
-        p2 holds p2Wizard
-      )
+    "throw GameException if the player is not found" in:
+      val emptyHands = Hands.empty
+      assertThrows[GameException] {
+        emptyHands.getHand(p1)
+      }
 
-      hands.areEmpty shouldBe false
+    "retrieve a player's hand if present" in:
+      val h = Hand(List(c1, c2))
+      val hands = Hands(Map(p1 -> h))
 
       val p1Hand = hands.getHand(p1)
-      p1Hand shouldBe defined
-      p1Hand.get.toList should have size 2
+      p1Hand.toList should have size 2
+      p1Hand.contains(c1) shouldBe true
 
-      hands.getHand(p3) shouldBe None
+      assertThrows[GameException] {
+        hands.getHand(p3)
+      }
 
-    "remove cards from a player's hand successfully" in:
-      val hands = handsOf(p1 holds (c1 - jester))
+    "remove a specific card from a player's hand" in:
+      val h = Hand(List(c1, c2))
+      val hands = Hands(Map(p1 -> h))
 
-      val updatedHandsOpt = hands.remove(p1, c1)
+      val updatedHands = hands.remove(p1, c1)
+      val newP1Hand = updatedHands.getHand(p1)
 
-      updatedHandsOpt shouldBe defined
-      val newP1Hand = updatedHandsOpt.get.getHand(p1).get
       newP1Hand.toList should have size 1
       newP1Hand.contains(c1) shouldBe false
+      newP1Hand.contains(c2) shouldBe true
 
-    "return None when trying to remove a card from a non-existent player" in:
-      val hands = handsOf(p1 holds c1)
-      hands.remove(p3, c1) shouldBe None
+    "throw GameException if the player is not found during removal" in:
+      val hands = Hands(Map(p1 -> Hand(List(c1))))
+      assertThrows[GameException] {
+        hands.remove(p3, c1)
+      }
 
     "evaluate areEmpty correctly based on inner hands" in:
       val reallyEmpty = handsOf(

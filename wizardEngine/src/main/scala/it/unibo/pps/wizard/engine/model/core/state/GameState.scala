@@ -31,6 +31,17 @@ type ServerGameState = GameState[ServerCoreState]
 type PlayerGameState = GameState[PlayerCoreState]
 
 object PlayerGameState:
+  /**
+   * Translates a ServerGameState into a PlayerGameState.
+   * This limits the state visibility to only what the specified player is allowed to see
+   * (e.g., hiding other players' hands).
+   *
+   * @param serverGameState The complete server-side game state.
+   * @param playerId The ID of the player requesting the state.
+   * @return A restricted PlayerGameState tailored for the specified player.
+   * @throws GameException if an inconsistency is detected (e.g. the player's hand is missing),
+   *                       indicating that the state is corrupted.
+   */
   def from(
       serverGameState: ServerGameState,
       playerId: PlayerId

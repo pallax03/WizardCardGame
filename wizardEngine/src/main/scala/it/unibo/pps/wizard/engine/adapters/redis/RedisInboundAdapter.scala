@@ -1,23 +1,21 @@
 package it.unibo.pps.wizard.engine.adapters.redis
 
-import io.vertx.redis.client.Command
-import io.vertx.redis.client.Redis
-import io.vertx.redis.client.Request
+import io.vertx.redis.client.{Command, Redis, Request}
 import it.unibo.pps.wizard.codecs.engine.model.core.state.GameStateCodecs.given
-import it.unibo.pps.wizard.codecs.syntax.CodecSyntax._
-import it.unibo.pps.wizard.engine.configuration._
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
+import it.unibo.pps.wizard.engine.configuration.*
 import it.unibo.pps.wizard.engine.lobby.LobbyId
-import it.unibo.pps.wizard.engine.model.basic._
-import it.unibo.pps.wizard.engine.model.core._
+import it.unibo.pps.wizard.engine.model.basic.*
+import it.unibo.pps.wizard.engine.model.core.*
 import it.unibo.pps.wizard.engine.model.core.InconsistentState
 import it.unibo.pps.wizard.engine.model.core.state.GameState
 import it.unibo.pps.wizard.engine.model.core.state.PlayerGameState
 import it.unibo.pps.wizard.engine.model.core.state.ServerGameState
-import it.unibo.pps.wizard.engine.model.events._
+import it.unibo.pps.wizard.engine.model.events.*
 import it.unibo.pps.wizard.engine.ports.InboundPort
 import it.unibo.pps.wizard.engine.ports.OutboundPort
 import it.unibo.pps.wizard.util.ChannelsKeys
-import it.unibo.pps.wizard.util.FutureSyntax._
+import it.unibo.pps.wizard.util.FutureSyntax.*
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -27,7 +25,9 @@ class RedisInboundAdapter(
     private val outboundPort: OutboundPort
 ) extends InboundPort:
 
-  // todo: related issue https://github.com/pallax03/WizardCardGame/issues/39
+  private def decodeGameState(rawGameState: String): ServerGameState = rawGameState.decodeAs[ServerGameState] match
+    case Right(state) => state
+    case Left(err) => throw GameException(InconsistentState.CorruptedState(err.toString))
 
   /** @inheritdoc */
   override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState] =
@@ -37,12 +37,7 @@ class RedisInboundAdapter(
       .asScala
       .map:
         case null => throw new RuntimeException("Game not found")
-        case response =>
-          val serverState = response.toString.decodeAs[ServerGameState] match
-            case Right(state) => state
-            case Left(err) =>
-              throw GameException(InconsistentState.CorruptedState(err.toString))
-          PlayerGameState.from(serverState, playerId)
+        case response => PlayerGameState.from(decodeGameState(response.toString), playerId)
 
   /** @inheritdoc */
   override def startGame(
@@ -58,16 +53,14 @@ class RedisInboundAdapter(
       .flatMap:
         case null =>
           val playersIds = config.players.map(_.id)
-          GameEngine.initializeGame(playersIds) match
-            case Right(initialState) =>
-              val setReq = Request.cmd(Command.SET).arg(key).arg(initialState.state.toJson)
-              redisClient
-                .send(setReq)
-                .asScala
-                .map: _ =>
-                  outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersIds))
-                  outboundPort.publish(lobbyId, initialState.events*)
-            case Left(_) => Future.unit
+          val initialState = GameEngine.initializeGame(playersIds)
+          val setReq = Request.cmd(Command.SET).arg(key).arg(initialState.state.toJson)
+          redisClient
+            .send(setReq)
+            .asScala
+            .map: _ =>
+              outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersIds))
+              outboundPort.publish(lobbyId, initialState.events *)
 
   /** @inheritdoc */
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Unit] =
@@ -78,11 +71,7 @@ class RedisInboundAdapter(
       .flatMap:
         case null => Future.unit
         case response =>
-          val oldState = response.toString.decodeAs[ServerGameState] match
-            case Right(state) => state
-            case Left(err) =>
-              throw GameException(InconsistentState.CorruptedState(err.toString))
-          GameEngine.processAction(oldState, action) match
+          GameEngine.processAction(decodeGameState(response.toString), action) match
             case Left(error) =>
               outboundPort.publish(lobbyId, FailureEvent.ActionFailed(action.playerId, error))
               Future.unit

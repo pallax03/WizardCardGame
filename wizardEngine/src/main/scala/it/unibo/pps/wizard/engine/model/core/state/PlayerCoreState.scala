@@ -14,6 +14,16 @@ final case class PlayerCoreState(
 ) extends CoreState
 
 object PlayerCoreState:
+  /**
+   * Constructs a PlayerCoreState from a ServerCoreState by extracting the specific hand
+   * of the given player. Hides the remaining players' hands.
+   *
+   * @param serverCore The current ServerCoreState.
+   * @param playerId The ID of the player requesting the state.
+   * @return A PlayerCoreState tailored for the specified player.
+   * @throws GameException if the player's hand is not found in the server state,
+   *                       indicating a corrupted state.
+   */
   def from(serverCore: ServerCoreState, playerId: PlayerId): PlayerCoreState =
     val playerHand = serverCore.hands.getHand(playerId)
     PlayerCoreState(

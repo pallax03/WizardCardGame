@@ -45,16 +45,3 @@ class TestGameErrorCodecs extends AnyWordSpec with Matchers:
       val jsonString = error.toJson
       jsonString shouldBe """{"error":"CardNotAllowed","reason":{"type":"MustFollowColor","requiredColor":"Red","legalCards":[{"type":"Standard","color":"Blue","rank":10}]}}"""
       jsonString.decodeAs[GameError].value shouldBe error
-
-    "encode and decode GameError.InconsistentState (TableNoWinner) correctly" in:
-      val error: GameError = GameError.InconsistentState(InconsistentStateReasons.TableNoWinner)
-      val jsonString = error.toJson
-      jsonString shouldBe """{"error":"InconsistentState","reason":{"type":"TableNoWinner"}}"""
-      jsonString.decodeAs[GameError].value shouldBe error
-
-    "encode and decode GameError.InconsistentState (HandNotFoundFor) correctly" in:
-      val error: GameError =
-        GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(PlayerId(1)))
-      val jsonString = error.toJson
-      jsonString shouldBe """{"error":"InconsistentState","reason":{"type":"HandNotFoundFor","playerId":1}}"""
-      jsonString.decodeAs[GameError].value shouldBe error
