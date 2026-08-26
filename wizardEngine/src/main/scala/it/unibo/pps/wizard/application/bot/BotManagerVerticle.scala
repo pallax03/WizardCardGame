@@ -1,5 +1,6 @@
 package it.unibo.pps.wizard.application.bot
 
+import cats.syntax.all._
 import io.vertx.core.AbstractVerticle
 import it.unibo.pps.wizard.application.bot.strategy.BotStrategy
 import it.unibo.pps.wizard.codecs.engine.model.WizardEventsCodecs.given
@@ -124,12 +125,16 @@ class BotManagerVerticle(
     strategy
       .resolveInvitationEvents(lobbyId, invitation)
       .flatMap: action =>
-        gameInboundPort.submitAction(lobbyId, action).flatMap:
-          case Left(gameError) =>
-            val mockFailure = FailureEvent.ActionFailed(playerId, gameError)
-            strategy.resolveFailedEvents(lobbyId, mockFailure).flatMap: fallbackAction =>
-              gameInboundPort.submitAction(lobbyId, fallbackAction).map(_ => ())
-          case Right(_) => Future.unit
+        gameInboundPort
+          .submitAction(lobbyId, action)
+          .flatMap:
+            case Left(gameError) =>
+              val mockFailure = FailureEvent.ActionFailed(playerId, gameError)
+              strategy
+                .resolveFailedEvents(lobbyId, mockFailure)
+                .flatMap: fallbackAction =>
+                  gameInboundPort.submitAction(lobbyId, fallbackAction).void
+            case Right(_) => Future.unit
       .onComplete:
         case Failure(e) =>
           logger.error(s"Bot $playerId strategy failed", e)

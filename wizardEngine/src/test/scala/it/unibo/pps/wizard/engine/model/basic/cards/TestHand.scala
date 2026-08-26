@@ -1,9 +1,9 @@
 package it.unibo.pps.wizard.engine.model.basic.cards
 
 import it.unibo.pps.wizard.engine.model.basic._
+import it.unibo.pps.wizard.engine.model.core.GameException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import it.unibo.pps.wizard.engine.model.core.GameException
 
 import scala.language.postfixOps
 

@@ -25,7 +25,7 @@ enum InconsistentState:
 
   /** Occurs when there is not any lobbyId with a related game. */
   case GameNotFound
-  
+
   /** Occurs when the trick table is empty or invalid at the moment of evaluation. */
   case TableNoWinner
 

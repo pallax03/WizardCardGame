@@ -71,9 +71,7 @@ object GameEngine:
 
       case _ => Left(GameError.InvalidAction)
 
-  /**
-   * Handles the action of playing a card during the Playing phase.
-   */
+  /** Handles the action of playing a card during the Playing phase. */
   private def handlePlayCard(
       currentState: GameState.Playing[ServerCoreState],
       playerId: PlayerId,
@@ -93,8 +91,7 @@ object GameEngine:
 
       if updatedTable.isTrickComplete(updatedCore.playersIds.size) then
         advanceCompletedTrick(currentState, updatedCore, updatedTable, cardPlayedEvent)
-      else
-        advanceRegularTurn(currentState, updatedCore, updatedTable, playerId, cardPlayedEvent)
+      else advanceRegularTurn(currentState, updatedCore, updatedTable, playerId, cardPlayedEvent)
 
   private def advanceCompletedTrick(
       currentState: GameState.Playing[ServerCoreState],
@@ -123,12 +120,11 @@ object GameEngine:
       table = updatedTable,
       playerTurn = nextPlayer
     )
-    val invitationEvent = InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable))
+    val invitationEvent =
+      InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable))
     (nextState, List(cardPlayedEvent, invitationEvent))
 
-  /**
-   * Handles the action of placing a bid during the Bidding phase.
-   */
+  /** Handles the action of placing a bid during the Bidding phase. */
   private def handlePlaceBid(
       currentState: GameState.Bidding[ServerCoreState],
       playerId: PlayerId,
@@ -149,8 +145,7 @@ object GameEngine:
       val bidPlacedEvent = ActionEvent.BidPlaced(playerId, bid)
       if updatedBids.isComplete(totalPlayers) then
         advanceToPlayingPhase(currentState, updatedBids, bidPlacedEvent)
-      else
-        advanceToNextBidder(currentState, updatedBids, playerId, bidPlacedEvent)
+      else advanceToNextBidder(currentState, updatedBids, playerId, bidPlacedEvent)
 
   private def advanceToPlayingPhase(
       currentState: GameState.Bidding[ServerCoreState],
@@ -194,9 +189,7 @@ object GameEngine:
     )
     (nextState, events)
 
-  /**
-   * Handles the action of resolving the trump color during the ChoosingTrump phase.
-   */
+  /** Handles the action of resolving the trump color during the ChoosingTrump phase. */
   private def handleResolveTrump(
       currentState: GameState.ChoosingTrump[ServerCoreState],
       playerId: PlayerId,
@@ -249,8 +242,7 @@ object GameEngine:
 
     if isRoundComplete(updatedCore.hands) then
       advanceToRoundCompletion(state, updatedCore, updatedTricks, trickWonEvent)
-    else
-      advanceToNextTrickTurn(state, updatedCore, updatedTricks, winnerId, trickWonEvent)
+    else advanceToNextTrickTurn(state, updatedCore, updatedTricks, winnerId, trickWonEvent)
 
   private def isRoundComplete(hands: Hands): Boolean = hands.areEmpty
 

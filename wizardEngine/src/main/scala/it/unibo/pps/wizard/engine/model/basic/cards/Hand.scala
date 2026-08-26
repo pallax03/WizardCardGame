@@ -23,8 +23,6 @@ object Hand:
     def contains(card: Card): Boolean = h.contains(card)
     def toList: List[Card] = h
 
-
-
 /**
  * Represents the state of all players' hands in the game.
  * Maps each PlayerId to their respective Hand.
@@ -38,7 +36,7 @@ object Hands:
   extension (hands: Hands)
     /**
      * Retrieves the Hand of a specific player.
-     * 
+     *
      * @param player The ID of the player.
      * @return The player's Hand.
      * @throws GameException if the player is not found, indicating a corrupted system state.
@@ -48,7 +46,7 @@ object Hands:
 
     /**
      * Removes a specific card from a player's hand.
-     * 
+     *
      * @param player The ID of the player.
      * @param card The card to remove.
      * @return A new Hands instance with the card removed.

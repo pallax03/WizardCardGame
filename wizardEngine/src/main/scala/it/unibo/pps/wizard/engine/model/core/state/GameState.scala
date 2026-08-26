@@ -5,7 +5,6 @@ import it.unibo.pps.wizard.engine.model.basic.bidding.Bids
 import it.unibo.pps.wizard.engine.model.basic.bidding.Tricks
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Table
 
-
 /** Represents the various phases and states of the Wizard card game. */
 sealed trait GameState[+C <: CoreState]
 

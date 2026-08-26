@@ -4,7 +4,6 @@ import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.basic.cards.Hands
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
-
 import it.unibo.pps.wizard.engine.model.rules.RoundManager.firstPlayer
 
 final case class ServerCoreState(

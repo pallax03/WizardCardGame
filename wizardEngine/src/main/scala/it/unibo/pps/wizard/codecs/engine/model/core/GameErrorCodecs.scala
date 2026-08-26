@@ -4,11 +4,9 @@ import io.circe._
 import io.circe.syntax._
 import it.unibo.pps.wizard.codecs.combinators.DiscriminatedCodecs._
 import it.unibo.pps.wizard.codecs.engine.model.basic.CardCodecs.given
-
 import it.unibo.pps.wizard.engine.model.basic.cards.Card
 import it.unibo.pps.wizard.engine.model.core.CardNotAllowedReasons
 import it.unibo.pps.wizard.engine.model.core.GameError
-
 
 object GameErrorCodecs:
   given Encoder[CardNotAllowedReasons] = Encoder.instance:
@@ -29,12 +27,12 @@ object GameErrorCodecs:
 
   given Encoder[GameError] = Encoder.instance: t =>
     val reason = t match
-      case GameError.CardNotAllowed(reason)    => Some(reason.asJson)
-      case _                                   => None
+      case GameError.CardNotAllowed(reason) => Some(reason.asJson)
+      case _                                => None
     reason.fold(Json.obj())(r => Json.obj("reason" -> r)).withTag("error", t.productPrefix)
 
   given Decoder[GameError] = decodeByTag("error"):
-    case "NotYourTurn"       => Decoder.const(GameError.NotYourTurn)
-    case "InvalidBid"        => Decoder.const(GameError.InvalidBid)
-    case "InvalidAction"     => Decoder.const(GameError.InvalidAction)
-    case "CardNotAllowed"    => Decoder.forProduct1("reason")(GameError.CardNotAllowed.apply)
+    case "NotYourTurn"    => Decoder.const(GameError.NotYourTurn)
+    case "InvalidBid"     => Decoder.const(GameError.InvalidBid)
+    case "InvalidAction"  => Decoder.const(GameError.InvalidAction)
+    case "CardNotAllowed" => Decoder.forProduct1("reason")(GameError.CardNotAllowed.apply)

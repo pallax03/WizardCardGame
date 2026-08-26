@@ -31,7 +31,11 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
             .submitAction(lobbyId, action)
             .map:
               case Right(_) =>
-                Right(ActionSuccessResponse(s"Action submitted successfully from player $playerId in lobby ${lobby.uuid}"))
+                Right(
+                  ActionSuccessResponse(
+                    s"Action submitted successfully from player $playerId in lobby ${lobby.uuid}"
+                  )
+                )
               case Left(gameError) =>
                 Left(ErrorResponse(gameError.toString, "INVALID_ACTION"))
         case None =>
