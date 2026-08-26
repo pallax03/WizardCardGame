@@ -4,8 +4,7 @@ import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.basic.cards.Hands
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
-import it.unibo.pps.wizard.engine.model.core.GameError
-import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons
+
 import it.unibo.pps.wizard.engine.model.rules.RoundManager.firstPlayer
 
 final case class ServerCoreState(
@@ -31,19 +30,3 @@ object ServerCoreState:
       dealerId = round.firstPlayer(playersIds),
       scoreboard = Scoreboard.empty
     )
-
-  extension (hands: Hands)
-    def getHandSafe(
-        player: PlayerId
-    ): Either[GameError, it.unibo.pps.wizard.engine.model.basic.cards.Hand] =
-      hands
-        .getHand(player)
-        .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(player)))
-
-    def removeSafe(
-        player: PlayerId,
-        card: it.unibo.pps.wizard.engine.model.basic.cards.Card
-    ): Either[GameError, Hands] =
-      hands
-        .remove(player, card)
-        .toRight(GameError.InconsistentState(InconsistentStateReasons.HandNotFoundFor(player)))

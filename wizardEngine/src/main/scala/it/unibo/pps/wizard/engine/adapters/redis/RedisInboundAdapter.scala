@@ -9,6 +9,7 @@ import it.unibo.pps.wizard.engine.configuration._
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.core._
+import it.unibo.pps.wizard.engine.model.core.InconsistentState
 import it.unibo.pps.wizard.engine.model.core.state.GameState
 import it.unibo.pps.wizard.engine.model.core.state.PlayerGameState
 import it.unibo.pps.wizard.engine.model.core.state.ServerGameState
@@ -40,12 +41,8 @@ class RedisInboundAdapter(
           val serverState = response.toString.decodeAs[ServerGameState] match
             case Right(state) => state
             case Left(err) =>
-              throw GameException(
-                GameError.InconsistentState(InconsistentStateReasons.CorruptedState(err.toString))
-              )
-          PlayerGameState.from(serverState, playerId) match
-            case Right(state) => state
-            case Left(err)    => throw GameException(err)
+              throw GameException(InconsistentState.CorruptedState(err.toString))
+          PlayerGameState.from(serverState, playerId)
 
   /** @inheritdoc */
   override def startGame(
@@ -84,9 +81,7 @@ class RedisInboundAdapter(
           val oldState = response.toString.decodeAs[ServerGameState] match
             case Right(state) => state
             case Left(err) =>
-              throw GameException(
-                GameError.InconsistentState(InconsistentStateReasons.CorruptedState(err.toString))
-              )
+              throw GameException(InconsistentState.CorruptedState(err.toString))
           GameEngine.processAction(oldState, action) match
             case Left(error) =>
               outboundPort.publish(lobbyId, FailureEvent.ActionFailed(action.playerId, error))

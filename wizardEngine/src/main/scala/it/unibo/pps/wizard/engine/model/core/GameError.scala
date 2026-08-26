@@ -21,13 +21,13 @@ enum CardNotAllowedReasons(val legitCards: List[Card]):
   case MustFollowColor(requiredColor: Card.Color, cards: List[Card])
       extends CardNotAllowedReasons(cards)
 
-enum InconsistentStateReasons:
+enum InconsistentState:
 
   /** Occurs when the trick table is empty or invalid at the moment of evaluation. */
   case TableNoWinner
 
   /** Occurs when the system expects a hand for a player that does not exist in the state. */
-  case HandNotFoundFor(playerId: PlayerId)
+  case CorruptedHand(playerId: PlayerId)
 
   /** Occurs when the serialized state (e.g., from Redis) cannot be decoded properly. */
   case CorruptedState(message: String)
@@ -47,11 +47,8 @@ enum GameError:
   /** The card played is not allowed based on current table rules. */
   case CardNotAllowed(reason: CardNotAllowedReasons)
 
-  /**
-   * Indicates an internal system error where the game state became corrupted or inconsistent.
-   * This suggests a logic error in the engine's transition handling.
-   */
-  case InconsistentState(reason: InconsistentStateReasons)
-
-/** Exception wrapper for GameError, useful to fail Futures with specific domain errors */
-case class GameException(error: GameError) extends Exception(error.toString)
+/**
+ * Indicates an internal system error where the game state became corrupted or inconsistent.
+ * This suggests a logic error in the engine's transition handling.
+ */
+case class GameException(error: InconsistentState) extends Exception(error.toString)

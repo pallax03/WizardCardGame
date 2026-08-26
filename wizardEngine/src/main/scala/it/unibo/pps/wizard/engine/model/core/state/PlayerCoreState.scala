@@ -4,8 +4,6 @@ import it.unibo.pps.wizard.engine.model.basic._
 import it.unibo.pps.wizard.engine.model.basic.cards.Hand
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
-import it.unibo.pps.wizard.engine.model.core.GameError
-
 final case class PlayerCoreState(
     playersIds: List[PlayerId],
     hand: Hand,
@@ -16,16 +14,13 @@ final case class PlayerCoreState(
 ) extends CoreState
 
 object PlayerCoreState:
-  def from(serverCore: ServerCoreState, playerId: PlayerId): Either[GameError, PlayerCoreState] =
-    import ServerCoreState.*
-    serverCore.hands
-      .getHandSafe(playerId)
-      .map: playerHand =>
-        PlayerCoreState(
-          playersIds = serverCore.playersIds,
-          hand = playerHand,
-          trump = serverCore.trump,
-          round = serverCore.round,
-          dealerId = serverCore.dealerId,
-          scoreboard = serverCore.scoreboard
-        )
+  def from(serverCore: ServerCoreState, playerId: PlayerId): PlayerCoreState =
+    val playerHand = serverCore.hands.getHand(playerId)
+    PlayerCoreState(
+      playersIds = serverCore.playersIds,
+      hand = playerHand,
+      trump = serverCore.trump,
+      round = serverCore.round,
+      dealerId = serverCore.dealerId,
+      scoreboard = serverCore.scoreboard
+    )
