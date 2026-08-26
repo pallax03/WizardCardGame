@@ -69,16 +69,21 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
         .flatMap:
           case Some(lobby) =>
             if lobby.status == LobbyStatus.WAITING then
-              lobbyStatePort
-                .saveLobby(lobby.copy(status = LobbyStatus.IN_GAME))
-                .flatMap(_ =>
-                  gameEngine.startGame(
-                    lobbyId,
-                    lobby.players.map(_.id),
-                    GameConfiguration(1000, lobby.players)
+              if lobby.players.forall(_.isOnline) then
+                lobbyStatePort
+                  .saveLobby(lobby.copy(status = LobbyStatus.IN_GAME))
+                  .flatMap(_ =>
+                    gameEngine.startGame(
+                      lobbyId,
+                      lobby.players.map(_.id),
+                      GameConfiguration(1000, lobby.players)
+                    )
                   )
+                  .map(_ => Right(GameStartedResponse("Game started")))
+              else
+                Future.successful(
+                  Left(ErrorResponse("Not all players are online", "PLAYERS_OFFLINE"))
                 )
-                .map(_ => Right(GameStartedResponse("Game started")))
             else
               Future.successful(
                 Left(ErrorResponse("Game already started or finished", "GAME_ALREADY_STARTED"))
