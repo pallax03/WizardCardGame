@@ -8,14 +8,14 @@ import it.unibo.pps.wizard.engine.model.core.GameError
 import it.unibo.pps.wizard.engine.model.core.InconsistentStateReasons
 import it.unibo.pps.wizard.engine.model.rules.RoundManager.firstPlayer
 
-case class ServerCoreState(
+final case class ServerCoreState(
     playersIds: List[PlayerId],
     hands: Hands,
     trump: Trump,
     round: Round,
     dealerId: PlayerId,
     scoreboard: Scoreboard
-):
+) extends CoreState:
   def updateTrump(trump: Trump): ServerCoreState = this.copy(trump = trump)
 
 object ServerCoreState:

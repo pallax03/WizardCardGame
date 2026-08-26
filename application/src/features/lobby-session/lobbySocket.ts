@@ -39,19 +39,17 @@ function parseServerEvent(rawData: string): ServerEvent | null {
     } satisfies ChatMessage;
   }
 
-  if (raw.type === "system") {
-    const rawAction = String(raw.action || "").toLowerCase();
-    const isJoin = rawAction.includes("joined");
-    const isLeave = rawAction.includes("left");
-
-    if (isJoin || isLeave) {
-      return {
-        type: "system",
-        playerId: Number(raw.playerId),
-        action: isJoin ? "joined" : "left",
-        timestamp,
-      } satisfies SystemMessage;
-    }
+  if (
+    raw.type === "system" &&
+    typeof raw.playerId === "number" &&
+    (raw.action === "joined" || raw.action === "left" || raw.action === "online" || raw.action === "offline")
+  ) {
+    return {
+      type: "system",
+      playerId: raw.playerId,
+      action: raw.action,
+      timestamp,
+    } satisfies SystemMessage;
   }
 
   if (isRecord(raw.event) && typeof raw.event.type === "string" && typeof raw.event.action === "string") {
@@ -64,8 +62,6 @@ function parseServerEvent(rawData: string): ServerEvent | null {
     };
     return { type: "event", event, timestamp } satisfies EventMessage;
   }
-
-  
 
   return null;
 }
@@ -84,8 +80,7 @@ export function connectLobbySocket({
   socket.onmessage = ({ data }) => {
     if (typeof data !== "string") return;
     const event = parseServerEvent(data);
-    if (event) onEvent(event)
-    else console.warn("Evento WebSocket non riconosciuto o scartato dal parser:", data);
+    if (event) onEvent(event);
   };
   socket.onerror = () => onConnectionChange("closed");
   socket.onclose = onClose;

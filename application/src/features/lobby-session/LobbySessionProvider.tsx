@@ -58,9 +58,12 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
       let connectedPlayerIds = state.connectedPlayerIds;
       if (action.event.type === "system") {
         const playerId = action.event.playerId;
-        connectedPlayerIds = action.event.action === "joined"
-          ? Array.from(new Set([...state.connectedPlayerIds, playerId]))
-          : state.connectedPlayerIds.filter((id) => id !== playerId);
+        const evAction = action.event.action;
+        if (evAction === "joined" || evAction === "online") {
+          connectedPlayerIds = Array.from(new Set([...state.connectedPlayerIds, playerId]));
+        } else if (evAction === "left" || evAction === "offline") {
+          connectedPlayerIds = state.connectedPlayerIds.filter((id) => id !== playerId);
+        }
       }
       return {
         ...state,
@@ -122,27 +125,24 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     queueMicrotask(() => dispatch({ type: "identity/resolved", playerId }));
   }, [lobbyId, router]);
 
-  const refreshLobby = useCallback(async () => {
+  const refreshLobby = useCallback(() => {
     if (lobbyRequestRef.current) {
       lobbyRefreshQueuedRef.current = true;
-      await lobbyRequestRef.current;
-      if (lobbyRefreshQueuedRef.current) {
-        return refreshLobby();
-      }
-      return;
+      return lobbyRequestRef.current;
     }
-
     const request = (async () => {
-      try {
-        const lobby = await getLobbyState(lobbyId);
-        dispatch({ type: "lobby/loaded", lobby });
-      } catch (reason: unknown) {
-        const error = reason instanceof Error ? reason : new Error(String(reason));
-        dispatch({ type: "sync/failed", error });
-      } finally {
-        lobbyRequestRef.current = null;
-      }
-  })();
+      do {
+        lobbyRefreshQueuedRef.current = false;
+        try {
+          const lobby = await getLobbyState(lobbyId);
+          dispatch({ type: "lobby/loaded", lobby });
+        } catch (reason: unknown) {
+          const error = reason instanceof Error ? reason : new Error(String(reason));
+          dispatch({ type: "sync/failed", error });
+        }
+      } while (lobbyRefreshQueuedRef.current);
+      lobbyRequestRef.current = null;
+    })();
     lobbyRequestRef.current = request;
     return request;
   }, [lobbyId]);
@@ -180,9 +180,9 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     dispatch({ type: "event/received", event });
     console.log("Received server event:", event);
     if (event.type === "system") {
-      setTimeout(() => {
+      if (event.action === "joined" || event.action === "left") {
         void refreshLobby();
-      }, 100);
+      }
       return;
     }
 
