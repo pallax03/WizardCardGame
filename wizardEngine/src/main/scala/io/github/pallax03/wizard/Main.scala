@@ -1,9 +1,5 @@
 package io.github.pallax03.wizard
 
-import io.vertx.core.AbstractVerticle
-import io.vertx.core.Vertx
-import io.vertx.redis.client.Redis
-import io.vertx.redis.client.RedisOptions
 import io.github.pallax03.wizard.application.bot.BotManagerVerticle
 import io.github.pallax03.wizard.application.web.http.HttpServerVerticle
 import io.github.pallax03.wizard.application.web.http.routes._
@@ -19,6 +15,10 @@ import io.github.pallax03.wizard.engine.ports.InboundPort
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import io.github.pallax03.wizard.engine.ports.OutboundPort
 import io.github.pallax03.wizard.engine.ports.PubSubPort
+import io.vertx.core.AbstractVerticle
+import io.vertx.core.Vertx
+import io.vertx.redis.client.Redis
+import io.vertx.redis.client.RedisOptions
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global

@@ -1,7 +1,5 @@
 package io.github.pallax03.wizard.engine.adapters
 
-import io.vertx.core.http.ServerWebSocket
-import io.vertx.core.json.JsonObject
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
@@ -9,6 +7,8 @@ import io.github.pallax03.wizard.engine.ports.PubSubPort
 import io.github.pallax03.wizard.engine.ports.Subscription
 import io.github.pallax03.wizard.engine.ports.WebSocketsPort
 import io.github.pallax03.wizard.util.ChannelsKeys
+import io.vertx.core.http.ServerWebSocket
+import io.vertx.core.json.JsonObject
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global

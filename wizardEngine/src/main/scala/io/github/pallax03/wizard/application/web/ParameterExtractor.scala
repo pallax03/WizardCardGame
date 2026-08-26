@@ -1,8 +1,8 @@
 package io.github.pallax03.wizard.application.web
 
-import io.vertx.core.http.HttpServerRequest
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.vertx.core.http.HttpServerRequest
 
 /**
  * Object utility to extract parameters from an HTTP request.

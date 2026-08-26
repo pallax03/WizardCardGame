@@ -1,7 +1,6 @@
 package io.github.pallax03.wizard.application.bot
 
 import cats.syntax.all._
-import io.vertx.core.AbstractVerticle
 import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
 import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
@@ -21,6 +20,7 @@ import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import io.github.pallax03.wizard.engine.ports.PubSubPort
 import io.github.pallax03.wizard.engine.ports.Subscription
 import io.github.pallax03.wizard.util.ChannelsKeys
+import io.vertx.core.AbstractVerticle
 import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap

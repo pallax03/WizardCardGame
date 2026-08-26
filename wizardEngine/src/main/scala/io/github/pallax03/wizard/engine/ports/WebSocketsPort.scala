@@ -1,8 +1,8 @@
 package io.github.pallax03.wizard.engine.ports
 
-import io.vertx.core.http.ServerWebSocket
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.vertx.core.http.ServerWebSocket
 
 import scala.concurrent.Future
 

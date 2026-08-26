@@ -1,9 +1,6 @@
 package io.github.pallax03.wizard.engine.adapters.redis
 
 import cats.syntax.all._
-import io.vertx.redis.client.Command
-import io.vertx.redis.client.Redis
-import io.vertx.redis.client.Request
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
 import io.github.pallax03.wizard.engine.lobby._
@@ -11,6 +8,9 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax._
+import io.vertx.redis.client.Command
+import io.vertx.redis.client.Redis
+import io.vertx.redis.client.Request
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
