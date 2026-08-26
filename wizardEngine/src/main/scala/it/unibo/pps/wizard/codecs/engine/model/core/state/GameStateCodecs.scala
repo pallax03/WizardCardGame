@@ -1,9 +1,10 @@
 package it.unibo.pps.wizard.codecs.engine.model.core.state
 
-import io.circe._, io.circe.syntax._
+import io.circe._
+import io.circe.syntax._
 import it.unibo.pps.wizard.codecs.engine.model._
-import it.unibo.pps.wizard.engine.model.rules.TableRules._
 import it.unibo.pps.wizard.engine.model.core.state._
+import it.unibo.pps.wizard.engine.model.rules.TableRules._
 
 import scala.annotation.nowarn
 
@@ -15,7 +16,6 @@ object GameStateCodecs:
   import basic.TableCodecs.given
   import basic.HandsCodecs.given
   import basic.TrumpCodecs.given
-
 
   given Codec[GameState.Ended] = Codec.AsObject.derived
 
@@ -30,7 +30,7 @@ object GameStateCodecs:
   given playerChoosingTrumpCodec: Codec[GameState.ChoosingTrump[PlayerCoreState]] =
     Codec.AsObject.derived
   given playerBiddingCodec: Codec[GameState.Bidding[PlayerCoreState]] = Codec.AsObject.derived
-  
+
   given playerPlayingCodec: Codec[GameState.Playing[PlayerCoreState]] =
     val derivedCodec = Codec.AsObject.derived[GameState.Playing[PlayerCoreState]]
     Codec.from(

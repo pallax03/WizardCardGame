@@ -1,10 +1,12 @@
 package it.unibo.pps.wizard.codecs.engine.model.core.state
 
-import it.unibo.pps.wizard.codecs.syntax.CodecSyntax.*
-import it.unibo.pps.wizard.engine.model.*
+import it.unibo.pps.wizard.codecs.syntax.CodecSyntax._
+import it.unibo.pps.wizard.engine.model._
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump.WizardUnresolved
-import it.unibo.pps.wizard.engine.model.core.state.{GameState, PlayerGameState, ServerCoreState}
-import org.scalatest.EitherValues.*
+import it.unibo.pps.wizard.engine.model.core.state.GameState
+import it.unibo.pps.wizard.engine.model.core.state.PlayerGameState
+import it.unibo.pps.wizard.engine.model.core.state.ServerCoreState
+import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

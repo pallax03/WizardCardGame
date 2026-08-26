@@ -1,7 +1,8 @@
 package it.unibo.pps.wizard.engine.model.core.state
 
-import it.unibo.pps.wizard.engine.model.basic.*
-import it.unibo.pps.wizard.engine.model.basic.gameplay.{Round, Trump}
+import it.unibo.pps.wizard.engine.model.basic._
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
+import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
 
 trait CoreState:
   def playersIds: List[PlayerId]
