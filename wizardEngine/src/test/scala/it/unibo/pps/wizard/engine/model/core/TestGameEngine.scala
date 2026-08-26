@@ -32,7 +32,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
 
   "A GameEngine" should:
     "initialize a new game correctly via initializeGame" in:
-      val engine = GameEngine.initializeGame(mockPlayersIds).toOption.get
+      val engine = GameEngine.initializeGame(mockPlayersIds)
 
       engine.state match
         case _: GameState.Bidding[?]       =>

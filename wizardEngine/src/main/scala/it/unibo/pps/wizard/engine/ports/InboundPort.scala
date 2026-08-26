@@ -4,6 +4,7 @@ import it.unibo.pps.wizard.engine.configuration.GameConfiguration
 import it.unibo.pps.wizard.engine.lobby.LobbyId
 import it.unibo.pps.wizard.engine.model.basic.PlayerId
 import it.unibo.pps.wizard.engine.model.core.GameAction
+import it.unibo.pps.wizard.engine.model.core.GameError
 import it.unibo.pps.wizard.engine.model.core.state.PlayerGameState
 
 import scala.concurrent.Future
@@ -38,7 +39,7 @@ trait InboundPort:
    *
    * @param lobbyId the identifier of the lobby
    * @param action the game action to submit
-   * @return a Future indicating the completion of the action submission
+   * @return a Future indicating the completion of the action submission, or the domain GameError if invalid
    * @throws GameException if processing the action encounters a critical system error (corrupted state).
    */
-  def submitAction(lobbyId: LobbyId, action: GameAction): Future[Unit]
+  def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]]

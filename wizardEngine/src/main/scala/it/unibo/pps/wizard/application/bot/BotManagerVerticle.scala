@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 
@@ -106,13 +107,6 @@ class BotManagerVerticle(
     rawJson.decodeAs[WizardEvent] match
       case Right(invitation: InvitationEvent) if playerId == invitation.playerId =>
         executeInvitationStrategy(lobbyId, playerId, strategy, invitation)
-      case Right(failure: FailureEvent) if playerId == failure.destinationId =>
-        strategy
-          .resolveFailedEvents(lobbyId, failure)
-          .onComplete:
-            case Success(action) =>
-              gameInboundPort.submitAction(lobbyId, action)
-            case Failure(e) => logger.error(s"Bot $playerId fallback failed", e)
       case Right(LifecycleEvent.GameEnded(_, _)) =>
         activeSubscriptions
           .remove((lobbyId, playerId))
@@ -129,8 +123,14 @@ class BotManagerVerticle(
   ): Unit =
     strategy
       .resolveInvitationEvents(lobbyId, invitation)
+      .flatMap: action =>
+        gameInboundPort.submitAction(lobbyId, action).flatMap:
+          case Left(gameError) =>
+            val mockFailure = FailureEvent.ActionFailed(playerId, gameError)
+            strategy.resolveFailedEvents(lobbyId, mockFailure).flatMap: fallbackAction =>
+              gameInboundPort.submitAction(lobbyId, fallbackAction).map(_ => ())
+          case Right(_) => Future.unit
       .onComplete:
-        case Success(action) =>
-          gameInboundPort.submitAction(lobbyId, action)
         case Failure(e) =>
           logger.error(s"Bot $playerId strategy failed", e)
+        case _ => ()

@@ -29,17 +29,13 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
         case Some(lobby) =>
           gameEnginePort
             .submitAction(lobbyId, action)
-            .map: _ =>
-              Right(
-                ActionSuccessResponse(
-                  s"Action submitted successfully from player $playerId in lobby ${lobby.uuid}"
-                )
-              )
+            .map:
+              case Right(_) =>
+                Right(ActionSuccessResponse(s"Action submitted successfully from player $playerId in lobby ${lobby.uuid}"))
+              case Left(gameError) =>
+                Left(ErrorResponse(gameError.toString, "INVALID_ACTION"))
         case None =>
           Future.successful(Left(ErrorResponse(s"Lobby $lobbyIdStr not found", "LOBBY_NOT_FOUND")))
-      .recover:
-        case ex: Throwable =>
-          Left(ErrorResponse(s"Internal error: ${ex.getMessage}", "INTERNAL_ERROR"))
 
   val chooseServerEndpoint: ServerEndpoint[Any, Future] {
     type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, String, GameAction);
