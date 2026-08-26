@@ -6,6 +6,7 @@ export type LobbyPlayer = {
   id: number;
   name: string;
   difficulty?: string | null;
+  isOnline?: boolean;
 };
 
 export type LobbyState = {

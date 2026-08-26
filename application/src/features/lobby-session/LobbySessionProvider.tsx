@@ -47,9 +47,9 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
       return {
         ...state,
         lobby: action.lobby,
-        connectedPlayerIds: state.lobby === null
-          ? action.lobby.players.map((player) => player.id)
-          : state.connectedPlayerIds,
+        connectedPlayerIds: action.lobby.players
+          .filter((player) => player.isOnline)
+          .map((player) => player.id),
         error: null,
       };
     case "game/loaded":
