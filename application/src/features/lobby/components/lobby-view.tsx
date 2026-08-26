@@ -6,7 +6,14 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/ui/components/card";
 import { Avatar, AvatarFallback } from "@/ui/components/avatar";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { Copy, Check, LogOut, Settings, Users, UserPlus, Bot as BotIcon, Plus, X, Loader2 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/ui/components/select";
+import { Copy, Check, LogOut, Settings, Users, UserPlus, Bot as BotIcon, Plus, X, Loader2, Clock } from "lucide-react";
 import { addBotAction, leaveLobbyAction } from "@/features/lobby/actions/lobby-actions";
 import { useLobbySession } from "@/features/lobby-session";
 import { lobbyI18n } from "@/i18n/lobby";
@@ -25,6 +32,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   const [removingBotId, setRemovingBotId] = useState<string | number | null>(null);
   const [activeBotSlot, setActiveBotSlot] = useState<number | null>(null);
   const [isLeaving, setIsLeaving] = useState<boolean>(false);
+  const [turnTime, setTurnTime] = useState<string | null>("30");
 
   const handleCopyCode = () => {
     if (!lobby?.lobbyId) return;
@@ -109,26 +117,27 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       )}
 
       <Card className="bg-slate-900 border-slate-800 text-slate-100">
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4">
           <div>
-            <CardTitle className="text-2xl font-bold text-white">
+            <CardTitle className="text-xl sm:text-2xl font-bold text-white break-all">
               {lobbyI18n.header.roomTitle}{roomCode}
             </CardTitle>
-            <p className="text-sm text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-slate-400 mt-1">
               {lobbyI18n.header.modePrefix}<span className="text-slate-200 font-medium">{lobbyI18n.header.modeName}</span> • {lobbyI18n.header.maxPlayers.replace("{max}", String(maxPlayers))}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
             <Button
               variant="outline"
               size="sm"
-              className="gap-2 border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 hover:text-white"
+              className="gap-2 border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200 hover:text-white flex-1 sm:flex-initial justify-center"
               onClick={handleCopyCode}
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-400" />}
-              <code className="font-mono text-xs">#{roomCode}</code>
+              {copied ? <Check className="w-4 h-4 text-emerald-400 shrink-0" /> : <Copy className="w-4 h-4 text-slate-400 shrink-0" />}
+              <span className="text-xs truncate">Copia Codice</span>
+              <code className="font-mono text-xs hidden md:inline">#{roomCode}</code>
             </Button>
-            <Button variant="ghost" size="icon" className="hover:bg-slate-800 text-slate-400 hover:text-white">
+            <Button variant="ghost" size="icon" className="hover:bg-slate-800 text-slate-400 hover:text-white shrink-0">
               <Settings className="w-5 h-5" />
             </Button>
           </div>
@@ -156,7 +165,6 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
               const isRemovingThisBot = removingBotId === player.id;
               const initials = player.name ? player.name.slice(0, 2).toUpperCase() : "P";
               
-              // Verifichiamo lo stato online
               const isOnline = isBot || connectedPlayerIds.some((id) => Number(id) === Number(player.id));
 
               const difficultyLabel = isBot && player.difficulty
@@ -174,9 +182,8 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                       : "bg-slate-800/60 border-slate-700/60"
                   }`}
                 >
-                  <div className="flex items-center gap-3">
-                    {/* Container per l'Avatar con Pallino di Stato visibile fuori dall'overflow dell'Avatar */}
-                    <div className="relative inline-block">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="relative inline-block shrink-0">
                       <Avatar className={`h-10 w-10 ${isBot ? "border border-cyan-500/50" : ""}`}>
                         <AvatarFallback className={isBot ? "bg-cyan-950 text-cyan-400" : "bg-slate-700 text-slate-200"}>
                           {isBot ? <BotIcon className="w-5 h-5" /> : initials}
@@ -190,11 +197,11 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                       />
                     </div>
 
-                    <div>
-                      <p className="font-semibold text-sm text-slate-100 flex items-center gap-1.5">
-                        {player.name}
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm text-slate-100 flex items-center gap-1.5 truncate">
+                        <span className="truncate">{player.name}</span>
                         {isMe && (
-                          <span className="text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800/60 px-1.5 py-0.2 rounded font-mono">
+                          <span className="text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800/60 px-1.5 py-0.2 rounded font-mono shrink-0">
                             {lobbyI18n.playersCard.youBadge}
                           </span>
                         )}
@@ -205,7 +212,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 shrink-0">
                     {isBot ? (
                       <>
                         <Badge variant="outline" className="text-cyan-400 border-cyan-500/40 bg-cyan-950/20">
@@ -227,12 +234,10 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                         </Button>
                       </>
                     ) : isOnline ? (
-                      /* Giocatore umano online: Pronto */
                       <Badge className="bg-emerald-950/80 text-emerald-400 border border-emerald-800/60">
                         {lobbyI18n.playersCard.readyBadge}
                       </Badge>
                     ) : (
-                      /* Giocatore umano offline: Non pronto / Disconnesso */
                       <Badge variant="outline" className="bg-red-950/80 text-red-400 border border-red-800/60">
                         {lobbyI18n.playersCard.notReadyBadge}
                       </Badge>
@@ -249,18 +254,18 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                 return (
                   <div
                     key={`empty-${index}`}
-                    className="flex items-center justify-between p-2 rounded-xl border border-dashed border-cyan-800/80 bg-slate-950/50 text-slate-300 text-xs font-medium"
+                    className="flex flex-col sm:flex-row items-center justify-between p-2.5 gap-2 rounded-xl border border-dashed border-cyan-800/80 bg-slate-950/50 text-slate-300 text-xs font-medium"
                   >
                     <div className="flex items-center gap-1.5 text-cyan-400 pl-1">
                       <BotIcon className="w-4 h-4" />
                       <span>{lobbyI18n.botSelection.label}</span>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 w-full sm:w-auto justify-end">
                       <Button
                         size="sm"
                         variant="outline"
                         disabled={isAddingBot}
-                        className="h-7 px-2 border-slate-700 bg-slate-800 hover:bg-cyan-950 hover:border-cyan-600 text-slate-200 text-xs gap-1"
+                        className="h-7 px-2 border-slate-700 bg-slate-800 hover:bg-cyan-950 hover:border-cyan-600 text-slate-200 text-xs gap-1 flex-1 sm:flex-initial"
                         onClick={async () => {
                           await handleAddBot("Dumb");
                           setActiveBotSlot(null);
@@ -273,7 +278,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                         size="sm"
                         variant="outline"
                         disabled={isAddingBot}
-                        className="h-7 px-2 border-slate-700 bg-slate-800 hover:bg-cyan-950 hover:border-cyan-600 text-slate-200 text-xs gap-1"
+                        className="h-7 px-2 border-slate-700 bg-slate-800 hover:bg-cyan-950 hover:border-cyan-600 text-slate-200 text-xs gap-1 flex-1 sm:flex-initial"
                         onClick={async () => {
                           await handleAddBot("Prolog");
                           setActiveBotSlot(null);
@@ -286,7 +291,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
                         size="icon"
                         variant="ghost"
                         disabled={isAddingBot}
-                        className="h-7 w-7 text-slate-400 hover:text-slate-100"
+                        className="h-7 w-7 text-slate-400 hover:text-slate-100 shrink-0"
                         onClick={() => setActiveBotSlot(null)}
                       >
                         <X className="w-3.5 h-3.5" />
@@ -325,20 +330,54 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
             <CardHeader className="pb-3">
               <CardTitle className="text-md font-medium text-slate-300">{lobbyI18n.detailsCard.title}</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
-              <div className="flex justify-between py-1.5 border-b border-slate-800">
-                <span className="text-slate-400">{lobbyI18n.detailsCard.turnTimeLabel}</span>
-                <span className="font-semibold text-slate-200">{lobbyI18n.detailsCard.turnTimeValue}</span>
+            <CardContent className="space-y-4 text-sm">
+              <div className="flex items-center justify-between py-1 border-b border-slate-800/80">
+                <span className="text-slate-400 flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-slate-400" />
+                  {lobbyI18n.detailsCard.turnTimeLabel}
+                </span>
+
+                {/* Select Shadcn UI con padding e spacing corretti */}
+                <Select value={turnTime} onValueChange={setTurnTime}>
+                  <SelectTrigger className="w-27.5 h-8 bg-slate-800/80 border-slate-700 text-slate-200 focus:ring-1 focus:ring-indigo-500 focus:ring-offset-0 text-xs font-semibold rounded-lg hover:bg-slate-800 transition-colors">
+                    <SelectValue placeholder="Seleziona" />
+                  </SelectTrigger>
+                  
+                  {/* Aggiunto padding p-1.5 per dare respiro al menu ed evitare che 15s e 60s tocchino il bordo */}
+                  <SelectContent className="bg-slate-900 border-slate-800 text-slate-200 p-1.5 min-w-30">
+                    <SelectItem 
+                      value="15" 
+                      className="text-xs py-2 px-3 my-0.5 rounded-md hover:bg-slate-800 focus:bg-slate-800 focus:text-white cursor-pointer"
+                    >
+                      15 secondi
+                    </SelectItem>
+                    <SelectItem 
+                      value="30" 
+                      className="text-xs py-2 px-3 my-0.5 rounded-md hover:bg-slate-800 focus:bg-slate-800 focus:text-white cursor-pointer"
+                    >
+                      30 secondi
+                    </SelectItem>
+                    <SelectItem 
+                      value="45" 
+                      className="text-xs py-2 px-3 my-0.5 rounded-md hover:bg-slate-800 focus:bg-slate-800 focus:text-white cursor-pointer"
+                    >
+                      45 secondi
+                    </SelectItem>
+                    <SelectItem 
+                      value="60" 
+                      className="text-xs py-2 px-3 my-0.5 rounded-md hover:bg-slate-800 focus:bg-slate-800 focus:text-white cursor-pointer"
+                    >
+                      60 secondi
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="flex justify-between py-1.5 border-b border-slate-800">
+
+              <div className="flex justify-between py-1">
                 <span className="text-slate-400">{lobbyI18n.detailsCard.botCountLabel}</span>
                 <span className="font-semibold text-slate-200">
                   {players.filter((p) => p.difficulty !== undefined && p.difficulty !== null).length}
                 </span>
-              </div>
-              <div className="flex justify-between py-1.5">
-                <span className="text-slate-400">{lobbyI18n.detailsCard.visibilityLabel}</span>
-                <span className="font-semibold text-slate-200">{lobbyI18n.detailsCard.visibilityValue}</span>
               </div>
             </CardContent>
           </Card>
