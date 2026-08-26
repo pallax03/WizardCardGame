@@ -6,14 +6,14 @@ import it.unibo.pps.wizard.engine.model.basic.gameplay.Round
 import it.unibo.pps.wizard.engine.model.basic.gameplay.Trump
 import it.unibo.pps.wizard.engine.model.core.GameError
 
-case class PlayerCoreState(
+final case class PlayerCoreState(
     playersIds: List[PlayerId],
     hand: Hand,
     trump: Trump,
     round: Round,
     dealerId: PlayerId,
     scoreboard: Scoreboard
-)
+) extends CoreState
 
 object PlayerCoreState:
   def from(serverCore: ServerCoreState, playerId: PlayerId): Either[GameError, PlayerCoreState] =
