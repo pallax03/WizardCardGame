@@ -36,7 +36,7 @@ ThisBuild / libraryDependencies ++= Seq(
 )
 
 assembly / assemblyJarName := s"${name.value}.jar"
-assembly / mainClass := Some("it.unibo.pps.wizard.Main")
+assembly / mainClass := Some("io.github.pallax03.wizard.Main")
 assembly / assemblyMergeStrategy := {
   case PathList("META-INF", "maven", "org.webjars", "swagger-ui", "pom.properties") => MergeStrategy.singleOrError
   case PathList("META-INF", "resources", "webjars", "swagger-ui", _*)                => MergeStrategy.singleOrError
@@ -49,11 +49,11 @@ lazy val root = (project in file("."))
   .settings(
     coverageExcludedPackages :=
       "<empty>;" +
-        "it\\.unibo\\.pps\\.wizard\\.Main;" +
-        "it\\.unibo\\.pps\\.wizard\\.application\\..*;" +
-        "it\\.unibo\\.pps\\.wizard\\.engine\\.adapters\\..*;" +
-        "it\\.unibo\\.pps\\.wizard\\.engine\\.ports\\..*;" +
-        "it\\.unibo\\.pps\\.wizard\\.util\\..*",
+        "io\\.github\\.pallax03\\.wizard\\.Main;" +
+        "io\\.github\\.pallax03\\.wizard\\.application\\..*;" +
+        "io\\.github\\.pallax03\\.wizard\\.engine\\.adapters\\..*;" +
+        "io\\.github\\.pallax03\\.wizard\\.engine\\.ports\\..*;" +
+        "io\\.github\\.pallax03\\.wizard\\.util\\..*",
 
     semanticdbEnabled := true,
     coverageMinimumStmtTotal := 75,
