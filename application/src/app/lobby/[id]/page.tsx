@@ -1,4 +1,4 @@
-import { LobbyView } from "@/features/lobby/components/lobby-view";
+import { LobbyView } from "@/features/lobby/components/LobbyView";
 
 export default async function LobbyPage() {
   return (

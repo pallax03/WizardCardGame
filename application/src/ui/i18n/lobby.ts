@@ -7,9 +7,10 @@ export const lobbyI18n = {
     modePrefix: "Modalità: ",
     modeName: "Standard",
     maxPlayers: "MAX {max} Giocatori",
+    copyCodeButton: "Copia Codice",
   },
   playersCard: {
-    title: "Giocatori Inseriti",
+    title: "Giocatori",
     youBadge: "(Tu)",
     aiPlayer: "AI Player",
     humanPlayer: "Umano",
@@ -36,7 +37,7 @@ export const lobbyI18n = {
     visibilityValue: "Privata",
   },
   actions: {
-    leave: "Esci",
-    startGame: "AVVIA PARTITA",
-  },
-};
+    leave: "Abbandona",
+    startGame: "Avvia Partita",
+  }
+}

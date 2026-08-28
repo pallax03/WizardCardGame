@@ -16,5 +16,5 @@ export const homeI18n = {
   joinSection: {
     label: "Inserisci Codice Stanza:",
     roomCodePlaceholder: "Es. ROOM-8X92",
-  },
-};
+  }
+}

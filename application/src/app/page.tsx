@@ -2,11 +2,12 @@
 
 import { useState } from "react";
 import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users } from "lucide-react";
-import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/lobby-actions";
+import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/join-actions";
 import { homeI18n } from "@/i18n/home";
 import { Button } from "@/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/components/card";
 import { Input } from "@/ui/components/input";
+import { getErrorMessage } from "@/ui/i18n/errors";
 
 export default function Home() {
   const [username, setUsername] = useState("");
@@ -23,7 +24,7 @@ export default function Home() {
     const result = await createLobbyAction(username);
 
     if (result?.error) {
-      setError(result.error);
+      setError(getErrorMessage(result.error));
       setIsCreating(false);
     }
   };
@@ -35,7 +36,7 @@ export default function Home() {
     const result = await joinLobbyAction(username, lobbyIdToJoin);
 
     if (result?.error) {
-      setError(result.error);
+      setError(getErrorMessage(result.error));
       setIsJoining(false);
     }
   };
