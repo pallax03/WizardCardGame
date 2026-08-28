@@ -1,69 +1,206 @@
-import { redirect } from 'next/navigation';
-import { ArrowRight, Sparkles, Users } from 'lucide-react';
-import { gameI18n } from '@/i18n/game';
-import { Badge } from '@/ui/components/badge';
-import { Button } from '@/ui/components/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/ui/components/card';
-import { Input } from '@/ui/components/input';
+"use client";
 
-export default function LobbyCreate() {
-    async function createLobby(formData: FormData) {
-        "use server";
-        
-        const name = formData.get("name")?.toString();
-        const customLobbyId = formData.get("lobby")?.toString();
-        
-        if (!name) return;
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
+import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/join-actions";
+import { t } from "@/ui/i18n/core";
+const homeI18n = t("home");
+import { Button } from "@/ui/components/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/components/card";
+import { Input } from "@/ui/components/input";
+import { getErrorMessage } from "@/ui/i18n/errors";
 
-        const url = customLobbyId 
-            ? `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/lobby/${customLobbyId}`
-            : `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/lobby`;
+export default function Home() {
+  const router = useRouter();
+  const [username, setUsername] = useState("");
+  const [lobbyIdToJoin, setLobbyIdToJoin] = useState("");
+  const [showJoinInput, setShowJoinInput] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isJoining, setIsJoining] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-        const res = await fetch(url, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ name, bot: null })
-        });
-        
-        if (!res.ok) {
-            throw new Error(gameI18n.errors.createLobby);
-        }
-        
-        const data = await res.json();
-
-        redirect(`/lobby/${data.lobbyId}?playerId=${data.playerId}`);
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const lobbyId = searchParams.get("lobbyId");
+    
+    // Auto-resume from local storage if both exist
+    const storedLobbyId = localStorage.getItem("wizard_lobbyId");
+    const storedPlayerId = localStorage.getItem("wizard_playerId");
+    
+    if (storedLobbyId && storedPlayerId && !lobbyId) {
+      router.push(`/lobby/${storedLobbyId}`);
+      return;
     }
-    return (
-        <main className="relative grid min-h-dvh place-items-center overflow-hidden bg-zinc-950 px-4 py-10 text-white selection:bg-indigo-400/30">
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-15%,rgba(99,102,241,0.28),transparent_42%)]" />
-            <div aria-hidden="true" className="pointer-events-none absolute inset-0 opacity-[0.025] bg-[linear-gradient(rgba(255,255,255,.7)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,.7)_1px,transparent_1px)] bg-size-[48px_48px]" />
 
-            <section className="relative z-10 flex w-full max-w-md flex-col items-center gap-7">
-                <Badge variant="outline" className="gap-1.5 border-indigo-300/15 bg-indigo-400/8 px-3 text-indigo-200">
-                    <Sparkles className="size-3" /> {gameI18n.home.eyebrow}
-                </Badge>
-                <div className="space-y-3 text-center">
-                    <h1 className="text-gradient-primary text-5xl font-bold sm:text-6xl">{gameI18n.home.title}</h1>
-                    <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-400 sm:text-base">{gameI18n.home.description}</p>
+    if (lobbyId) {
+      // ponytail: defer state update to next tick to dodge synchronous effect warning
+      setTimeout(() => {
+        setLobbyIdToJoin(lobbyId);
+        setShowJoinInput(true);
+      }, 0);
+    }
+  }, [router]);
+
+  const handleCreateLobby = async () => {
+    setIsCreating(true);
+    setError(null);
+
+    const result = await createLobbyAction(username);
+
+    if (result?.error) {
+      setError(getErrorMessage(result.error));
+      setIsCreating(false);
+    }
+  };
+
+  const handleJoinLobby = async () => {
+    setIsJoining(true);
+    setError(null);
+
+    const result = await joinLobbyAction(username, lobbyIdToJoin);
+
+    if (result?.error) {
+      setError(getErrorMessage(result.error));
+      setIsJoining(false);
+    }
+  };
+
+  return (
+    <main className="app-page relative flex flex-col items-center justify-center p-4 selection:bg-purple-500/30 overflow-hidden">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-15%,rgba(99,102,241,0.28),transparent_42%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950 pointer-events-none" />
+
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-20">
+        <Button
+          suppressHydrationWarning
+          variant="outline"
+          size="sm"
+          className="gap-2 border-zinc-200 text-zinc-300"
+          onClick={() => {
+            const isEn = document.cookie.includes('wizard_lang=en');
+            document.cookie = `wizard_lang=${isEn ? 'it' : 'en'}; path=/; max-age=31536000`;
+            window.location.reload();
+          }}
+        >
+          <Globe className="w-4 h-4" />
+          {typeof document !== 'undefined' && document.cookie.includes('wizard_lang=en') ? 'IT' : 'EN'}
+        </Button>
+      </div>
+
+      <div className="relative z-10 w-full max-w-md space-y-8">
+
+        <div className="flex flex-col items-center gap-3 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium backdrop-blur-md">
+            <Sparkles className="w-3.5 h-3.5" /> {homeI18n.badge}
+          </div>
+          <h1 suppressHydrationWarning className="text-6xl md:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-indigo-200 via-purple-300 to-pink-300 drop-shadow-sm">
+            {homeI18n.title}
+          </h1>
+          <p suppressHydrationWarning className="text-zinc-400 text-sm font-light">
+            {homeI18n.subtitle}
+          </p>
+        </div>
+
+        <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-md shadow-2xl">
+          <CardHeader>
+            <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-300"><Users className="size-5" /></div>
+            <CardTitle className="text-lg text-zinc-100 font-semibold">{homeI18n.card.title}</CardTitle>
+            <CardDescription className="text-zinc-400 text-sm">{homeI18n.card.description}</CardDescription>
+          </CardHeader>
+
+          <CardContent className="space-y-5">
+            <div className="space-y-2">
+              <Input
+                placeholder={homeI18n.card.usernamePlaceholder}
+                value={username}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError(null);
+                }}
+                className="bg-zinc-950/60 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500 h-11"
+              />
+              {error && <p className="text-xs text-red-400 font-medium pl-1">{error}</p>}
+            </div>
+
+            <div className="space-y-3 pt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={() => {
+                    setShowJoinInput(!showJoinInput);
+                    if (error) setError(null);
+                  }}
+                  disabled={isCreating || isJoining}
+                  variant={showJoinInput ? "outline" : "secondary"}
+                  size="lg"
+                  className="gap-2 transition-all"
+                >
+                  {showJoinInput ? (
+                    <>
+                      <X className="w-4 h-4" /> {homeI18n.buttons.close}
+                    </>
+                  ) : (
+                    <>
+                      <LogIn className="w-4 h-4" /> {homeI18n.buttons.join}
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={handleCreateLobby}
+                  disabled={isCreating || isJoining}
+                  size="lg"
+                  className="gap-2 font-medium transition-all"
+                >
+                  {isCreating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <PlusCircle className="w-4 h-4" /> {homeI18n.buttons.createLobby}
+                    </>
+                  )}
+                </Button>
+              </div>
+
+              {showJoinInput && (
+                <div className="p-3 rounded-lg bg-zinc-950/80 border border-zinc-800 space-y-3 animate-in fade-in-50 slide-in-from-top-2 duration-200">
+                  <label className="text-xs font-medium text-zinc-400 block">
+                    {homeI18n.joinSection.label}
+                  </label>
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
+                      value={lobbyIdToJoin}
+                      onChange={(e) => {
+                        setLobbyIdToJoin(e.target.value);
+                        if (error) setError(null);
+                      }}
+                      className="bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-primary h-11 font-mono uppercase text-sm"
+                    />
+                    <Button
+                      onClick={handleJoinLobby}
+                      disabled={isJoining || !lobbyIdToJoin.trim()}
+                      size="lg"
+                      className="px-4 font-medium gap-1 shrink-0"
+                    >
+                      {isJoining ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          {homeI18n.buttons.enter} <ArrowRight className="w-4 h-4" />
+                        </>
+                      )}
+                    </Button>
+                  </div>
                 </div>
+              )}
 
-                <Card className="w-full gap-5 border border-white/8 bg-zinc-900/70 py-6 shadow-2xl shadow-black/30 backdrop-blur-xl">
-                    <CardHeader>
-                        <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-300"><Users className="size-5" /></div>
-                        <CardTitle className="text-lg text-white">{gameI18n.home.formTitle}</CardTitle>
-                        <CardDescription className="text-zinc-400">{gameI18n.home.formDescription}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                        <form action={createLobby} className="flex flex-col gap-3">
-                            <Input type="text" name="name" placeholder={gameI18n.home.namePlaceholder} aria-label={gameI18n.home.namePlaceholder} required autoComplete="nickname" className="h-11 border-white/8 bg-white/5 px-4 text-white placeholder:text-zinc-600 focus-visible:border-indigo-400/50 focus-visible:ring-indigo-400/15" />
-                            <Input type="text" name="lobby" placeholder={gameI18n.home.lobbyPlaceholder} aria-label={gameI18n.home.lobbyPlaceholder} autoComplete="off" className="h-11 border-white/8 bg-white/5 px-4 text-white placeholder:text-zinc-600 focus-visible:border-indigo-400/50 focus-visible:ring-indigo-400/15" />
-                            <Button type="submit" size="lg" className="mt-2 h-11 w-full bg-indigo-500 text-white shadow-lg shadow-indigo-950/40 hover:bg-indigo-400">
-                                {gameI18n.home.createButton}<ArrowRight data-icon="inline-end" />
-                            </Button>
-                        </form>
-                    </CardContent>
-                </Card>
-            </section>
-        </main>
-    );
+            </div>
+          </CardContent>
+        </Card>
+
+      </div>
+    </main>
+  );
 }

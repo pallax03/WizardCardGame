@@ -39,32 +39,51 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   private val addPlayerScript =
     """
-      |local lobbyStr = redis.call('GET', KEYS[1])
-      |local lobby
-      |if not lobbyStr then
-      |  lobby = { lobbyId = ARGV[3], players = {}, status = "WAITING" }
-      |else
-      |  lobby = cjson.decode(lobbyStr)
-      |end
-      |
-      |if #lobby.players >= 6 then return nil end
-      |
-      |local newId = #lobby.players
-      |local newPlayer = { id = newId, name = ARGV[1] }
-      |if ARGV[2] == '' then
-      |  newPlayer.difficulty = cjson.null
-      |  newPlayer.isOnline = false
-      |else
-      |  newPlayer.difficulty = ARGV[2]
-      |  newPlayer.name = 'Bot-' .. (newId+1)
-      |  newPlayer.isOnline = true
-      |end
-      |
-      |table.insert(lobby.players, newPlayer)
-      |redis.call('SET', KEYS[1], cjson.encode(lobby), 'EX', 86400)
-      |
-      |return cjson.encode(newPlayer)
-      |""".stripMargin
+    |local lobbyStr = redis.call('GET', KEYS[1])
+    |local lobby
+    |if not lobbyStr then
+    |  lobby = { lobbyId = ARGV[3], players = {}, status = "WAITING" }
+    |else
+    |  lobby = cjson.decode(lobbyStr)
+    |end
+    |
+    |local inputName = ARGV[1]
+    |local isBot = ARGV[2] ~= ''
+    |
+    |if not isBot then
+    |  for i, p in ipairs(lobby.players) do
+    |    if p.name == inputName and (p.difficulty == nil or p.difficulty == cjson.null) then
+    |      if not p.isOnline then
+    |        return cjson.encode(p)
+    |      else
+    |        return nil
+    |      end
+    |    end
+    |  end
+    |end
+    |
+    |if #lobby.players >= 6 then return nil end
+    |
+    |local maxId = -1
+    |for i, p in ipairs(lobby.players) do
+    |  if p.id > maxId then maxId = p.id end
+    |end
+    |local newId = maxId + 1
+    |local newPlayer = { id = newId, name = inputName }
+    |if not isBot then
+    |  newPlayer.difficulty = cjson.null
+    |  newPlayer.isOnline = false
+    |else
+    |  newPlayer.difficulty = ARGV[2]
+    |  newPlayer.name = 'Bot-' .. (newId+1)
+    |  newPlayer.isOnline = true
+    |end
+    |
+    |table.insert(lobby.players, newPlayer)
+    |redis.call('SET', KEYS[1], cjson.encode(lobby), 'EX', 86400)
+    |
+    |return cjson.encode(newPlayer)
+    |""".stripMargin
 
   /** @inheritdoc */
   override def addPlayer(
