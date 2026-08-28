@@ -41,17 +41,33 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
       return initialState(action.lobbyId);
     case "identity/resolved":
       return { ...state, playerId: action.playerId };
-    case "connection/changed":
-      return { ...state, connectionState: action.connectionState };
-    case "lobby/loaded":
+    case "connection/changed": {
+      const isNowOpen = action.connectionState === "open";
+      let newConnectedIds = state.connectedPlayerIds;
+      if (state.playerId !== null) {
+        const idSet = new Set(state.connectedPlayerIds);
+        if (isNowOpen) idSet.add(state.playerId);
+        else idSet.delete(state.playerId);
+        newConnectedIds = Array.from(idSet);
+      }
+      return { ...state, connectionState: action.connectionState, connectedPlayerIds: newConnectedIds };
+    }
+    case "lobby/loaded": {
+      // Affidiamoci alla risposta HTTP (che viene rifetchata ad ogni evento system).
+      // L'unica eccezione è il current player: se il socket è open, siamo sicuri di essere online.
+      const httpOnlineIds = new Set(
+        action.lobby.players.filter((p) => p.isOnline).map((p) => p.id)
+      );
+      if (state.connectionState === "open" && state.playerId !== null) {
+        httpOnlineIds.add(state.playerId);
+      }
       return {
         ...state,
         lobby: action.lobby,
-        connectedPlayerIds: action.lobby.players
-          .filter((player) => player.isOnline)
-          .map((player) => player.id),
+        connectedPlayerIds: Array.from(httpOnlineIds),
         error: null,
       };
+    }
     case "game/loaded":
       return { ...state, game: action.game, error: null };
     case "event/received": {
@@ -112,6 +128,8 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     const playerId = candidate === null ? Number.NaN : Number.parseInt(candidate, 10);
 
     if (Number.isNaN(playerId)) {
+      localStorage.removeItem("wizard_lobbyId");
+      localStorage.removeItem("wizard_playerId");
       router.replace("/");
       return;
     }

@@ -20,6 +20,16 @@ export default function Home() {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const lobbyId = searchParams.get("lobbyId");
+    
+    // Auto-resume from local storage if both exist
+    const storedLobbyId = localStorage.getItem("wizard_lobbyId");
+    const storedPlayerId = localStorage.getItem("wizard_playerId");
+    
+    if (storedLobbyId && storedPlayerId && !lobbyId) {
+      window.location.href = `/lobby/${storedLobbyId}`;
+      return;
+    }
+
     if (lobbyId) {
       setLobbyIdToJoin(lobbyId);
       setShowJoinInput(true);

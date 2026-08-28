@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addBotAction, leaveLobbyAction } from "@/features/lobby/actions/manage-actions";
 import { useLobbySession } from "@/features/lobby-session";
@@ -40,9 +40,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   };
 
   const handleStartGame = () => {
-    if (lobby?.lobbyId) {
-      router.push(`/game/${lobby.lobbyId}`);
-    }
+    // todo: implement start game logic, possibly calling an action to start the game and handling errors
   };
 
   const handleAddBot = async (difficulty: string) => {
@@ -74,6 +72,18 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     setRemovingBotId(null);
   };
 
+  useEffect(() => {
+    if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
+      localStorage.removeItem("wizard_lobbyId");
+      localStorage.removeItem("wizard_playerId");
+      router.push("/");
+      return;
+    }
+    if (lobby?.status === "IN_GAME") {
+      router.push(`/lobby/${lobby.lobbyId}/game`);
+    }
+  }, [lobby, playerId, router]);
+
   if (!lobby && connectionState === "connecting") {
     return (
       <div className="flex items-center justify-center min-h-100">
@@ -83,6 +93,8 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   }
 
   if (sessionError) {
+    localStorage.removeItem("wizard_lobbyId");
+    localStorage.removeItem("wizard_playerId");
     return (
       <div className="flex flex-col items-center justify-center min-h-100 gap-4">
         {/* Traduzione del codice d'errore proveniente dalla sessione */}
