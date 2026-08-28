@@ -18,20 +18,20 @@ export function LobbyHeader({ roomCode }: LobbyHeaderProps) {
   };
 
   return (
-    <Card className="bg-slate-900 border-slate-800 text-slate-100">
+    <Card className="surface-card text-zinc-100">
       <CardHeader className="flex flex-row items-center justify-between py-4">
         <div>
-          <CardTitle className="text-lg sm:text-xl font-bold text-white">
+          <CardTitle className="text-lg sm:text-xl font-bold text-zinc-100">
             Stanza #{roomCode.slice(0, 8)}
           </CardTitle>
         </div>
         <Button
           variant="outline"
           size="sm"
-          className="gap-2 border-slate-700 bg-slate-800/50 hover:bg-slate-800 text-slate-200"
+          className="gap-2 border-zinc-700 bg-zinc-900/60 hover:bg-zinc-800 text-zinc-200"
           onClick={handleCopy}
         >
-          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-slate-400" />}
+          {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
           <span className="text-xs">{lobbyI18n.header.copyCodeButton}</span>
         </Button>
       </CardHeader>

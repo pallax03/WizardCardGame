@@ -130,6 +130,21 @@
 }
 
 @layer components {
+  .app-page {
+    min-height: 100vh;
+    background-color: #09090b;
+    background-image:
+      radial-gradient(circle at 50% -15%, rgba(99, 102, 241, 0.28), transparent 42%),
+      radial-gradient(ellipse at top, rgba(49, 46, 129, 0.2), #09090b 60%);
+    color: #f4f4f5;
+  }
+
+  .surface-card {
+    background-color: rgb(24 24 27 / 0.8) !important;
+    border-color: rgb(39 39 42) !important;
+    backdrop-filter: blur(12px);
+  }
+
   .text-gradient-primary {
     @apply tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-indigo-300 via-purple-300 to-pink-300 drop-shadow-sm;
   }
