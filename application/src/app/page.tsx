@@ -68,6 +68,7 @@ export default function Home() {
       {/* Language Switcher */}
       <div className="absolute top-4 right-4 z-20">
         <Button
+          suppressHydrationWarning
           variant="outline"
           size="sm"
           className="gap-2 border-zinc-200 text-zinc-300"

@@ -45,7 +45,7 @@ export async function joinLobbyAction(username: string, lobbyId: string) {
     return { error: LOBBY_ERRORS.LOBBY_NOT_FOUND };
   }
 
-  const pId = data.playerId ? `&playerId=${data.playerId}` : "";
+  const pId = data.playerId !== undefined ? `&playerId=${data.playerId}` : "";
   const pName = `&playerName=${encodeURIComponent(trimmedName)}`;
 
   redirect(`/lobby/${data.lobbyId || trimmedLobbyId}?${pId}${pName}`);

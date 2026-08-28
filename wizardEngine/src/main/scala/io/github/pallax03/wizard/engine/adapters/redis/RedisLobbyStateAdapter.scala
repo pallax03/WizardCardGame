@@ -54,8 +54,6 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
     |  for i, p in ipairs(lobby.players) do
     |    if p.name == inputName and (p.difficulty == nil or p.difficulty == cjson.null) then
     |      if not p.isOnline then
-    |        p.isOnline = true
-    |        redis.call('SET', KEYS[1], cjson.encode(lobby), 'EX', 86400)
     |        return cjson.encode(p)
     |      else
     |        return nil
