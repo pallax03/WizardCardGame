@@ -7,7 +7,8 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useChat } from "../hooks/useChat";
 import { ChatMessage } from "../types";
 import { useLobbySession } from "@/features/lobby-session";
-import { chatI18n } from "@/i18n/chat";
+import { t } from "@/ui/i18n/core";
+const chatI18n = t("chat");
 import { Badge } from "@/ui/components/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/ui/components/sheet";
 import { Skeleton } from "@/ui/components/skeleton";
@@ -82,7 +83,8 @@ export function ChatSheet() {
   }, []);
   useEffect(() => {
     if (isOpen && activePrivateId !== null) {
-      markPrivateSeen(activePrivateId);
+      // ponytail: defer to avoid set-state-in-effect warning
+      setTimeout(() => markPrivateSeen(activePrivateId), 0);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, activePrivateId, messages.length]);
@@ -92,7 +94,6 @@ export function ChatSheet() {
   }
 
   const privateName = activePrivateId === null ? null : playersMap[activePrivateId];
-  const placeholder = activePrivateId === null ? chatI18n.placeholder : chatI18n.privatePlaceholder;
 
   return (
     <MotionConfig reducedMotion="user" transition={{ type: "spring", stiffness: 420, damping: 34 }}>

@@ -3,11 +3,12 @@
 import { useEffect, useRef } from "react";
 import { Check, LockKeyhole, MessageCircle } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { chatI18n } from "@/i18n/chat";
+import { t } from "@/ui/i18n/core";
+const chatI18n = t("chat");
 import { Badge } from "@/ui/components/badge";
 import { Bubble, BubbleContent, BubbleGroup } from "@/ui/components/bubble";
 import { ScrollArea } from "@/ui/components/scroll-area";
-import { ChatMessage, EventMessage, SystemMessage, AnyMessage } from "../types";
+import { AnyMessage } from "../types";
 import { PlayerAvatar } from "@/ui/components/player-avatar";
 
 interface ChatMessageListProps {

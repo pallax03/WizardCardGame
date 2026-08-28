@@ -1,9 +1,9 @@
 "use client";
 
-import { Avatar, AvatarFallback } from "@/ui/components/avatar";
 import { Button } from "@/ui/components/button";
-import { Bot as BotIcon, X, Loader2 } from "lucide-react";
-import { lobbyI18n } from "@/ui/i18n/lobby";
+import { X, Loader2 } from "lucide-react";
+import { t } from "@/ui/i18n/core";
+const lobbyI18n = t("lobby");
 import { PlayerCardProps } from "../types";
 
 import { PlayerAvatar } from "@/ui/components/player-avatar";

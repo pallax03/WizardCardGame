@@ -2,7 +2,8 @@
 
 import { SubmitEvent, useState } from "react";
 import { Send } from "lucide-react";
-import { chatI18n } from "@/i18n/chat";
+import { t } from "@/ui/i18n/core";
+const chatI18n = t("chat");
 import { Button } from "@/ui/components/button";
 import { Input } from "@/ui/components/input";
 

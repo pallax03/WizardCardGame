@@ -4,7 +4,8 @@ import { Avatar, AvatarFallback } from "@/ui/components/avatar";
 import { Bot as BotIcon, LockKeyhole } from "lucide-react";
 import { Popover, PopoverClose, PopoverContent, PopoverDescription, PopoverHeader, PopoverTitle, PopoverTrigger } from "@/ui/components/popover";
 import { Button } from "@/ui/components/button";
-import { chatI18n } from "@/i18n/chat";
+import { t } from "@/ui/i18n/core";
+const chatI18n = t("chat");
 
 export interface PlayerAvatarProps {
   playerId: number;

@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addBotAction, leaveLobbyAction } from "@/features/lobby/actions/manage-actions";
 import { useLobbySession } from "@/features/lobby-session";
-import { lobbyI18n } from "@/i18n/lobby";
+import { t } from "@/ui/i18n/core";
+const lobbyI18n = t("lobby");
 
 
 import { LobbyHeader } from "@/features/lobby/components/LobbyHeader";

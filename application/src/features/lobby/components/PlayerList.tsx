@@ -6,7 +6,8 @@ import { Button } from "@/ui/components/button";
 import { Users, UserPlus, Plus, X } from "lucide-react";
 import { PlayerCard } from "@/features/lobby/components/PlayerCard";
 import { EmptySlotProps, PlayerListProps } from "../types";
-import { lobbyI18n } from "@/ui/i18n/lobby";
+import { t } from "@/ui/i18n/core";
+const lobbyI18n = t("lobby");
 
 export function PlayerList({
   players,

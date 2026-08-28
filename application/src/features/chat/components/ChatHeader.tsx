@@ -2,7 +2,8 @@
 
 import { ArrowLeft, LockKeyhole, Users, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
-import { chatI18n } from "@/i18n/chat";
+import { t } from "@/ui/i18n/core";
+const chatI18n = t("chat");
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
 import { SheetClose, SheetDescription, SheetHeader, SheetTitle } from "@/ui/components/sheet";

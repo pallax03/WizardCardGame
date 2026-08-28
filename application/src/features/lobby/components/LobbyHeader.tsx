@@ -5,7 +5,8 @@ import { Card, CardHeader, CardTitle } from "@/ui/components/card";
 import { Button } from "@/ui/components/button";
 import { Copy, Check, Share } from "lucide-react";
 import { LobbyHeaderProps } from "../types";
-import { lobbyI18n } from "@/ui/i18n/lobby";
+import { t } from "@/ui/i18n/core";
+const lobbyI18n = t("lobby");
 
 export function LobbyHeader({ lobbyCode }: LobbyHeaderProps) {
   const [copied, setCopied] = useState(false);

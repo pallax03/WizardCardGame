@@ -1,18 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
 export default function NotFound() {
+  const router = useRouter();
+  
   useEffect(() => {
     const storedLobbyId = localStorage.getItem("wizard_lobbyId");
     const storedPlayerId = localStorage.getItem("wizard_playerId");
     
     if (storedLobbyId && storedPlayerId) {
-      window.location.href = `/lobby/${storedLobbyId}`;
+      router.push(`/lobby/${storedLobbyId}`);
     } else {
-      window.location.href = "/";
+      router.push("/");
     }
-  }, []);
+  }, [router]);
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-zinc-950 text-indigo-400">

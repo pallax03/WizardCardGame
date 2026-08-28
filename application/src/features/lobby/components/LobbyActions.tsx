@@ -1,7 +1,8 @@
 "use client";
 
 import { Button } from "@/ui/components/button";
-import { lobbyI18n } from "@/ui/i18n/lobby";
+import { t } from "@/ui/i18n/core";
+const lobbyI18n = t("lobby");
 import { LogOut, Check, Loader2 } from "lucide-react";
 import { LobbyActionsProps } from "../types";
 

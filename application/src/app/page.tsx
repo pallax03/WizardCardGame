@@ -1,15 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/join-actions";
-import { homeI18n } from "@/i18n/home";
+import { t } from "@/ui/i18n/core";
+const homeI18n = t("home");
 import { Button } from "@/ui/components/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/components/card";
 import { Input } from "@/ui/components/input";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
 export default function Home() {
+  const router = useRouter();
   const [username, setUsername] = useState("");
   const [lobbyIdToJoin, setLobbyIdToJoin] = useState("");
   const [showJoinInput, setShowJoinInput] = useState(false);
@@ -26,15 +29,18 @@ export default function Home() {
     const storedPlayerId = localStorage.getItem("wizard_playerId");
     
     if (storedLobbyId && storedPlayerId && !lobbyId) {
-      window.location.href = `/lobby/${storedLobbyId}`;
+      router.push(`/lobby/${storedLobbyId}`);
       return;
     }
 
     if (lobbyId) {
-      setLobbyIdToJoin(lobbyId);
-      setShowJoinInput(true);
+      // ponytail: defer state update to next tick to dodge synchronous effect warning
+      setTimeout(() => {
+        setLobbyIdToJoin(lobbyId);
+        setShowJoinInput(true);
+      }, 0);
     }
-  }, []);
+  }, [router]);
 
   const handleCreateLobby = async () => {
     setIsCreating(true);
