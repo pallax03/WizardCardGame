@@ -33,7 +33,11 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, onRemove
 
         <div className="min-w-0">
           <p className="font-semibold text-sm text-zinc-100 flex items-center gap-1.5 truncate">
-            <span className="truncate">{isBot ? player.name + " (" + player.difficulty + ")" : player.name}</span>
+            <span className="truncate">
+              {isBot 
+                ? `${player.name} (${player.difficulty === "Dumb" ? lobbyI18n.botSelection.dumb : player.difficulty === "Prolog" ? lobbyI18n.botSelection.prolog : player.difficulty})` 
+                : player.name}
+            </span>
             {isMe && (
               <span className="text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800/60 px-1.5 py-0.2 rounded font-mono shrink-0">
                 {lobbyI18n.playersCard.youBadge}
@@ -46,11 +50,12 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, onRemove
         </div>
       </div>
 
-      {isBot && (
+      {!isMe && (
         <Button
           size="icon"
           variant="ghost"
           disabled={isRemoving}
+          title={isBot ? lobbyI18n.playersCard.removeBotTooltip : lobbyI18n.playersCard.removePlayerTooltip}
           className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-950/40"
           onClick={() => onRemoveBot(player.id)}
         >

@@ -5,7 +5,7 @@ export interface LobbyViewProps {
 }
 
 export interface LobbyHeaderProps {
-  roomCode: string;
+  lobbyCode: string;
 }
 
 export interface PlayerListProps {

@@ -1,26 +1,23 @@
-export const gameI18n = {
+const it = {
   locale: "it",
   metadata: {
     title: "Wizard Card Game | Gioca online",
+    lobbyTitle: "Wizard Card Game | Stanza",
     description: "Gioca a Wizard online con i tuoi amici",
   },
-  errors: {
-    createLobby: "Impossibile creare la lobby",
-  },
-  home: {
-    title: "Wizard Card Game",
-    eyebrow: "Il classico gioco di prese online",
-    description: "Crea una lobby o raggiungi i tuoi amici con un codice. Bastano pochi secondi.",
-    formTitle: "Entra in partita",
-    formDescription: "Scegli il nome che vedranno gli altri giocatori.",
-    namePlaceholder: "Il tuo nome",
-    lobbyPlaceholder: "Codice lobby (opzionale)",
-    createButton: "Continua",
-    joinButton: "Entra nella lobby",
-  },
-  lobby: {
-    title: "Wizard Card Game",
-    subtitle: "Codice lobby",
-    description: "La lobby è pronta. Condividi il codice e attendi gli altri giocatori.",
-  }
 };
+
+const en = {
+  locale: "en",
+  metadata: {
+    title: "Wizard Card Game | Play online",
+    lobbyTitle: "Wizard Card Game | Lobby",
+    description: "Play Wizard online with your friends",
+  },
+};
+
+export const getGameI18n = (lang: string) => lang === "en" ? en : it;
+
+// Fallback for any client imports if they exist
+export const gameI18n = it;
+

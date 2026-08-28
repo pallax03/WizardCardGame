@@ -13,7 +13,7 @@ export function LobbyActions({ isLeaving, onLeave, onStart }: LobbyActionsProps)
         disabled={isLeaving}
         variant="destructive"
         size="lg"
-        className="w-1/3 gap-2 bg-red-950/80 hover:bg-red-900 border border-red-800/50 text-red-200"
+        className="w-1/3 gap-2"
       >
         {isLeaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />} {lobbyI18n.actions.leave}
       </Button>

@@ -23,7 +23,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   const [isLeaving, setIsLeaving] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const handleLeaveRoom = async () => {
+  const handleLeaveLobby = async () => {
     setActionError(null);
     if (lobby?.lobbyId && playerId !== null) {
       setIsLeaving(true);
@@ -77,7 +77,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   if (!lobby && connectionState === "connecting") {
     return (
       <div className="flex items-center justify-center min-h-100">
-        <p className="text-slate-400 animate-pulse font-medium">{lobbyI18n.loading}</p>
+        <p suppressHydrationWarning className="text-slate-400 animate-pulse font-medium">{lobbyI18n.loading}</p>
       </div>
     );
   }
@@ -111,7 +111,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         </div>
       )}
 
-      <LobbyHeader roomCode={lobby?.lobbyId || ""} />
+      <LobbyHeader lobbyCode={lobby?.lobbyId || ""} />
       
       <PlayerList
         players={players}
@@ -128,7 +128,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       
       <LobbyActions
         isLeaving={isLeaving}
-        onLeave={handleLeaveRoom}
+        onLeave={handleLeaveLobby}
         onStart={handleStartGame}
       />
     </div>

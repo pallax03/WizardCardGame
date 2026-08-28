@@ -42,7 +42,7 @@ export async function joinLobbyAction(username: string, lobbyId: string) {
   );
 
   if (error || !data) {
-    return { error: LOBBY_ERRORS.ROOM_NOT_FOUND };
+    return { error: LOBBY_ERRORS.LOBBY_NOT_FOUND };
   }
 
   const pId = data.playerId ? `&playerId=${data.playerId}` : "";

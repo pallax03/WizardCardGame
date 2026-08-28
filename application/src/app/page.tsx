@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/join-actions";
 import { homeI18n } from "@/i18n/home";
 import { Button } from "@/ui/components/button";
@@ -16,6 +16,15 @@ export default function Home() {
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const searchParams = new URLSearchParams(window.location.search);
+    const lobbyId = searchParams.get("lobbyId");
+    if (lobbyId) {
+      setLobbyIdToJoin(lobbyId);
+      setShowJoinInput(true);
+    }
+  }, []);
 
   const handleCreateLobby = async () => {
     setIsCreating(true);
@@ -46,16 +55,33 @@ export default function Home() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-15%,rgba(99,102,241,0.28),transparent_42%)]" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950 pointer-events-none" />
 
+      {/* Language Switcher */}
+      <div className="absolute top-4 right-4 z-20">
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 border-zinc-200 text-zinc-300"
+          onClick={() => {
+            const isEn = document.cookie.includes('wizard_lang=en');
+            document.cookie = `wizard_lang=${isEn ? 'it' : 'en'}; path=/; max-age=31536000`;
+            window.location.reload();
+          }}
+        >
+          <Globe className="w-4 h-4" />
+          {typeof document !== 'undefined' && document.cookie.includes('wizard_lang=en') ? 'IT' : 'EN'}
+        </Button>
+      </div>
+
       <div className="relative z-10 w-full max-w-md space-y-8">
 
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5" /> {homeI18n.badge}
           </div>
-          <h1 className="text-6xl md:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-indigo-200 via-purple-300 to-pink-300 drop-shadow-sm">
+          <h1 suppressHydrationWarning className="text-6xl md:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-indigo-200 via-purple-300 to-pink-300 drop-shadow-sm">
             {homeI18n.title}
           </h1>
-          <p className="text-zinc-400 text-sm font-light">
+          <p suppressHydrationWarning className="text-zinc-400 text-sm font-light">
             {homeI18n.subtitle}
           </p>
         </div>
@@ -83,30 +109,15 @@ export default function Home() {
 
             <div className="space-y-3 pt-2">
               <div className="grid grid-cols-2 gap-3">
-
-                <Button
-                  onClick={handleCreateLobby}
-                  disabled={isCreating || isJoining}
-                  className="h-11 bg-indigo-500 hover:bg-indigo-400 text-white font-medium shadow-lg shadow-indigo-600/20 transition-all gap-2"
-                >
-                  {isCreating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <PlusCircle className="w-4 h-4" /> {homeI18n.buttons.createRoom}
-                    </>
-                  )}
-                </Button>
-
                 <Button
                   onClick={() => {
                     setShowJoinInput(!showJoinInput);
                     if (error) setError(null);
                   }}
                   disabled={isCreating || isJoining}
-                  className={`h-11 bg-indigo-500 hover:bg-indigo-400 text-white transition-all gap-2 ${
-                    showJoinInput ? "border-indigo-500/50 bg-indigo-500/10 text-indigo-300" : ""
-                  }`}
+                  variant={showJoinInput ? "outline" : "secondary"}
+                  size="lg"
+                  className="gap-2 transition-all"
                 >
                   {showJoinInput ? (
                     <>
@@ -115,6 +126,21 @@ export default function Home() {
                   ) : (
                     <>
                       <LogIn className="w-4 h-4" /> {homeI18n.buttons.join}
+                    </>
+                  )}
+                </Button>
+
+                <Button
+                  onClick={handleCreateLobby}
+                  disabled={isCreating || isJoining}
+                  size="lg"
+                  className="gap-2 font-medium transition-all"
+                >
+                  {isCreating ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <>
+                      <PlusCircle className="w-4 h-4" /> {homeI18n.buttons.createLobby}
                     </>
                   )}
                 </Button>
@@ -127,18 +153,19 @@ export default function Home() {
                   </label>
                   <div className="flex gap-2">
                     <Input
-                      placeholder={homeI18n.joinSection.roomCodePlaceholder}
+                      placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
                       value={lobbyIdToJoin}
                       onChange={(e) => {
                         setLobbyIdToJoin(e.target.value);
                         if (error) setError(null);
                       }}
-                      className="bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500 h-10 font-mono uppercase text-sm"
+                      className="bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-primary h-11 font-mono uppercase text-sm"
                     />
                     <Button
                       onClick={handleJoinLobby}
                       disabled={isJoining || !lobbyIdToJoin.trim()}
-                      className="h-10 px-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium gap-1 shrink-0"
+                      size="lg"
+                      className="px-4 font-medium gap-1 shrink-0"
                     >
                       {isJoining ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
