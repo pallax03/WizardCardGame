@@ -2,7 +2,7 @@ package io.github.pallax03.wizard
 
 import io.github.pallax03.wizard.application.bot.BotManagerVerticle
 import io.github.pallax03.wizard.application.web.http.HttpServerVerticle
-import io.github.pallax03.wizard.application.web.http.routes._
+import io.github.pallax03.wizard.application.web.http.routes.*
 import io.github.pallax03.wizard.application.web.ws.WebSocketsVerticle
 import io.github.pallax03.wizard.engine.adapters.VertxWebSocketsAdapter
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologAdapter
@@ -15,6 +15,7 @@ import io.github.pallax03.wizard.engine.ports.InboundPort
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import io.github.pallax03.wizard.engine.ports.OutboundPort
 import io.github.pallax03.wizard.engine.ports.PubSubPort
+import io.github.pallax03.wizard.util.MetricsConfig
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.Vertx
 import io.vertx.redis.client.Redis
@@ -31,7 +32,7 @@ object Main:
   private val redisPoolSize = sys.env.getOrElse("REDIS_POOL_SIZE", "6").toInt
 
   def main(args: Array[String]): Unit =
-    val vertx = Vertx.vertx()
+    val vertx = Vertx.vertx(MetricsConfig.vertxOptions)
 
     val redisOptions = RedisOptions()
       .setConnectionString(s"redis://$redisHost:$redisPort")

@@ -11,6 +11,7 @@ val circeVersion          = "0.14.16"
 val logbackVersion        = "1.6.3"
 val tapirVersion          = "1.13.31"
 val tapirCirceVersion     = "3.11.0"
+val micrometerVersion      = "1.17.0"
 
 ThisBuild / scalaVersion := scala3Version
 ThisBuild / scalacOptions := Seq("-Wunused:all", "-Wunused:imports", "-Werror", "-language:implicitConversions", "-Wconf:msg=not declared infix:s")
@@ -24,6 +25,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "io.vertx"                   %    "vertx-core"              % vertxVersion,
   "io.vertx"                   %    "vertx-web"               % vertxVersion,
   "io.vertx"                   %    "vertx-redis-client"      % vertxVersion,
+  "io.vertx"                   %    "vertx-micrometer-metrics"% vertxVersion,
   "it.unibo.alice.tuprolog"    %    "2p-core"                 % tuPrologVersion,
   "io.circe"                  %%    "circe-core"              % circeVersion,
   "io.circe"                  %%    "circe-generic"           % circeVersion,
@@ -33,6 +35,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.softwaremill.sttp.tapir" %%    "tapir-vertx-server"    % tapirVersion,
   "com.softwaremill.sttp.tapir" %%    "tapir-json-circe"      % tapirVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle"  % tapirVersion,
+  "io.micrometer"              %    "micrometer-registry-prometheus" % micrometerVersion,
 )
 
 assembly / assemblyJarName := s"${name.value}.jar"
