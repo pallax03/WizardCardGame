@@ -64,11 +64,20 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
     |
     |if #lobby.players >= 6 then return nil end
     |
-    |local maxId = -1
-    |for i, p in ipairs(lobby.players) do
-    |  if p.id > maxId then maxId = p.id end
+    |local counterKey = KEYS[1] .. ':nextId'
+    |local newId = 0
+    |if redis.call('EXISTS', counterKey) == 0 then
+    |  local maxId = -1
+    |  for i, p in ipairs(lobby.players) do
+    |    if p.id > maxId then maxId = p.id end
+    |  end
+    |  newId = maxId + 1
+    |  redis.call('SET', counterKey, newId + 1, 'EX', 86400)
+    |else
+    |  newId = tonumber(redis.call('INCR', counterKey)) - 1
+    |  redis.call('EXPIRE', counterKey, 86400)
     |end
-    |local newId = maxId + 1
+    |
     |local newPlayer = { id = newId, name = inputName }
     |if not isBot then
     |  newPlayer.difficulty = cjson.null
