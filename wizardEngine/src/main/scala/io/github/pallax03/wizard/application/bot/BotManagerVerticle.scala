@@ -21,7 +21,6 @@ import io.github.pallax03.wizard.engine.ports.PubSubPort
 import io.github.pallax03.wizard.engine.ports.Subscription
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.vertx.core.AbstractVerticle
-import org.slf4j.LoggerFactory
 
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,35 +35,29 @@ class BotManagerVerticle(
     gameInboundPort: InboundPort
 ) extends AbstractVerticle:
 
-  private val logger = LoggerFactory.getLogger(classOf[BotManagerVerticle])
   private val activeSubscriptions = TrieMap.empty[(LobbyId, PlayerId), Subscription]
 
   private val podId = java.util.UUID.randomUUID().toString
 
   override def start(): Unit =
-    logger.warn("BotManagerVerticle started. Subscribing to " + ChannelsKeys.SPAWN_BOT_CHANNEL)
     pubSubPort.subscribe(ChannelsKeys.SPAWN_BOT_CHANNEL, processSpawnEvent)
-
-    logger.warn("Subscribing to old lobbies")
     lobbyStatePort.getAllLobbies.onComplete:
       case Success(lobbies) =>
         lobbies.filter(_.status == IN_GAME).foreach(spawnBotsForLobby)
       case Failure(_) => ()
 
   private def processSpawnEvent(lobbyIdStr: String): Unit =
-    logger.warn(s"Received spawn request for lobby: $lobbyIdStr")
     lobbyStatePort
       .getLobby(LobbyId(lobbyIdStr))
       .onComplete:
         case Success(Some(lobby)) => spawnBotsForLobby(lobby)
-        case _                    => logger.error(s"Failed to retrieve lobby $lobbyIdStr for spawn")
+        case _                    => ()
 
   private def spawnBotsForLobby(lobby: Lobby): Unit =
     lobbyStatePort
       .tryAcquireBotLock(lobby.uuid, podId)
       .onComplete:
         case Success(true) =>
-          logger.warn(s"Lock acquired for lobby ${lobby.uuid}. Spawning bots...")
           lobby.players
             .filter(_.difficulty.isDefined)
             .foreach: bot =>
@@ -77,8 +70,7 @@ class BotManagerVerticle(
                   .map: sub =>
                     activeSubscriptions.put((lobby.uuid, bot.id), sub)
               syncStateAndPlay(lobby.uuid, bot.id, strategy)
-        case _ =>
-          logger.info(s"Lobby ${lobby.uuid} bots are managed by another pod.")
+        case _ => ()
 
   private def syncStateAndPlay(lobbyId: LobbyId, botId: PlayerId, strategy: BotStrategy): Unit =
     gameInboundPort
@@ -95,12 +87,8 @@ class BotManagerVerticle(
             case _ => None
 
           invitationOpt.foreach: inv =>
-            logger.warn(
-              s"Bot $botId deduced pending action from GameState: ${inv.getClass.getSimpleName}"
-            )
             executeInvitationStrategy(lobbyId, botId, strategy, inv)
-        case Failure(e) =>
-          logger.error(s"Bot $botId failed to sync GameState", e)
+        case Failure(_) => ()
 
   private def handleGameEvents(lobbyId: LobbyId, playerId: PlayerId, strategy: BotStrategy)(
       rawJson: String
@@ -136,6 +124,5 @@ class BotManagerVerticle(
                   gameInboundPort.submitAction(lobbyId, fallbackAction).void
             case Right(_) => Future.unit
       .onComplete:
-        case Failure(e) =>
-          logger.error(s"Bot $playerId strategy failed", e)
-        case _ => ()
+        case Failure(_) => ()
+        case _          => ()
