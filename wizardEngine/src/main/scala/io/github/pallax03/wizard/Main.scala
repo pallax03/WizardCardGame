@@ -1,27 +1,19 @@
 package io.github.pallax03.wizard
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import io.vertx.core.{AbstractVerticle, Vertx}
+import io.vertx.redis.client.{Redis, RedisOptions}
+
 import io.github.pallax03.wizard.application.bot.BotManagerVerticle
 import io.github.pallax03.wizard.application.web.http.HttpServerVerticle
 import io.github.pallax03.wizard.application.web.http.routes._
 import io.github.pallax03.wizard.application.web.ws.WebSocketsVerticle
 import io.github.pallax03.wizard.engine.adapters.VertxWebSocketsAdapter
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologAdapter
-import io.github.pallax03.wizard.engine.adapters.redis.RedisInboundAdapter
-import io.github.pallax03.wizard.engine.adapters.redis.RedisLobbyStateAdapter
-import io.github.pallax03.wizard.engine.adapters.redis.RedisOutboundAdapter
-import io.github.pallax03.wizard.engine.adapters.redis.RedisPubSubAdapter
-import io.github.pallax03.wizard.engine.ports.AIPort
-import io.github.pallax03.wizard.engine.ports.InboundPort
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import io.github.pallax03.wizard.engine.ports.OutboundPort
-import io.github.pallax03.wizard.engine.ports.PubSubPort
-import io.vertx.core.AbstractVerticle
-import io.vertx.core.Vertx
-import io.vertx.redis.client.Redis
-import io.vertx.redis.client.RedisOptions
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
+import io.github.pallax03.wizard.engine.adapters.redis._
+import io.github.pallax03.wizard.engine.ports._
 
 object Main:
   private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "5001").toInt
@@ -51,20 +43,23 @@ object Main:
       "bot verticle",
       0
     )
-    runHTTPServer(vertx, inPort, lobbyStatePort, prologPort)
+    runHTTPServer(vertx, inPort, lobbyStatePort, prologPort, redisClient, outPort)
     runWSServer(vertx, lobbyStatePort, pubSubPort)
 
   private def runHTTPServer(
       vertx: Vertx,
       gameEngineInPort: InboundPort,
       lobbyStatePort: LobbyStatePort,
-      prologPort: AIPort
+      prologPort: AIPort,
+      redisClient: Redis,
+      outPort: OutboundPort
   )(using ec: ExecutionContext): Unit =
+    val recoveryPort = RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort)
     val lobbyRoutes = LobbyRoutes(lobbyStatePort, gameEngineInPort)
     val actionRoutes = ActionRoutes(lobbyStatePort, gameEngineInPort)
     val aiRoutes = AIRoutes(lobbyStatePort, prologPort)
     val allEndpoints = lobbyRoutes.all ++ actionRoutes.all ++ aiRoutes.all
-    val verticle = HttpServerVerticle(allEndpoints, httpPort)
+    val verticle = HttpServerVerticle(allEndpoints, httpPort, recoveryPort)
     deploy(vertx, verticle, "HTTP", httpPort)
 
   private def runWSServer(

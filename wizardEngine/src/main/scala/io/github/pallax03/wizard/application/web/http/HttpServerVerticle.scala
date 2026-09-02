@@ -1,11 +1,16 @@
 package io.github.pallax03.wizard.application.web.http
 
+import scala.concurrent.Future
+
 import io.circe.generic.auto._
+
+import io.vertx.core.AbstractVerticle
+import io.vertx.ext.web.Router
+
 import io.github.pallax03.wizard.application.web.http.endpoints.ErrorResponse
 import io.github.pallax03.wizard.engine.model.core.GameException
 import io.github.pallax03.wizard.util.WizardLogger
-import io.vertx.core.AbstractVerticle
-import io.vertx.ext.web.Router
+
 import sttp.tapir._
 import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
@@ -13,14 +18,14 @@ import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.interceptor.exception.ExceptionHandler
 import sttp.tapir.server.interceptor.log.DefaultServerLog
 import sttp.tapir.server.model.ValuedEndpointOutput
-import sttp.tapir.server.vertx.VertxFutureServerInterpreter
-import sttp.tapir.server.vertx.VertxFutureServerOptions
+import sttp.tapir.server.vertx.{VertxFutureServerInterpreter, VertxFutureServerOptions}
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
-import scala.concurrent.Future
-
-class HttpServerVerticle(serverEndpoints: List[ServerEndpoint[Any, Future]], port: Int)
-    extends AbstractVerticle:
+class HttpServerVerticle(
+    serverEndpoints: List[ServerEndpoint[Any, Future]],
+    port: Int,
+    recoveryPort: io.github.pallax03.wizard.engine.ports.GameRecoveryPort
+) extends AbstractVerticle:
 
   override def start(): Unit =
     val router = Router.router(vertx)
@@ -38,8 +43,10 @@ class HttpServerVerticle(serverEndpoints: List[ServerEndpoint[Any, Future]], por
     )
 
     import io.github.pallax03.wizard.application.web._
+    import scala.concurrent.ExecutionContext.Implicits.global
+    import io.github.pallax03.wizard.engine.lobby.LobbyId
 
-    val exceptionHandler = ExceptionHandler.pure[Future](ctx =>
+    val exceptionHandler = ExceptionHandler[Future](ctx =>
       val lobbyIdOpt = ctx.request.extractLobbyIdStr
       val playerIdOpt = ctx.request.extractPlayerIdStr
 
@@ -47,22 +54,63 @@ class HttpServerVerticle(serverEndpoints: List[ServerEndpoint[Any, Future]], por
         ctx.e match
           case ge: GameException =>
             WizardLogger.error(s"GameException interceptada sull'endpoint ${ctx.endpoint.show}", ge)
-            Some(
-              ValuedEndpointOutput(
-                jsonBody[ErrorResponse].and(
-                  sttp.tapir.statusCode(sttp.model.StatusCode.InternalServerError)
-                ),
-                ErrorResponse(ge.getMessage, "GAME_EXCEPTION")
-              )
-            )
+            lobbyIdOpt match
+              case Some(lobbyId) =>
+                recoveryPort
+                  .attemptRecovery(LobbyId(lobbyId), ge)
+                  .map { recovered =>
+                    if recovered then
+                      Some(
+                        ValuedEndpointOutput(
+                          jsonBody[ErrorResponse].and(
+                            sttp.tapir.statusCode(sttp.model.StatusCode.InternalServerError)
+                          ),
+                          ErrorResponse(ge.getMessage, "RECOVERED")
+                        )
+                      )
+                    else
+                      Some(
+                        ValuedEndpointOutput(
+                          jsonBody[ErrorResponse].and(
+                            sttp.tapir.statusCode(sttp.model.StatusCode.InternalServerError)
+                          ),
+                          ErrorResponse(ge.getMessage, "ABORTED")
+                        )
+                      )
+                  }
+                  .recover { case ex =>
+                    WizardLogger.error("Recovery fallback fallito clamorosamente", ex)
+                    Some(
+                      ValuedEndpointOutput(
+                        jsonBody[ErrorResponse].and(
+                          sttp.tapir.statusCode(sttp.model.StatusCode.InternalServerError)
+                        ),
+                        ErrorResponse("Internal Server Error", "INTERNAL_ERROR")
+                      )
+                    )
+                  }
+              case None =>
+                Future.successful(
+                  Some(
+                    ValuedEndpointOutput(
+                      jsonBody[ErrorResponse].and(
+                        sttp.tapir.statusCode(sttp.model.StatusCode.InternalServerError)
+                      ),
+                      ErrorResponse(ge.getMessage, "GAME_EXCEPTION")
+                    )
+                  )
+                )
+
           case ex: Throwable =>
             WizardLogger.error(s"Errore non gestito sull'endpoint ${ctx.endpoint.show}", ex)
-            Some(
-              ValuedEndpointOutput(
-                jsonBody[ErrorResponse].and(
-                  sttp.tapir.statusCode(sttp.model.StatusCode.InternalServerError)
-                ),
-                ErrorResponse("Internal Server Error", "INTERNAL_ERROR")
+            Future.successful(
+              Some(
+                ValuedEndpointOutput(
+                  jsonBody[ErrorResponse].and(
+                    sttp.tapir.statusCode(sttp.model.StatusCode.InternalServerError)
+                  ),
+                  ErrorResponse("Internal Server Error", "INTERNAL_ERROR")
+                )
               )
             )
       }

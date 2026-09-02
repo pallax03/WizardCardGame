@@ -2,15 +2,14 @@ package io.github.pallax03.wizard.engine.model.events
 
 import io.github.pallax03.wizard.engine.model.basic._
 import io.github.pallax03.wizard.engine.model.basic.bidding.Trick
-import io.github.pallax03.wizard.engine.model.basic.cards.Card
-import io.github.pallax03.wizard.engine.model.basic.cards.Hand
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
+import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
+import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Trump}
 
 /** Represents game progress updates, such as phase changes or round results. */
 sealed trait ProgressEvent extends WizardEvent
 
 object ProgressEvent:
+  case class RoundStarted(round: Round) extends ProgressEvent
   case class CardsDealt(playerId: PlayerId, hand: Hand, trump: Trump, round: Round)
       extends ProgressEvent,
         DestinationScoped:

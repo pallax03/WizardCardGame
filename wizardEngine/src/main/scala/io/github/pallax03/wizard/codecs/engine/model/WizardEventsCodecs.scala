@@ -2,6 +2,7 @@ package io.github.pallax03.wizard.codecs.engine.model
 
 import io.circe._
 import io.circe.syntax._
+
 import io.github.pallax03.wizard.engine.model.basic._
 import io.github.pallax03.wizard.engine.model.core.GameError
 import io.github.pallax03.wizard.engine.model.events._
@@ -69,6 +70,12 @@ object WizardEventsCodecs:
           p <- fields.get[PlayerId]("playerId")
           err <- fields.get[GameError]("reason")
         } yield FailureEvent.ActionFailed(p, err)
+      case "StateRecovered" =>
+        fields.get[Int]("round").map(LifecycleEvent.StateRecovered.apply)
+      case "GameAborted" =>
+        fields.get[String]("reason").map(LifecycleEvent.GameAborted.apply)
+      case "RoundStarted" =>
+        fields.get[Round]("round").map(ProgressEvent.RoundStarted.apply)
       case other =>
         Left(DecodingFailure(s"No decoding for $other.", c.history))
     }
