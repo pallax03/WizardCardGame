@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addBotAction, leaveLobbyAction } from "@/features/lobby/actions/manage-actions";
+import { addBotAction, leaveLobbyAction, startGameAction } from "@/features/lobby/actions/manage-actions";
 import { useLobbySession } from "@/features/lobby-session";
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
@@ -22,6 +22,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   const [removingBotId, setRemovingBotId] = useState<string | number | null>(null);
   const [activeBotSlot, setActiveBotSlot] = useState<number | null>(null);
   const [isLeaving, setIsLeaving] = useState<boolean>(false);
+  const [isStarting, setIsStarting] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleLeaveLobby = async () => {
@@ -40,8 +41,18 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     router.push("/");
   };
 
-  const handleStartGame = () => {
-    // todo: implement start game logic, possibly calling an action to start the game and handling errors
+  const handleStartGame = async () => {
+    if (!lobby?.lobbyId) return;
+
+    setActionError(null);
+    setIsStarting(true);
+
+    const result = await startGameAction(lobby.lobbyId);
+
+    if (result.error) {
+      setActionError(getErrorMessage(result.error));
+      setIsStarting(false);
+    }
   };
 
   const handleAddBot = async (difficulty: string) => {
@@ -79,9 +90,6 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       localStorage.removeItem("wizard_playerId");
       router.push("/");
       return;
-    }
-    if (lobby?.status === "IN_GAME") {
-      router.push(`/lobby/${lobby.lobbyId}/game`);
     }
   }, [lobby, playerId, router]);
 

@@ -7,6 +7,11 @@ export const LOBBY_ERROR_LIST = [
   "LEAVE_FAILED",
   "SERVER_ERROR",
   "CONNECTION_ERROR",
+  "LOBBY_FULL",
+  "LOBBY_NOT_FOUND",
+  "PLAYERS_OFFLINE",
+  "GAME_ALREADY_STARTED",
+  "NOT_FOUND",
 ] as const;
 
 export type LobbyErrorCode = (typeof LOBBY_ERROR_LIST)[number];

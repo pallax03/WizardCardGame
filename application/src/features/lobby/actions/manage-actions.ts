@@ -34,3 +34,17 @@ export async function leaveLobbyAction(
 
   return { success: true };
 }
+
+export async function startGameAction(
+  lobbyId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const { error } = await apiFetch(`/api/lobby/${lobbyId}/start`, {
+    method: "POST",
+  });
+
+  if (error) {
+    return { error };
+  }
+
+  return { success: true };
+}

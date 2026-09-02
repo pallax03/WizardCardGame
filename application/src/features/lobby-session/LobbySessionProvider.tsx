@@ -81,8 +81,20 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
           connectedPlayerIds = state.connectedPlayerIds.filter((id) => id !== playerId);
         }
       }
+      let updatedLobby = state.lobby;
+      if (
+        action.event.type === "event" &&
+        action.event.event.action === "GameStarted" &&
+        state.lobby
+      ) {
+        updatedLobby = {
+          ...state.lobby,
+          status: "IN_GAME",
+        };
+      }
       return {
         ...state,
+        lobby: updatedLobby,
         messages: [...state.messages, action.event],
         connectedPlayerIds,
         lastGameEvent: action.event.type === "event" ? action.event.event : state.lastGameEvent,
@@ -178,7 +190,10 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
         try {
           const game = await getGameState(lobbyId, playerId);
           gameWasLoadedRef.current = true;
-          dispatch({ type: "game/loaded", game });
+           if (game) {
+            gameWasLoadedRef.current = true;
+            dispatch({ type: "game/loaded", game });
+          }
         } catch (reason: unknown) {
           const error = reason instanceof Error ? reason : new Error(String(reason));
           dispatch({ type: "sync/failed", error });
@@ -217,6 +232,17 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       if (event.event.action === "GameStarted") void refreshLobby();
     }
   }, [refreshGame, refreshLobby]);
+
+  useEffect(() => {
+    if (state.lobby?.status === "IN_GAME") {
+      const targetPath = `/lobby/${state.lobbyId}/game`;
+
+      // Se non siamo già nella rotta del gioco, naviga con window.location.assign
+      if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
+        window.location.assign(targetPath);
+      }
+    }
+  }, [state.lobby?.status, state.lobbyId]);
 
   useEffect(() => {
     if (state.playerId === null) return;

@@ -85,6 +85,10 @@ export const it = {
     SERVER_ERROR: "Errore di risposta dal server backend.",
     CONNECTION_ERROR: "Impossibile connettersi al server backend.",
     UNKNOWN_ERROR: "Si è verificato un errore inatteso.",
+    LOBBY_FULL: "La lobby è piena.",
+    PLAYERS_OFFLINE: "Alcuni giocatori sono offline.",
+    GAME_ALREADY_STARTED: "La partita è già iniziata.",
+    NOT_FOUND: "Elemento non trovato.",
   },
   ui: {
     close: "Chiudi",
@@ -179,6 +183,10 @@ export const en = {
     SERVER_ERROR: "Backend server response error.",
     CONNECTION_ERROR: "Cannot connect to the backend server.",
     UNKNOWN_ERROR: "An unexpected error occurred.",
+    LOBBY_FULL: "The lobby is full.",
+    PLAYERS_OFFLINE: "Some players are offline.",
+    GAME_ALREADY_STARTED: "The game has already started.",
+    NOT_FOUND: "Item not found.",
   },
   ui: {
     close: "Close",

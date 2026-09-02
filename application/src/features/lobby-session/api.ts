@@ -16,5 +16,7 @@ export async function getLobbyState(lobbyId: string) {
 }
 
 export async function getGameState(lobbyId: string, playerId: number) {
-  return await getJson<GameState>(`/game/${lobbyId}/player/${playerId}`);
+  //TO-DO
+  //return await getJson<GameState>(`/game/${lobbyId}/player/${playerId}`);
+  return null;
 }
