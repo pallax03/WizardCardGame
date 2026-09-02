@@ -2,13 +2,13 @@ package io.github.pallax03.wizard.engine.model.rules
 
 import cats.data.State
 import cats.syntax.traverse.toTraverseOps
+
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bids
 import io.github.pallax03.wizard.engine.model.basic.cards._
 import io.github.pallax03.wizard.engine.model.basic.gameplay._
 import io.github.pallax03.wizard.engine.model.core.GameError
-import io.github.pallax03.wizard.engine.model.core.state.GameState
-import io.github.pallax03.wizard.engine.model.core.state.ServerCoreState
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
 
 /** Manages game round lifecycle operations, player turns, card dealing, and state initialization. */
 object RoundManager:

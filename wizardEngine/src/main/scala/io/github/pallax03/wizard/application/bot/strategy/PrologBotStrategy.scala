@@ -1,14 +1,12 @@
 package io.github.pallax03.wizard.application.bot.strategy
 
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.core.GameAction
-import io.github.pallax03.wizard.engine.model.core.GameError
-import io.github.pallax03.wizard.engine.model.events.FailureEvent
-import io.github.pallax03.wizard.engine.model.events.InvitationEvent
-import io.github.pallax03.wizard.engine.ports.AIPort
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.model.core.{GameAction, GameError}
+import io.github.pallax03.wizard.engine.model.events.{FailureEvent, InvitationEvent}
+import io.github.pallax03.wizard.engine.ports.AIPort
 
 /**
  * An intelligent implementation of [[BotStrategy]] that leverages the [[AIPort]].

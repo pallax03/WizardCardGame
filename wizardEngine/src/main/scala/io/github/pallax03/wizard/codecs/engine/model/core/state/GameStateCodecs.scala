@@ -2,6 +2,7 @@ package io.github.pallax03.wizard.codecs.engine.model.core.state
 
 import io.circe._
 import io.circe.syntax._
+
 import io.github.pallax03.wizard.codecs.engine.model._
 import io.github.pallax03.wizard.engine.model.core.state._
 import io.github.pallax03.wizard.engine.model.rules.TableRules._

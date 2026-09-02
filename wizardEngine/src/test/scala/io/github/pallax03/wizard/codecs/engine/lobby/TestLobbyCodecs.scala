@@ -3,6 +3,7 @@ package io.github.pallax03.wizard.codecs.engine.lobby
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
 import io.github.pallax03.wizard.engine.lobby._
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+
 import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

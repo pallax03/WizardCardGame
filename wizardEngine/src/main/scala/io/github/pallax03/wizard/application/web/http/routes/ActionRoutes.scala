@@ -1,17 +1,18 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import io.github.pallax03.wizard.application.web.http._
-import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
-import io.github.pallax03.wizard.application.web.http.endpoints.ActionSuccessResponse
-import io.github.pallax03.wizard.application.web.http.endpoints.ErrorResponse
+import io.github.pallax03.wizard.application.web.http.endpoints.{
+  ActionEndpoints,
+  ActionSuccessResponse,
+  ErrorResponse
+}
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.core.GameAction
-import io.github.pallax03.wizard.engine.ports.InboundPort
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import sttp.tapir.server.ServerEndpoint
+import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import sttp.tapir.server.ServerEndpoint
 
 class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(using
     ec: ExecutionContext

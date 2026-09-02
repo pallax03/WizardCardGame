@@ -1,19 +1,21 @@
 package io.github.pallax03.wizard.engine.adapters.redis
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{ExecutionContext, Future}
+
 import cats.syntax.all._
+
 import io.circe.syntax._
+
 import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.events.DestinationScoped
-import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.model.events.WizardEvent
-import io.github.pallax03.wizard.engine.ports.OutboundPort
-import io.github.pallax03.wizard.engine.ports.PubSubPort
+import io.github.pallax03.wizard.engine.model.events.{
+  DestinationScoped,
+  LifecycleEvent,
+  WizardEvent
+}
+import io.github.pallax03.wizard.engine.ports.{OutboundPort, PubSubPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class RedisOutboundAdapter(
     val pubSubPort: PubSubPort

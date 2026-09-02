@@ -1,11 +1,12 @@
 package io.github.pallax03.wizard.engine.model.basic.gameplay
 
+import scala.language.postfixOps
+
 import io.github.pallax03.wizard.engine.model.basic._
 import io.github.pallax03.wizard.engine.model.core.GameError
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.language.postfixOps
 
 class TestTrump extends AnyWordSpec with Matchers:
 

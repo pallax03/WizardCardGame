@@ -1,13 +1,13 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
 import io.circe.generic.auto._
+
 import io.github.pallax03.wizard.application.web.http._
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
-import io.github.pallax03.wizard.engine.lobby.BotsDifficulty
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.lobby.Player
+import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId, Player}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.generic.auto._

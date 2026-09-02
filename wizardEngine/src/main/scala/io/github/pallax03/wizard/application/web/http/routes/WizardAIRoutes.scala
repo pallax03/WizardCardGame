@@ -1,8 +1,8 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
+import io.vertx.ext.web.{Router, RoutingContext}
+
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import io.vertx.ext.web.Router
-import io.vertx.ext.web.RoutingContext
 
 class WizardAIRoutes(lobbyStatePort: LobbyStatePort):
 

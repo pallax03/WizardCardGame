@@ -1,12 +1,13 @@
 package io.github.pallax03.wizard.engine.model.rules
 
+import scala.language.postfixOps
+
 import io.github.pallax03.wizard.engine.model.basic._
 import io.github.pallax03.wizard.engine.model.core.CardNotAllowedReasons._
 import io.github.pallax03.wizard.engine.model.core.GameError
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.language.postfixOps
 
 class TestTableRules extends AnyWordSpec with Matchers:
 

@@ -2,6 +2,7 @@ package io.github.pallax03.wizard.codecs.engine.model.core
 
 import io.circe._
 import io.circe.syntax._
+
 import io.github.pallax03.wizard.codecs.combinators.DiscriminatedCodecs._
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given

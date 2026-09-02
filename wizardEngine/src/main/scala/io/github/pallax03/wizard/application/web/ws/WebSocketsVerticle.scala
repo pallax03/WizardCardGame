@@ -1,15 +1,15 @@
 package io.github.pallax03.wizard.application.web.ws
 
-import io.github.pallax03.wizard.application.web._
-import io.github.pallax03.wizard.engine.lobby.Lobby
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import io.github.pallax03.wizard.engine.ports.WebSocketsPort
-import io.github.pallax03.wizard.util.FutureSyntax._
+import scala.util.Success
+
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
 
-import scala.util.Success
+import io.github.pallax03.wizard.application.web._
+import io.github.pallax03.wizard.engine.lobby.Lobby
+import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, WebSocketsPort}
+import io.github.pallax03.wizard.util.FutureSyntax._
 
 /**
  * Verticle responsible for managing WebSocket connections.

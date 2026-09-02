@@ -1,7 +1,6 @@
 package io.github.pallax03.wizard.util
 
-import org.slf4j.LoggerFactory
-import org.slf4j.MDC
+import org.slf4j.{LoggerFactory, MDC}
 
 object WizardLogger:
   private val logger = LoggerFactory.getLogger("WizardApp")

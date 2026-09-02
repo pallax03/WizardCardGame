@@ -1,9 +1,11 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
 import io.circe.generic.auto._
+
 import io.github.pallax03.wizard.codecs.engine.model.core.GameActionCodecs.given
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.core.GameAction
+
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.generic.auto._

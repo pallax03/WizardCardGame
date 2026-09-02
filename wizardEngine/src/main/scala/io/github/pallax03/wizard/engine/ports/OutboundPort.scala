@@ -1,9 +1,9 @@
 package io.github.pallax03.wizard.engine.ports
 
+import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.events.WizardEvent
-
-import scala.concurrent.Future
 
 /**
  * Outbound port for the Wizard game engine.

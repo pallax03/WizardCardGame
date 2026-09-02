@@ -8,6 +8,7 @@ object ChannelsKeys:
   def lobby(id: LobbyId): String = s"lobby:${id.toString}"
   val LOBBY_CHANNEL: String = "lobby:*"
   def game(id: LobbyId): String = s"game:${id.toString}"
+  def gameCheckpoint(id: LobbyId): String = s"${game(id)}:checkpoint"
   val GAME_CHANNEL: String = "game:*"
 
   def pubSubLobbyChannel(id: LobbyId): String = s"channel:${id.toString}"

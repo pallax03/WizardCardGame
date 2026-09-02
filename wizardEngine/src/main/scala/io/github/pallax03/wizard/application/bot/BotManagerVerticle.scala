@@ -1,32 +1,35 @@
 package io.github.pallax03.wizard.application.bot
 
-import cats.syntax.all._
-import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
-import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
-import io.github.pallax03.wizard.engine.lobby.Lobby
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.lobby.LobbyStatus.IN_GAME
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.model.core.state.GameState
-import io.github.pallax03.wizard.engine.model.core.state.PlayerCoreState
-import io.github.pallax03.wizard.engine.model.events.FailureEvent
-import io.github.pallax03.wizard.engine.model.events.InvitationEvent
-import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.model.events.WizardEvent
-import io.github.pallax03.wizard.engine.ports.AIPort
-import io.github.pallax03.wizard.engine.ports.InboundPort
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import io.github.pallax03.wizard.engine.ports.PubSubPort
-import io.github.pallax03.wizard.engine.ports.Subscription
-import io.github.pallax03.wizard.util.ChannelsKeys
-import io.vertx.core.AbstractVerticle
-
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
+
+import cats.syntax.all._
+
+import io.vertx.core.AbstractVerticle
+
+import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
+import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
+import io.github.pallax03.wizard.engine.lobby.LobbyStatus.IN_GAME
+import io.github.pallax03.wizard.engine.lobby.{Lobby, LobbyId}
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerCoreState}
+import io.github.pallax03.wizard.engine.model.events.{
+  FailureEvent,
+  InvitationEvent,
+  LifecycleEvent,
+  WizardEvent
+}
+import io.github.pallax03.wizard.engine.ports.{
+  AIPort,
+  InboundPort,
+  LobbyStatePort,
+  PubSubPort,
+  Subscription
+}
+import io.github.pallax03.wizard.util.ChannelsKeys
 
 class BotManagerVerticle(
     pubSubPort: PubSubPort,

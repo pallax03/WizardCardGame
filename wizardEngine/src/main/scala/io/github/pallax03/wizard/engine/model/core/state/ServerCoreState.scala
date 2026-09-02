@@ -2,8 +2,7 @@ package io.github.pallax03.wizard.engine.model.core.state
 
 import io.github.pallax03.wizard.engine.model.basic._
 import io.github.pallax03.wizard.engine.model.basic.cards.Hands
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
+import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Trump}
 import io.github.pallax03.wizard.engine.model.rules.RoundManager.firstPlayer
 
 final case class ServerCoreState(

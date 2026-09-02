@@ -1,18 +1,19 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
-import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
-import io.github.pallax03.wizard.application.web.http.endpoints.ActionSuccessResponse
-import io.github.pallax03.wizard.application.web.http.endpoints.ErrorResponse
+import scala.concurrent.{ExecutionContext, Future}
+
+import io.github.pallax03.wizard.application.web.http.endpoints.{
+  AIEndpoints,
+  ActionSuccessResponse,
+  ErrorResponse
+}
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.ports.AIPort
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import sttp.tapir.server.ServerEndpoint
+import io.github.pallax03.wizard.engine.ports.{AIPort, LobbyStatePort}
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import sttp.tapir.server.ServerEndpoint
 
 class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: ExecutionContext):
 

@@ -1,8 +1,10 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
 import io.circe.generic.auto._
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+
 import sttp.model.StatusCode
 import sttp.tapir._
 import sttp.tapir.generic.auto._

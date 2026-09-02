@@ -1,17 +1,15 @@
 package io.github.pallax03.wizard.engine.adapters.redis
 
-import cats.syntax.all._
-import io.github.pallax03.wizard.engine.ports.PubSubPort
-import io.github.pallax03.wizard.engine.ports.Subscription
-import io.github.pallax03.wizard.util.FutureSyntax._
-import io.vertx.redis.client.Command
-import io.vertx.redis.client.Redis
-import io.vertx.redis.client.RedisConnection
-import io.vertx.redis.client.Request
-
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
+import cats.syntax.all._
+
+import io.vertx.redis.client.{Command, Redis, RedisConnection, Request}
+
+import io.github.pallax03.wizard.engine.ports.{PubSubPort, Subscription}
+import io.github.pallax03.wizard.util.FutureSyntax._
 
 class RedisPubSubAdapter(redis: Redis) extends PubSubPort:
   private val handlers = mutable.Map.empty[String, mutable.Set[String => Unit]]

@@ -3,6 +3,7 @@ package io.github.pallax03.wizard.engine.adapters.prolog
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologEngine
 import io.github.pallax03.wizard.engine.model.basic._
 import io.github.pallax03.wizard.engine.model.rules.TableRules._
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

@@ -1,10 +1,9 @@
 package io.github.pallax03.wizard.util
 
-import io.vertx.ext.web.RoutingContext
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.Promise
+import scala.concurrent.{Future, Promise}
+
+import io.vertx.ext.web.RoutingContext
 
 object FutureSyntax:
   extension [T](vFuture: io.vertx.core.Future[T])

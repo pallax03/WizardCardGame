@@ -1,8 +1,7 @@
 package io.github.pallax03.wizard.engine.model.rules
 
 import io.github.pallax03.wizard.engine.model.basic._
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bids
-import io.github.pallax03.wizard.engine.model.basic.bidding.Tricks
+import io.github.pallax03.wizard.engine.model.basic.bidding.{Bids, Tricks}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
 
 /** Rules and calculations governing the scoring phase at the end of a round. */

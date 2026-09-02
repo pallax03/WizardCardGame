@@ -3,9 +3,12 @@ package io.github.pallax03.wizard.codecs.engine.model.core.state
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
 import io.github.pallax03.wizard.engine.model._
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump.WizardUnresolved
-import io.github.pallax03.wizard.engine.model.core.state.GameState
-import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
-import io.github.pallax03.wizard.engine.model.core.state.ServerCoreState
+import io.github.pallax03.wizard.engine.model.core.state.{
+  GameState,
+  PlayerGameState,
+  ServerCoreState
+}
+
 import org.scalatest.EitherValues._
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
