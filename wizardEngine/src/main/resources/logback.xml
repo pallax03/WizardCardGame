@@ -1,16 +1,39 @@
 <configuration>
 
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+    <appender name="HTTP_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/http.log</file>
+        <append>true</append>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{lobbyId:-system}] [%X{playerId:-system}] - %msg%n</pattern>
         </encoder>
     </appender>
 
+    <appender name="PUBSUB_FILE" class="ch.qos.logback.core.FileAppender">
+        <file>logs/pubsub.log</file>
+        <append>true</append>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{lobbyId:-system}] [%X{playerId:-system}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{lobbyId:-system}] [%X{playerId:-system}] - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <logger name="io.vertx.ext.web.handler.LoggerHandler" level="INFO">
+        <appender-ref ref="HTTP_FILE" />
+    </logger>
+
+    <logger name="PubSubLogger" level="DEBUG" additivity="false">
+        <appender-ref ref="PUBSUB_FILE" />
+        <appender-ref ref="STDOUT" />
+    </logger>
+
     <logger name="io.netty" level="WARN" />
-
-    <logger name="io.vertx.ext.web.handler.LoggerHandler" level="INFO" />
-
-    <logger name="it.unibo.pps.wizard" level="DEBUG" />
+    <logger name="io.github.pallax03.wizard" level="DEBUG" />
+    <logger name="WizardApp" level="DEBUG" />
 
     <root level="WARN">
         <appender-ref ref="STDOUT" />

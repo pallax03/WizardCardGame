@@ -1,23 +1,18 @@
 package io.github.pallax03.wizard.engine.adapters.prolog
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologEngine
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bids
-import io.github.pallax03.wizard.engine.model.basic.cards.Card
-import io.github.pallax03.wizard.engine.model.basic.cards.Hand
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
-import io.github.pallax03.wizard.engine.model.core.state.GameState
-import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
-import io.github.pallax03.wizard.engine.model.rules.BiddingRules._
-import io.github.pallax03.wizard.engine.model.rules.TableRules._
-import io.github.pallax03.wizard.engine.ports.AIPort
-import io.github.pallax03.wizard.engine.ports.InboundPort
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids}
+import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
+import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Table}
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerGameState}
+import io.github.pallax03.wizard.engine.model.rules.BiddingRules.*
+import io.github.pallax03.wizard.engine.model.rules.TableRules.*
+import io.github.pallax03.wizard.engine.ports.{AIPort, InboundPort}
 
 /**
  * Adapter that connects the game engine's AI requirements with the Prolog knowledge base.

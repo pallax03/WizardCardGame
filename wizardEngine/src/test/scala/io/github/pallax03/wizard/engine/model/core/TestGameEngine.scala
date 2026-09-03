@@ -1,16 +1,14 @@
 package io.github.pallax03.wizard.engine.model.core
 
-import io.github.pallax03.wizard.engine.model.basic._
-import io.github.pallax03.wizard.engine.model.core.GameError._
-import io.github.pallax03.wizard.engine.model.core.state.GameState
-import io.github.pallax03.wizard.engine.model.core.state.ServerCoreState
-import io.github.pallax03.wizard.engine.model.events.ActionEvent
-import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.model.events.ProgressEvent
+import scala.language.postfixOps
+
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.core.GameError.*
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
+import io.github.pallax03.wizard.engine.model.events.{ActionEvent, LifecycleEvent, ProgressEvent}
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.language.postfixOps
 
 class TestGameEngine extends AnyWordSpec with Matchers:
 

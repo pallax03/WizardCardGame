@@ -1,17 +1,14 @@
 package io.github.pallax03.wizard.engine.adapters.prolog
 
-import alice.tuprolog.Term
-import alice.tuprolog.Theory
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
-import io.github.pallax03.wizard.engine.model.basic.bidding.Trick
-import io.github.pallax03.wizard.engine.model.basic.cards.Card
-import io.github.pallax03.wizard.engine.model.basic.cards.Hand
+import scala.util.Using
+
+import io.github.pallax03.wizard.engine.adapters.prolog.WizardTermMapper.*
+import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Trick}
+import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 import io.github.pallax03.wizard.util.PrologEngine
 
-import scala.util.Using
-
-import WizardTermMapper._
+import alice.tuprolog.{Term, Theory}
 
 /**
  * An adapter engine that delegates AI decision-making to a Prolog-based knowledge base.

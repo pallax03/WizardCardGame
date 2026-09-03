@@ -1,10 +1,11 @@
 package io.github.pallax03.wizard.engine.model.basic.gameplay
 
-import io.github.pallax03.wizard.engine.model.basic._
+import scala.language.postfixOps
+
+import io.github.pallax03.wizard.engine.model.basic.*
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.language.postfixOps
 
 class TestTable extends AnyWordSpec with Matchers:
 

@@ -3,7 +3,7 @@
 import type { LobbyState, GameState } from "./types";
 
 async function getJson<T>(path: string): Promise<T> {
-  const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
+  const backendUrl = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
   const response = await fetch(`${backendUrl}${path}`, { cache: "no-store" });
   if (!response.ok) {
     throw new Error(`GET ${path} failed with status ${response.status}`);

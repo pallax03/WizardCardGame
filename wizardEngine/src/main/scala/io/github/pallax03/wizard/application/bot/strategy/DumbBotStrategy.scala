@@ -1,17 +1,15 @@
 package io.github.pallax03.wizard.application.bot.strategy
 
+import scala.concurrent.Future
+import scala.util.Random
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Round._
-import io.github.pallax03.wizard.engine.model.core.GameAction
-import io.github.pallax03.wizard.engine.model.core.GameError
-import io.github.pallax03.wizard.engine.model.events.FailureEvent
-import io.github.pallax03.wizard.engine.model.events.InvitationEvent
-
-import scala.concurrent.Future
-import scala.util.Random
+import io.github.pallax03.wizard.engine.model.basic.gameplay.Round.*
+import io.github.pallax03.wizard.engine.model.core.{GameAction, GameError}
+import io.github.pallax03.wizard.engine.model.events.{FailureEvent, InvitationEvent}
 
 /**
  * A simple, randomized implementation of [[BotStrategy]].

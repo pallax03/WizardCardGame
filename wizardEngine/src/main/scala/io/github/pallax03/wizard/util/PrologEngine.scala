@@ -1,11 +1,8 @@
 package io.github.pallax03.wizard.util
 
-import alice.tuprolog.Prolog
-import alice.tuprolog.SolveInfo
-import alice.tuprolog.Term
-import alice.tuprolog.Theory
+import scala.jdk.CollectionConverters.*
 
-import scala.jdk.CollectionConverters._
+import alice.tuprolog.{Prolog, SolveInfo, Term, Theory}
 
 /**
  * Utility object to interface Scala with tuProlog.

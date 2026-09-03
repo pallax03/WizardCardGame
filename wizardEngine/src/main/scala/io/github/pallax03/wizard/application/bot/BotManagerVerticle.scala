@@ -1,33 +1,24 @@
 package io.github.pallax03.wizard.application.bot
 
-import cats.syntax.all._
-import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
-import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
-import io.github.pallax03.wizard.engine.lobby.Lobby
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.lobby.LobbyStatus.IN_GAME
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.model.core.state.GameState
-import io.github.pallax03.wizard.engine.model.core.state.PlayerCoreState
-import io.github.pallax03.wizard.engine.model.events.FailureEvent
-import io.github.pallax03.wizard.engine.model.events.InvitationEvent
-import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.model.events.WizardEvent
-import io.github.pallax03.wizard.engine.ports.AIPort
-import io.github.pallax03.wizard.engine.ports.InboundPort
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import io.github.pallax03.wizard.engine.ports.PubSubPort
-import io.github.pallax03.wizard.engine.ports.Subscription
-import io.github.pallax03.wizard.util.ChannelsKeys
-import io.vertx.core.AbstractVerticle
-import org.slf4j.LoggerFactory
-
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
+import scala.util.{Failure, Success}
+
+import cats.syntax.all.*
+
+import io.vertx.core.AbstractVerticle
+
+import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
+import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.lobby.LobbyStatus.IN_GAME
+import io.github.pallax03.wizard.engine.lobby.{Lobby, LobbyId}
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerCoreState}
+import io.github.pallax03.wizard.engine.model.events.*
+import io.github.pallax03.wizard.engine.ports.*
+import io.github.pallax03.wizard.util.ChannelsKeys
 
 class BotManagerVerticle(
     pubSubPort: PubSubPort,
@@ -36,40 +27,42 @@ class BotManagerVerticle(
     gameInboundPort: InboundPort
 ) extends AbstractVerticle:
 
-  private val logger = LoggerFactory.getLogger(classOf[BotManagerVerticle])
   private val activeSubscriptions = TrieMap.empty[(LobbyId, PlayerId), Subscription]
 
   private val podId = java.util.UUID.randomUUID().toString
 
   override def start(): Unit =
-    logger.warn("BotManagerVerticle started. Subscribing to " + ChannelsKeys.SPAWN_BOT_CHANNEL)
     pubSubPort.subscribe(ChannelsKeys.SPAWN_BOT_CHANNEL, processSpawnEvent)
-
-    logger.warn("Subscribing to old lobbies")
     lobbyStatePort.getAllLobbies.onComplete:
       case Success(lobbies) =>
         lobbies.filter(_.status == IN_GAME).foreach(spawnBotsForLobby)
-      case Failure(_) => ()
+      case Failure(e) =>
+        pubSubPort.publish(
+          ChannelsKeys.LOGS_CHANNEL,
+          s"ERROR:Failed to load lobbies: ${e.getMessage}"
+        )
 
   private def processSpawnEvent(lobbyIdStr: String): Unit =
-    logger.warn(s"Received spawn request for lobby: $lobbyIdStr")
     lobbyStatePort
       .getLobby(LobbyId(lobbyIdStr))
       .onComplete:
         case Success(Some(lobby)) => spawnBotsForLobby(lobby)
-        case _                    => logger.error(s"Failed to retrieve lobby $lobbyIdStr for spawn")
+        case Success(None)        => ()
+        case Failure(e) =>
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"ERROR:Failed to process spawn event for lobby $lobbyIdStr: ${e.getMessage}"
+          )
 
   private def spawnBotsForLobby(lobby: Lobby): Unit =
     lobbyStatePort
       .tryAcquireBotLock(lobby.uuid, podId)
       .onComplete:
         case Success(true) =>
-          logger.warn(s"Lock acquired for lobby ${lobby.uuid}. Spawning bots...")
           lobby.players
             .filter(_.difficulty.isDefined)
             .foreach: bot =>
               val strategy = BotStrategy(bot.difficulty.get, prologPort)
-
               if !activeSubscriptions.contains((lobby.uuid, bot.id)) then
                 val handler = handleGameEvents(lobby.uuid, bot.id, strategy)
                 pubSubPort
@@ -77,8 +70,12 @@ class BotManagerVerticle(
                   .map: sub =>
                     activeSubscriptions.put((lobby.uuid, bot.id), sub)
               syncStateAndPlay(lobby.uuid, bot.id, strategy)
-        case _ =>
-          logger.info(s"Lobby ${lobby.uuid} bots are managed by another pod.")
+        case Success(false) => ()
+        case Failure(e) =>
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"ERROR:Failed to acquire bot lock for lobby ${lobby.uuid}: ${e.getMessage}"
+          )
 
   private def syncStateAndPlay(lobbyId: LobbyId, botId: PlayerId, strategy: BotStrategy): Unit =
     gameInboundPort
@@ -95,12 +92,12 @@ class BotManagerVerticle(
             case _ => None
 
           invitationOpt.foreach: inv =>
-            logger.warn(
-              s"Bot $botId deduced pending action from GameState: ${inv.getClass.getSimpleName}"
-            )
             executeInvitationStrategy(lobbyId, botId, strategy, inv)
         case Failure(e) =>
-          logger.error(s"Bot $botId failed to sync GameState", e)
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"ERROR:Failed to sync state for bot $botId in lobby $lobbyId: ${e.getMessage}"
+          )
 
   private def handleGameEvents(lobbyId: LobbyId, playerId: PlayerId, strategy: BotStrategy)(
       rawJson: String
@@ -129,13 +126,19 @@ class BotManagerVerticle(
           .submitAction(lobbyId, action)
           .flatMap:
             case Left(gameError) =>
-              val mockFailure = FailureEvent.ActionFailed(playerId, gameError)
+              pubSubPort.publish(
+                ChannelsKeys.LOGS_CHANNEL,
+                s"WARN:Bot $playerId received GameError: $gameError for lobby $lobbyId"
+              )
               strategy
-                .resolveFailedEvents(lobbyId, mockFailure)
+                .resolveFailedEvents(lobbyId, FailureEvent.ActionFailed(playerId, gameError))
                 .flatMap: fallbackAction =>
                   gameInboundPort.submitAction(lobbyId, fallbackAction).void
             case Right(_) => Future.unit
       .onComplete:
         case Failure(e) =>
-          logger.error(s"Bot $playerId strategy failed", e)
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"ERROR:Failed to execute bot strategy for bot $playerId in lobby $lobbyId: ${e.getMessage}"
+          )
         case _ => ()
