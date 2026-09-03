@@ -15,3 +15,5 @@ object ChannelsKeys:
   def pubSubLobbyPlayerChannel(id: LobbyId, playerId: PlayerId): String =
     s"channel:${id.toString}:${playerId.toInt}"
   def botLock(id: LobbyId): String = s"lock:bot:${id.toString}"
+
+  val LOGS_CHANNEL: String = "system:logs"

@@ -36,9 +36,16 @@ object Main:
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
     val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort)
     val recoveryPort: GameRecoveryPort =
-      RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort)
+      RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort, pubSubPort)
     val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort)
     val prologPort = WizardPrologAdapter(inPort)
+
+    deploy(
+      vertx,
+      io.github.pallax03.wizard.application.logging.PubSubLoggerVerticle(pubSubPort),
+      "pubsub logger verticle",
+      0
+    )
 
     deploy(
       vertx,
