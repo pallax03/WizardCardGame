@@ -6,10 +6,10 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
 
-import io.github.pallax03.wizard.application.web._
+import io.github.pallax03.wizard.application.web.*
 import io.github.pallax03.wizard.engine.lobby.Lobby
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, WebSocketsPort}
-import io.github.pallax03.wizard.util.FutureSyntax._
+import io.github.pallax03.wizard.util.FutureSyntax.*
 
 /**
  * Verticle responsible for managing WebSocket connections.

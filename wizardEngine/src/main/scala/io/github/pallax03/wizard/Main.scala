@@ -8,12 +8,12 @@ import io.vertx.redis.client.{Redis, RedisOptions}
 
 import io.github.pallax03.wizard.application.bot.BotManagerVerticle
 import io.github.pallax03.wizard.application.web.http.HttpServerVerticle
-import io.github.pallax03.wizard.application.web.http.routes._
+import io.github.pallax03.wizard.application.web.http.routes.*
 import io.github.pallax03.wizard.application.web.ws.WebSocketsVerticle
 import io.github.pallax03.wizard.engine.adapters.VertxWebSocketsAdapter
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologAdapter
-import io.github.pallax03.wizard.engine.adapters.redis._
-import io.github.pallax03.wizard.engine.ports._
+import io.github.pallax03.wizard.engine.adapters.redis.*
+import io.github.pallax03.wizard.engine.ports.*
 
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
@@ -35,7 +35,8 @@ object Main:
     val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
     val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort)
-    val recoveryPort: GameRecoveryPort = RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort)
+    val recoveryPort: GameRecoveryPort =
+      RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort)
     val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort)
     val prologPort = WizardPrologAdapter(inPort)
 
@@ -62,7 +63,10 @@ object Main:
     val aiRoutes = AIRoutes(lobbyStatePort, prologPort)
     val domainEndpoints = lobbyRoutes.all ++ actionRoutes.all ++ aiRoutes.all
 
-    val swaggerEndpoints = if !isProduction then SwaggerInterpreter().fromServerEndpoints(domainEndpoints, "Wizard Game Engine API", "1.0.0") else List.empty
+    val swaggerEndpoints =
+      if !isProduction then
+        SwaggerInterpreter().fromServerEndpoints(domainEndpoints, "Wizard Game Engine API", "1.0.0")
+      else List.empty
 
     val allEndpoints = domainEndpoints ++ swaggerEndpoints
     val verticle = HttpServerVerticle(allEndpoints, httpPort)

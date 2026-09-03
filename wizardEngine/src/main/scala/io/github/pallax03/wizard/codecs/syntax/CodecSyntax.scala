@@ -1,8 +1,8 @@
 package io.github.pallax03.wizard.codecs.syntax
 
-import io.circe._
-import io.circe.parser._
-import io.circe.syntax._
+import io.circe.*
+import io.circe.parser.*
+import io.circe.syntax.*
 
 object CodecSyntax:
   extension [A: Encoder](a: A) def toJson: String = a.asJson.noSpaces

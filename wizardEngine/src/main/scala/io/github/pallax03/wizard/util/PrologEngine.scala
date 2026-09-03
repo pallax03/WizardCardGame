@@ -1,6 +1,6 @@
 package io.github.pallax03.wizard.util
 
-import scala.jdk.CollectionConverters._
+import scala.jdk.CollectionConverters.*
 
 import alice.tuprolog.{Prolog, SolveInfo, Term, Theory}
 

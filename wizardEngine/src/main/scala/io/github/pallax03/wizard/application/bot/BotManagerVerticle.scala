@@ -5,19 +5,19 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-import cats.syntax.all._
+import cats.syntax.all.*
 
 import io.vertx.core.AbstractVerticle
 
 import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
 import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.LobbyStatus.IN_GAME
 import io.github.pallax03.wizard.engine.lobby.{Lobby, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerCoreState}
-import io.github.pallax03.wizard.engine.model.events._
-import io.github.pallax03.wizard.engine.ports._
+import io.github.pallax03.wizard.engine.model.events.*
+import io.github.pallax03.wizard.engine.ports.*
 import io.github.pallax03.wizard.util.ChannelsKeys
 
 class BotManagerVerticle(

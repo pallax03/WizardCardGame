@@ -10,8 +10,8 @@ import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids}
 import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Table}
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerGameState}
-import io.github.pallax03.wizard.engine.model.rules.BiddingRules._
-import io.github.pallax03.wizard.engine.model.rules.TableRules._
+import io.github.pallax03.wizard.engine.model.rules.BiddingRules.*
+import io.github.pallax03.wizard.engine.model.rules.TableRules.*
 import io.github.pallax03.wizard.engine.ports.{AIPort, InboundPort}
 
 /**

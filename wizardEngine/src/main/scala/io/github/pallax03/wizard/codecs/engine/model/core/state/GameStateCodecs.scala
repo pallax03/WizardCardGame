@@ -1,11 +1,11 @@
 package io.github.pallax03.wizard.codecs.engine.model.core.state
 
-import io.circe._
-import io.circe.syntax._
+import io.circe.*
+import io.circe.syntax.*
 
-import io.github.pallax03.wizard.codecs.engine.model._
-import io.github.pallax03.wizard.engine.model.core.state._
-import io.github.pallax03.wizard.engine.model.rules.TableRules._
+import io.github.pallax03.wizard.codecs.engine.model.*
+import io.github.pallax03.wizard.engine.model.core.state.*
+import io.github.pallax03.wizard.engine.model.rules.TableRules.*
 
 object GameStateCodecs:
   import io.circe.generic.auto.given

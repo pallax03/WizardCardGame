@@ -7,7 +7,7 @@ import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Round._
+import io.github.pallax03.wizard.engine.model.basic.gameplay.Round.*
 import io.github.pallax03.wizard.engine.model.core.{GameAction, GameError}
 import io.github.pallax03.wizard.engine.model.events.{FailureEvent, InvitationEvent}
 

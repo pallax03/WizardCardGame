@@ -1,18 +1,22 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.circe.generic.auto._
-import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
-import io.github.pallax03.wizard.application.web.http.ErrorResponse
-import io.github.pallax03.wizard.application.web.http.HttpSupport
+import io.circe.generic.auto.*
+
 import io.github.pallax03.wizard.application.web.http.HttpSupport.given
+import io.github.pallax03.wizard.application.web.http.{
+  ActionSuccessResponse,
+  ErrorResponse,
+  HttpSupport
+}
 import io.github.pallax03.wizard.codecs.engine.model.core.GameActionCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.core.GameAction
-import sttp.tapir._
-import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe._
+
+import sttp.tapir.*
+import sttp.tapir.generic.auto.*
+import sttp.tapir.json.circe.*
 
 given Schema[Card] = Schema.derived
 

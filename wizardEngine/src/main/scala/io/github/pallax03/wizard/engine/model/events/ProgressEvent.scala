@@ -1,6 +1,6 @@
 package io.github.pallax03.wizard.engine.model.events
 
-import io.github.pallax03.wizard.engine.model.basic._
+import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.Trick
 import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Trump}

@@ -3,9 +3,9 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.syntax.all._
+import cats.syntax.all.*
 
-import io.circe.syntax._
+import io.circe.syntax.*
 
 import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId

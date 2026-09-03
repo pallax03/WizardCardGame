@@ -6,14 +6,14 @@ import scala.concurrent.Future
 import io.vertx.redis.client.{Command, Redis, Request}
 
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.core.GameException
 import io.github.pallax03.wizard.engine.model.core.state.ServerGameState
 import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
 import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, LobbyStatePort, OutboundPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
-import io.github.pallax03.wizard.util.FutureSyntax._
+import io.github.pallax03.wizard.util.FutureSyntax.*
 
 class RedisGameRecoveryAdapter(
     private val redisClient: Redis,
@@ -25,15 +25,24 @@ class RedisGameRecoveryAdapter(
     val gameKey = ChannelsKeys.game(lobbyId)
     val checkpointKey = ChannelsKeys.gameCheckpoint(lobbyId)
 
-    val processCheckpoint = redisClient.send(Request.cmd(Command.GET).arg(checkpointKey)).asScala
+    val processCheckpoint = redisClient
+      .send(Request.cmd(Command.GET).arg(checkpointKey))
+      .asScala
       .map(Option(_).map(_.toString))
       .flatMap:
-        case Some(json) if json.decodeAs[ServerGameState].isRight => restoreCheckpoint(lobbyId, gameKey, json)
-        case _                                                    => abortGame(lobbyId, gameKey, checkpointKey, exception)
+        case Some(json) if json.decodeAs[ServerGameState].isRight =>
+          restoreCheckpoint(lobbyId, gameKey, json)
+        case _ => abortGame(lobbyId, gameKey, checkpointKey, exception)
 
-    processCheckpoint.recoverWith { case _ => abortGame(lobbyId, gameKey, checkpointKey, exception) }
+    processCheckpoint.recoverWith { case _ =>
+      abortGame(lobbyId, gameKey, checkpointKey, exception)
+    }
 
-  private def restoreCheckpoint(lobbyId: LobbyId, gameKey: String, checkpointJson: String): Future[Boolean] =
+  private def restoreCheckpoint(
+      lobbyId: LobbyId,
+      gameKey: String,
+      checkpointJson: String
+  ): Future[Boolean] =
     redisClient
       .send(Request.cmd(Command.SET).arg(gameKey).arg(checkpointJson))
       .asScala
@@ -47,10 +56,15 @@ class RedisGameRecoveryAdapter(
       checkpointKey: String,
       exception: GameException
   ): Future[Boolean] =
-    redisClient.send(Request.cmd(Command.DEL).arg(gameKey).arg(checkpointKey)).asScala.flatMap: _ =>
-      lobbyStatePort.getLobby(lobbyId).flatMap:
-        case Some(lobby) => lobbyStatePort.saveLobby(lobby.copy(status = LobbyStatus.WAITING))
-        case None        => Future.unit
-    .map: _ =>
-      outboundPort.publish(lobbyId, LifecycleEvent.GameAborted(exception.getMessage))
-      false
+    redisClient
+      .send(Request.cmd(Command.DEL).arg(gameKey).arg(checkpointKey))
+      .asScala
+      .flatMap: _ =>
+        lobbyStatePort
+          .getLobby(lobbyId)
+          .flatMap:
+            case Some(lobby) => lobbyStatePort.saveLobby(lobby.copy(status = LobbyStatus.WAITING))
+            case None        => Future.unit
+      .map: _ =>
+        outboundPort.publish(lobbyId, LifecycleEvent.GameAborted(exception.getMessage))
+        false

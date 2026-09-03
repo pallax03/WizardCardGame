@@ -1,11 +1,11 @@
 package io.github.pallax03.wizard.codecs.engine.model
 
-import io.circe._
-import io.circe.syntax._
+import io.circe.*
+import io.circe.syntax.*
 
-import io.github.pallax03.wizard.engine.model.basic._
+import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.GameError
-import io.github.pallax03.wizard.engine.model.events._
+import io.github.pallax03.wizard.engine.model.events.*
 
 object WizardEventsCodecs:
 

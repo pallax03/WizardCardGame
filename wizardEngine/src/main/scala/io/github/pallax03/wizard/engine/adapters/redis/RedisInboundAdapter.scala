@@ -3,22 +3,22 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import cats.syntax.all._
+import cats.syntax.all.*
 
 import io.vertx.redis.client.{Command, Redis, Request}
 
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
-import io.github.pallax03.wizard.engine.configuration._
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.configuration.*
 import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.basic._
-import io.github.pallax03.wizard.engine.model.core.InconsistentState._
-import io.github.pallax03.wizard.engine.model.core._
-import io.github.pallax03.wizard.engine.model.core.state._
-import io.github.pallax03.wizard.engine.model.events._
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.core.*
+import io.github.pallax03.wizard.engine.model.core.InconsistentState.*
+import io.github.pallax03.wizard.engine.model.core.state.*
+import io.github.pallax03.wizard.engine.model.events.*
 import io.github.pallax03.wizard.engine.ports.{InboundPort, OutboundPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
-import io.github.pallax03.wizard.util.FutureSyntax._
+import io.github.pallax03.wizard.util.FutureSyntax.*
 
 class RedisInboundAdapter(
     private val redisClient: Redis,
@@ -40,13 +40,17 @@ class RedisInboundAdapter(
   private def withRecovery[T](lobbyId: LobbyId)(action: => Future[T]): Future[T] =
     action.recoverWith:
       case ge: GameException =>
-        recoveryPort.attemptRecovery(lobbyId, ge).flatMap: recovered =>
-          Future.failed(if recovered then RecoveredGameException(ge) else AbortedGameException(ge))
+        recoveryPort
+          .attemptRecovery(lobbyId, ge)
+          .flatMap: recovered =>
+            Future.failed(
+              if recovered then RecoveredGameException(ge) else AbortedGameException(ge)
+            )
 
   private def saveState(lobbyId: LobbyId, newState: GameEngine): Future[Unit] =
     val key = ChannelsKeys.game(lobbyId)
     val checkpointKey = ChannelsKeys.gameCheckpoint(lobbyId)
-    
+
     val reqs = newState.state match
       case _: GameState.Ended =>
         List(Request.cmd(Command.DEL).arg(key), Request.cmd(Command.DEL).arg(checkpointKey))
@@ -79,7 +83,9 @@ class RedisInboundAdapter(
         val playersIds = config.players.map(_.id)
         val initialState = GameEngine.initializeGame(playersIds)
         redisClient
-          .send(Request.cmd(Command.SET).arg(ChannelsKeys.game(lobbyId)).arg(initialState.state.toJson))
+          .send(
+            Request.cmd(Command.SET).arg(ChannelsKeys.game(lobbyId)).arg(initialState.state.toJson)
+          )
           .asScala
           .map: _ =>
             outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersIds))

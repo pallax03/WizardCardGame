@@ -1,6 +1,6 @@
 package io.github.pallax03.wizard.engine.model.core.state
 
-import io.github.pallax03.wizard.engine.model.basic._
+import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bids, Tricks}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
 

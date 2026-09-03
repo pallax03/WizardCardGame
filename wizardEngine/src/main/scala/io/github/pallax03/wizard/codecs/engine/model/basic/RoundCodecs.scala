@@ -1,8 +1,8 @@
 package io.github.pallax03.wizard.codecs.engine.model.basic
 
-import io.circe._
+import io.circe.*
 
-import io.github.pallax03.wizard.engine.model.basic._
+import io.github.pallax03.wizard.engine.model.basic.*
 
 object RoundCodecs:
   import gameplay.Round

@@ -1,7 +1,7 @@
 package io.github.pallax03.wizard.engine.model.basic
 
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
-import io.github.pallax03.wizard.engine.model.basic.cards._
+import io.github.pallax03.wizard.engine.model.basic.cards.*
 
 /** Represents the unique identifier of a player in the game. */
 opaque type PlayerId = Int

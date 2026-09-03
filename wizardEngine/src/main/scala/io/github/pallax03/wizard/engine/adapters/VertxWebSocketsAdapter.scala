@@ -8,6 +8,8 @@ import scala.util.Try
 import io.vertx.core.http.ServerWebSocket
 import io.vertx.core.json.JsonObject
 
+import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
@@ -18,9 +20,6 @@ import io.github.pallax03.wizard.engine.ports.{
   WebSocketsPort
 }
 import io.github.pallax03.wizard.util.ChannelsKeys
-
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
-import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given 
 
 case class ClientSession(ws: ServerWebSocket, sub: Subscription)
 

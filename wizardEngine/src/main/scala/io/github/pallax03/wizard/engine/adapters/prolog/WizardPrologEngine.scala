@@ -2,7 +2,7 @@ package io.github.pallax03.wizard.engine.adapters.prolog
 
 import scala.util.Using
 
-import io.github.pallax03.wizard.engine.adapters.prolog.WizardTermMapper._
+import io.github.pallax03.wizard.engine.adapters.prolog.WizardTermMapper.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Trick}
 import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump

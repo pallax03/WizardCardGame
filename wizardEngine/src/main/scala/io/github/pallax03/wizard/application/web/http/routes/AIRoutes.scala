@@ -1,17 +1,24 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
-import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
-import io.github.pallax03.wizard.application.web.http.ErrorResponse
-import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
-import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.ports.AIPort
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import sttp.tapir.server.ServerEndpoint
+import scala.concurrent.{
+  ExecutionContext,
+  Future
+}
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
+import io.github.pallax03.wizard.application.web.http.{
+  ActionSuccessResponse,
+  ErrorResponse
+}
+import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.ports.{
+  AIPort,
+  LobbyStatePort
+}
+
+import sttp.tapir.server.ServerEndpoint
 
 /**
  * HTTP routes for AI hint domain.
