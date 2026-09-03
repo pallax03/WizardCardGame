@@ -1,10 +1,11 @@
 package io.github.pallax03.wizard.codecs.engine.lobby
 
-import io.circe._
-import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
-import io.github.pallax03.wizard.engine.lobby._
-
 import scala.util.Try
+
+import io.circe.*
+
+import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
+import io.github.pallax03.wizard.engine.lobby.*
 
 object LobbyCodecs:
 

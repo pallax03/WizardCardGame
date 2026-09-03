@@ -1,15 +1,14 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
-import io.github.pallax03.wizard.application.web.http.ErrorResponse
-import io.github.pallax03.wizard.application.web.http.endpoints._
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
-import io.github.pallax03.wizard.engine.lobby._
-import io.github.pallax03.wizard.engine.ports.InboundPort
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import sttp.tapir.server.ServerEndpoint
+import scala.concurrent.{ExecutionContext, Future}
 
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import io.github.pallax03.wizard.application.web.http.ErrorResponse
+import io.github.pallax03.wizard.application.web.http.endpoints.*
+import io.github.pallax03.wizard.engine.configuration.GameConfiguration
+import io.github.pallax03.wizard.engine.lobby.*
+import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
+
+import sttp.tapir.server.ServerEndpoint
 
 /**
  * HTTP routes for the Lobby domain.

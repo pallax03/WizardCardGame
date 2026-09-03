@@ -1,11 +1,11 @@
 package io.github.pallax03.wizard.engine.ports
 
+import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
-
-import scala.concurrent.Future
 
 /**
  * Defines the interface for an AI component capable of making decisions within the Wizard game.

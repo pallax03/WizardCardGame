@@ -1,10 +1,11 @@
 package io.github.pallax03.wizard.engine.ports
 
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import scala.concurrent.Future
+
 import io.vertx.core.http.ServerWebSocket
 
-import scala.concurrent.Future
+import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 trait WebSocketsPort:
 

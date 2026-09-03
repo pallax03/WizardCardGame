@@ -36,3 +36,4 @@ out/
 !application/.env.local
 **/CLAUDE.md
 **/AGENTS.md
+wizardEngine/logs

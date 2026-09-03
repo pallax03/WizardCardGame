@@ -1,6 +1,7 @@
 package io.github.pallax03.wizard.util
 
 import io.github.pallax03.wizard.engine.model.basic.cards.Card.Color
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

@@ -1,19 +1,25 @@
 package io.github.pallax03.wizard.engine.adapters
 
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import io.github.pallax03.wizard.engine.ports.PubSubPort
-import io.github.pallax03.wizard.engine.ports.Subscription
-import io.github.pallax03.wizard.engine.ports.WebSocketsPort
-import io.github.pallax03.wizard.util.ChannelsKeys
-import io.vertx.core.http.ServerWebSocket
-import io.vertx.core.json.JsonObject
-
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
+
+import io.vertx.core.http.ServerWebSocket
+import io.vertx.core.json.JsonObject
+
+import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.model.events.SystemEvent
+import io.github.pallax03.wizard.engine.ports.{
+  LobbyStatePort,
+  PubSubPort,
+  Subscription,
+  WebSocketsPort
+}
+import io.github.pallax03.wizard.util.ChannelsKeys
 
 case class ClientSession(ws: ServerWebSocket, sub: Subscription)
 
@@ -35,6 +41,7 @@ class VertxWebSocketsAdapter(
     ws.exceptionHandler: _ =>
       this.close(lobbyId, playerId)
 
+    // Forwarding Messages
     ws.textMessageHandler: text =>
       Try:
         val json = new JsonObject(text)
@@ -47,7 +54,7 @@ class VertxWebSocketsAdapter(
       .subscribePlayer(lobbyId, playerId, rawJson => ws.writeTextMessage(rawJson))
       .map: sub =>
         lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, true)
-        val msg = s"""{"type":"system","playerId":${playerId.toInt},"action":"online"}"""
+        val msg = SystemEvent.online(playerId).toJson
         pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
         sessions.put((lobbyId, playerId), ClientSession(ws, sub))
 
@@ -57,7 +64,7 @@ class VertxWebSocketsAdapter(
       case Some(session) =>
         Try(session.ws.close())
         lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, false)
-        val msg = s"""{"type":"system","playerId":${playerId.toInt},"action":"offline"}"""
+        val msg = SystemEvent.offline(playerId).toJson
         pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
         session.sub.cancel()
       case None =>

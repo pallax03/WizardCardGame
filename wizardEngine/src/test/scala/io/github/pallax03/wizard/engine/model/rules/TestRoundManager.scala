@@ -1,9 +1,9 @@
 package io.github.pallax03.wizard.engine.model.rules
 
-import io.github.pallax03.wizard.engine.model.basic._
+import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.GameError
-import io.github.pallax03.wizard.engine.model.core.state.GameState
-import io.github.pallax03.wizard.engine.model.core.state.ServerCoreState
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

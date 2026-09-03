@@ -1,9 +1,9 @@
 package io.github.pallax03.wizard.engine.model.basic.cards
 
+import scala.language.postfixOps
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.language.postfixOps
 
 class TestCard extends AnyWordSpec with Matchers:
   import Card.*

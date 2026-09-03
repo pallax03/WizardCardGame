@@ -1,9 +1,10 @@
 package io.github.pallax03.wizard.codecs.engine.model.core
 
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
-import io.github.pallax03.wizard.engine.model.basic._
-import io.github.pallax03.wizard.engine.model.core._
-import org.scalatest.EitherValues._
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.core.*
+
+import org.scalatest.EitherValues.*
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 

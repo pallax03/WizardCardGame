@@ -1,9 +1,9 @@
 package io.github.pallax03.wizard.engine.ports
 
-import io.github.pallax03.wizard.engine.lobby._
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
-
 import scala.concurrent.Future
+
+import io.github.pallax03.wizard.engine.lobby.*
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 /**
  * Internal port to manage the persistent state of a Lobby before the game starts.

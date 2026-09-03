@@ -1,11 +1,10 @@
 package io.github.pallax03.wizard.engine.ports
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.util.ChannelsKeys
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 
 trait Subscription:
   /** Cancels this specific subscription. */

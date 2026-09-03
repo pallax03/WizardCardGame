@@ -1,8 +1,8 @@
 package io.github.pallax03.wizard.engine.model.basic.cards
 
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
-
 import java.util.concurrent.atomic.AtomicInteger
+
+import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 
 /**
  * Represents a card in the Wizard game.

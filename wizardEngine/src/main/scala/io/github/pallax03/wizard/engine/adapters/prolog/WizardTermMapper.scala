@@ -1,6 +1,6 @@
 package io.github.pallax03.wizard.engine.adapters.prolog
 
-import io.github.pallax03.wizard.engine.model.basic.cards._
+import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 
 /**

@@ -1,6 +1,6 @@
 package io.github.pallax03.wizard.codecs.combinators
 
-import io.circe._
+import io.circe.*
 
 object DiscriminatedCodecs:
 
