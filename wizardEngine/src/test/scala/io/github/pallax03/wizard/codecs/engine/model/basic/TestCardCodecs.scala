@@ -1,9 +1,9 @@
 package io.github.pallax03.wizard.codecs.engine.model.basic
 
-import io.circe.syntax._
+import io.circe.syntax.*
 
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
-import io.github.pallax03.wizard.engine.model.basic.cards._
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.model.basic.cards.*
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec

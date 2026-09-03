@@ -11,7 +11,12 @@ import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.core.GameException
 import io.github.pallax03.wizard.engine.model.core.state.ServerGameState
 import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, LobbyStatePort, OutboundPort, PubSubPort}
+import io.github.pallax03.wizard.engine.ports.{
+  GameRecoveryPort,
+  LobbyStatePort,
+  OutboundPort,
+  PubSubPort
+}
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
@@ -26,7 +31,10 @@ class RedisGameRecoveryAdapter(
     val gameKey = ChannelsKeys.game(lobbyId)
     val checkpointKey = ChannelsKeys.gameCheckpoint(lobbyId)
 
-    pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:Attempting game recovery for lobby $lobbyId due to GameException: ${exception.getMessage}")
+    pubSubPort.publish(
+      ChannelsKeys.LOGS_CHANNEL,
+      s"ERROR:Attempting game recovery for lobby $lobbyId due to GameException: ${exception.getMessage}"
+    )
 
     val processCheckpoint = redisClient
       .send(Request.cmd(Command.GET).arg(checkpointKey))
@@ -34,17 +42,25 @@ class RedisGameRecoveryAdapter(
       .map(Option(_).map(_.toString))
       .flatMap:
         case Some(json) if json.decodeAs[ServerGameState].isRight =>
-          pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"INFO:Restoring checkpoint for lobby $lobbyId")
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"INFO:Restoring checkpoint for lobby $lobbyId"
+          )
           restoreCheckpoint(lobbyId, gameKey, json)
-        case _ => 
-          pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"WARN:Checkpoint corrupted or missing for lobby $lobbyId. Aborting game.")
+        case _ =>
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"WARN:Checkpoint corrupted or missing for lobby $lobbyId. Aborting game."
+          )
           abortGame(lobbyId, gameKey, checkpointKey, exception)
 
     processCheckpoint.recoverWith { case e =>
-      pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:Failed during recovery process for lobby $lobbyId: ${e.getMessage}")
+      pubSubPort.publish(
+        ChannelsKeys.LOGS_CHANNEL,
+        s"ERROR:Failed during recovery process for lobby $lobbyId: ${e.getMessage}"
+      )
       abortGame(lobbyId, gameKey, checkpointKey, exception)
     }
-
 
   private def restoreCheckpoint(
       lobbyId: LobbyId,

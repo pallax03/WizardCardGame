@@ -1,6 +1,6 @@
 package io.github.pallax03.wizard.engine.model.rules
 
-import io.github.pallax03.wizard.engine.model.basic._
+import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.GameError
 
 import org.scalatest.matchers.should.Matchers

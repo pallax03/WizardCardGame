@@ -2,8 +2,8 @@ package io.github.pallax03.wizard.engine.model.core
 
 import scala.language.postfixOps
 
-import io.github.pallax03.wizard.engine.model.basic._
-import io.github.pallax03.wizard.engine.model.core.GameError._
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.core.GameError.*
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
 import io.github.pallax03.wizard.engine.model.events.{ActionEvent, LifecycleEvent, ProgressEvent}
 

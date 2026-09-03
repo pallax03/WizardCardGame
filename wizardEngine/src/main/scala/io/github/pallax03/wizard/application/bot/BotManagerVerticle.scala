@@ -36,7 +36,11 @@ class BotManagerVerticle(
     lobbyStatePort.getAllLobbies.onComplete:
       case Success(lobbies) =>
         lobbies.filter(_.status == IN_GAME).foreach(spawnBotsForLobby)
-      case Failure(e) => pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:Failed to load lobbies: ${e.getMessage}")
+      case Failure(e) =>
+        pubSubPort.publish(
+          ChannelsKeys.LOGS_CHANNEL,
+          s"ERROR:Failed to load lobbies: ${e.getMessage}"
+        )
 
   private def processSpawnEvent(lobbyIdStr: String): Unit =
     lobbyStatePort
@@ -44,7 +48,11 @@ class BotManagerVerticle(
       .onComplete:
         case Success(Some(lobby)) => spawnBotsForLobby(lobby)
         case Success(None)        => ()
-        case Failure(e)           => pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:Failed to process spawn event for lobby $lobbyIdStr: ${e.getMessage}")
+        case Failure(e) =>
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"ERROR:Failed to process spawn event for lobby $lobbyIdStr: ${e.getMessage}"
+          )
 
   private def spawnBotsForLobby(lobby: Lobby): Unit =
     lobbyStatePort
@@ -63,7 +71,11 @@ class BotManagerVerticle(
                     activeSubscriptions.put((lobby.uuid, bot.id), sub)
               syncStateAndPlay(lobby.uuid, bot.id, strategy)
         case Success(false) => ()
-        case Failure(e)     => pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:Failed to acquire bot lock for lobby ${lobby.uuid}: ${e.getMessage}")
+        case Failure(e) =>
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"ERROR:Failed to acquire bot lock for lobby ${lobby.uuid}: ${e.getMessage}"
+          )
 
   private def syncStateAndPlay(lobbyId: LobbyId, botId: PlayerId, strategy: BotStrategy): Unit =
     gameInboundPort
@@ -81,7 +93,11 @@ class BotManagerVerticle(
 
           invitationOpt.foreach: inv =>
             executeInvitationStrategy(lobbyId, botId, strategy, inv)
-        case Failure(e) => pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:Failed to sync state for bot $botId in lobby $lobbyId: ${e.getMessage}")
+        case Failure(e) =>
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"ERROR:Failed to sync state for bot $botId in lobby $lobbyId: ${e.getMessage}"
+          )
 
   private def handleGameEvents(lobbyId: LobbyId, playerId: PlayerId, strategy: BotStrategy)(
       rawJson: String
@@ -110,12 +126,19 @@ class BotManagerVerticle(
           .submitAction(lobbyId, action)
           .flatMap:
             case Left(gameError) =>
-              pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"WARN:Bot $playerId received GameError: $gameError for lobby $lobbyId")
+              pubSubPort.publish(
+                ChannelsKeys.LOGS_CHANNEL,
+                s"WARN:Bot $playerId received GameError: $gameError for lobby $lobbyId"
+              )
               strategy
                 .resolveFailedEvents(lobbyId, FailureEvent.ActionFailed(playerId, gameError))
                 .flatMap: fallbackAction =>
                   gameInboundPort.submitAction(lobbyId, fallbackAction).void
             case Right(_) => Future.unit
       .onComplete:
-        case Failure(e) => pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:Failed to execute bot strategy for bot $playerId in lobby $lobbyId: ${e.getMessage}")
-        case _          => ()
+        case Failure(e) =>
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"ERROR:Failed to execute bot strategy for bot $playerId in lobby $lobbyId: ${e.getMessage}"
+          )
+        case _ => ()

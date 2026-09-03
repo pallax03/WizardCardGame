@@ -27,7 +27,7 @@ class RedisOutboundAdapter(
       .sequence(events.map: ev =>
         val jsonMsg = ev.asJson.noSpaces
         pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"INFO:[Lobby $lobbyId] $jsonMsg")
-        
+
         ev match
           case scoped: DestinationScoped =>
             pubSubPort.publish(

@@ -1,22 +1,13 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
-import scala.concurrent.{
-  ExecutionContext,
-  Future
-}
+import scala.concurrent.{ExecutionContext, Future}
 
 import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
-import io.github.pallax03.wizard.application.web.http.{
-  ActionSuccessResponse,
-  ErrorResponse
-}
+import io.github.pallax03.wizard.application.web.http.{ActionSuccessResponse, ErrorResponse}
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.ports.{
-  AIPort,
-  LobbyStatePort
-}
+import io.github.pallax03.wizard.engine.ports.{AIPort, LobbyStatePort}
 
 import sttp.tapir.server.ServerEndpoint
 
