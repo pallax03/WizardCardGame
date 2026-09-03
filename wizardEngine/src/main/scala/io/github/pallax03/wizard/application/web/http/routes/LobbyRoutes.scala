@@ -1,68 +1,60 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
-import scala.concurrent.{ExecutionContext, Future}
-
-import io.github.pallax03.wizard.application.web.http._
+import io.github.pallax03.wizard.application.web.http.ErrorResponse
 import io.github.pallax03.wizard.application.web.http.endpoints._
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby._
-import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
-
+import io.github.pallax03.wizard.engine.ports.InboundPort
+import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import sttp.tapir.server.ServerEndpoint
 
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+
+/**
+ * HTTP routes for the Lobby domain.
+ *
+ * Standard layout (shared across all `*Routes`):
+ *   1. private helpers that encapsulate business logic and return `Either[ErrorResponse, Output]`
+ *   2. `ServerEndpoint` vals wiring each `LobbyEndpoints.*` via `serverLogic`
+ *   3. `val all` aggregating the endpoints for `HttpServerVerticle`
+ */
 class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
     ec: ExecutionContext
 ):
 
-  private val createLobbyServerEndpoint: ServerEndpoint[Any, Future] {
-    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = JoinLobbyRequest
-    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyPlayerResponse
-  } = LobbyEndpoints.createLobby
-    .serverLogic: req =>
-      val lobbyId = LobbyId.generate
-      lobbyStatePort
-        .addPlayer(lobbyId, req.name, req.bot)
-        .map:
-          case Some(player) =>
-            Right(LobbyPlayerResponse(lobbyId, player.id))
-          case None =>
-            Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
+  private def addPlayerToLobby(
+      lobbyId: LobbyId,
+      req: JoinLobbyRequest
+  ): Future[Either[ErrorResponse, LobbyPlayerResponse]] =
+    lobbyStatePort
+      .addPlayer(lobbyId, req.name, req.bot)
+      .map:
+        case Some(player) => Right(LobbyPlayerResponse(lobbyId, player.id))
+        case None         => Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
 
-  private val joinLobbyServerEndpoint: ServerEndpoint[Any, Future] {
-    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = (String, JoinLobbyRequest)
-    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyPlayerResponse
-  } = LobbyEndpoints.joinLobby
-    .serverLogic:
-      case (rawLobbyId, req) =>
-        val lobbyId = LobbyId(rawLobbyId)
-        lobbyStatePort
-          .addPlayer(lobbyId, req.name, req.bot)
-          .map:
-            case Some(player) =>
-              Right(LobbyPlayerResponse(lobbyId, player.id))
-            case None =>
-              Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
+  val createLobbyEndpoint: ServerEndpoint[Any, Future] =
+    LobbyEndpoints.createLobby.serverLogic { req =>
+      val lobbyId: LobbyId = LobbyId.generate
+      addPlayerToLobby(lobbyId, req)
+    }
 
-  private val getLobbyInfoServerEndpoint: ServerEndpoint[Any, Future] {
-    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = String
-    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = LobbyStateResponse
-  } = LobbyEndpoints.getLobbyInfo
-    .serverLogic: rawLobbyId =>
-      val lobbyId = LobbyId(rawLobbyId)
+  val joinLobbyEndpoint: ServerEndpoint[Any, Future] =
+    LobbyEndpoints.joinLobby.serverLogic { case (lobbyId, req) =>
+      addPlayerToLobby(lobbyId, req)
+    }
+
+  val getLobbyInfoEndpoint: ServerEndpoint[Any, Future] =
+    LobbyEndpoints.getLobbyInfo.serverLogic { lobbyId =>
       lobbyStatePort
         .getLobby(lobbyId)
         .map:
-          case Some(lobby) =>
-            Right(LobbyStateResponse(lobbyId, lobby.players))
-          case None =>
-            Left(ErrorResponse(s"Lobby $rawLobbyId not found", "LOBBY_NOT_FOUND"))
+          case Some(lobby) => Right(LobbyStateResponse(lobbyId, lobby.players))
+          case None        => Left(ErrorResponse(s"Lobby $lobbyId not found", "LOBBY_NOT_FOUND"))
+    }
 
-  private val startGameServerEndpoint: ServerEndpoint[Any, Future] {
-    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = String
-    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = GameStartedResponse
-  } = LobbyEndpoints.startGame
-    .serverLogic: rawLobbyId =>
-      val lobbyId = LobbyId(rawLobbyId)
+  val startGameEndpoint: ServerEndpoint[Any, Future] =
+    LobbyEndpoints.startGame.serverLogic { lobbyId =>
       lobbyStatePort
         .getLobby(lobbyId)
         .flatMap:
@@ -89,24 +81,23 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
               )
           case None =>
             Future.successful(
-              Left(ErrorResponse(s"Lobby $rawLobbyId not found", "LOBBY_NOT_FOUND"))
+              Left(ErrorResponse(s"Lobby $lobbyId not found", "LOBBY_NOT_FOUND"))
             )
+    }
 
-  private val removePlayerServerEndpoint: ServerEndpoint[Any, Future] {
-    type SECURITY_INPUT = Unit; type PRINCIPAL = Unit; type INPUT = LobbyPlayerResponse
-    type ERROR_OUTPUT = ErrorResponse; type OUTPUT = Unit
-  } = LobbyEndpoints.removePlayer
-    .serverLogic: req =>
+  val removePlayerEndpoint: ServerEndpoint[Any, Future] =
+    LobbyEndpoints.removePlayer.serverLogic { req =>
       lobbyStatePort
         .removePlayer(req.lobbyId, req.playerId)
         .map: success =>
           if success then Right(())
           else Left(ErrorResponse("Player or lobby not found", "NOT_FOUND"))
+    }
 
   val all: List[ServerEndpoint[Any, Future]] = List(
-    createLobbyServerEndpoint,
-    joinLobbyServerEndpoint,
-    getLobbyInfoServerEndpoint,
-    startGameServerEndpoint,
-    removePlayerServerEndpoint
+    createLobbyEndpoint,
+    joinLobbyEndpoint,
+    getLobbyInfoEndpoint,
+    startGameEndpoint,
+    removePlayerEndpoint
   )

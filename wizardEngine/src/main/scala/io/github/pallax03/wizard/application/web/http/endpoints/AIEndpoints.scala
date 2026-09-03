@@ -1,34 +1,42 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
 import io.circe.generic.auto._
-
+import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
+import io.github.pallax03.wizard.application.web.http.ErrorResponse
+import io.github.pallax03.wizard.application.web.http.HttpSupport
+import io.github.pallax03.wizard.application.web.http.HttpSupport.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
-
-import sttp.model.StatusCode
 import sttp.tapir._
-import sttp.tapir.generic.auto._
 import sttp.tapir.json.circe._
 
 object AIEndpoints:
 
-  private val lobbyIdPath = path[String]("lobbyId").map(s => LobbyId(s))(_.toString)
-  private val playerIdPath = path[String]("playerId").map(s => PlayerId(s.toInt))(_.toString)
+  /** Shared base for all AI hint endpoints: typed lobby/player + hint prefix. */
+  private val base: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
+    endpoint.get
+      .in("api" / "lobby" / HttpSupport.lobbyIdPath / "player" / HttpSupport.playerIdPath / "hint")
+      .tag("AI Hint")
+      .out(jsonBody[ActionSuccessResponse])
+      .errorOut(HttpSupport.errorOutput)
 
-  private val baseAIEndpoint = endpoint.get
-    .in("lobby" / lobbyIdPath / "player" / playerIdPath / "hint")
-    .out(jsonBody[ActionSuccessResponse])
-    .errorOut(
-      oneOf(
-        oneOfVariant(StatusCode.BadRequest, jsonBody[ErrorResponse]),
-        oneOfVariant(StatusCode.NotFound, jsonBody[ErrorResponse]),
-        oneOfVariant(StatusCode.InternalServerError, jsonBody[ErrorResponse])
-      )
-    )
-
+  /** GET /api/lobby/{lobbyId}/player/{playerId}/hint/choose — best trump color. */
   val bestTrump: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
-    baseAIEndpoint.in("choose")
+    base
+      .summary("AI hint: best trump")
+      .description("Returns the AI-suggested trump color for the dealer in ChoosingTrump phase.")
+      .in("choose")
+
+  /** GET /api/lobby/{lobbyId}/player/{playerId}/hint/bid — best bid. */
   val bestBid: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
-    baseAIEndpoint.in("bid")
+    base
+      .summary("AI hint: best bid")
+      .description("Returns the AI-suggested bid for the current Bidding phase.")
+      .in("bid")
+
+  /** GET /api/lobby/{lobbyId}/player/{playerId}/hint/card — best card. */
   val bestCard: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
-    baseAIEndpoint.in("card")
+    base
+      .summary("AI hint: best card")
+      .description("Returns the AI-suggested card to play for the current Playing phase.")
+      .in("card")
