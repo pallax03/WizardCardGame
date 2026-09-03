@@ -36,7 +36,6 @@ services:
     environment:
       - PORT=${APPLICATION_PORT}
       - BACKEND_INTERNAL_URL=http://wizard-engine:${HTTP_PORT}
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost:${HTTP_PORT}
       - NEXT_PUBLIC_WS_URL=ws://localhost:${WS_PORT}
     depends_on:
       - wizard-engine

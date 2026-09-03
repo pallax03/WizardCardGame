@@ -1,22 +1,14 @@
 "use server";
 
+import { apiFetch } from "@/lib/api/api";
 import type { LobbyState, GameState } from "./types";
 
-async function getJson<T>(path: string): Promise<T> {
-  const backendUrl = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
-  const response = await fetch(`${backendUrl}${path}`, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`GET ${path} failed with status ${response.status}`);
-  }
-  return response.json() as Promise<T>;
+export async function getLobbyState(lobbyId: string): Promise<LobbyState> {
+  return await apiFetch<LobbyState>(`/api/lobby/${lobbyId}`, { cache: "no-store" });
 }
 
-export async function getLobbyState(lobbyId: string) {
-  return await getJson<LobbyState>(`/api/lobby/${lobbyId}`);
-}
-
-export async function getGameState(lobbyId: string, playerId: number) {
+export async function getGameState(_lobbyId: string, _playerId: number): Promise<GameState | null> {
   //TO-DO
-  //return await getJson<GameState>(`/game/${lobbyId}/player/${playerId}`);
+  //return await apiFetch<GameState>(`/game/${_lobbyId}/player/${_playerId}`);
   return null;
 }
