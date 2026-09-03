@@ -6,6 +6,7 @@ import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.GameAction
+import io.github.pallax03.wizard.engine.model.core.GameAction.PlayCard
 import io.github.pallax03.wizard.engine.ports.InboundPort
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import sttp.tapir.server.ServerEndpoint
@@ -60,18 +61,18 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
             Future.successful(Left(ErrorResponse(s"Lobby $lobbyId not found", "LOBBY_NOT_FOUND")))
 
   val chooseEndpoint: ServerEndpoint[Any, Future] =
-    ActionEndpoints.chooseAction.serverLogic { case (lobbyId, playerId, action) =>
-      handleAction(lobbyId, playerId, action)
+    ActionEndpoints.chooseAction.serverLogic { case (lobbyId, playerId, trumpColor) =>
+      handleAction(lobbyId, playerId, GameAction.ResolveTrumpColor(playerId, trumpColor))
     }
 
   val placeEndpoint: ServerEndpoint[Any, Future] =
-    ActionEndpoints.placeAction.serverLogic { case (lobbyId, playerId, action) =>
-      handleAction(lobbyId, playerId, action)
+    ActionEndpoints.placeAction.serverLogic { case (lobbyId, playerId, bid) =>
+      handleAction(lobbyId, playerId, GameAction.PlaceBid(playerId, bid))
     }
 
   val playEndpoint: ServerEndpoint[Any, Future] =
-    ActionEndpoints.playAction.serverLogic { case (lobbyId, playerId, action) =>
-      handleAction(lobbyId, playerId, action)
+    ActionEndpoints.playAction.serverLogic { case (lobbyId, playerId, card) =>
+      handleAction(lobbyId, playerId, PlayCard(playerId, card))
     }
 
   val all: List[ServerEndpoint[Any, Future]] = List(
