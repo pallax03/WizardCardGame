@@ -1,23 +1,15 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.circe.generic.auto.*
-
-import io.github.pallax03.wizard.application.web.http.HttpSupport.given
-import io.github.pallax03.wizard.application.web.http.{
-  ActionSuccessResponse,
-  ErrorResponse,
-  HttpSupport
-}
+import io.github.pallax03.wizard.application.web.http.{ActionSuccessResponse, ErrorResponse, HttpSupport}
+import io.github.pallax03.wizard.codecs.engine.model.basic.BiddingCodecs.given
+import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
+import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
-import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import sttp.tapir.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
-
-given Schema[Card] = Schema.derived
 
 object ActionEndpoints:
 

@@ -1,28 +1,18 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.circe.generic.auto.*
-import io.github.pallax03.wizard.application.web.http.HttpSupport.given
 import io.github.pallax03.wizard.application.web.http.{ErrorResponse, HttpSupport, LobbyPlayer}
-import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
-import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
-import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId, Player}
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
+import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
+import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId}
 import sttp.model.StatusCode
 import sttp.tapir.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 case class JoinLobbyRequest(name: String, bot: Option[BotsDifficulty])
-case class LobbyStateResponse(lobbyId: LobbyId, players: List[Player])
+case class LobbyStateResponse(lobbyId: LobbyId, players: List[io.github.pallax03.wizard.engine.lobby.Player])
 case class GameStartedResponse(message: String)
 
 object LobbyEndpoints:
-
-  given Schema[Player] = Schema.derived
-  given Schema[JoinLobbyRequest] = Schema.derived
-  given Schema[LobbyPlayer] = Schema.derived
-  given Schema[LobbyStateResponse] = Schema.derived
-  given Schema[GameStartedResponse] = Schema.derived
 
   /** Shared base for all lobby endpoints: prefix + tag + error mapping. */
   private val base: Endpoint[Unit, Unit, ErrorResponse, Unit, Any] =
