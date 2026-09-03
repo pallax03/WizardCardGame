@@ -2,8 +2,8 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.{ErrorResponse, LobbyPlayer}
 import io.github.pallax03.wizard.application.web.http.endpoints.*
+import io.github.pallax03.wizard.application.web.http.{ErrorResponse, LobbyPlayer}
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}

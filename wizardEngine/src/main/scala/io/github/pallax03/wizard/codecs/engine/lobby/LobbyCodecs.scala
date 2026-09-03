@@ -3,10 +3,11 @@ package io.github.pallax03.wizard.codecs.engine.lobby
 import scala.util.Try
 
 import io.circe.*
-import sttp.tapir.Schema
 
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import io.github.pallax03.wizard.engine.lobby.*
+
+import sttp.tapir.Schema
 
 object LobbyCodecs:
   // --- Circe ---
@@ -34,8 +35,8 @@ object LobbyCodecs:
 
   // --- Tapir Schemas ---
 
-  given Schema[LobbyId]       = Schema.string
-  given Schema[LobbyStatus]   = Schema.string
+  given Schema[LobbyId] = Schema.string
+  given Schema[LobbyStatus] = Schema.string
   given Schema[BotsDifficulty] = Schema.string
-  given Schema[Player]        = Schema.derived
-  given Schema[Lobby]         = Schema.derived
+  given Schema[Player] = Schema.derived
+  given Schema[Lobby] = Schema.derived

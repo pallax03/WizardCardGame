@@ -4,12 +4,16 @@ import io.github.pallax03.wizard.application.web.http.{ErrorResponse, HttpSuppor
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
 import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId}
+
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
 case class JoinLobbyRequest(name: String, bot: Option[BotsDifficulty])
-case class LobbyStateResponse(lobbyId: LobbyId, players: List[io.github.pallax03.wizard.engine.lobby.Player])
+case class LobbyStateResponse(
+    lobbyId: LobbyId,
+    players: List[io.github.pallax03.wizard.engine.lobby.Player]
+)
 case class GameStartedResponse(message: String)
 
 object LobbyEndpoints:
@@ -32,8 +36,7 @@ object LobbyEndpoints:
       .out(jsonBody[LobbyPlayer])
 
   /** POST /api/lobby/{lobbyId} — join an existing lobby. */
-  val joinLobby
-      : Endpoint[Unit, (LobbyId, JoinLobbyRequest), ErrorResponse, LobbyPlayer, Any] =
+  val joinLobby: Endpoint[Unit, (LobbyId, JoinLobbyRequest), ErrorResponse, LobbyPlayer, Any] =
     base.post
       .summary("Join lobby")
       .description("Adds a player (or bot) to an existing lobby identified by lobbyId.")

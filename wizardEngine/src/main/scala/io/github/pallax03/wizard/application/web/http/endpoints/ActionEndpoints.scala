@@ -1,6 +1,10 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.github.pallax03.wizard.application.web.http.{ActionSuccessResponse, ErrorResponse, HttpSupport}
+import io.github.pallax03.wizard.application.web.http.{
+  ActionSuccessResponse,
+  ErrorResponse,
+  HttpSupport
+}
 import io.github.pallax03.wizard.codecs.engine.model.basic.BiddingCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
@@ -8,14 +12,14 @@ import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
+
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
 object ActionEndpoints:
 
   /** Shared base: typed lobby/player + JSON GameAction body. */
-  private val base
-      : Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
+  private val base: Endpoint[Unit, (LobbyId, PlayerId), ErrorResponse, ActionSuccessResponse, Any] =
     endpoint.post
       .in("api" / "lobby" / HttpSupport.lobbyIdPath / "player" / HttpSupport.playerIdPath)
       .tag("Game Action")

@@ -1,9 +1,10 @@
 package io.github.pallax03.wizard.codecs.engine.model.basic
 
 import io.circe.*
-import sttp.tapir.Schema
 
 import io.github.pallax03.wizard.engine.model.basic.*
+
+import sttp.tapir.Schema
 
 object BiddingCodecs:
   import bidding._
@@ -18,9 +19,7 @@ object BiddingCodecs:
   given Decoder[Tricks] = Decoder.decodeMap[PlayerId, Trick].asInstanceOf[Decoder[Tricks]]
 
   // --- Tapir Schemas ---
-  // Bid è type alias Int, Tapir lo risolve automaticamente con schemaForInt.
-  // Bids/Tricks sono opaque Map — rappresentati in OpenAPI come oggetto chiave-stringa.
 
-  given Schema[Bid]    = Schema.schemaForInt
-  given Schema[Bids]   = Schema.schemaForMap[PlayerId, Bid].asInstanceOf[Schema[Bids]]
+  given Schema[Bid] = Schema.schemaForInt
+  given Schema[Bids] = Schema.schemaForMap[PlayerId, Bid].asInstanceOf[Schema[Bids]]
   given Schema[Tricks] = Schema.schemaForMap[PlayerId, Trick].asInstanceOf[Schema[Tricks]]

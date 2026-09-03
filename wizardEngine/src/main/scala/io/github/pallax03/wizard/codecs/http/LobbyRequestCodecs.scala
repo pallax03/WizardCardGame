@@ -2,8 +2,6 @@ package io.github.pallax03.wizard.codecs.http
 
 import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
-import sttp.tapir.Schema
-import sttp.tapir.generic.auto.*
 
 import io.github.pallax03.wizard.application.web.http.endpoints.{
   GameStartedResponse,
@@ -11,6 +9,9 @@ import io.github.pallax03.wizard.application.web.http.endpoints.{
   LobbyStateResponse
 }
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
+
+import sttp.tapir.Schema
+import sttp.tapir.generic.auto.*
 
 /**
  * Circe codecs and Tapir schemas for the lobby-specific HTTP request/response types.
@@ -24,14 +25,14 @@ import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
  */
 object LobbyRequestCodecs:
   // --- Circe ---
-  given Encoder[JoinLobbyRequest]    = deriveEncoder
-  given Decoder[JoinLobbyRequest]    = deriveDecoder
-  given Encoder[LobbyStateResponse]  = deriveEncoder
-  given Decoder[LobbyStateResponse]  = deriveDecoder
+  given Encoder[JoinLobbyRequest] = deriveEncoder
+  given Decoder[JoinLobbyRequest] = deriveDecoder
+  given Encoder[LobbyStateResponse] = deriveEncoder
+  given Decoder[LobbyStateResponse] = deriveDecoder
   given Encoder[GameStartedResponse] = deriveEncoder
   given Decoder[GameStartedResponse] = deriveDecoder
 
   // --- Tapir Schemas ---
-  given Schema[JoinLobbyRequest]    = Schema.derived
-  given Schema[LobbyStateResponse]  = Schema.derived
+  given Schema[JoinLobbyRequest] = Schema.derived
+  given Schema[LobbyStateResponse] = Schema.derived
   given Schema[GameStartedResponse] = Schema.derived

@@ -2,11 +2,12 @@ package io.github.pallax03.wizard.codecs.engine.model.basic
 
 import io.circe.*
 import io.circe.syntax.*
-import sttp.tapir.Schema
-import sttp.tapir.generic.Configuration
 
 import io.github.pallax03.wizard.codecs.combinators.DiscriminatedCodecs.*
 import io.github.pallax03.wizard.engine.model.basic.cards.{Card, SpecialCard}
+
+import sttp.tapir.Schema
+import sttp.tapir.generic.Configuration
 
 object CardCodecs:
   // --- Circe ---
@@ -31,15 +32,13 @@ object CardCodecs:
     case "Jester"   => Decoder.forProduct1("id")(Card.Jester.apply)
 
   // --- Tapir Schemas ---
-  // Il discriminatore "type" specchia esattamente il decodeByTag("type") di Circe sopra.
 
   given Schema[Card.Color] = Schema.string
-  given Schema[Card.Rank] = Schema.schemaForInt.map(v =>
-    Card.Rank.values.find(_.value == v)
-  )(_.value)
+  given Schema[Card.Rank] =
+    Schema.schemaForInt.map(v => Card.Rank.values.find(_.value == v))(_.value)
 
   private given tapirConfig: Configuration = Configuration.default.withDiscriminator("type")
   given Schema[Card.Standard] = Schema.derived
-  given Schema[Card.Wizard]   = Schema.derived
-  given Schema[Card.Jester]   = Schema.derived
-  given Schema[Card]          = Schema.derived
+  given Schema[Card.Wizard] = Schema.derived
+  given Schema[Card.Jester] = Schema.derived
+  given Schema[Card] = Schema.derived
