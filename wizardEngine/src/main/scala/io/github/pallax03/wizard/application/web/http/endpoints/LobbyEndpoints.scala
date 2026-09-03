@@ -1,8 +1,7 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.circe.generic.auto._
-import io.github.pallax03.wizard.application.web.http.ErrorResponse
-import io.github.pallax03.wizard.application.web.http.HttpSupport
+import io.circe.generic.auto.*
+import io.github.pallax03.wizard.application.web.http.{ErrorResponse, HttpSupport, LobbyPlayer}
 import io.github.pallax03.wizard.application.web.http.HttpSupport.given
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
@@ -11,15 +10,11 @@ import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.lobby.Player
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import sttp.model.StatusCode
-import sttp.tapir._
-import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe._
+import sttp.tapir.*
+import sttp.tapir.generic.auto.*
+import sttp.tapir.json.circe.*
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Lobby Domain DTOs
-// ─────────────────────────────────────────────────────────────────────────────
 case class JoinLobbyRequest(name: String, bot: Option[BotsDifficulty])
-case class LobbyPlayerResponse(lobbyId: LobbyId, playerId: PlayerId)
 case class LobbyStateResponse(lobbyId: LobbyId, players: List[Player])
 case class GameStartedResponse(message: String)
 
@@ -27,7 +22,7 @@ object LobbyEndpoints:
 
   given Schema[Player] = Schema.derived
   given Schema[JoinLobbyRequest] = Schema.derived
-  given Schema[LobbyPlayerResponse] = Schema.derived
+  given Schema[LobbyPlayer] = Schema.derived
   given Schema[LobbyStateResponse] = Schema.derived
   given Schema[GameStartedResponse] = Schema.derived
 
@@ -39,24 +34,24 @@ object LobbyEndpoints:
       .errorOut(HttpSupport.errorOutput)
 
   /** POST /api/lobby — create a new lobby and return the creator's IDs. */
-  val createLobby: Endpoint[Unit, JoinLobbyRequest, ErrorResponse, LobbyPlayerResponse, Any] =
+  val createLobby: Endpoint[Unit, JoinLobbyRequest, ErrorResponse, LobbyPlayer, Any] =
     base.post
       .summary("Create lobby")
       .description(
         "Creates a new lobby with the given player name. Fails with 400 if lobby is full."
       )
       .in(jsonBody[JoinLobbyRequest])
-      .out(jsonBody[LobbyPlayerResponse])
+      .out(jsonBody[LobbyPlayer])
 
   /** POST /api/lobby/{lobbyId} — join an existing lobby. */
   val joinLobby
-      : Endpoint[Unit, (LobbyId, JoinLobbyRequest), ErrorResponse, LobbyPlayerResponse, Any] =
+      : Endpoint[Unit, (LobbyId, JoinLobbyRequest), ErrorResponse, LobbyPlayer, Any] =
     base.post
       .summary("Join lobby")
       .description("Adds a player (or bot) to an existing lobby identified by lobbyId.")
       .in(HttpSupport.lobbyIdPath)
       .in(jsonBody[JoinLobbyRequest])
-      .out(jsonBody[LobbyPlayerResponse])
+      .out(jsonBody[LobbyPlayer])
 
   /** GET /api/lobby/{lobbyId} — retrieve lobby state. */
   val getLobbyInfo: Endpoint[Unit, LobbyId, ErrorResponse, LobbyStateResponse, Any] =
@@ -75,9 +70,9 @@ object LobbyEndpoints:
       .out(jsonBody[GameStartedResponse])
 
   /** DELETE /api/lobby — remove a player (body-based for backward compat with frontend). */
-  val removePlayer: Endpoint[Unit, LobbyPlayerResponse, ErrorResponse, Unit, Any] =
+  val removePlayer: Endpoint[Unit, LobbyPlayer, ErrorResponse, Unit, Any] =
     base.delete
       .summary("Remove player")
       .description("Removes playerId from lobbyId. Returns 204 on success, 404 if not found.")
-      .in(jsonBody[LobbyPlayerResponse])
+      .in(jsonBody[LobbyPlayer])
       .out(statusCode(StatusCode.NoContent))

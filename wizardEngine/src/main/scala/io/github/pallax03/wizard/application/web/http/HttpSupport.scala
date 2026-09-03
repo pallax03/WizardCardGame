@@ -17,8 +17,9 @@ import sttp.tapir.json.circe._
  * and `errorOutput` instead of redefining them locally.
  */
 case class ErrorResponse(message: String, code: String)
-
 case class ActionSuccessResponse(message: String)
+
+case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId)
 
 object HttpSupport:
 
