@@ -1,33 +1,30 @@
 package io.github.pallax03.wizard.application.web.http
 
-import io.circe.generic.auto.*
-
+import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 import sttp.model.StatusCode
 import sttp.tapir.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 
 /**
  * Shared HTTP protocol definitions for all Tapir endpoints.
  *
- * Centralizes error model, status-code mapping, typed path inputs
- * and Tapir schemas so every `*Endpoints` file follows the same contract.
+ * Centralizes error model, status-code mapping, and typed path inputs
+ * so every `*Endpoints` file follows the same contract.
  * All feature endpoints should reuse `lobbyIdPath`, `playerIdPath`
  * and `errorOutput` instead of redefining them locally.
+ *
+ * Serialization contracts (Circe codecs + Tapir schemas) for the types
+ * defined here live in [[io.github.pallax03.wizard.codecs.http.HttpCodecs]].
  */
 case class ErrorResponse(message: String, code: String)
-
 case class ActionSuccessResponse(message: String)
 
-object HttpSupport:
+case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId)
 
-  given Schema[PlayerId] = Schema.string
-  given Schema[LobbyId] = Schema.string
-  given Schema[ErrorResponse] = Schema.derived
-  given Schema[ActionSuccessResponse] = Schema.derived
+object HttpSupport:
 
   /** Typed path extractor for `/lobby/{lobbyId}`. */
   val lobbyIdPath: EndpointInput[LobbyId] =

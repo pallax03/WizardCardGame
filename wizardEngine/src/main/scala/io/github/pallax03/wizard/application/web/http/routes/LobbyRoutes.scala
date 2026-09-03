@@ -2,8 +2,8 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.ErrorResponse
 import io.github.pallax03.wizard.application.web.http.endpoints.*
+import io.github.pallax03.wizard.application.web.http.{ErrorResponse, LobbyPlayer}
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
@@ -25,11 +25,11 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
   private def addPlayerToLobby(
       lobbyId: LobbyId,
       req: JoinLobbyRequest
-  ): Future[Either[ErrorResponse, LobbyPlayerResponse]] =
+  ): Future[Either[ErrorResponse, LobbyPlayer]] =
     lobbyStatePort
       .addPlayer(lobbyId, req.name, req.bot)
       .map:
-        case Some(player) => Right(LobbyPlayerResponse(lobbyId, player.id))
+        case Some(player) => Right(LobbyPlayer(lobbyId, player.id))
         case None         => Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
 
   val createLobbyEndpoint: ServerEndpoint[Any, Future] =
