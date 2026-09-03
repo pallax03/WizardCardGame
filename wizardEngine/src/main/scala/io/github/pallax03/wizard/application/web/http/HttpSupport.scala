@@ -1,12 +1,14 @@
 package io.github.pallax03.wizard.application.web.http
 
-import io.circe.generic.auto._
+import io.circe.generic.auto.*
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+
 import sttp.model.StatusCode
-import sttp.tapir._
-import sttp.tapir.generic.auto._
-import sttp.tapir.json.circe._
+import sttp.tapir.*
+import sttp.tapir.generic.auto.*
+import sttp.tapir.json.circe.*
 
 /**
  * Shared HTTP protocol definitions for all Tapir endpoints.

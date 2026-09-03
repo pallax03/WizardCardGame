@@ -1,9 +1,8 @@
 package io.github.pallax03.wizard.engine.model.rules
 
-import io.github.pallax03.wizard.engine.model.basic._
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bid._
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bids
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.basic.bidding.Bid.*
+import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
 import io.github.pallax03.wizard.engine.model.core.GameError
 

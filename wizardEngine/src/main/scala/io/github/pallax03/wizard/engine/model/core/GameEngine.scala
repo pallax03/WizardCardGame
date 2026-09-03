@@ -1,16 +1,16 @@
 package io.github.pallax03.wizard.engine.model.core
 
-import io.github.pallax03.wizard.engine.model.basic._
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bids
-import io.github.pallax03.wizard.engine.model.basic.bidding.Tricks
-import io.github.pallax03.wizard.engine.model.basic.cards._
-import io.github.pallax03.wizard.engine.model.basic.gameplay._
-import io.github.pallax03.wizard.engine.model.core.state.GameState
-import io.github.pallax03.wizard.engine.model.core.state.ServerCoreState
-import io.github.pallax03.wizard.engine.model.core.state.ServerGameState
-import io.github.pallax03.wizard.engine.model.events._
-import io.github.pallax03.wizard.engine.model.rules._
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids, Tricks}
+import io.github.pallax03.wizard.engine.model.basic.cards.*
+import io.github.pallax03.wizard.engine.model.basic.gameplay.*
+import io.github.pallax03.wizard.engine.model.core.state.{
+  GameState,
+  ServerCoreState,
+  ServerGameState
+}
+import io.github.pallax03.wizard.engine.model.events.*
+import io.github.pallax03.wizard.engine.model.rules.*
 
 /**
  * The GameEngine is responsible for processing game actions and managing the game state.
@@ -322,7 +322,7 @@ object GameEngine:
 
     (
       gameState,
-      (cardsDeals :+ ProgressEvent.PhaseChanged(
+      (ProgressEvent.RoundStarted(round) +: cardsDeals :+ ProgressEvent.PhaseChanged(
         gameState.getClass.getSimpleName
       )) ++ phaseSpecificEvents
     )

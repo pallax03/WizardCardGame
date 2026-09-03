@@ -1,13 +1,11 @@
 package io.github.pallax03.wizard.application.bot.strategy
 
-import io.github.pallax03.wizard.engine.lobby.BotsDifficulty
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.core.GameAction
-import io.github.pallax03.wizard.engine.model.events.FailureEvent
-import io.github.pallax03.wizard.engine.model.events.InvitationEvent
-import io.github.pallax03.wizard.engine.ports.AIPort
-
 import scala.concurrent.Future
+
+import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId}
+import io.github.pallax03.wizard.engine.model.core.GameAction
+import io.github.pallax03.wizard.engine.model.events.{FailureEvent, InvitationEvent}
+import io.github.pallax03.wizard.engine.ports.AIPort
 
 /**
  * Defines the strategy interface for AI-controlled players.

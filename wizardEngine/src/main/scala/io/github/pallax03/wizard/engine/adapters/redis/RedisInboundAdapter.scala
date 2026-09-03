@@ -1,28 +1,29 @@
 package io.github.pallax03.wizard.engine.adapters.redis
 
-import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax._
-import io.github.pallax03.wizard.engine.configuration._
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.basic._
-import io.github.pallax03.wizard.engine.model.core.InconsistentState._
-import io.github.pallax03.wizard.engine.model.core._
-import io.github.pallax03.wizard.engine.model.core.state._
-import io.github.pallax03.wizard.engine.model.events._
-import io.github.pallax03.wizard.engine.ports.InboundPort
-import io.github.pallax03.wizard.engine.ports.OutboundPort
-import io.github.pallax03.wizard.util.ChannelsKeys
-import io.github.pallax03.wizard.util.FutureSyntax._
-import io.vertx.redis.client.Command
-import io.vertx.redis.client.Redis
-import io.vertx.redis.client.Request
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import cats.syntax.all.*
+
+import io.vertx.redis.client.{Command, Redis, Request}
+
+import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.configuration.*
+import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.core.*
+import io.github.pallax03.wizard.engine.model.core.InconsistentState.*
+import io.github.pallax03.wizard.engine.model.core.state.*
+import io.github.pallax03.wizard.engine.model.events.*
+import io.github.pallax03.wizard.engine.ports.{InboundPort, OutboundPort}
+import io.github.pallax03.wizard.util.ChannelsKeys
+import io.github.pallax03.wizard.util.FutureSyntax.*
+
 class RedisInboundAdapter(
     private val redisClient: Redis,
-    private val outboundPort: OutboundPort
+    private val outboundPort: OutboundPort,
+    private val recoveryPort: io.github.pallax03.wizard.engine.ports.GameRecoveryPort
 ) extends InboundPort:
 
   private def decodeGameState(rawGameState: String): ServerGameState =
@@ -30,15 +31,45 @@ class RedisInboundAdapter(
       case Right(state) => state
       case Left(err)    => throw GameException(CorruptedState(err.toString))
 
+  private def fetchGameState(lobbyId: LobbyId): Future[Option[ServerGameState]] =
+    redisClient
+      .send(Request.cmd(Command.GET).arg(ChannelsKeys.game(lobbyId)))
+      .asScala
+      .map(Option(_).map(r => decodeGameState(r.toString)))
+
+  private def withRecovery[T](lobbyId: LobbyId)(action: => Future[T]): Future[T] =
+    action.recoverWith:
+      case ge: GameException =>
+        recoveryPort
+          .attemptRecovery(lobbyId, ge)
+          .flatMap: recovered =>
+            Future.failed(
+              if recovered then RecoveredGameException(ge) else AbortedGameException(ge)
+            )
+
+  private def saveState(lobbyId: LobbyId, newState: GameEngine): Future[Unit] =
+    val key = ChannelsKeys.game(lobbyId)
+    val checkpointKey = ChannelsKeys.gameCheckpoint(lobbyId)
+
+    val reqs = newState.state match
+      case _: GameState.Ended =>
+        List(Request.cmd(Command.DEL).arg(key), Request.cmd(Command.DEL).arg(checkpointKey))
+      case _ =>
+        val mainSave = Request.cmd(Command.SET).arg(key).arg(newState.state.toJson)
+        val isNewRound = newState.events.exists(_.isInstanceOf[ProgressEvent.RoundStarted])
+        if isNewRound then
+          val cpSave = Request.cmd(Command.SET).arg(checkpointKey).arg(newState.state.toJson)
+          List(mainSave, cpSave)
+        else List(mainSave)
+
+    Future.sequence(reqs.map(r => redisClient.send(r).asScala)).void
+
   /** @inheritdoc */
   override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState] =
-    val key = ChannelsKeys.game(lobbyId)
-    redisClient
-      .send(Request.cmd(Command.GET).arg(key))
-      .asScala
-      .map:
-        case null     => throw GameException(GameNotFound)
-        case response => PlayerGameState.from(decodeGameState(response.toString), playerId)
+    withRecovery(lobbyId):
+      fetchGameState(lobbyId).map:
+        case Some(state) => PlayerGameState.from(state, playerId)
+        case None        => throw GameException(GameNotFound)
 
   /** @inheritdoc */
   override def startGame(
@@ -46,43 +77,29 @@ class RedisInboundAdapter(
       players: List[PlayerId],
       config: GameConfiguration
   ): Future[Unit] =
-    val key = ChannelsKeys.game(lobbyId)
-    val req = Request.cmd(Command.GET).arg(key)
-    redisClient
-      .send(req)
-      .asScala
-      .flatMap:
-        case null =>
-          val playersIds = config.players.map(_.id)
-          val initialState = GameEngine.initializeGame(playersIds)
-          val setReq = Request.cmd(Command.SET).arg(key).arg(initialState.state.toJson)
-          redisClient
-            .send(setReq)
-            .asScala
-            .map: _ =>
-              outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersIds))
-              outboundPort.publish(lobbyId, initialState.events*)
+    fetchGameState(lobbyId).flatMap:
+      case Some(_) => Future.unit
+      case None =>
+        val playersIds = config.players.map(_.id)
+        val initialState = GameEngine.initializeGame(playersIds)
+        redisClient
+          .send(
+            Request.cmd(Command.SET).arg(ChannelsKeys.game(lobbyId)).arg(initialState.state.toJson)
+          )
+          .asScala
+          .map: _ =>
+            outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersIds))
+            outboundPort.publish(lobbyId, initialState.events*)
 
   /** @inheritdoc */
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]] =
-    val key = ChannelsKeys.game(lobbyId)
-    redisClient
-      .send(Request.cmd(Command.GET).arg(key))
-      .asScala
-      .flatMap:
-        case null => Future.successful(Right(()))
-        case response =>
-          GameEngine.processAction(decodeGameState(response.toString), action) match
-            case Left(error) =>
-              Future.successful(Left(error))
+    withRecovery(lobbyId):
+      fetchGameState(lobbyId).flatMap:
+        case None => Future.successful(Right(()))
+        case Some(state) =>
+          GameEngine.processAction(state, action) match
+            case Left(error) => Future.successful(Left(error))
             case Right(newState) =>
-              val saveReq = newState.state match
-                case _: GameState.Ended => Request.cmd(Command.DEL).arg(key)
-                case _ => Request.cmd(Command.SET).arg(key).arg(newState.state.toJson)
-
-              redisClient
-                .send(saveReq)
-                .asScala
-                .map: _ =>
-                  outboundPort.publish(lobbyId, newState.events*)
-                  Right(())
+              saveState(lobbyId, newState).map: _ =>
+                outboundPort.publish(lobbyId, newState.events*)
+                Right(())

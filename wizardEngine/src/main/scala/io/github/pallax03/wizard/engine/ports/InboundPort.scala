@@ -1,13 +1,12 @@
 package io.github.pallax03.wizard.engine.ports
 
+import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.model.core.GameAction
-import io.github.pallax03.wizard.engine.model.core.GameError
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
-
-import scala.concurrent.Future
+import io.github.pallax03.wizard.engine.model.core.{GameAction, GameError}
 
 /**
  * Inbound port for the Wizard game engine.

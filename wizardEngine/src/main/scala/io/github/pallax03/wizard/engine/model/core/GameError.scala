@@ -55,3 +55,5 @@ enum GameError:
  * This suggests a logic error in the engine's transition handling.
  */
 case class GameException(error: InconsistentState) extends Exception(error.toString)
+case class RecoveredGameException(ge: GameException) extends Exception("RECOVERED")
+case class AbortedGameException(ge: GameException) extends Exception("ABORTED")

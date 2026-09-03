@@ -1,11 +1,12 @@
 package io.github.pallax03.wizard.engine.model.basic.cards
 
-import io.github.pallax03.wizard.engine.model.basic._
+import scala.language.postfixOps
+
+import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.GameException
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-
-import scala.language.postfixOps
 
 class TestHand extends AnyWordSpec with Matchers:
   import BasicTestDSL._
