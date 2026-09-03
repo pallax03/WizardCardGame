@@ -8,7 +8,6 @@ import io.github.pallax03.wizard.application.web.http.{
   ErrorResponse,
   HttpSupport
 }
-import io.github.pallax03.wizard.codecs.engine.model.core.GameActionCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
