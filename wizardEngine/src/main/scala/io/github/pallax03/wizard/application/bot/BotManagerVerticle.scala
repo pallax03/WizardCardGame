@@ -16,19 +16,8 @@ import io.github.pallax03.wizard.engine.lobby.LobbyStatus.IN_GAME
 import io.github.pallax03.wizard.engine.lobby.{Lobby, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerCoreState}
-import io.github.pallax03.wizard.engine.model.events.{
-  FailureEvent,
-  InvitationEvent,
-  LifecycleEvent,
-  WizardEvent
-}
-import io.github.pallax03.wizard.engine.ports.{
-  AIPort,
-  InboundPort,
-  LobbyStatePort,
-  PubSubPort,
-  Subscription
-}
+import io.github.pallax03.wizard.engine.model.events._
+import io.github.pallax03.wizard.engine.ports._
 import io.github.pallax03.wizard.util.ChannelsKeys
 
 class BotManagerVerticle(
@@ -65,7 +54,6 @@ class BotManagerVerticle(
             .filter(_.difficulty.isDefined)
             .foreach: bot =>
               val strategy = BotStrategy(bot.difficulty.get, prologPort)
-
               if !activeSubscriptions.contains((lobby.uuid, bot.id)) then
                 val handler = handleGameEvents(lobby.uuid, bot.id, strategy)
                 pubSubPort
@@ -120,9 +108,8 @@ class BotManagerVerticle(
           .submitAction(lobbyId, action)
           .flatMap:
             case Left(gameError) =>
-              val mockFailure = FailureEvent.ActionFailed(playerId, gameError)
               strategy
-                .resolveFailedEvents(lobbyId, mockFailure)
+                .resolveFailedEvents(lobbyId, FailureEvent.ActionFailed(playerId, gameError))
                 .flatMap: fallbackAction =>
                   gameInboundPort.submitAction(lobbyId, fallbackAction).void
             case Right(_) => Future.unit

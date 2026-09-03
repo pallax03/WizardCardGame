@@ -15,6 +15,8 @@ import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologAdapter
 import io.github.pallax03.wizard.engine.adapters.redis._
 import io.github.pallax03.wizard.engine.ports._
 
+import sttp.tapir.swagger.bundle.SwaggerInterpreter
+
 object Main:
   private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "5001").toInt
   private val wsPort: Int = sys.env.getOrElse("WS_PORT", "5002").toInt
@@ -32,9 +34,9 @@ object Main:
 
     val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
-
     val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort)
-    val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort)
+    val recoveryPort: GameRecoveryPort = RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort)
+    val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort)
     val prologPort = WizardPrologAdapter(inPort)
 
     deploy(
@@ -43,23 +45,27 @@ object Main:
       "bot verticle",
       0
     )
-    runHTTPServer(vertx, inPort, lobbyStatePort, prologPort, redisClient, outPort)
+    runHTTPServer(vertx, inPort, lobbyStatePort, prologPort)
     runWSServer(vertx, lobbyStatePort, pubSubPort)
+
+  private def isProduction: Boolean =
+    sys.env.getOrElse("APP_ENV", "development").toLowerCase == "production"
 
   private def runHTTPServer(
       vertx: Vertx,
       gameEngineInPort: InboundPort,
       lobbyStatePort: LobbyStatePort,
-      prologPort: AIPort,
-      redisClient: Redis,
-      outPort: OutboundPort
+      prologPort: AIPort
   )(using ec: ExecutionContext): Unit =
-    val recoveryPort = RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort)
     val lobbyRoutes = LobbyRoutes(lobbyStatePort, gameEngineInPort)
     val actionRoutes = ActionRoutes(lobbyStatePort, gameEngineInPort)
     val aiRoutes = AIRoutes(lobbyStatePort, prologPort)
-    val allEndpoints = lobbyRoutes.all ++ actionRoutes.all ++ aiRoutes.all
-    val verticle = HttpServerVerticle(allEndpoints, httpPort, recoveryPort)
+    val domainEndpoints = lobbyRoutes.all ++ actionRoutes.all ++ aiRoutes.all
+
+    val swaggerEndpoints = if !isProduction then SwaggerInterpreter().fromServerEndpoints(domainEndpoints, "Wizard Game Engine API", "1.0.0") else List.empty
+
+    val allEndpoints = domainEndpoints ++ swaggerEndpoints
+    val verticle = HttpServerVerticle(allEndpoints, httpPort)
     deploy(vertx, verticle, "HTTP", httpPort)
 
   private def runWSServer(

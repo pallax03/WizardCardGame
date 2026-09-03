@@ -71,7 +71,7 @@ object WizardEventsCodecs:
           err <- fields.get[GameError]("reason")
         } yield FailureEvent.ActionFailed(p, err)
       case "StateRecovered" =>
-        fields.get[Int]("round").map(LifecycleEvent.StateRecovered.apply)
+        Right(LifecycleEvent.StateRecovered())
       case "GameAborted" =>
         fields.get[String]("reason").map(LifecycleEvent.GameAborted.apply)
       case "RoundStarted" =>
