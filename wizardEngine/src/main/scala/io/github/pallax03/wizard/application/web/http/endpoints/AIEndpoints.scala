@@ -1,13 +1,11 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.circe.generic.auto.*
-
-import io.github.pallax03.wizard.application.web.http.HttpSupport.given
 import io.github.pallax03.wizard.application.web.http.{
   ActionSuccessResponse,
   ErrorResponse,
   HttpSupport
 }
+import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
