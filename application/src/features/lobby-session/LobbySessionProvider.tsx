@@ -149,7 +149,9 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     if (urlPlayerId) {
       localStorage.setItem("wizard_playerId", urlPlayerId);
       localStorage.setItem("wizard_lobbyId", lobbyId);
-      router.replace(`/lobby/${lobbyId}`);
+      if (typeof window !== "undefined" && !window.location.pathname.endsWith("/game")) {
+        router.replace(`/lobby/${lobbyId}`);
+      }
     }
 
     queueMicrotask(() => dispatch({ type: "identity/resolved", playerId }));
@@ -237,12 +239,11 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     if (state.lobby?.status === "IN_GAME") {
       const targetPath = `/lobby/${state.lobbyId}/game`;
 
-      // Se non siamo già nella rotta del gioco, naviga con window.location.assign
       if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
-        window.location.assign(targetPath);
+        router.push(targetPath);
       }
     }
-  }, [state.lobby?.status, state.lobbyId]);
+  }, [state.lobby?.status, state.lobbyId, router]);
 
   useEffect(() => {
     if (state.playerId === null) return;
