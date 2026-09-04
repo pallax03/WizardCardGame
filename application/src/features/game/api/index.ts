@@ -1,7 +1,7 @@
 ﻿"use server";
 
 import { apiFetch } from "@/lib/api/api";
-import type { Card, CardColor } from "./types";
+import type { Card, CardColor } from "../types";
 
 export async function chooseTrumpColor(
   lobbyId: string,
