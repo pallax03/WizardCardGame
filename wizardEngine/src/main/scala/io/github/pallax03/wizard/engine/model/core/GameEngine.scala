@@ -39,7 +39,16 @@ object GameEngine:
   def initializeGame(playersIds: List[PlayerId]): GameEngine =
     val initialRound = Round.start
     val initialCore = ServerCoreState.initialize(playersIds, initialRound)
-    setupRoundEngine(initialRound, initialCore)
+    setupNewRound(initialRound, initialCore)
+
+  /**
+   * Recovers a round by reinitializing it with the current core state, generating new hands and trump.
+   *
+   * @param core The current core state of the game.
+   * @return A GameEngine representing the restarted round.
+   */
+  def recoverRound(core: ServerCoreState): GameEngine =
+    setupNewRound(core.round, core)
 
   /**
    * Processes a game action based on the current game state.
@@ -301,9 +310,9 @@ object GameEngine:
       val nextRound = core.round.next
       val nextDealer = core.playersIds.nextAfter(core.dealerId).getOrElse(core.dealerId)
       val updatedCore = core.copy(round = nextRound, dealerId = nextDealer)
-      setupRoundEngine(nextRound, updatedCore)
+      setupNewRound(nextRound, updatedCore)
 
-  private def setupRoundEngine(
+  private def setupNewRound(
       round: Round,
       coreContext: ServerCoreState
   ): GameEngine =
@@ -322,7 +331,7 @@ object GameEngine:
 
     (
       gameState,
-      (ProgressEvent.RoundStarted(round) +: cardsDeals :+ ProgressEvent.PhaseChanged(
+      (cardsDeals :+ ProgressEvent.PhaseChanged(
         gameState.getClass.getSimpleName
       )) ++ phaseSpecificEvents
     )

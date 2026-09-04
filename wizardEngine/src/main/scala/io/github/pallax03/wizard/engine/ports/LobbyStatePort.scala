@@ -2,6 +2,7 @@ package io.github.pallax03.wizard.engine.ports
 
 import scala.concurrent.Future
 
+import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
@@ -52,14 +53,15 @@ trait LobbyStatePort:
    *
    * @param lobbyId the UUID of the lobby if retrieve fail automatically create a new lobby.
    * @param name the player's name
-   * @param bot the bot difficulty, if any
+   * @param difficulty the bot difficulty, if any
    * @return a Future containing the assigned Player, or None if the lobby is full.
    */
   def addPlayer(
       lobbyId: LobbyId,
       name: String,
-      bot: Option[BotsDifficulty] = None
-  ): Future[Option[Player]]
+      difficulty: Option[BotsDifficulty] = None,
+      secret: Option[String] = None
+  ): Future[Either[AppError, Player]]
 
   /**
    * Atomically removes a player from the lobby by ID.

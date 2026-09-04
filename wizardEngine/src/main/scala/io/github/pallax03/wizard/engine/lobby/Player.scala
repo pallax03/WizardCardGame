@@ -6,5 +6,6 @@ case class Player(
     id: PlayerId,
     name: String,
     difficulty: Option[BotsDifficulty] = None,
-    isOnline: Boolean = false
+    isOnline: Boolean = false,
+    secret: Option[String] = None
 )

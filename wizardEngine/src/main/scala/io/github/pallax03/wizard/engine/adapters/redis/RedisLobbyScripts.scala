@@ -12,45 +12,40 @@ private[redis] object RedisLobbyScripts:
       |  lobby = cjson.decode(lobbyStr)
       |end
       |
+      |if lobby.status ~= "WAITING" then return "ERR_IN_PROGRESS" end
+      |
       |local inputName = ARGV[1]
       |local isBot = ARGV[2] ~= ''
+      |local secret = ARGV[4]
       |
       |if not isBot then
-      |  for i, p in ipairs(lobby.players) do
-      |    if p.name == inputName and (p.difficulty == nil or p.difficulty == cjson.null) then
-      |      if not p.isOnline then
+      |  if secret ~= '' then
+      |    for i, p in ipairs(lobby.players) do
+      |      if p.secret == secret then
       |        return cjson.encode(p)
-      |      else
-      |        return nil
       |      end
       |    end
       |  end
       |end
       |
-      |if #lobby.players >= 6 then return nil end
+      |if #lobby.players >= 6 then return "ERR_FULL" end
       |
-      |local counterKey = KEYS[1] .. ':nextId'
-      |local newId = 0
-      |if redis.call('EXISTS', counterKey) == 0 then
-      |  local maxId = -1
-      |  for i, p in ipairs(lobby.players) do
-      |    if p.id > maxId then maxId = p.id end
-      |  end
-      |  newId = maxId + 1
-      |  redis.call('SET', counterKey, newId + 1, 'EX', 86400)
-      |else
-      |  newId = tonumber(redis.call('INCR', counterKey)) - 1
-      |  redis.call('EXPIRE', counterKey, 86400)
+      |local maxId = -1
+      |for i, p in ipairs(lobby.players) do
+      |  if p.id > maxId then maxId = p.id end
       |end
+      |local newId = maxId + 1
       |
       |local newPlayer = { id = newId, name = inputName }
       |if not isBot then
       |  newPlayer.difficulty = cjson.null
       |  newPlayer.isOnline = false
+      |  newPlayer.secret = secret ~= '' and secret or cjson.null
       |else
       |  newPlayer.difficulty = ARGV[2]
       |  newPlayer.name = 'Bot-' .. (newId+1)
       |  newPlayer.isOnline = true
+      |  newPlayer.secret = cjson.null
       |end
       |
       |table.insert(lobby.players, newPlayer)
@@ -80,4 +75,32 @@ private[redis] object RedisLobbyScripts:
       |else
       |  return 0
       |end
+      |""".stripMargin
+
+  val removePlayerScript: String =
+    """
+      |local lobbyStr = redis.call('GET', KEYS[1])
+      |if not lobbyStr then return 0 end
+      |local lobby = cjson.decode(lobbyStr)
+      |local targetPlayerId = tonumber(ARGV[1])
+      |
+      |local newPlayers = {}
+      |local found = false
+      |for i, p in ipairs(lobby.players) do
+      |  if p.id ~= targetPlayerId then
+      |    table.insert(newPlayers, p)
+      |  else
+      |    found = true
+      |  end
+      |end
+      |
+      |if not found then return 0 end
+      |
+      |if #newPlayers == 0 then
+      |  redis.call('DEL', KEYS[1])
+      |else
+      |  lobby.players = newPlayers
+      |  redis.call('SET', KEYS[1], cjson.encode(lobby), 'EX', 86400)
+      |end
+      |return 1
       |""".stripMargin
