@@ -1,18 +1,6 @@
 package io.github.pallax03.wizard.application.web.http
 
 import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
-
-/**
- * Shared HTTP protocol definitions for all Tapir endpoints.
- *
- * Centralizes error model, status-code mapping, and typed path inputs
- * so every `*Endpoints` file follows the same contract.
- * All feature endpoints should reuse `lobbyIdPath`, `playerIdPath`
- * and `errorOutput` instead of redefining them locally.
- *
- * Serialization contracts (Circe codecs + Tapir schemas) for the types
- * defined here live in [[io.github.pallax03.wizard.codecs.http.HttpCodecs]].
- */
 import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
@@ -26,6 +14,17 @@ case class ActionSuccessResponse(message: String)
 case class AuthLobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
 case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId)
 
+/**
+ * Shared HTTP protocol definitions for all Tapir endpoints.
+ *
+ * Centralizes error model, status-code mapping, and typed path inputs
+ * so every `*Endpoints` file follows the same contract.
+ * All feature endpoints should reuse `lobbyIdPath`, `playerIdPath`
+ * and `errorOutput` instead of redefining them locally.
+ *
+ * Serialization contracts (Circe codecs + Tapir schemas) for the types
+ * defined here live in [[io.github.pallax03.wizard.codecs.http.HttpCodecs]].
+ */
 object HttpSupport:
 
   /** Typed path extractor for `/lobby/{lobbyId}`. */
