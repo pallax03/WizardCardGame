@@ -5,7 +5,6 @@ import scala.concurrent.Future
 import io.vertx.core.AbstractVerticle
 import io.vertx.ext.web.Router
 
-import io.github.pallax03.wizard.application.web.*
 import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
 import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.model.core.{
@@ -58,8 +57,9 @@ class HttpServerVerticle(
   )
 
   private def exceptionHandler = ExceptionHandler[Future](ctx =>
-    val lobbyIdOpt = ctx.request.extractLobbyIdStr
-    val playerIdOpt = ctx.request.extractPlayerIdStr
+    val uri = ctx.request.uri.toString
+    val lobbyIdOpt = "(?<=/lobby/)[^/?]+".r.findFirstIn(uri)
+    val playerIdOpt = "(?<=/player/)[^/?]+".r.findFirstIn(uri)
 
     WizardLogger.withContext(lobbyIdOpt, playerIdOpt):
       val (logMsg, clientMsg, code) = ctx.e match
