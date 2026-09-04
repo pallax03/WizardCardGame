@@ -56,10 +56,8 @@ class RedisInboundAdapter(
         List(Request.cmd(Command.DEL).arg(key), Request.cmd(Command.DEL).arg(checkpointKey))
       case _ =>
         val mainSave = Request.cmd(Command.SET).arg(key).arg(newState.state.toJson)
-        val isNewRound = newState.events.exists(_.isInstanceOf[ProgressEvent.RoundStarted])
-        if isNewRound then
-          val cpSave = Request.cmd(Command.SET).arg(checkpointKey).arg(newState.state.toJson)
-          List(mainSave, cpSave)
+        if newState.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]) then
+          List(mainSave, Request.cmd(Command.SET).arg(checkpointKey).arg(newState.state.toJson))
         else List(mainSave)
 
     Future.sequence(reqs.map(r => redisClient.send(r).asScala)).void

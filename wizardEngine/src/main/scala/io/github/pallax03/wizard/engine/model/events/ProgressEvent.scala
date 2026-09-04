@@ -9,7 +9,6 @@ import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Trump}
 sealed trait ProgressEvent extends WizardEvent
 
 object ProgressEvent:
-  case class RoundStarted(round: Round) extends ProgressEvent
   case class CardsDealt(playerId: PlayerId, hand: Hand, trump: Trump, round: Round)
       extends ProgressEvent,
         DestinationScoped:
