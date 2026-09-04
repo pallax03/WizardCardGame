@@ -1,12 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addBotAction, leaveLobbyAction, startGameAction } from "@/features/lobby/actions/manage-actions";
-import { useLobbySession } from "@/features/lobby-session";
+import { useLobby } from "../hooks/useLobby"; // O il percorso corretto al file
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
-
 
 import { LobbyHeader } from "@/features/lobby/components/LobbyHeader";
 import { PlayerList } from "@/features/lobby/components/PlayerList";
@@ -16,82 +13,23 @@ import { getErrorMessage } from "@/ui/i18n/errors";
 
 export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   const router = useRouter();
-  const { lobby, playerId, connectionState, refreshLobby, connectedPlayerIds, error: sessionError } = useLobbySession();
-
-  const [isAddingBot, setIsAddingBot] = useState<boolean>(false);
-  const [removingBotId, setRemovingBotId] = useState<string | number | null>(null);
-  const [activeBotSlot, setActiveBotSlot] = useState<number | null>(null);
-  const [isLeaving, setIsLeaving] = useState<boolean>(false);
-  const [isStarting, setIsStarting] = useState<boolean>(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-
-  const handleLeaveLobby = async () => {
-    setActionError(null);
-    if (lobby?.lobbyId && playerId !== null) {
-      setIsLeaving(true);
-      const result = await leaveLobbyAction(lobby.lobbyId, playerId);
-      if (result?.error) {
-        setActionError(getErrorMessage(result.error));
-        setIsLeaving(false);
-        return;
-      }
-    }
-    localStorage.removeItem("wizard_lobbyId");
-    localStorage.removeItem("wizard_playerId");
-    router.push("/");
-  };
-
-  const handleStartGame = async () => {
-    if (!lobby?.lobbyId) return;
-
-    setActionError(null);
-    setIsStarting(true);
-
-    const result = await startGameAction(lobby.lobbyId);
-
-    if (result.error) {
-      setActionError(getErrorMessage(result.error));
-      setIsStarting(false);
-    }
-  };
-
-  const handleAddBot = async (difficulty: string) => {
-    if (!lobby?.lobbyId) return;
-    if (difficulty !== "Dumb" && difficulty !== "Prolog") return;
-    setActionError(null);
-    setIsAddingBot(true);
-    const result = await addBotAction(lobby.lobbyId, difficulty);
-    
-    if (result.error) {
-      setActionError(getErrorMessage(result.error));
-    } else {
-      await refreshLobby();
-    }
-    setIsAddingBot(false);
-  };
-
-  const handleRemoveBot = async (botId: number) => {
-    if (!lobby?.lobbyId) return;
-    setActionError(null);
-    setRemovingBotId(botId);
-    const result = await leaveLobbyAction(lobby.lobbyId, botId);
-    
-    if (result?.error) {
-      setActionError(getErrorMessage(result.error));
-    } else {
-      await refreshLobby();
-    }
-    setRemovingBotId(null);
-  };
-
-  useEffect(() => {
-    if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
-      localStorage.removeItem("wizard_lobbyId");
-      localStorage.removeItem("wizard_playerId");
-      router.push("/");
-      return;
-    }
-  }, [lobby, playerId, router]);
+  const {
+    lobby,
+    playerId,
+    connectionState,
+    connectedPlayerIds,
+    sessionError,
+    actionError,
+    isAddingBot,
+    removingBotId,
+    activeBotSlot,
+    isLeaving,
+    setActiveBotSlot,
+    handleLeaveLobby,
+    handleStartGame,
+    handleAddBot,
+    handleRemoveBot,
+  } = useLobby();
 
   if (!lobby && connectionState === "connecting") {
     return (
@@ -106,7 +44,6 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     localStorage.removeItem("wizard_playerId");
     return (
       <div className="flex flex-col items-center justify-center min-h-100 gap-4">
-        {/* Traduzione del codice d'errore proveniente dalla sessione */}
         <p className="text-red-400 font-medium">{getErrorMessage(sessionError.message)}</p>
         <button onClick={() => router.push("/")} className="px-4 py-2 border rounded-md text-slate-200">
           {lobbyI18n.backToHome}
@@ -125,7 +62,6 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         </div>
       )}
 
-      {/* Box opzionale per mostrare errori temporanei delle azioni (es. rimozione bot fallita) */}
       {actionError && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-md text-xs text-center">
           {actionError}

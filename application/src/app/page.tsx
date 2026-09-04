@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
-import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/join-actions";
+import { createLobbyAction, joinLobbyAction } from "@/features/lobby/api";
 import { t } from "@/ui/i18n/core";
 const homeI18n = t("home");
 import { Button } from "@/ui/components/button";
