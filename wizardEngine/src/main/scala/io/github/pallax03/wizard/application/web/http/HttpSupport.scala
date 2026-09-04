@@ -22,7 +22,8 @@ import sttp.tapir.json.circe.*
 
 case class ActionSuccessResponse(message: String)
 
-case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
+case class AuthLobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
+case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId)
 
 object HttpSupport:
 

@@ -1,6 +1,6 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.github.pallax03.wizard.application.web.http.{HttpSupport, LobbyPlayer}
+import io.github.pallax03.wizard.application.web.http.{AuthLobbyPlayer, HttpSupport, LobbyPlayer}
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
@@ -8,7 +8,6 @@ import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
-
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
@@ -40,23 +39,23 @@ object LobbyEndpoints:
       .errorOut(HttpSupport.errorOutput)
 
   /** POST /api/lobby — create a new lobby and return the creator's IDs. */
-  val createLobby: Endpoint[Unit, JoinLobbyRequest, AppError, LobbyPlayer, Any] =
+  val createLobby: Endpoint[Unit, JoinLobbyRequest, AppError, AuthLobbyPlayer, Any] =
     base.post
       .summary("Create lobby")
       .description(
         "Creates a new lobby with the given player name. Fails with 400 if lobby is full."
       )
       .in(jsonBody[JoinLobbyRequest])
-      .out(jsonBody[LobbyPlayer])
+      .out(jsonBody[AuthLobbyPlayer])
 
   /** POST /api/lobby/{lobbyId} — join an existing lobby. */
-  val joinLobby: Endpoint[Unit, (LobbyId, JoinLobbyRequest), AppError, LobbyPlayer, Any] =
+  val joinLobby: Endpoint[Unit, (LobbyId, JoinLobbyRequest), AppError, AuthLobbyPlayer, Any] =
     base.post
       .summary("Join lobby")
       .description("Adds a player (or bot) to an existing lobby identified by lobbyId.")
       .in(HttpSupport.lobbyIdPath)
       .in(jsonBody[JoinLobbyRequest])
-      .out(jsonBody[LobbyPlayer])
+      .out(jsonBody[AuthLobbyPlayer])
 
   /** GET /api/lobby/{lobbyId} — retrieve lobby state. */
   val getLobbyInfo: Endpoint[Unit, LobbyId, AppError, LobbyStateResponse, Any] =

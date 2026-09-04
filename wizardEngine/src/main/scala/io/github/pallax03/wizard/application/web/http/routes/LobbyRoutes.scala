@@ -2,7 +2,7 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.LobbyPlayer
+import io.github.pallax03.wizard.application.web.http.AuthLobbyPlayer
 import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.errors.AppError
@@ -26,7 +26,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
   private def addPlayerToLobby(
       lobbyId: LobbyId,
       req: JoinLobbyRequest
-  ): Future[Either[AppError, LobbyPlayer]] =
+  ): Future[Either[AppError, AuthLobbyPlayer]] =
     val actualSecret = req.bot match
       case Some(_) => None
       case None    => Some(req.secret.getOrElse(java.util.UUID.randomUUID().toString))
@@ -34,7 +34,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
     lobbyStatePort
       .addPlayer(lobbyId, req.name, req.bot, actualSecret)
       .map:
-        case Right(player) => Right(LobbyPlayer(lobbyId, player.id, player.secret))
+        case Right(player) => Right(AuthLobbyPlayer(lobbyId, player.id, player.secret))
         case Left(error)   => Left(error)
 
   private val createLobbyEndpoint: ServerEndpoint[Any, Future] =

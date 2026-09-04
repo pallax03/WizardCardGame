@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.codecs.http
 import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 
-import io.github.pallax03.wizard.application.web.http.{ActionSuccessResponse, LobbyPlayer}
+import io.github.pallax03.wizard.application.web.http.{ActionSuccessResponse, AuthLobbyPlayer, LobbyPlayer}
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 
@@ -22,10 +22,13 @@ object HttpCodecs:
 
   given Encoder[ActionSuccessResponse] = deriveEncoder
   given Decoder[ActionSuccessResponse] = deriveDecoder
+  given Encoder[AuthLobbyPlayer] = deriveEncoder
+  given Decoder[AuthLobbyPlayer] = deriveDecoder
   given Encoder[LobbyPlayer] = deriveEncoder
   given Decoder[LobbyPlayer] = deriveDecoder
 
   // --- Tapir Schemas ---
 
   given Schema[ActionSuccessResponse] = Schema.derived
+  given Schema[AuthLobbyPlayer] = Schema.derived
   given Schema[LobbyPlayer] = Schema.derived
