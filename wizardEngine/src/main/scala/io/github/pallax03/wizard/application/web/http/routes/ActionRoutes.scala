@@ -2,8 +2,8 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
 import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
+import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
 import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
@@ -32,7 +32,12 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
                 .submitAction(lobbyId, actionBuilder(player.id))
                 .map:
                   case Left(gameError) => Left(AppError.GameError(gameError.toString))
-                  case Right(_)        => Right(ActionSuccessResponse(s"Action submitted successfully from player ${player.id} in lobby ${lobby.uuid}"))
+                  case Right(_) =>
+                    Right(
+                      ActionSuccessResponse(
+                        s"Action submitted successfully from player ${player.id} in lobby ${lobby.uuid}"
+                      )
+                    )
             case None =>
               Future.successful(Left(AppError.NotAuthenticated))
         case None =>
@@ -42,7 +47,11 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
     ActionEndpoints.chooseAction
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
       .serverLogic(secret => { case (lobbyId, trumpColor) =>
-        handleAction(secret, lobbyId, playerId => GameAction.ResolveTrumpColor(playerId, trumpColor))
+        handleAction(
+          secret,
+          lobbyId,
+          playerId => GameAction.ResolveTrumpColor(playerId, trumpColor)
+        )
       })
 
   private val placeEndpoint: ServerEndpoint[Any, Future] =

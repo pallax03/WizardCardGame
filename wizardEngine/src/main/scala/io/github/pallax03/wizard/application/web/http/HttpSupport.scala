@@ -1,12 +1,6 @@
 package io.github.pallax03.wizard.application.web.http
 
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
-
-import sttp.model.StatusCode
-import sttp.tapir.*
-import sttp.tapir.json.circe.*
-
+import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
 /**
  * Shared HTTP protocol definitions for all Tapir endpoints.
  *
@@ -19,7 +13,12 @@ import sttp.tapir.json.circe.*
  * defined here live in [[io.github.pallax03.wizard.codecs.http.HttpCodecs]].
  */
 import io.github.pallax03.wizard.engine.errors.AppError
-import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
+import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
+
+import sttp.model.StatusCode
+import sttp.tapir.*
+import sttp.tapir.json.circe.*
 
 case class ActionSuccessResponse(message: String)
 

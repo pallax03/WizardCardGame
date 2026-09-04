@@ -2,9 +2,9 @@ package io.github.pallax03.wizard.engine.ports
 
 import scala.concurrent.Future
 
+import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.errors.AppError
 
 /**
  * Internal port to manage the persistent state of a Lobby before the game starts.
@@ -57,10 +57,10 @@ trait LobbyStatePort:
    * @return a Future containing the assigned Player, or None if the lobby is full.
    */
   def addPlayer(
-                 lobbyId: LobbyId,
-                 name: String,
-                 difficulty: Option[BotsDifficulty] = None,
-                 secret: Option[String] = None
+      lobbyId: LobbyId,
+      name: String,
+      difficulty: Option[BotsDifficulty] = None,
+      secret: Option[String] = None
   ): Future[Either[AppError, Player]]
 
   /**

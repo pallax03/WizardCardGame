@@ -1,12 +1,9 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.github.pallax03.wizard.application.web.http.{
-  ActionSuccessResponse,
-  HttpSupport
-}
+import io.github.pallax03.wizard.application.web.http.{ActionSuccessResponse, HttpSupport}
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
-import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.errors.AppError
+import io.github.pallax03.wizard.engine.lobby.LobbyId
 
 import sttp.tapir.*
 import sttp.tapir.json.circe.*

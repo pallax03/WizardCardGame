@@ -2,17 +2,16 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
 import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
+import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.{AIPort, LobbyStatePort}
 
 import sttp.tapir.server.ServerEndpoint
-
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: ExecutionContext):
 
@@ -40,22 +39,30 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
   private val hintBestTrump: ServerEndpoint[Any, Future] =
     AIEndpoints.bestTrump
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
-      .serverLogic(secret => lobbyId =>
-        handleHint(secret, lobbyId, playerId => aiPort.resolvedTrumpColor(lobbyId, playerId), _.toJson)
+      .serverLogic(secret =>
+        lobbyId =>
+          handleHint(
+            secret,
+            lobbyId,
+            playerId => aiPort.resolvedTrumpColor(lobbyId, playerId),
+            _.toJson
+          )
       )
 
   private val hintBestBid: ServerEndpoint[Any, Future] =
     AIEndpoints.bestBid
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
-      .serverLogic(secret => lobbyId =>
-        handleHint(secret, lobbyId, playerId => aiPort.placeBid(lobbyId, playerId), _.toJson)
+      .serverLogic(secret =>
+        lobbyId =>
+          handleHint(secret, lobbyId, playerId => aiPort.placeBid(lobbyId, playerId), _.toJson)
       )
 
   private val hintBestCard: ServerEndpoint[Any, Future] =
     AIEndpoints.bestCard
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
-      .serverLogic(secret => lobbyId =>
-        handleHint(secret, lobbyId, playerId => aiPort.bestCard(lobbyId, playerId), _.toJson)
+      .serverLogic(secret =>
+        lobbyId =>
+          handleHint(secret, lobbyId, playerId => aiPort.bestCard(lobbyId, playerId), _.toJson)
       )
 
   val all: List[ServerEndpoint[Any, Future]] = List(

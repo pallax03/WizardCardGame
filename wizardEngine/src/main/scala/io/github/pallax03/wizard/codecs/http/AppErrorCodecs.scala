@@ -1,8 +1,10 @@
 package io.github.pallax03.wizard.codecs.http
 
 import io.circe.{Decoder, Encoder, Json}
-import sttp.tapir.Schema
+
 import io.github.pallax03.wizard.engine.errors.AppError
+
+import sttp.tapir.Schema
 
 object AppErrorCodecs:
   given Encoder[AppError] = Encoder.instance: err =>
@@ -18,6 +20,6 @@ object AppErrorCodecs:
   }
 
   // Schema for Tapir
-  given Schema[AppError] = Schema.derived[AppError.UnknownAppError].map(
-    err => Some(err: AppError)
-  )(err => AppError.UnknownAppError(err.message, err.code))
+  given Schema[AppError] = Schema
+    .derived[AppError.UnknownAppError]
+    .map(err => Some(err: AppError))(err => AppError.UnknownAppError(err.message, err.code))

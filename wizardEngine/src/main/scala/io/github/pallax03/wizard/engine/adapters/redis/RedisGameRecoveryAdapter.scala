@@ -2,14 +2,25 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import io.vertx.redis.client.{Command, Redis, Request}
+
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyStatus}
+import io.github.pallax03.wizard.engine.model.core.state.{
+  GameState,
+  ServerCoreState,
+  ServerGameState
+}
 import io.github.pallax03.wizard.engine.model.core.{GameEngine, GameException}
-import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState, ServerGameState}
 import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, LobbyStatePort, OutboundPort, PubSubPort}
+import io.github.pallax03.wizard.engine.ports.{
+  GameRecoveryPort,
+  LobbyStatePort,
+  OutboundPort,
+  PubSubPort
+}
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
@@ -33,12 +44,18 @@ class RedisGameRecoveryAdapter(
       .flatMap:
         case Some(json) =>
           json.decodeAs[ServerGameState] match
-            case Right(GameState.ChoosingTrump(core)) => recoverCheckpointWithNewRound(lobbyId, core)
-            case Right(GameState.Bidding(core, _, _)) => recoverCheckpointWithNewRound(lobbyId, core)
-            case Right(GameState.Playing(core, _, _, _, _)) => recoverCheckpointWithNewRound(lobbyId, core)
+            case Right(GameState.ChoosingTrump(core)) =>
+              recoverCheckpointWithNewRound(lobbyId, core)
+            case Right(GameState.Bidding(core, _, _)) =>
+              recoverCheckpointWithNewRound(lobbyId, core)
+            case Right(GameState.Playing(core, _, _, _, _)) =>
+              recoverCheckpointWithNewRound(lobbyId, core)
 
             case Right(GameState.Ended(_, _)) =>
-              pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"WARN:Checkpoint contains ended game. Aborting.")
+              pubSubPort.publish(
+                ChannelsKeys.LOGS_CHANNEL,
+                s"WARN:Checkpoint contains ended game. Aborting."
+              )
               abortGame(lobbyId, exception)
 
             case Left(_) =>
@@ -46,7 +63,10 @@ class RedisGameRecoveryAdapter(
               abortGame(lobbyId, exception)
 
         case None =>
-          pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"WARN:Checkpoint missing for lobby $lobbyId. Aborting game.")
+          pubSubPort.publish(
+            ChannelsKeys.LOGS_CHANNEL,
+            s"WARN:Checkpoint missing for lobby $lobbyId. Aborting game."
+          )
           abortGame(lobbyId, exception)
 
     processCheckpoint.recoverWith { case e =>
@@ -57,26 +77,36 @@ class RedisGameRecoveryAdapter(
       abortGame(lobbyId, exception)
     }
 
-  private def recoverCheckpointWithNewRound(lobbyId: LobbyId, core: ServerCoreState): Future[Boolean] =
+  private def recoverCheckpointWithNewRound(
+      lobbyId: LobbyId,
+      core: ServerCoreState
+  ): Future[Boolean] =
     pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"INFO:Restoring checkpoint for lobby $lobbyId")
     redisClient
-      .send(Request.cmd(Command.DEL)
-        .arg(ChannelsKeys.gameCheckpoint(lobbyId))
+      .send(
+        Request
+          .cmd(Command.DEL)
+          .arg(ChannelsKeys.gameCheckpoint(lobbyId))
       )
       .asScala
       .map: _ =>
-        pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"INFO:Removing checkpoint for lobby:$lobbyId")
+        pubSubPort.publish(
+          ChannelsKeys.LOGS_CHANNEL,
+          s"INFO:Removing checkpoint for lobby:$lobbyId"
+        )
         true
       .flatMap: _ =>
         val engine = GameEngine.recoverRound(core)
         redisClient
-          .send(Request.cmd(Command.SET)
-            .arg(ChannelsKeys.game(lobbyId))
-            .arg(engine.state.toJson)
+          .send(
+            Request
+              .cmd(Command.SET)
+              .arg(ChannelsKeys.game(lobbyId))
+              .arg(engine.state.toJson)
           )
           .asScala
           .map: _ =>
-            outboundPort.publish(lobbyId, LifecycleEvent.StateRecovered() +: engine.events *)
+            outboundPort.publish(lobbyId, LifecycleEvent.StateRecovered() +: engine.events*)
             true
 
   private def abortGame(
@@ -84,9 +114,11 @@ class RedisGameRecoveryAdapter(
       exception: GameException
   ): Future[Boolean] =
     redisClient
-      .send(Request.cmd(Command.DEL)
-        .arg(ChannelsKeys.game(lobbyId))
-        .arg(ChannelsKeys.gameCheckpoint(lobbyId))
+      .send(
+        Request
+          .cmd(Command.DEL)
+          .arg(ChannelsKeys.game(lobbyId))
+          .arg(ChannelsKeys.gameCheckpoint(lobbyId))
       )
       .asScala
       .flatMap: _ =>

@@ -10,9 +10,9 @@ import io.vertx.redis.client.{Command, Redis, Request}
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import io.github.pallax03.wizard.util.ChannelsKeys
@@ -71,7 +71,9 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         case Right(player) =>
           val msg = SystemEvent.joined(player.id).toJson
           redisClient
-            .send(Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg))
+            .send(
+              Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
+            )
             .asScala
             .map(_ => Right(player))
         case Left(error) => Future.successful(Left(error))
@@ -92,11 +94,12 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         if resp != null && resp.toInteger == 1 then
           val msg = SystemEvent.left(playerId).toJson
           redisClient
-            .send(Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg))
+            .send(
+              Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
+            )
             .asScala
             .as(true)
-        else
-          Future.successful(false)
+        else Future.successful(false)
 
   /** @inheritdoc */
   override def getAllLobbies: Future[List[Lobby]] =

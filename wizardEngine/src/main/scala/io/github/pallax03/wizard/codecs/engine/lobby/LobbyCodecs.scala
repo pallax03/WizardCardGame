@@ -26,7 +26,8 @@ object LobbyCodecs:
   given Encoder[Player] = Encoder.forProduct5("id", "name", "difficulty", "isOnline", "secret")(p =>
     (p.id, p.name, p.difficulty, p.isOnline, p.secret)
   )
-  given Decoder[Player] = Decoder.forProduct5("id", "name", "difficulty", "isOnline", "secret")(Player.apply)
+  given Decoder[Player] =
+    Decoder.forProduct5("id", "name", "difficulty", "isOnline", "secret")(Player.apply)
 
   given Encoder[Lobby] =
     Encoder.forProduct3("lobbyId", "players", "status")(l => (l.uuid, l.players, l.status))

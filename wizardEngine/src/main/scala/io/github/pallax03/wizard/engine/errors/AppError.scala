@@ -15,7 +15,7 @@ object AppError:
 
   // Lobby Errors
   case class LobbyNotFound(lobbyId: LobbyId) extends NotFoundError:
-    val message = s"Lobby $lobbyId not found"
+    val message: String = s"Lobby $lobbyId not found"
     val code = "LOBBY_NOT_FOUND"
 
   case object LobbyFull extends BadRequestError:
@@ -45,7 +45,7 @@ object AppError:
 
   // Internal Errors
   case class InternalServerError(exMsg: String) extends InternalError:
-    val message = s"Internal error: $exMsg"
+    val message: String = s"Internal error: $exMsg"
     val code = "INTERNAL_ERROR"
 
   case class UnknownAppError(message: String, code: String) extends AppError

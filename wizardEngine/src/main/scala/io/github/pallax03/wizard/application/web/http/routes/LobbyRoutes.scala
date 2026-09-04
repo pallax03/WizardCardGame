@@ -2,10 +2,10 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.application.web.http.LobbyPlayer
-import io.github.pallax03.wizard.engine.errors.AppError
+import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
+import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
 
@@ -30,7 +30,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
     val actualSecret = req.bot match
       case Some(_) => None
       case None    => Some(req.secret.getOrElse(java.util.UUID.randomUUID().toString))
-      
+
     lobbyStatePort
       .addPlayer(lobbyId, req.name, req.bot, actualSecret)
       .map:
@@ -54,9 +54,8 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
         .getLobby(lobbyId)
         .map:
           case Some(lobby) =>
-            val publicPlayers = lobby.players.map(p =>
-              PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline)
-            )
+            val publicPlayers =
+              lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline))
             Right(LobbyStateResponse(lobbyId, publicPlayers))
           case None => Left(AppError.LobbyNotFound(lobbyId))
     }
@@ -65,12 +64,14 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
       secret: String,
       lobbyId: LobbyId
   )(f: (Player, Lobby) => Future[Either[AppError, T]]): Future[Either[AppError, T]] =
-    lobbyStatePort.getLobby(lobbyId).flatMap:
-      case Some(lobby) =>
-        lobby.players.find(_.secret.contains(secret)) match
-          case Some(player) => f(player, lobby)
-          case None         => Future.successful(Left(AppError.NotAuthenticated))
-      case None => Future.successful(Left(AppError.LobbyNotFound(lobbyId)))
+    lobbyStatePort
+      .getLobby(lobbyId)
+      .flatMap:
+        case Some(lobby) =>
+          lobby.players.find(_.secret.contains(secret)) match
+            case Some(player) => f(player, lobby)
+            case None         => Future.successful(Left(AppError.NotAuthenticated))
+        case None => Future.successful(Left(AppError.LobbyNotFound(lobbyId)))
 
   private val getPlayerGameEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.getPlayerGame
@@ -101,10 +102,8 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
                   )
                 )
                 .map(_ => Right(GameStartedResponse("Game started")))
-            else
-              Future.successful(Left(AppError.PlayersOffline))
-          else
-            Future.successful(Left(AppError.GameInProgress))
+            else Future.successful(Left(AppError.PlayersOffline))
+          else Future.successful(Left(AppError.GameInProgress))
         }
       }
 
