@@ -1,6 +1,7 @@
 package io.github.pallax03.wizard.application.web.http
 
 import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
+
 /**
  * Shared HTTP protocol definitions for all Tapir endpoints.
  *
