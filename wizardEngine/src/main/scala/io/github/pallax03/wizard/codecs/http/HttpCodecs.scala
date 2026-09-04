@@ -5,7 +5,6 @@ import io.circe.{Decoder, Encoder}
 
 import io.github.pallax03.wizard.application.web.http.{
   ActionSuccessResponse,
-  ErrorResponse,
   LobbyPlayer
 }
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
@@ -24,8 +23,6 @@ import sttp.tapir.generic.auto.*
 object HttpCodecs:
   // --- Circe ---
 
-  given Encoder[ErrorResponse] = deriveEncoder
-  given Decoder[ErrorResponse] = deriveDecoder
   given Encoder[ActionSuccessResponse] = deriveEncoder
   given Decoder[ActionSuccessResponse] = deriveDecoder
   given Encoder[LobbyPlayer] = deriveEncoder
@@ -33,6 +30,5 @@ object HttpCodecs:
 
   // --- Tapir Schemas ---
 
-  given Schema[ErrorResponse] = Schema.derived
   given Schema[ActionSuccessResponse] = Schema.derived
   given Schema[LobbyPlayer] = Schema.derived

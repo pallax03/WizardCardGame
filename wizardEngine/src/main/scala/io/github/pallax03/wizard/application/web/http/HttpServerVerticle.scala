@@ -2,13 +2,12 @@ package io.github.pallax03.wizard.application.web.http
 
 import scala.concurrent.Future
 
-import io.circe.generic.auto.*
-
 import io.vertx.core.AbstractVerticle
 import io.vertx.ext.web.Router
 
 import io.github.pallax03.wizard.application.web.*
-import io.github.pallax03.wizard.application.web.http.ErrorResponse
+import io.github.pallax03.wizard.engine.errors.AppError
+import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
 import io.github.pallax03.wizard.engine.model.core.{
   AbortedGameException,
   GameException,
@@ -18,7 +17,6 @@ import io.github.pallax03.wizard.util.WizardLogger
 
 import sttp.model.StatusCode
 import sttp.tapir.*
-import sttp.tapir.generic.auto.*
 import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
 import sttp.tapir.server.interceptor.exception.ExceptionHandler
@@ -83,6 +81,6 @@ class HttpServerVerticle(
           (s"CRASH ${ctx.endpoint.show}", "Internal Server Error", "INTERNAL_ERROR")
 
       WizardLogger.error(logMsg, ctx.e)
-      val errorOutput = jsonBody[ErrorResponse].and(statusCode(StatusCode.InternalServerError))
-      Future.successful(Some(ValuedEndpointOutput(errorOutput, ErrorResponse(clientMsg, code))))
+      val errorOutput = jsonBody[AppError].and(statusCode(StatusCode.InternalServerError))
+      Future.successful(Some(ValuedEndpointOutput(errorOutput, AppError.InternalServerError(s"$clientMsg (code: $code)"))))
   )

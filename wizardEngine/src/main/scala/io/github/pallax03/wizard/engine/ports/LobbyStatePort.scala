@@ -4,6 +4,7 @@ import scala.concurrent.Future
 
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.errors.AppError
 
 /**
  * Internal port to manage the persistent state of a Lobby before the game starts.
@@ -60,7 +61,7 @@ trait LobbyStatePort:
                  name: String,
                  difficulty: Option[BotsDifficulty] = None,
                  secret: Option[String] = None
-  ): Future[Either[LobbyError, Player]]
+  ): Future[Either[AppError, Player]]
 
   /**
    * Atomically removes a player from the lobby by ID.

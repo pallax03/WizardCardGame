@@ -1,6 +1,5 @@
 package io.github.pallax03.wizard.application.web.http
 
-import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
@@ -19,7 +18,9 @@ import sttp.tapir.json.circe.*
  * Serialization contracts (Circe codecs + Tapir schemas) for the types
  * defined here live in [[io.github.pallax03.wizard.codecs.http.HttpCodecs]].
  */
-case class ErrorResponse(message: String, code: String)
+import io.github.pallax03.wizard.engine.errors.AppError
+import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
+
 case class ActionSuccessResponse(message: String)
 
 case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
@@ -34,10 +35,19 @@ object HttpSupport:
   val playerIdPath: EndpointInput[PlayerId] =
     path[String]("playerId").map(s => PlayerId(s.toInt))(_.toInt.toString)
 
-  /** Shared error output: maps [[ErrorResponse]] to 400 / 404 / 500 for Swagger. */
-  val errorOutput: EndpointOutput[ErrorResponse] =
-    oneOf(
-      oneOfVariant(StatusCode.BadRequest, jsonBody[ErrorResponse]),
-      oneOfVariant(StatusCode.NotFound, jsonBody[ErrorResponse]),
-      oneOfVariant(StatusCode.InternalServerError, jsonBody[ErrorResponse])
+  /** Shared error output: maps [[AppError]] to 400 / 401 / 404 / 500 for Swagger. */
+  val errorOutput: EndpointOutput[AppError] =
+    oneOf[AppError](
+      oneOfVariantValueMatcher(StatusCode.NotFound, jsonBody[AppError]) {
+        case _: AppError.NotFoundError => true
+      },
+      oneOfVariantValueMatcher(StatusCode.Unauthorized, jsonBody[AppError]) {
+        case _: AppError.UnauthorizedError => true
+      },
+      oneOfVariantValueMatcher(StatusCode.BadRequest, jsonBody[AppError]) {
+        case _: AppError.BadRequestError => true
+      },
+      oneOfVariantValueMatcher(StatusCode.InternalServerError, jsonBody[AppError]) {
+        case _: AppError.InternalError => true
+      }
     )

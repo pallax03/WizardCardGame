@@ -3,7 +3,8 @@ package io.github.pallax03.wizard.application.web.http.routes
 import scala.concurrent.{ExecutionContext, Future}
 
 import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
-import io.github.pallax03.wizard.application.web.http.{ActionSuccessResponse, ErrorResponse}
+import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
+import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.GameAction
@@ -12,66 +13,51 @@ import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
 
 import sttp.tapir.server.ServerEndpoint
 
-/**
- * HTTP routes for Game Action domain.
- *
- * Standard layout:
- *   1. `handleAction` helper: lobby existence check + action submission
- *   2. validates that `action.playerId` matches the `playerId` path param
- *   3. `ServerEndpoint` vals for choose/place/play
- *   4. `all` aggregation
- */
 class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(using
     ec: ExecutionContext
 ):
 
   private def handleAction(
+      secret: String,
       lobbyId: LobbyId,
-      playerId: PlayerId,
-      action: GameAction
-  ): Future[Either[ErrorResponse, ActionSuccessResponse]] =
-    if action.playerId != playerId then
-      Future.successful(
-        Left(
-          ErrorResponse(
-            s"playerId mismatch: path $playerId vs body ${action.playerId}",
-            "BAD_REQUEST"
-          )
-        )
-      )
-    else
-      lobbyStatePort
-        .getLobby(lobbyId)
-        .flatMap:
-          case Some(lobby) =>
-            gameEnginePort
-              .submitAction(lobbyId, action)
-              .map:
-                case Right(_) =>
-                  Right(
-                    ActionSuccessResponse(
-                      s"Action submitted successfully from player $playerId in lobby ${lobby.uuid}"
-                    )
-                  )
-                case Left(gameError) =>
-                  Left(ErrorResponse(gameError.toString, "INVALID_ACTION"))
-          case None =>
-            Future.successful(Left(ErrorResponse(s"Lobby $lobbyId not found", "LOBBY_NOT_FOUND")))
+      actionBuilder: PlayerId => GameAction
+  ): Future[Either[AppError, ActionSuccessResponse]] =
+    lobbyStatePort
+      .getLobby(lobbyId)
+      .flatMap:
+        case Some(lobby) =>
+          lobby.players.find(_.secret.contains(secret)) match
+            case Some(player) =>
+              gameEnginePort
+                .submitAction(lobbyId, actionBuilder(player.id))
+                .map:
+                  case Left(gameError) => Left(AppError.GameError(gameError.toString))
+                  case Right(_)        => Right(ActionSuccessResponse(s"Action submitted successfully from player ${player.id} in lobby ${lobby.uuid}"))
+            case None =>
+              Future.successful(Left(AppError.NotAuthenticated))
+        case None =>
+          Future.successful(Left(AppError.LobbyNotFound(lobbyId)))
 
-  val chooseEndpoint: ServerEndpoint[Any, Future] =
-    ActionEndpoints.chooseAction.serverLogic { case (lobbyId, playerId, trumpColor) =>
-      handleAction(lobbyId, playerId, GameAction.ResolveTrumpColor(playerId, trumpColor))
-    }
+  private val chooseEndpoint: ServerEndpoint[Any, Future] =
+    ActionEndpoints.chooseAction
+      .serverSecurityLogicSuccess(secret => Future.successful(secret))
+      .serverLogic(secret => { case (lobbyId, trumpColor) =>
+        handleAction(secret, lobbyId, playerId => GameAction.ResolveTrumpColor(playerId, trumpColor))
+      })
 
-  val placeEndpoint: ServerEndpoint[Any, Future] =
-    ActionEndpoints.placeAction.serverLogic { case (lobbyId, playerId, bid) =>
-      handleAction(lobbyId, playerId, GameAction.PlaceBid(playerId, bid))
-    }
+  private val placeEndpoint: ServerEndpoint[Any, Future] =
+    ActionEndpoints.placeAction
+      .serverSecurityLogicSuccess(secret => Future.successful(secret))
+      .serverLogic(secret => { case (lobbyId, bid) =>
+        handleAction(secret, lobbyId, playerId => GameAction.PlaceBid(playerId, bid))
+      })
 
-  val playEndpoint: ServerEndpoint[Any, Future] =
-    ActionEndpoints.playAction.serverLogic { case (lobbyId, playerId, card) =>
-      handleAction(lobbyId, playerId, PlayCard(playerId, card))
-    }
+  private val playEndpoint: ServerEndpoint[Any, Future] =
+    ActionEndpoints.playAction
+      .serverSecurityLogicSuccess(secret => Future.successful(secret))
+      .serverLogic(secret => { case (lobbyId, card) =>
+        handleAction(secret, lobbyId, playerId => PlayCard(playerId, card))
+      })
 
   val all: List[ServerEndpoint[Any, Future]] = List(
     chooseEndpoint,

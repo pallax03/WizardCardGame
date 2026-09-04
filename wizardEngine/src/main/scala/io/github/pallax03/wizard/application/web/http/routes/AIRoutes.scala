@@ -3,56 +3,60 @@ package io.github.pallax03.wizard.application.web.http.routes
 import scala.concurrent.{ExecutionContext, Future}
 
 import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
-import io.github.pallax03.wizard.application.web.http.{ActionSuccessResponse, ErrorResponse}
+import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.ports.{AIPort, LobbyStatePort}
 
 import sttp.tapir.server.ServerEndpoint
 
-/**
- * HTTP routes for AI hint domain.
- *
- * Standard layout:
- *   1. `handleHint` helper: validates lobby existence, runs AI computation, maps errors
- *   2. `ServerEndpoint` vals delegating to `AIEndpoints.*`
- *   3. `all` aggregation
- */
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
+
 class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: ExecutionContext):
 
   private def handleHint[A](
+      secret: String,
       lobbyId: LobbyId,
-      action: => Future[A],
+      action: PlayerId => Future[A],
       encode: A => String
-  ): Future[Either[ErrorResponse, ActionSuccessResponse]] =
+  ): Future[Either[AppError, ActionSuccessResponse]] =
     lobbyStatePort
       .getLobby(lobbyId)
       .flatMap:
-        case Some(_) =>
-          action.map(res => Right(ActionSuccessResponse(encode(res))))
+        case Some(lobby) =>
+          lobby.players.find(_.secret.contains(secret)) match
+            case Some(player) =>
+              action(player.id).map(res => Right(ActionSuccessResponse(encode(res))))
+            case None =>
+              Future.successful(Left(AppError.NotAuthenticated))
         case None =>
-          Future.successful(
-            Left(ErrorResponse(s"Lobby $lobbyId not found", "LOBBY_NOT_FOUND"))
-          )
+          Future.successful(Left(AppError.LobbyNotFound(lobbyId)))
       .recover:
         case ex: Throwable =>
-          Left(ErrorResponse(s"Internal error: ${ex.getMessage}", "INTERNAL_ERROR"))
+          Left(AppError.InternalServerError(ex.getMessage))
 
-  val hintBestTrump: ServerEndpoint[Any, Future] =
-    AIEndpoints.bestTrump.serverLogic { case (lobbyId, playerId) =>
-      handleHint(lobbyId, aiPort.resolvedTrumpColor(lobbyId, playerId), _.toJson)
-    }
+  private val hintBestTrump: ServerEndpoint[Any, Future] =
+    AIEndpoints.bestTrump
+      .serverSecurityLogicSuccess(secret => Future.successful(secret))
+      .serverLogic(secret => lobbyId =>
+        handleHint(secret, lobbyId, playerId => aiPort.resolvedTrumpColor(lobbyId, playerId), _.toJson)
+      )
 
-  val hintBestBid: ServerEndpoint[Any, Future] =
-    AIEndpoints.bestBid.serverLogic { case (lobbyId, playerId) =>
-      handleHint(lobbyId, aiPort.placeBid(lobbyId, playerId), _.toJson)
-    }
+  private val hintBestBid: ServerEndpoint[Any, Future] =
+    AIEndpoints.bestBid
+      .serverSecurityLogicSuccess(secret => Future.successful(secret))
+      .serverLogic(secret => lobbyId =>
+        handleHint(secret, lobbyId, playerId => aiPort.placeBid(lobbyId, playerId), _.toJson)
+      )
 
-  val hintBestCard: ServerEndpoint[Any, Future] =
-    AIEndpoints.bestCard.serverLogic { case (lobbyId, playerId) =>
-      handleHint(lobbyId, aiPort.bestCard(lobbyId, playerId), _.toJson)
-    }
+  private val hintBestCard: ServerEndpoint[Any, Future] =
+    AIEndpoints.bestCard
+      .serverSecurityLogicSuccess(secret => Future.successful(secret))
+      .serverLogic(secret => lobbyId =>
+        handleHint(secret, lobbyId, playerId => aiPort.bestCard(lobbyId, playerId), _.toJson)
+      )
 
   val all: List[ServerEndpoint[Any, Future]] = List(
     hintBestTrump,
