@@ -52,13 +52,14 @@ trait LobbyStatePort:
    *
    * @param lobbyId the UUID of the lobby if retrieve fail automatically create a new lobby.
    * @param name the player's name
-   * @param bot the bot difficulty, if any
+   * @param difficulty the bot difficulty, if any
    * @return a Future containing the assigned Player, or None if the lobby is full.
    */
   def addPlayer(
-      lobbyId: LobbyId,
-      name: String,
-      bot: Option[BotsDifficulty] = None
+                 lobbyId: LobbyId,
+                 name: String,
+                 difficulty: Option[BotsDifficulty] = None,
+                 secret: Option[String] = None
   ): Future[Either[LobbyError, Player]]
 
   /**

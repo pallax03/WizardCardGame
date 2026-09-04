@@ -26,10 +26,14 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
       lobbyId: LobbyId,
       req: JoinLobbyRequest
   ): Future[Either[ErrorResponse, LobbyPlayer]] =
+    val actualSecret = req.difficulty match
+      case Some(_) => None
+      case None    => Some(req.secret.getOrElse(java.util.UUID.randomUUID().toString))
+      
     lobbyStatePort
-      .addPlayer(lobbyId, req.name, req.bot)
+      .addPlayer(lobbyId, req.name, req.difficulty, actualSecret)
       .map:
-        case Right(player) => Right(LobbyPlayer(lobbyId, player.id))
+        case Right(player) => Right(LobbyPlayer(lobbyId, player.id, player.secret))
         case Left(error)   => Left(ErrorResponse(error.message, error.code))
 
   private val createLobbyEndpoint: ServerEndpoint[Any, Future] =

@@ -43,7 +43,8 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
   override def addPlayer(
       lobbyId: LobbyId,
       name: String,
-      difficulty: Option[BotsDifficulty]
+      difficulty: Option[BotsDifficulty],
+      secret: Option[String] = None
   ): Future[Either[LobbyError, Player]] =
     val req = Request
       .cmd(Command.EVAL)
@@ -53,6 +54,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       .arg(name)
       .arg(difficulty.map(_.toString).getOrElse(""))
       .arg(lobbyId.toString)
+      .arg(secret.getOrElse(""))
 
     redisClient
       .send(req)
@@ -63,7 +65,6 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
           response.toString match
             case "ERR_IN_PROGRESS" => Left(LobbyError.GameInProgress)
             case "ERR_FULL"        => Left(LobbyError.LobbyFull)
-            case "ERR_TAKEN"       => Left(LobbyError.NameTaken)
             case json              => Right(json.decodeAs[Player].toOption.get)
       .flatMap:
         case Right(player) =>

@@ -22,7 +22,7 @@ import sttp.tapir.json.circe.*
 case class ErrorResponse(message: String, code: String)
 case class ActionSuccessResponse(message: String)
 
-case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId)
+case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
 
 object HttpSupport:
 

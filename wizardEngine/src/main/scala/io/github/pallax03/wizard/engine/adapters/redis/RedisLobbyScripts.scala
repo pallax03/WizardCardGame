@@ -16,14 +16,13 @@ private[redis] object RedisLobbyScripts:
       |
       |local inputName = ARGV[1]
       |local isBot = ARGV[2] ~= ''
+      |local secret = ARGV[4]
       |
       |if not isBot then
-      |  for i, p in ipairs(lobby.players) do
-      |    if p.name == inputName and (p.difficulty == nil or p.difficulty == cjson.null) then
-      |      if not p.isOnline then
+      |  if secret ~= '' then
+      |    for i, p in ipairs(lobby.players) do
+      |      if p.secret == secret then
       |        return cjson.encode(p)
-      |      else
-      |        return "ERR_TAKEN"
       |      end
       |    end
       |  end
@@ -41,10 +40,12 @@ private[redis] object RedisLobbyScripts:
       |if not isBot then
       |  newPlayer.difficulty = cjson.null
       |  newPlayer.isOnline = false
+      |  newPlayer.secret = secret ~= '' and secret or cjson.null
       |else
       |  newPlayer.difficulty = ARGV[2]
       |  newPlayer.name = 'Bot-' .. (newId+1)
       |  newPlayer.isOnline = true
+      |  newPlayer.secret = cjson.null
       |end
       |
       |table.insert(lobby.players, newPlayer)

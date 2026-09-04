@@ -9,7 +9,7 @@ import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
-case class JoinLobbyRequest(name: String, bot: Option[BotsDifficulty])
+case class JoinLobbyRequest(name: String, difficulty: Option[BotsDifficulty], secret: Option[String] = None)
 case class LobbyStateResponse(
     lobbyId: LobbyId,
     players: List[io.github.pallax03.wizard.engine.lobby.Player]
