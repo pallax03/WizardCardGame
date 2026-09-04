@@ -1,34 +1,16 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.github.pallax03.wizard.application.web.http.{AuthLobbyPlayer, HttpSupport, LobbyPlayer}
+import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
 import io.github.pallax03.wizard.engine.errors.AppError
-import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId}
-import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
 
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
-
-case class JoinLobbyRequest(
-    name: String,
-    bot: Option[BotsDifficulty],
-    secret: Option[String] = None
-)
-case class PublicPlayerInfo(
-    id: PlayerId,
-    name: String,
-    difficulty: Option[BotsDifficulty] = None,
-    isOnline: Boolean = false
-)
-case class LobbyStateResponse(
-    lobbyId: LobbyId,
-    players: List[PublicPlayerInfo]
-)
-case class GameStartedResponse(message: String)
 
 object LobbyEndpoints:
 
@@ -43,9 +25,7 @@ object LobbyEndpoints:
   val createLobby: Endpoint[Unit, JoinLobbyRequest, AppError, AuthLobbyPlayer, Any] =
     base.post
       .summary("Create lobby")
-      .description(
-        "Creates a new lobby with the given player name. Fails with 400 if lobby is full."
-      )
+      .description("Creates a new lobby with the given player name. Fails with 400 if lobby is full.")
       .in(jsonBody[JoinLobbyRequest])
       .out(jsonBody[AuthLobbyPlayer])
 

@@ -2,7 +2,7 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.AuthLobbyPlayer
+import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.errors.AppError
@@ -60,7 +60,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
           case None => Left(AppError.LobbyNotFound(lobbyId))
     }
 
-  private def withAuth[T](
+  private[routes] def withAuth[T](
       secret: String,
       lobbyId: LobbyId
   )(f: (Player, Lobby) => Future[Either[AppError, T]]): Future[Either[AppError, T]] =

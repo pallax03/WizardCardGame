@@ -9,10 +9,7 @@ import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
-case class ActionSuccessResponse(message: String)
 
-case class AuthLobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
-case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId)
 
 /**
  * Shared HTTP protocol definitions for all Tapir endpoints.

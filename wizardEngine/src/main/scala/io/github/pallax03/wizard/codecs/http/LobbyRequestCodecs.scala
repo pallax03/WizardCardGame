@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.codecs.http
 import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 
-import io.github.pallax03.wizard.application.web.http.endpoints.{
+import io.github.pallax03.wizard.application.web.http.{
   GameStartedResponse,
   JoinLobbyRequest,
   LobbyStateResponse,
