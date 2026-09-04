@@ -8,6 +8,7 @@ import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
+
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
