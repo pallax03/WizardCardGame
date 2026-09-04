@@ -59,7 +59,7 @@ trait LobbyStatePort:
       lobbyId: LobbyId,
       name: String,
       bot: Option[BotsDifficulty] = None
-  ): Future[Option[Player]]
+  ): Future[Either[LobbyError, Player]]
 
   /**
    * Atomically removes a player from the lobby by ID.

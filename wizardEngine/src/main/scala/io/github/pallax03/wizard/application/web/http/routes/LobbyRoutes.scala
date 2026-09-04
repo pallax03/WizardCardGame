@@ -29,21 +29,21 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
     lobbyStatePort
       .addPlayer(lobbyId, req.name, req.bot)
       .map:
-        case Some(player) => Right(LobbyPlayer(lobbyId, player.id))
-        case None         => Left(ErrorResponse("Lobby is full", "LOBBY_FULL"))
+        case Right(player) => Right(LobbyPlayer(lobbyId, player.id))
+        case Left(error)   => Left(ErrorResponse(error.message, error.code))
 
-  val createLobbyEndpoint: ServerEndpoint[Any, Future] =
+  private val createLobbyEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.createLobby.serverLogic { req =>
       val lobbyId: LobbyId = LobbyId.generate
       addPlayerToLobby(lobbyId, req)
     }
 
-  val joinLobbyEndpoint: ServerEndpoint[Any, Future] =
+  private val joinLobbyEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.joinLobby.serverLogic { case (lobbyId, req) =>
       addPlayerToLobby(lobbyId, req)
     }
 
-  val getLobbyInfoEndpoint: ServerEndpoint[Any, Future] =
+  private val getLobbyInfoEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.getLobbyInfo.serverLogic { lobbyId =>
       lobbyStatePort
         .getLobby(lobbyId)
@@ -52,7 +52,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
           case None        => Left(ErrorResponse(s"Lobby $lobbyId not found", "LOBBY_NOT_FOUND"))
     }
 
-  val startGameEndpoint: ServerEndpoint[Any, Future] =
+  private val startGameEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.startGame.serverLogic { lobbyId =>
       lobbyStatePort
         .getLobby(lobbyId)
@@ -84,7 +84,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
             )
     }
 
-  val removePlayerEndpoint: ServerEndpoint[Any, Future] =
+  private val removePlayerEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.removePlayer.serverLogic { req =>
       lobbyStatePort
         .removePlayer(req.lobbyId, req.playerId)
