@@ -84,7 +84,7 @@ object Main:
       lobbyStatePort: LobbyStatePort,
       pubSubPort: PubSubPort
   ): Unit =
-    val wsAdapter = VertxWebSocketsAdapter(pubSubPort, lobbyStatePort)
+    val wsAdapter = VertxWebSocketsAdapter(vertx, pubSubPort, lobbyStatePort)
     val verticle = WebSocketsVerticle(wsAdapter, lobbyStatePort, wsPort)
     deploy(vertx, verticle, "WebSocket", wsPort)
 

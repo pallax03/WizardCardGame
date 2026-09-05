@@ -1,14 +1,12 @@
 package io.github.pallax03.wizard.application.web.ws
 
 import scala.util.Success
-
 import io.vertx.core.AbstractVerticle
-import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
-
 import io.github.pallax03.wizard.engine.lobby.{Lobby, LobbyId}
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, WebSocketsPort}
 import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.vertx.core.http.HttpServerOptions
 
 class WebSocketsVerticle(
     wsPortAdapter: WebSocketsPort,
@@ -19,7 +17,7 @@ class WebSocketsVerticle(
   override def start(): Unit =
     val router = Router.router(vertx)
     router
-      .route("/ws/lobby/:lobbyId")
+      .route("/lobby/:lobbyId")
       .handler: ctx =>
         val req = ctx.request()
         val lobbyIdStr = req.getParam("lobbyId")
@@ -40,6 +38,5 @@ class WebSocketsVerticle(
                         wsPortAdapter.subscribeToLobbyEvents(LobbyId(lobbyIdStr), player.id, ws)
                       case None => ws.close(403, "Forbidden")
                   case _ => ws.close(404, "Not Found")
-
     val options = HttpServerOptions().setIdleTimeout(60)
     vertx.createHttpServer(options).requestHandler(router).listen(port)
