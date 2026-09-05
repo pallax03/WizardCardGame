@@ -1,10 +1,14 @@
 package io.github.pallax03.wizard.engine.lobby
 
+import io.github.pallax03.wizard.engine.configuration.GameConfiguration
+
 import java.util.UUID
 
 /** Represents the status of a Lobby. */
 enum LobbyStatus:
-  case WAITING, IN_GAME, FINISHED
+  case WAITING, IN_GAME, PAUSED, FINISHED
+
+  override def toString: String = super.toString.toUpperCase
 
 opaque type LobbyId = String
 
@@ -22,6 +26,7 @@ object LobbyId:
 case class Lobby(
     uuid: LobbyId,
     players: List[Player],
-    status: LobbyStatus
+    status: LobbyStatus,
+    configuration: GameConfiguration
 ):
   def addPlayer(player: Player): Lobby = copy(players = this.players :+ player)

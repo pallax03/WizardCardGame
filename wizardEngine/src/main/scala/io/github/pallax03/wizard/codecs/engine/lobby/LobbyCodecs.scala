@@ -29,9 +29,16 @@ object LobbyCodecs:
   given Decoder[Player] =
     Decoder.forProduct5("id", "name", "difficulty", "isOnline", "secret")(Player.apply)
 
+  import io.github.pallax03.wizard.engine.configuration.GameConfiguration
+  import io.circe.generic.semiauto.*
+  import sttp.tapir.generic.auto.*
+
+  given Encoder[GameConfiguration] = deriveEncoder
+  given Decoder[GameConfiguration] = deriveDecoder
+
   given Encoder[Lobby] =
-    Encoder.forProduct3("lobbyId", "players", "status")(l => (l.uuid, l.players, l.status))
-  given Decoder[Lobby] = Decoder.forProduct3("lobbyId", "players", "status")(Lobby.apply)
+    Encoder.forProduct4("lobbyId", "players", "status", "configuration")(l => (l.uuid, l.players, l.status, l.configuration))
+  given Decoder[Lobby] = Decoder.forProduct4("lobbyId", "players", "status", "configuration")(Lobby.apply)
 
   // --- Tapir Schemas ---
 
@@ -39,4 +46,5 @@ object LobbyCodecs:
   given Schema[LobbyStatus] = Schema.string
   given Schema[BotsDifficulty] = Schema.string
   given Schema[Player] = Schema.derived
+  given Schema[GameConfiguration] = Schema.derived
   given Schema[Lobby] = Schema.derived

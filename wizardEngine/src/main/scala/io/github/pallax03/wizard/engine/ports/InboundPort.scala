@@ -34,6 +34,14 @@ trait InboundPort:
   def startGame(lobbyId: LobbyId, players: List[PlayerId], config: GameConfiguration): Future[Unit]
 
   /**
+   * Resumes a paused game for the specified lobby.
+   *
+   * @param lobbyId the identifier of the lobby
+   * @return a Future indicating the completion of the game resume process
+   */
+  def resumeGame(lobbyId: LobbyId): Future[Unit]
+
+  /**
    * Submits a game action for processing.
    *
    * @param lobbyId the identifier of the lobby

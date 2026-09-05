@@ -53,6 +53,8 @@ object WizardEventsCodecs:
     ev.downField("action").as[String].flatMap {
       case "GameStarted" =>
         fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameStarted.apply)
+      case "GameResumed" =>
+        fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameResumed.apply)
       case "WaitingForTrump" =>
         ev.get[PlayerId]("playerId").map(InvitationEvent.WaitingForTrump.apply)
       case "WaitingForBid" =>

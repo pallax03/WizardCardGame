@@ -4,10 +4,11 @@ import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
+import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
-
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
@@ -62,9 +63,18 @@ object LobbyEndpoints:
   val startGame: Endpoint[String, LobbyId, AppError, GameStartedResponse, Any] =
     secureBase.post
       .summary("Start game")
-      .description("Transitions a WAITING lobby to IN_GAME and triggers engine initialization.")
+      .description("Transitions a WAITING or PAUSED lobby to IN_GAME and triggers engine initialization.")
       .in(HttpSupport.lobbyIdPath / "start")
       .out(jsonBody[GameStartedResponse])
+
+  /** POST /api/lobby/{lobbyId}/configuration — update the game configuration. */
+  val updateConfiguration: Endpoint[String, (LobbyId, GameConfiguration), AppError, GameConfiguration, Any] =
+    secureBase.post
+      .summary("Update Game Configuration")
+      .description("Updates the game configuration for a waiting or paused lobby.")
+      .in(HttpSupport.lobbyIdPath / "configuration")
+      .in(jsonBody[GameConfiguration])
+      .out(jsonBody[GameConfiguration])
 
   /** DELETE /api/lobby — remove a player (body-based for backward compat with frontend). */
   val removePlayer: Endpoint[String, LobbyPlayer, AppError, Unit, Any] =

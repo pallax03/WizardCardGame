@@ -78,16 +78,23 @@ class RedisInboundAdapter(
     fetchGameState(lobbyId).flatMap:
       case Some(_) => Future.unit
       case None =>
-        val playersIds = config.players.map(_.id)
-        val initialState = GameEngine.initializeGame(playersIds)
+        val initialState = GameEngine.initializeGame(players)
         redisClient
           .send(
             Request.cmd(Command.SET).arg(ChannelsKeys.game(lobbyId)).arg(initialState.state.toJson)
           )
           .asScala
           .map: _ =>
-            outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersIds))
             outboundPort.publish(lobbyId, initialState.events*)
+
+  /** @inheritdoc */
+  override def resumeGame(lobbyId: LobbyId): Future[Unit] =
+    fetchGameState(lobbyId).flatMap:
+      case Some(state) =>
+        outboundPort.publish(lobbyId, LifecycleEvent.GameResumed(state.playersIds))
+        Future.unit
+      case None =>
+        Future.failed(GameException(GameNotFound))
 
   /** @inheritdoc */
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]] =

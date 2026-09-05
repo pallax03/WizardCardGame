@@ -1,6 +1,6 @@
 package io.github.pallax03.wizard.application.web.http
 
-import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId}
+import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 // --- Lobby Endpoints Payloads ---
@@ -20,6 +20,7 @@ case class PublicPlayerInfo(
 
 case class LobbyStateResponse(
     lobbyId: LobbyId,
+    status: LobbyStatus,
     players: List[PublicPlayerInfo]
 )
 

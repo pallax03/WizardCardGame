@@ -2,11 +2,8 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import cats.syntax.all.*
-
 import io.vertx.redis.client.{Command, Redis, Request}
-
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
@@ -40,7 +37,11 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         case null     => None
         case response => response.toString.decodeAs[Lobby].toOption
 
-  /** @inheritdoc */
+  /**
+   * @inheritdoc
+   *
+   * // redis response: see [[io.github.pallax03.wizard.engine.adapters.redis.RedisLobbyScripts]]
+   * */
   override def addPlayer(
       lobbyId: LobbyId,
       name: String,
@@ -64,9 +65,9 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         case null => Left(AppError.LobbyFull)
         case response =>
           response.toString match
-            case "ERR_IN_PROGRESS" => Left(AppError.GameInProgress)
-            case "ERR_FULL"        => Left(AppError.LobbyFull)
-            case json              => Right(json.decodeAs[Player].toOption.get)
+            case AppError.GameInProgress.code => Left(AppError.GameInProgress)
+            case AppError.LobbyFull.code      => Left(AppError.LobbyFull)
+            case json                         => Right(json.decodeAs[Player].toOption.get)
       .flatMap:
         case Right(player) =>
           val msg = SystemEvent.joined(player.id).toJson

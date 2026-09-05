@@ -36,7 +36,7 @@ object GameStateCodecs:
       derivedCodec,
       Encoder.instance { playing =>
         val baseJson = derivedCodec(playing)
-        val winner = playing.table.evaluateTrick(playing.core.trump).flatMap(playing.table.playerOf)
+        val winner = playing.table.evaluateTrick(playing.core.trump).map(playing.table.playerOf)
         baseJson.mapObject(_.add("currentWinner", winner.asJson))
       }
     )

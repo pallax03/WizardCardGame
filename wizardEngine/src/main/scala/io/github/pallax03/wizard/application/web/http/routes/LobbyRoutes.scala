@@ -1,25 +1,20 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.application.web.http.endpoints.*
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
-
 import sttp.tapir.server.ServerEndpoint
 
 /**
  * HTTP routes for the Lobby domain.
- *
- * Standard layout (shared across all `*Routes`):
- *   1. private helpers that encapsulate business logic and return `Either[AppError, Output]`
- *   2. `ServerEndpoint` vals wiring each `LobbyEndpoints.*` via `serverLogic`
- *   3. `val all` aggregating the endpoints for `HttpServerVerticle`
  */
-class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
+class LobbyRoutes(
+    lobbyStatePort: LobbyStatePort,
+    gameEngine: InboundPort
+)(using
     ec: ExecutionContext
 ):
 
@@ -56,7 +51,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
           case Some(lobby) =>
             val publicPlayers =
               lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline))
-            Right(LobbyStateResponse(lobbyId, publicPlayers))
+            Right(LobbyStateResponse(lobbyId, lobby.status, publicPlayers))
           case None => Left(AppError.LobbyNotFound(lobbyId))
     }
 
@@ -90,20 +85,43 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
       .serverLogic { secret => lobbyId =>
         withAuth(secret, lobbyId) { (_, lobby) =>
-          if lobby.status == LobbyStatus.WAITING then
-            if lobby.players.forall(_.isOnline) then
+          lobby.status match
+            case LobbyStatus.WAITING =>
+              if lobby.players.forall(_.isOnline) then
+                val updatedLobby = lobby.copy(status = LobbyStatus.IN_GAME)
+                lobbyStatePort
+                  .saveLobby(updatedLobby)
+                  .flatMap(_ =>
+                    gameEngine.startGame(
+                      lobbyId,
+                      lobby.players.map(_.id),
+                      lobby.configuration
+                    )
+                  )
+                  .map(_ => Right(GameStartedResponse("Game started")))
+              else Future.successful(Left(AppError.PlayersOffline))
+            
+            case LobbyStatus.PAUSED =>
               lobbyStatePort
                 .saveLobby(lobby.copy(status = LobbyStatus.IN_GAME))
-                .flatMap(_ =>
-                  gameEngine.startGame(
-                    lobbyId,
-                    lobby.players.map(_.id),
-                    GameConfiguration(1000, lobby.players)
-                  )
-                )
-                .map(_ => Right(GameStartedResponse("Game started")))
-            else Future.successful(Left(AppError.PlayersOffline))
-          else Future.successful(Left(AppError.GameInProgress))
+                .flatMap: _ =>
+                  gameEngine.resumeGame(lobbyId)
+                .map(_ => Right(GameStartedResponse("Game resumed")))
+            
+            case _ => Future.successful(Left(AppError.GameInProgress))
+        }
+      }
+
+  private val updateConfigurationEndpoint: ServerEndpoint[Any, Future] =
+    LobbyEndpoints.updateConfiguration
+      .serverSecurityLogicSuccess(secret => Future.successful(secret))
+      .serverLogic { secret => input =>
+        val (lobbyId, config) = input
+        withAuth(secret, lobbyId) { (_, lobby) =>
+          val updatedLobby = lobby.copy(configuration = config)
+          lobbyStatePort
+            .saveLobby(updatedLobby)
+            .map(_ => Right(config))
         }
       }
 
@@ -125,6 +143,7 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
     joinLobbyEndpoint,
     getLobbyInfoEndpoint,
     startGameEndpoint,
+    updateConfigurationEndpoint,
     removePlayerEndpoint,
     getPlayerGameEndpoint
   )
