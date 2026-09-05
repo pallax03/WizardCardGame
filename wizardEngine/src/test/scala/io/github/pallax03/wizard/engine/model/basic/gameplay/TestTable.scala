@@ -1,9 +1,8 @@
 package io.github.pallax03.wizard.engine.model.basic.gameplay
 
 import scala.language.postfixOps
-
 import io.github.pallax03.wizard.engine.model.basic.*
-
+import io.github.pallax03.wizard.engine.model.core.GameException
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -34,9 +33,9 @@ class TestTable extends AnyWordSpec with Matchers:
         table.playedCards shouldEqual (cardP1 - cardP2)
 
       "identify the player of a specific card" in:
-        table.playerOf(cardP1) shouldBe Some(p1)
-        table.playerOf(cardP2) shouldBe Some(p2)
-        table.playerOf(Five of Blue) shouldBe None
+        table.playerOf(cardP1) shouldBe p1
+        table.playerOf(cardP2) shouldBe p2
+        an [GameException] should be thrownBy table.playerOf(Five of Blue) 
 
     "evaluating the leader card (suit to follow)" should:
       "set the first standard card as leader" in:
