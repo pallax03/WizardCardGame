@@ -47,6 +47,20 @@ trait InboundPort:
    * @param lobbyId the identifier of the lobby
    * @param action the game action to submit
    * @return a Future indicating the completion of the action submission, or the domain GameError if invalid
-   * @throws GameException if processing the action encounters a critical system error (corrupted state).
    */
   def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]]
+
+  /**
+   * Handles an expired turn timer for the given player (The Rope mechanic).
+   * The server picks a valid fallback move and plays it on their behalf.
+   * Increments the player's AFK strike counter; if it reaches the configured maximum,
+   * the player is automatically set offline and the lobby is paused.
+   *
+   * This method is a no-op if it is no longer the player's turn (race-condition safety).
+   *
+   * @param lobbyId  the identifier of the lobby
+   * @param playerId the player whose timer expired
+   */
+  def handleTimeout(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]
+
+

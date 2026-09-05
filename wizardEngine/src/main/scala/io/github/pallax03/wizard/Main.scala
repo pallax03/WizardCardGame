@@ -7,6 +7,7 @@ import io.vertx.core.{AbstractVerticle, Vertx}
 import io.vertx.redis.client.{Redis, RedisOptions}
 
 import io.github.pallax03.wizard.application.bot.BotManagerVerticle
+import io.github.pallax03.wizard.application.timer.TurnTimerVerticle
 import io.github.pallax03.wizard.application.web.http.HttpServerVerticle
 import io.github.pallax03.wizard.application.web.http.routes.*
 import io.github.pallax03.wizard.application.web.ws.WebSocketsVerticle
@@ -32,12 +33,12 @@ object Main:
       .setMaxPoolSize(redisPoolSize)
     val redisClient = Redis.createClient(vertx, redisOptions)
 
-    val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
+    val pubSubPort: PubSubPort       = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
-    val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort)
+    val outPort: OutboundPort        = RedisOutboundAdapter(pubSubPort, redisClient, lobbyStatePort)
     val recoveryPort: GameRecoveryPort =
       RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort, pubSubPort)
-    val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort)
+    val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort, lobbyStatePort)
     val prologPort = WizardPrologAdapter(inPort)
 
     deploy(
@@ -53,6 +54,14 @@ object Main:
       "bot verticle",
       0
     )
+
+    deploy(
+      vertx,
+      TurnTimerVerticle(pubSubPort, redisClient, inPort),
+      "turn timer verticle",
+      0
+    )
+
     runHTTPServer(vertx, inPort, lobbyStatePort, prologPort)
     runWSServer(vertx, lobbyStatePort, pubSubPort)
 
