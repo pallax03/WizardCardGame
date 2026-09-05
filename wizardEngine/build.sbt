@@ -51,6 +51,7 @@ lazy val root = (project in file("."))
       "<empty>;" +
         "io\\.github\\.pallax03\\.wizard\\.Main;" +
         "io\\.github\\.pallax03\\.wizard\\.application\\..*;" +
+        "io\\.github\\.pallax03\\.wizard\\.codecs\\..*;" +
         "io\\.github\\.pallax03\\.wizard\\.engine\\.adapters\\..*;" +
         "io\\.github\\.pallax03\\.wizard\\.engine\\.ports\\..*;" +
         "io\\.github\\.pallax03\\.wizard\\.util\\..*",
