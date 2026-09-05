@@ -1,9 +1,8 @@
 package io.github.pallax03.wizard.engine.model.rules
 
 import io.github.pallax03.wizard.engine.model.basic.*
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.{GameError, GameException}
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
-
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -19,11 +18,11 @@ class TestRoundManager extends AnyWordSpec with Matchers:
     val playersIds: List[PlayerId] = List(p1, p2, p3)
     "managing turn order" should:
       "find the next player correctly" in:
-        playersIds.nextAfter(p1) shouldBe Right(p2)
-        playersIds.nextAfter(p3) shouldBe Right(p1)
+        playersIds.nextAfter(p1) shouldBe p2
+        playersIds.nextAfter(p3) shouldBe p1
 
       "fail if current player is not in the list" in:
-        playersIds.nextAfter(PlayerId(99)) shouldBe Left(GameError.NotYourTurn)
+        an [GameException] shouldBe thrownBy (playersIds.nextAfter(PlayerId(99)))
 
     "determining the first player of a round" should:
       "rotate correctly based on the round number" in:
@@ -73,8 +72,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         expected.validateTurnOf(p2) shouldBe Right(())
 
       "fail with NotYourTurn if the action player is different" in:
-        val expected = p2
-        expected.validateTurnOf(p1) shouldBe Left(GameError.NotYourTurn)
+        p2.validateTurnOf(p1) shouldBe Left(GameError.NotYourTurn(p2))
 
     "initializing a new round" should:
       import Card.*

@@ -18,17 +18,20 @@ class TestBiddingRules extends AnyWordSpec with Matchers:
     val round2: Round = 2
     "a bid is outside the valid range" should:
       "reject negative bids" in:
-        -1.validateBid(round2, Bids.empty, totalPlayers) shouldBe Left(GameError.InvalidBid)
+        val invalidBid = -1
+        invalidBid.validateBid(round2, Bids.empty, totalPlayers) shouldBe Left(GameError.InvalidBid(round2, invalidBid))
 
       "reject bids exceeding the current round number" in:
-        3.validateBid(round2, Bids.empty, totalPlayers) shouldBe Left(GameError.InvalidBid)
+        val validBid = 3
+        validBid.validateBid(round2, Bids.empty, totalPlayers) shouldBe Left(GameError.InvalidBid(round2, validBid))
 
     "processing the final bid (Hook Rule)" should:
       val bidsAfterP1 = Bids.empty + (p1 place 1)
       val bidsAfterP2 = bidsAfterP1 + (p2 place 0)
 
       "reject the bid if it causes the total to equal the round number" in:
-        1.validateBid(round2, bidsAfterP2, totalPlayers) shouldBe Left(GameError.InvalidBid)
+        val validBid = 1
+        validBid.validateBid(round2, bidsAfterP2, totalPlayers) shouldBe Left(GameError.InvalidBid(round2, validBid))
 
       "allow the bid if the total is different from the round number" in:
         2.validateBid(round2, bidsAfterP2, totalPlayers) shouldBe Right(())

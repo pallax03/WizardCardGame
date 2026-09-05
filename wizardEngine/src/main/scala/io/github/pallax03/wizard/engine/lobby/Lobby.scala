@@ -8,7 +8,6 @@ import java.util.UUID
 enum LobbyStatus:
   case WAITING, IN_GAME, PAUSED, FINISHED
 
-  override def toString: String = super.toString.toUpperCase
 
 opaque type LobbyId = String
 

@@ -1,12 +1,11 @@
 package io.github.pallax03.wizard.engine.model.core
 
 import scala.language.postfixOps
-
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.GameError.*
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
+import io.github.pallax03.wizard.engine.model.events.InvitationEvent.WaitingForTrump
 import io.github.pallax03.wizard.engine.model.events.{ActionEvent, LifecycleEvent, ProgressEvent}
-
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -145,11 +144,9 @@ class TestGameEngine extends AnyWordSpec with Matchers:
     "fail with NotYourTurn when a player places a bid out of turn" in:
       val core = createMockCore(1)
       val biddingState = GameState.Bidding(core, Bids.empty, p1)
-      val action = GameAction.PlaceBid(p2, 3)
-
-      val result = GameEngine.processAction(biddingState, action)
-
-      result shouldBe Left(NotYourTurn)
+      val p2Action = GameAction.PlaceBid(p2, 3)
+      
+      GameEngine.processAction(biddingState, p2Action) shouldBe Left(NotYourTurn(p1))
 
     "transition from Bidding to Playing phase when the last player places their bid" in:
       val hands = handsOf(
@@ -240,8 +237,6 @@ class TestGameEngine extends AnyWordSpec with Matchers:
     "fail with InvalidAction when does not match the current game state" in:
       val core = createMockCore(1)
       val choosingState = GameState.ChoosingTrump(core)
-      val action = GameAction.PlaceBid(p1, 1)
+      val p1Action = GameAction.PlaceBid(p1, 1)
 
-      val result = GameEngine.processAction(choosingState, action)
-
-      result shouldBe Left(InvalidAction)
+      GameEngine.processAction(choosingState, p1Action) shouldBe Left(InvalidAction(Option(WaitingForTrump(p1))))
