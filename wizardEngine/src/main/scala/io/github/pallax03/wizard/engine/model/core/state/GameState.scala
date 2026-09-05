@@ -5,7 +5,12 @@ import io.github.pallax03.wizard.engine.model.basic.bidding.{Bids, Tricks}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
 
 /** Represents the various phases and states of the Wizard card game. */
-sealed trait GameState[+C <: CoreState]
+sealed trait GameState[+C <: CoreState]:
+  def playersIds: List[PlayerId] = this match
+    case GameState.ChoosingTrump(core) => core.playersIds
+    case GameState.Bidding(core, _, _) => core.playersIds
+    case GameState.Playing(core, _, _, _, _) => core.playersIds
+    case GameState.Ended(ids, _) => ids
 
 object GameState:
 
@@ -23,7 +28,7 @@ object GameState:
       tricksWon: Tricks
   ) extends GameState[C]
 
-  case class Ended(playersIds: List[PlayerId], scoreboard: Scoreboard) extends GameState[Nothing]
+  case class Ended(override val playersIds: List[PlayerId], scoreboard: Scoreboard) extends GameState[Nothing]
 
 type ServerGameState = GameState[ServerCoreState]
 type PlayerGameState = GameState[PlayerCoreState]

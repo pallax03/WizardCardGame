@@ -4,13 +4,11 @@ import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids, Tricks}
 import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.*
-import io.github.pallax03.wizard.engine.model.core.state.{
-  GameState,
-  ServerCoreState,
-  ServerGameState
-}
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState, ServerGameState}
 import io.github.pallax03.wizard.engine.model.events.*
 import io.github.pallax03.wizard.engine.model.rules.*
+
+import scala.language.postfixOps
 
 /**
  * The GameEngine is responsible for processing game actions and managing the game state.
@@ -23,10 +21,13 @@ opaque type GameEngine = (ServerGameState, List[WizardEvent])
  * Provides methods to process game actions and manage the game state.
  */
 object GameEngine:
-
-  extension (engine: GameEngine)
-    def state: ServerGameState = engine._1
-    def events: List[WizardEvent] = engine._2
+  extension (state: ServerGameState)
+    private def toGameEngine(event: WizardEvent): GameEngine = (state, List(event))
+    private def toGameEngine(events: WizardEvent*): GameEngine = (state, events.toList)
+  extension (flow: GameEngine)
+    def state: ServerGameState = flow._1
+    def events: List[WizardEvent] = flow._2
+    private def prepend(event: WizardEvent): GameEngine = (flow.state, event +: flow.events)
 
   /**
    * Initializes the game engine with the given players.
@@ -39,7 +40,7 @@ object GameEngine:
   def initializeGame(playersIds: List[PlayerId]): GameEngine =
     val initialRound = Round.start
     val initialCore = ServerCoreState.initialize(playersIds, initialRound)
-    setupNewRound(initialRound, initialCore)
+    setupNewRound(initialRound, initialCore).prepend(LifecycleEvent.GameStarted(playersIds))
 
   /**
    * Recovers a round by reinitializing it with the current core state, generating new hands and trump.
@@ -94,29 +95,17 @@ object GameEngine:
       val updatedHands = currentState.core.hands.remove(playerId, card)
       val updatedCore = currentState.core.copy(hands = updatedHands)
       val updatedTable = currentState.table + (playerId, card)
-      val winningCard = updatedTable.evaluateTrick(currentState.core.trump)
-      val followingColor = updatedTable.followingColor
-      val cardPlayedEvent = ActionEvent.CardPlayed(playerId, card, winningCard, followingColor)
 
-      if updatedTable.isTrickComplete(updatedCore.playersIds.size) then
-        advanceCompletedTrick(currentState, updatedCore, updatedTable, cardPlayedEvent)
-      else advanceRegularTurn(currentState, updatedCore, updatedTable, playerId, cardPlayedEvent)
-
-  private def advanceCompletedTrick(
-      currentState: GameState.Playing[ServerCoreState],
-      updatedCore: ServerCoreState,
-      completedTable: Table,
-      cardPlayedEvent: ActionEvent.CardPlayed
-  ): GameEngine =
-    val engine = completeTrick(currentState, updatedCore, completedTable)
-    (engine.state, cardPlayedEvent +: engine.events)
+      val flow = if updatedTable.isTrickComplete(updatedCore.playersIds.size) then
+        completeTrick(currentState, updatedCore, updatedTable)
+      else advanceRegularTurn(currentState, updatedCore, updatedTable, playerId)
+      flow.prepend(ActionEvent.CardPlayed(playerId, card, updatedTable.evaluateTrick(currentState.core.trump), updatedTable.followingColor))
 
   private def advanceRegularTurn(
       currentState: GameState.Playing[ServerCoreState],
       updatedCore: ServerCoreState,
       updatedTable: Table,
-      currentPlayerId: PlayerId,
-      cardPlayedEvent: ActionEvent.CardPlayed
+      currentPlayerId: PlayerId
   ): GameEngine =
     val nextPlayer =
       currentState.core.playersIds
@@ -124,14 +113,11 @@ object GameEngine:
         .getOrElse(currentState.playerTurn)
 
     val nextHand = updatedCore.hands.getHand(nextPlayer)
-    val nextState = currentState.copy(
+    currentState.copy(
       core = updatedCore,
       table = updatedTable,
       playerTurn = nextPlayer
-    )
-    val invitationEvent =
-      InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable))
-    (nextState, List(cardPlayedEvent, invitationEvent))
+    ).toGameEngine(InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable)))
 
   /** Handles the action of placing a bid during the Bidding phase. */
   private def handlePlaceBid(
@@ -139,8 +125,6 @@ object GameEngine:
       playerId: PlayerId,
       bid: Bid
   ): Either[GameError, GameEngine] =
-    val totalPlayers = currentState.core.playersIds.size
-
     for
       _ <- currentState.playerTurn.validateTurnOf(playerId)
       updatedBids <- BiddingRules.processBid(
@@ -151,52 +135,41 @@ object GameEngine:
         currentState.core.playersIds.size
       )
     yield
-      val bidPlacedEvent = ActionEvent.BidPlaced(playerId, bid)
-      if updatedBids.isComplete(totalPlayers) then
-        advanceToPlayingPhase(currentState, updatedBids, bidPlacedEvent)
-      else advanceToNextBidder(currentState, updatedBids, playerId, bidPlacedEvent)
+      val flow = if updatedBids.isComplete(currentState.core.playersIds.size) then
+        advanceToPlayingPhase(currentState, updatedBids)
+      else advanceToNextBidder(currentState, updatedBids, playerId)
+      flow.prepend(ActionEvent.BidPlaced(playerId, bid))
 
   private def advanceToPlayingPhase(
       currentState: GameState.Bidding[ServerCoreState],
       completedBids: Bids,
-      bidPlacedEvent: ActionEvent.BidPlaced
   ): GameEngine =
     val firstPlayer = currentState.core.round.firstPlayer(currentState.core.playersIds)
     val hand = currentState.core.hands.getHand(firstPlayer)
     if hand.isEmpty then throw GameException(InconsistentState.CorruptedHand(firstPlayer))
 
-    val nextState = GameState.Playing(
+    GameState.Playing(
       core = currentState.core,
       bids = completedBids,
       table = Table.empty,
       playerTurn = firstPlayer,
       tricksWon = Tricks.empty
-    )
-    val events = List(
+    ).toGameEngine(
       ProgressEvent.PhaseChanged(GameState.Playing.toString),
-      bidPlacedEvent,
       InvitationEvent.WaitingForCard(firstPlayer, hand.legalCards(Table.empty))
     )
-    (nextState, events)
 
   private def advanceToNextBidder(
       currentState: GameState.Bidding[ServerCoreState],
       updatedBids: Bids,
       currentPlayerId: PlayerId,
-      bidPlacedEvent: ActionEvent.BidPlaced
   ): GameEngine =
     val nextPlayer =
       currentState.core.playersIds.nextAfter(currentPlayerId).getOrElse(currentState.playerTurn)
-
-    val nextState = currentState.copy(
+    currentState.copy(
       bids = updatedBids,
       playerTurn = nextPlayer
-    )
-    val events = List(
-      bidPlacedEvent,
-      InvitationEvent.WaitingForBid(nextPlayer, currentState.core.round)
-    )
-    (nextState, events)
+    ).toGameEngine(InvitationEvent.WaitingForBid(nextPlayer, currentState.core.round))
 
   /** Handles the action of resolving the trump color during the ChoosingTrump phase. */
   private def handleResolveTrump(
@@ -239,48 +212,32 @@ object GameEngine:
 
     val winnerId = completedTable
       .playerOf(winningCard)
-      .getOrElse(throw GameException(InconsistentState.TableNoWinner))
 
     val updatedTricks = state.tricksWon addTrickTo winnerId
 
-    val trickWonEvent = ProgressEvent.TrickWon(
+    val flow = if isRoundComplete(updatedCore.hands) then
+      completeRound(state, updatedCore, updatedTricks)
+    else advanceToNextTrickTurn(state, updatedCore, updatedTricks, winnerId)
+    flow.prepend(ProgressEvent.TrickWon(
       winnerId,
       updatedTricks(winnerId),
       completedTable.playedCards
-    )
-
-    if isRoundComplete(updatedCore.hands) then
-      advanceToRoundCompletion(state, updatedCore, updatedTricks, trickWonEvent)
-    else advanceToNextTrickTurn(state, updatedCore, updatedTricks, winnerId, trickWonEvent)
+    ))
 
   private def isRoundComplete(hands: Hands): Boolean = hands.areEmpty
-
-  private def advanceToRoundCompletion(
-      state: GameState.Playing[ServerCoreState],
-      updatedCore: ServerCoreState,
-      updatedTricks: Tricks,
-      trickWonEvent: ProgressEvent.TrickWon
-  ): GameEngine =
-    val engine = completeRound(state, updatedCore, updatedTricks)
-    (engine.state, trickWonEvent +: engine.events)
 
   private def advanceToNextTrickTurn(
       state: GameState.Playing[ServerCoreState],
       updatedCore: ServerCoreState,
       updatedTricks: Tricks,
-      winnerId: PlayerId,
-      trickWonEvent: ProgressEvent.TrickWon
+      winnerId: PlayerId
   ): GameEngine =
-    val hand = updatedCore.hands.getHand(winnerId)
-    val nextState = state.copy(
+    state.copy(
       core = updatedCore,
       table = Table.empty,
       playerTurn = winnerId,
       tricksWon = updatedTricks
-    )
-    val legalCards = hand.toList.filter(_.validateAgainst(Table.empty, hand).isRight)
-    val invitationEvent = InvitationEvent.WaitingForCard(winnerId, legalCards)
-    (nextState, List(trickWonEvent, invitationEvent))
+    ).toGameEngine(InvitationEvent.WaitingForCard(winnerId, updatedCore.hands.getHand(winnerId).legalCards(Table.empty)))
 
   private def completeRound(
       state: GameState.Playing[ServerCoreState],
@@ -294,23 +251,15 @@ object GameEngine:
       updatedCore.round,
       updatedCore.scoreboard
     )
-    val next = nextRoundOrEnd(updatedCore.copy(scoreboard = updatedScoreboard))
-    (
-      next.state,
-      ProgressEvent.RoundScored(updatedCore.playersIds, updatedScoreboard) +: next.events
-    )
+    nextRoundOrEnd(updatedCore.copy(scoreboard = updatedScoreboard)).prepend(ProgressEvent.RoundScored(updatedCore.playersIds, updatedScoreboard))
 
   private def nextRoundOrEnd(core: ServerCoreState): GameEngine =
     if core.round.isLastRound(core.playersIds) then
-      (
-        GameState.Ended(core.playersIds, core.scoreboard),
-        List(LifecycleEvent.GameEnded(core.playersIds, core.scoreboard))
-      )
+      GameState.Ended(core.playersIds, core.scoreboard).toGameEngine(LifecycleEvent.GameEnded(core.playersIds, core.scoreboard))
     else
       val nextRound = core.round.next
       val nextDealer = core.playersIds.nextAfter(core.dealerId).getOrElse(core.dealerId)
-      val updatedCore = core.copy(round = nextRound, dealerId = nextDealer)
-      setupNewRound(nextRound, updatedCore)
+      setupNewRound(nextRound, core.copy(round = nextRound, dealerId = nextDealer))
 
   private def setupNewRound(
       round: Round,
@@ -318,20 +267,15 @@ object GameEngine:
   ): GameEngine =
     val (newCore, gameState) = round.initialize(Deck.create).run(coreContext).value
 
-    val phaseSpecificEvents = gameState match
+    val invitationEvents: List[WizardEvent] = gameState match
       case GameState.ChoosingTrump(_) =>
         List(InvitationEvent.WaitingForTrump(newCore.dealerId))
       case GameState.Bidding(_, _, playerTurn) =>
         List(InvitationEvent.WaitingForBid(playerTurn, round))
-      case _ => Nil
+      case _ => List.empty
 
-    val cardsDeals = newCore.playersIds.map: pId =>
-      val hand = newCore.hands.getHand(pId)
-      ProgressEvent.CardsDealt(pId, hand, newCore.trump, newCore.round)
-
-    (
-      gameState,
-      (cardsDeals :+ ProgressEvent.PhaseChanged(
-        gameState.getClass.getSimpleName
-      )) ++ phaseSpecificEvents
-    )
+    val cardsDeals: List[WizardEvent] = newCore.playersIds.map: pId =>
+      ProgressEvent.CardsDealt(pId, newCore.hands.getHand(pId), newCore.trump, newCore.round)
+      
+    val allEvents = cardsDeals ::: ProgressEvent.PhaseChanged(gameState.getClass.getSimpleName) :: invitationEvents
+    gameState.toGameEngine(allEvents*)

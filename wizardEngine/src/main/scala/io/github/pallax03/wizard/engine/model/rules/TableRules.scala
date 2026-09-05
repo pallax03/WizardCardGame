@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.engine.model.rules
 import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.*
 import io.github.pallax03.wizard.engine.model.core.CardNotAllowedReasons.*
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.{GameError, GameException, InconsistentState}
 
 /** Defines the rules for card validation and trick evaluation. */
 object TableRules:
