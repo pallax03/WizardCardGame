@@ -3,6 +3,9 @@ package io.github.pallax03.wizard.engine.model.core.state
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bids, Tricks}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
+import io.github.pallax03.wizard.engine.model.events.InvitationEvent
+import io.github.pallax03.wizard.engine.model.rules.TableRules.legalCards
+import io.github.pallax03.wizard.engine.model.rules.BiddingRules.notValidBid
 
 /** Represents the various phases and states of the Wizard card game. */
 sealed trait GameState[+C <: CoreState]:
@@ -29,6 +32,22 @@ object GameState:
   ) extends GameState[C]
 
   case class Ended(override val playersIds: List[PlayerId], scoreboard: Scoreboard) extends GameState[Nothing]
+
+  extension [C <: CoreState](state: GameState[C])
+    /**
+     * Deduces the pending invitation event for a given player based on the current state.
+     */
+    def pendingInvitation(playerId: PlayerId): Option[InvitationEvent] =
+      state match
+        case GameState.Bidding(core, bids, turn) if turn == playerId =>
+          Some(InvitationEvent.WaitingForBid(playerId, core.round, bids.notValidBid(core.round, core.playersIds.size)))
+        case GameState.Playing(core: PlayerCoreState, _, _, turn, _) if turn == playerId =>
+          Some(InvitationEvent.WaitingForCard(playerId, core.hand.toList))
+        case GameState.Playing(core: ServerCoreState, _, table, turn, _) if turn == playerId =>
+          Some(InvitationEvent.WaitingForCard(playerId, core.hands.getHand(playerId).legalCards(table)))
+        case GameState.ChoosingTrump(core) if core.dealerId == playerId =>
+          Some(InvitationEvent.WaitingForTrump(playerId))
+        case _ => None
 
 type ServerGameState = GameState[ServerCoreState]
 type PlayerGameState = GameState[PlayerCoreState]

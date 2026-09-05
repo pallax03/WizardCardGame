@@ -1,7 +1,10 @@
 package io.github.pallax03.wizard.engine.model.core
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
+import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
+import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 
 /**
  * Reasons why a card move is considered illegal during a trick.
@@ -23,6 +26,9 @@ enum CardNotAllowedReasons(val legitCards: List[Card]):
 
 enum InconsistentState:
 
+  /** Occurs when playerId is not found in [[io.github.pallax03.wizard.engine.model.core.state.CoreState]]. */
+  case PlayerNotFound(playerId: PlayerId)
+  
   /** Occurs when there is not any lobbyId with a related game. */
   case GameNotFound
 
@@ -39,13 +45,13 @@ enum InconsistentState:
 enum GameError:
 
   /** The action was performed by a player who is not the current turn holder. */
-  case NotYourTurn
+  case NotYourTurn(turnOf: PlayerId)
 
   /** The bid placed does not respect the game rules. (lastBid must be sumOfAllBids != round ) */
-  case InvalidBid
+  case InvalidBid(round: Round, invalidBid: Bid)
 
   /** The action is not permitted in the current [[GameState]]. */
-  case InvalidAction
+  case InvalidAction(invitationEvent: Option[InvitationEvent])
 
   /** The card played is not allowed based on current table rules. */
   case CardNotAllowed(reason: CardNotAllowedReasons)

@@ -2,13 +2,12 @@ package io.github.pallax03.wizard.engine.adapters.prolog
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologEngine
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids}
 import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
-import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Table}
+import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerGameState}
 import io.github.pallax03.wizard.engine.model.rules.BiddingRules.*
 import io.github.pallax03.wizard.engine.model.rules.TableRules.*
@@ -50,13 +49,13 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
    * @inheritdoc
    * @param playerId given a player, retrieve every playerId's data
    * @return the best Color to resolve trump
-   * @note falls back to the first Card.Color.values
+   * @note falls back to the simplest legal move via FallbackStrategy
    */
   override def resolvedTrumpColor(lobbyId: LobbyId, playerId: PlayerId): Future[Card.Color] =
     onRunningPhase(lobbyId, "choose trump color")(playerId):
       case state @ GameState.ChoosingTrump(_) =>
         withHand(Some(state.core.hand)): hand =>
-          engine.chooseTrumpColor(hand).getOrElse(Card.Color.values.head)
+          engine.chooseTrumpColor(hand).getOrElse(throw IllegalStateException("AI failed to choose a color"))
 
   /**
    * @inheritdoc
@@ -71,7 +70,7 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
         withHand(Some(state.core.hand)): hand =>
           engine
             .placeBid(hand, state.core.trump)
-            .getOrElse(firstValidBid(state.core.round, state.bids, state.core.playersIds.size))
+            .getOrElse(throw IllegalStateException("AI failed to place bid"))
 
   /**
    * @inheritdoc
@@ -87,7 +86,7 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
           engine
             .adjustBid(hand, rejectedBid)
             .filter(_.validateBid(state.core.round, state.bids, state.core.playersIds.size).isRight)
-            .getOrElse(firstValidBid(state.core.round, state.bids, state.core.playersIds.size))
+            .getOrElse(throw IllegalStateException("AI failed to adjust bid"))
 
   /**
    * @inheritdoc
@@ -111,9 +110,4 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
               playerTrick = state.tricksWon(playerId)
             )
             .filter(legalCards.contains)
-            .getOrElse(legalCards.head)
-
-  private def firstValidBid(round: Round, bids: Bids, totalPlayers: Int): Bid =
-    (0 to round)
-      .find(_.validateBid(round, bids, totalPlayers).isRight)
-      .getOrElse(0)
+            .getOrElse(throw IllegalStateException("AI failed to play a valid card"))

@@ -2,8 +2,8 @@ package io.github.pallax03.wizard.codecs.engine.model
 
 import io.circe.*
 import io.circe.syntax.*
-
 import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.core.GameError
 import io.github.pallax03.wizard.engine.model.events.*
 
@@ -61,7 +61,8 @@ object WizardEventsCodecs:
         for {
           p <- ev.get[PlayerId]("playerId")
           r <- fields.get[Round]("round")
-        } yield InvitationEvent.WaitingForBid(p, r)
+          i <- fields.get[Option[Bid]]("invalidBid")
+        } yield InvitationEvent.WaitingForBid(p, r, i)
       case "WaitingForCard" =>
         for {
           p <- ev.get[PlayerId]("playerId")

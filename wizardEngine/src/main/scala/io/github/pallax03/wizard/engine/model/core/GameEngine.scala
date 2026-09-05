@@ -65,21 +65,20 @@ object GameEngine:
     state match
       case currentState @ GameState.ChoosingTrump(_) =>
         action match
-          case GameAction.ResolveTrumpColor(playerId, color) =>
-            handleResolveTrump(currentState, playerId, color)
-          case _ => Left(GameError.InvalidAction)
+          case GameAction.ResolveTrumpColor(playerId, color) => handleResolveTrump(currentState, playerId, color)
+          case _ => Left(GameError.InvalidAction(state.pendingInvitation(action.playerId)))
 
       case currentState @ GameState.Bidding(_, _, _) =>
         action match
           case GameAction.PlaceBid(playerId, bid) => handlePlaceBid(currentState, playerId, bid)
-          case _                                  => Left(GameError.InvalidAction)
+          case _ => Left(GameError.InvalidAction(state.pendingInvitation(action.playerId)))
 
       case currentState @ GameState.Playing(_, _, _, _, _) =>
         action match
           case GameAction.PlayCard(playerId, card) => handlePlayCard(currentState, playerId, card)
-          case _                                   => Left(GameError.InvalidAction)
+          case _ => Left(GameError.InvalidAction(state.pendingInvitation(action.playerId)))
 
-      case _ => Left(GameError.InvalidAction)
+      case _ => Left(GameError.InvalidAction(state.pendingInvitation(action.playerId)))
 
   /** Handles the action of playing a card during the Playing phase. */
   private def handlePlayCard(
@@ -110,7 +109,6 @@ object GameEngine:
     val nextPlayer =
       currentState.core.playersIds
         .nextAfter(currentPlayerId)
-        .getOrElse(currentState.playerTurn)
 
     val nextHand = updatedCore.hands.getHand(nextPlayer)
     currentState.copy(
@@ -165,11 +163,11 @@ object GameEngine:
       currentPlayerId: PlayerId,
   ): GameEngine =
     val nextPlayer =
-      currentState.core.playersIds.nextAfter(currentPlayerId).getOrElse(currentState.playerTurn)
+      currentState.core.playersIds.nextAfter(currentPlayerId)
     currentState.copy(
       bids = updatedBids,
       playerTurn = nextPlayer
-    ).toGameEngine(InvitationEvent.WaitingForBid(nextPlayer, currentState.core.round))
+    ).toGameEngine(InvitationEvent.WaitingForBid(nextPlayer, currentState.core.round, updatedBids.notValidBid(currentState.core.round, currentState.core.playersIds.size)))
 
   /** Handles the action of resolving the trump color during the ChoosingTrump phase. */
   private def handleResolveTrump(
@@ -189,17 +187,15 @@ object GameEngine:
       updatedTrump: Trump,
       trumpResolvedEvent: ActionEvent.TrumpColorResolved
   ): GameEngine =
-    val nextState = GameState.Bidding(
+    GameState.Bidding(
       currentState.core.updateTrump(updatedTrump),
       Bids.empty,
       currentState.core.dealerId
-    )
-    val events = List(
+    ).toGameEngine(
       trumpResolvedEvent,
       ProgressEvent.PhaseChanged(GameState.Bidding.toString),
-      InvitationEvent.WaitingForBid(nextState.playerTurn, nextState.core.round)
+      InvitationEvent.WaitingForBid(currentState.core.dealerId, currentState.core.round, Bids.empty.notValidBid(currentState.core.round, currentState.core.playersIds.size))
     )
-    (nextState, events)
 
   private def completeTrick(
       state: GameState.Playing[ServerCoreState],
@@ -258,7 +254,7 @@ object GameEngine:
       GameState.Ended(core.playersIds, core.scoreboard).toGameEngine(LifecycleEvent.GameEnded(core.playersIds, core.scoreboard))
     else
       val nextRound = core.round.next
-      val nextDealer = core.playersIds.nextAfter(core.dealerId).getOrElse(core.dealerId)
+      val nextDealer = core.playersIds.nextAfter(core.dealerId)
       setupNewRound(nextRound, core.copy(round = nextRound, dealerId = nextDealer))
 
   private def setupNewRound(
@@ -271,7 +267,7 @@ object GameEngine:
       case GameState.ChoosingTrump(_) =>
         List(InvitationEvent.WaitingForTrump(newCore.dealerId))
       case GameState.Bidding(_, _, playerTurn) =>
-        List(InvitationEvent.WaitingForBid(playerTurn, round))
+        List(InvitationEvent.WaitingForBid(playerTurn, round, Bids.empty.notValidBid(round, newCore.playersIds.size)))
       case _ => List.empty
 
     val cardsDeals: List[WizardEvent] = newCore.playersIds.map: pId =>

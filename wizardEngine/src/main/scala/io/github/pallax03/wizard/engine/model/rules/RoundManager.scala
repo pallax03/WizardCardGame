@@ -2,12 +2,12 @@ package io.github.pallax03.wizard.engine.model.rules
 
 import cats.data.State
 import cats.syntax.traverse.toTraverseOps
-
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bids
 import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.*
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.InconsistentState.PlayerNotFound
+import io.github.pallax03.wizard.engine.model.core.{GameError, GameException}
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
 
 /** Manages game round lifecycle operations, player turns, card dealing, and state initialization. */
@@ -18,12 +18,12 @@ object RoundManager:
      * Determines the next player in the turn order following the current player.
      *
      * @param current the ID of the current player.
-     * @return Right containing the next [[PlayerId]], or Left with a [[GameError]] if the player is not found.
+     * @return the next [[PlayerId]], throws a [[GameException]] if the player is not found.
      */
-    def nextAfter(current: PlayerId): Either[GameError, PlayerId] =
+    def nextAfter(current: PlayerId): PlayerId =
       playersIds.indexWhere(_ == current) match
-        case id if id >= 0 => Right(playersIds((id + 1) % playersIds.size))
-        case _             => Left(GameError.NotYourTurn)
+        case id if id >= 0 => playersIds((id + 1) % playersIds.size)
+        case _             => throw GameException(PlayerNotFound(current))
 
   extension (round: Round)
     /**
@@ -93,6 +93,6 @@ object RoundManager:
      * @return Right(()) if the turn is valid, Left with [[GameError.NotYourTurn]] otherwise.
      */
     def validateTurnOf(actionPlayer: PlayerId): Either[GameError, Unit] =
-      Either.cond(actionPlayer == expectedPlayer, (), GameError.NotYourTurn)
+      Either.cond(actionPlayer == expectedPlayer, (), GameError.NotYourTurn(expectedPlayer))
 
 export RoundManager.*

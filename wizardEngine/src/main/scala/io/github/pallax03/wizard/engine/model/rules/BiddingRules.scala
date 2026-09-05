@@ -30,6 +30,13 @@ object BiddingRules:
       .validateBid(round, currentBids, totalPlayers)
       .map(_ => currentBids + (currentPlayer place bid))
 
+  extension (currentBids: Bids)
+    /** Returns the invalid bid for the last player, if applicable. */
+    def notValidBid(round: Round, totalPlayers: Int): Option[Bid] =
+      val suspectedInvalid = round - currentBids.total
+      Option.when(suspectedInvalid.validateBid(round, currentBids, totalPlayers).isLeft)(suspectedInvalid)
+        .filter(isWithinBounds(_, round))
+
   extension (bid: Bid)
     /**
      * Validates if a bid conforms to both boundary rules and the last-player restriction.
@@ -40,9 +47,9 @@ object BiddingRules:
      * @return Right(()) if valid, Left with a [[GameError]] otherwise.
      */
     def validateBid(round: Round, currentBids: Bids, totalPlayers: Int): Either[GameError, Unit] =
-      if !isWithinBounds(bid, round) then Left(GameError.InvalidBid)
+      if !isWithinBounds(bid, round) then Left(GameError.InvalidBid(round, bid))
       else if isLastPlayerInvalid(bid, round, currentBids, totalPlayers) then
-        Left(GameError.InvalidBid)
+        Left(GameError.InvalidBid(round, bid))
       else Right(())
 
   private def isWithinBounds(bid: Bid, round: Round): Boolean =
