@@ -70,7 +70,7 @@ class LobbyRoutes(
         (for
           (player, lobby) <- getAuthLobbyT(lobbyId, secret)
           _ <- EitherT.cond[Future](
-            lobby.status != LobbyStatus.WAITING,
+            lobby.status == LobbyStatus.WAITING,
             (),
             LobbyError.GameInProgress
           )
