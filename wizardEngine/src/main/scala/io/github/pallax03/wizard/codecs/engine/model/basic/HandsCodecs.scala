@@ -5,6 +5,10 @@ import io.circe.*
 import io.github.pallax03.wizard.engine.model.basic.*
 
 object HandsCodecs:
+  import cards.{Hands, Hand}
+  import sttp.tapir.Schema
+  given Schema[Hand] = Schema.anyObject[Hand].name(Schema.SName("Hand"))
+  given Schema[Hands] = Schema.anyObject[Hands].name(Schema.SName("Hands"))
   import CardCodecs.given
   import PlayerIdCodecs.given
   import cards.{Hands, Hand, Card}

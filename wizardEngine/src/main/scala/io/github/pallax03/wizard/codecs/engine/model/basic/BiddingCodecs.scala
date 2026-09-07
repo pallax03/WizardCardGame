@@ -21,5 +21,5 @@ object BiddingCodecs:
   // --- Tapir Schemas ---
 
   given Schema[Bid] = Schema.schemaForInt
-  given Schema[Bids] = Schema.schemaForMap[PlayerId, Bid].asInstanceOf[Schema[Bids]]
-  given Schema[Tricks] = Schema.schemaForMap[PlayerId, Trick].asInstanceOf[Schema[Tricks]]
+  given Schema[Bids] = Schema.anyObject[Bids].name(Schema.SName("Bids"))
+  given Schema[Tricks] = Schema.anyObject[Tricks].name(Schema.SName("Tricks"))

@@ -8,6 +8,8 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
 
 object TableCodecs:
+  import sttp.tapir.Schema
+  given Schema[Table] = Schema.anyObject[Table].name(Schema.SName("Table"))
   import CardCodecs.given
   import PlayerIdCodecs.given
 

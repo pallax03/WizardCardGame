@@ -8,6 +8,8 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 
 object TrumpCodecs:
+  import sttp.tapir.Schema
+  given Schema[Trump] = Schema.anyObject[Trump].name(Schema.SName("Trump"))
   import CardCodecs.given
 
   given Encoder[Trump] = Encoder.instance: t =>
