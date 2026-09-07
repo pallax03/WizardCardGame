@@ -8,9 +8,10 @@ import { GameScoreboard } from "./GameScoreboard";
 import { GameTurnBanner } from "./GameTurnBanner";
 import { ManualApiTester } from "./ManualApiTester";
 import { PlayerHand } from "./PlayerHand";
-import { PlayersRoundStatus } from "./PlayersRoundStatus";
 import { TrickTable } from "./TrickTable";
 import { TrumpArea } from "./TrumpArea";
+import { Badge } from "@/ui/components/badge";
+import { Card as UiCard, CardContent } from "@/ui/components/card";
 
 interface GameBoardProps {
   customPlayerId?: number;
@@ -44,9 +45,29 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     handlePlayCard,
   } = useGameBoard(customPlayerId);
 
+  const players = lobby?.players ?? [];
+
+  // Mappatura posizioni radiale al tavolo stile Texas Hold'em
+  // Ordiniamo i player partendo dal client locale (in basso / Sud)
+  const myIndex = players.findIndex((p) => p.id === playerId);
+  const orderedPlayers =
+    myIndex !== -1
+      ? [...players.slice(myIndex), ...players.slice(0, myIndex)]
+      : players;
+
+  // Stili per disporre i player attorno al tavolo ovale
+  const positionStyles = [
+    "bottom-[-20px] left-1/2 -translate-x-1/2 z-20", // Sud (You)
+    "top-1/2 left-[-15px] -translate-y-1/2 z-10",     // Ovest
+    "top-[-20px] left-1/2 -translate-x-1/2 z-10",    // Nord
+    "top-1/2 right-[-15px] -translate-y-1/2 z-10",    // Est
+    "top-8 left-8 z-10",                             // Nord-Ovest (in caso di 5+ giocatori)
+    "top-8 right-8 z-10",                            // Nord-Est (in caso di 6+ giocatori)
+  ];
+
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6 pb-16">
-      {/* 1. Header & Status Bar */}
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
+      {/* 1. Header & Stato Connessione */}
       <GameHeader
         lobbyId={lobbyId}
         playerId={playerId}
@@ -55,88 +76,158 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         status={gameState.status}
       />
 
-      {/* 2. Main Turn Banner */}
-      <GameTurnBanner
-        isMyTurn={isMyTurn}
-        turnPrompt={turnPrompt}
-        lastError={gameState.lastError}
-        actionStatus={actionStatus}
-      />
+      {/* 2. TAVOLO DA GIOCO TEXAS HOLD'EM (Poker Table Felt) */}
+      <div className="relative w-full my-8 py-10 px-4 min-h-[580px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)] flex flex-col items-center justify-between overflow-hidden">
+        
+        {/* Linea interna decorativa del feltro */}
+        <div className="absolute inset-4 rounded-[100px] sm:rounded-[160px] border-2 border-emerald-600/30 pointer-events-none flex items-center justify-center">
+          <span className="text-emerald-900/20 text-6xl sm:text-8xl font-black uppercase tracking-widest select-none">
+            WIZARD
+          </span>
+        </div>
 
-      {/* 3. Grid: Trump Info + Players Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <TrumpArea
-          trump={gameState.trump}
-          effectiveTrumpColor={gameState.effectiveTrumpColor}
-        />
-        <PlayersRoundStatus
-          players={lobby?.players ?? []}
-          currentTurnPlayerId={gameState.currentTurn.playerId}
-          myPlayerId={playerId}
-          bids={gameState.bids}
-          tricksWon={gameState.tricksWon}
-        />
+        {/* --- GIOCATORI SEDUTI INTORNO AL TAVOLO --- */}
+        {orderedPlayers.map((player, idx) => {
+          const isCurrentTurn = gameState.currentTurn.playerId === player.id;
+          const isMe = player.id === playerId;
+          const playerBid = gameState.bids[player.id];
+          const playerTricks = gameState.tricksWon[player.id] ?? 0;
+          const isBot = Boolean(player.difficulty);
+          const posClass = positionStyles[idx % positionStyles.length];
+
+          return (
+            <div key={player.id} className={`absolute ${posClass}`}>
+              <UiCard
+                className={`w-36 sm:w-44 transition-all duration-300 shadow-xl backdrop-blur-md ${
+                  isCurrentTurn
+                    ? "bg-amber-500/20 border-amber-400 ring-4 ring-amber-400/50 scale-105"
+                    : "bg-zinc-900/90 border-zinc-700/80"
+                }`}
+              >
+                <CardContent className="p-2 sm:p-3 text-center">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <span className="font-bold text-xs sm:text-sm text-white truncate max-w-[90px]">
+                      {player.name}
+                    </span>
+                    {isMe && <Badge variant="secondary" className="text-[9px] px-1 py-0">TU</Badge>}
+                    {isBot && <Badge variant="outline" className="text-[9px] px-1 py-0 text-zinc-400">BOT</Badge>}
+                  </div>
+
+                  <div className="flex justify-around items-center text-[11px] font-mono mt-1 pt-1 border-t border-zinc-800 text-zinc-300">
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-zinc-500 uppercase">Bid</span>
+                      <span className="font-bold text-amber-400">{playerBid !== undefined ? playerBid : "-"}</span>
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-[9px] text-zinc-500 uppercase">Tricks</span>
+                      <span className="font-bold text-emerald-400">{playerTricks}</span>
+                    </div>
+                  </div>
+
+                  {isCurrentTurn && (
+                    <div className="mt-1 text-[9px] font-extrabold text-amber-300 animate-pulse tracking-wider uppercase">
+                      Turno Attivo
+                    </div>
+                  )}
+                </CardContent>
+              </UiCard>
+            </div>
+          );
+        })}
+
+        {/* --- CENTRO TAVOLO (Carte Giocate, Trump & Stato Turno) --- */}
+        <div className="relative z-10 my-auto w-full max-w-3xl flex flex-col items-center gap-4">
+          
+          {/* Banner con lo stato del Turno */}
+          <div className="w-full max-w-md">
+            <GameTurnBanner
+              isMyTurn={isMyTurn}
+              turnPrompt={turnPrompt}
+              lastError={gameState.lastError}
+              actionStatus={actionStatus}
+            />
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
+            {/* Area Briscola / Trump */}
+            <div className="w-full md:w-auto min-w-[140px]">
+              <TrumpArea
+                trump={gameState.trump}
+                effectiveTrumpColor={gameState.effectiveTrumpColor}
+              />
+            </div>
+
+            {/* Tavolo delle Carte giocate nel Trick */}
+            <div className="flex-1 w-full">
+              <TrickTable
+                table={gameState.table}
+                playersMap={playersMap}
+                myPlayerId={playerId}
+                winningCard={gameState.winningCard}
+                followingColor={gameState.followingColor}
+                lastTrick={gameState.lastTrick}
+              />
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* 4. Table / Trick in Progress */}
-      <TrickTable
-        table={gameState.table}
-        playersMap={playersMap}
-        myPlayerId={playerId}
-        winningCard={gameState.winningCard}
-        followingColor={gameState.followingColor}
-        lastTrick={gameState.lastTrick}
-      />
+      {/* 3. MANO DEL GIOCATORE & CONTROLLI D'AZIONE (Schermo In Basso) */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+        {/* Mano del Giocatore (2 Colonne) */}
+        <div className="lg:col-span-2">
+          <PlayerHand
+            hand={gameState.hand}
+            selectedCard={selectedCard}
+            canPlay={canPlay}
+            isCardPlayable={isCardPlayable}
+            onSelectCard={setSelectedCard}
+          />
+        </div>
 
-      {/* 5. Player's Hand */}
-      <PlayerHand
-        hand={gameState.hand}
-        selectedCard={selectedCard}
-        canPlay={canPlay}
-        isCardPlayable={isCardPlayable}
-        onSelectCard={setSelectedCard}
-      />
+        {/* Controlli Azione Diretti (1 Colonna) */}
+        <div>
+          <GameActionControls
+            isMyTurn={isMyTurn}
+            canChooseTrump={canChooseTrump}
+            canBid={canBid}
+            canPlay={canPlay}
+            round={gameState.round}
+            selectedColor={selectedColor}
+            onSelectColor={setSelectedColor}
+            onChooseTrump={handleChooseTrump}
+            bidInput={bidInput}
+            onSelectBid={setBidInput}
+            onPlaceBid={handlePlaceBid}
+            selectedCard={selectedCard}
+            onPlayCard={handlePlayCard}
+            isSubmitting={isSubmitting}
+          />
+        </div>
+      </div>
 
-      {/* 6. Contextual Action Panel */}
-      <GameActionControls
-        isMyTurn={isMyTurn}
-        canChooseTrump={canChooseTrump}
-        canBid={canBid}
-        canPlay={canPlay}
-        round={gameState.round}
-        selectedColor={selectedColor}
-        onSelectColor={setSelectedColor}
-        onChooseTrump={handleChooseTrump}
-        bidInput={bidInput}
-        onSelectBid={setBidInput}
-        onPlaceBid={handlePlaceBid}
-        selectedCard={selectedCard}
-        onPlayCard={handlePlayCard}
-        isSubmitting={isSubmitting}
-      />
+      {/* 4. PANNELLI SECONDARI E TOOL UTILI */}
+      <div className="space-y-6 pt-4 border-t border-zinc-800">
+        <GameScoreboard
+          scoreboard={gameState.scoreboard}
+          playersMap={playersMap}
+          myPlayerId={playerId}
+        />
 
-      {/* 7. Direct API Tester / Manual Buttons */}
-      <ManualApiTester
-        selectedCard={selectedCard}
-        onPlayCard={handlePlayCard}
-        bidInput={bidInput}
-        onSetBidInput={setBidInput}
-        onPlaceBid={handlePlaceBid}
-        selectedColor={selectedColor}
-        onSetSelectedColor={setSelectedColor}
-        onChooseTrump={handleChooseTrump}
-        isSubmitting={isSubmitting}
-      />
+        <ManualApiTester
+          selectedCard={selectedCard}
+          onPlayCard={handlePlayCard}
+          bidInput={bidInput}
+          onSetBidInput={setBidInput}
+          onPlaceBid={handlePlaceBid}
+          selectedColor={selectedColor}
+          onSetSelectedColor={setSelectedColor}
+          onChooseTrump={handleChooseTrump}
+          isSubmitting={isSubmitting}
+        />
 
-      {/* 8. Scoreboard */}
-      <GameScoreboard
-        scoreboard={gameState.scoreboard}
-        playersMap={playersMap}
-        myPlayerId={playerId}
-      />
-
-      {/* 9. Real-time Event Log */}
-      <GameEventLog gameEvents={gameEvents} />
+        <GameEventLog gameEvents={gameEvents} />
+      </div>
     </div>
   );
 }

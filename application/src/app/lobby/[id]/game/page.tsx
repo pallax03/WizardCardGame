@@ -9,7 +9,7 @@ export default function GamePage() {
   const customPlayerId = queryPlayerId ? Number(queryPlayerId) : undefined;
 
   return (
-    <main className="app-page p-4 sm:p-6 min-h-screen">
+    <main className="min-h-screen bg-radial from-zinc-900 via-zinc-950 to-black text-zinc-100 p-2 sm:p-6 overflow-x-hidden">
       <GameBoard customPlayerId={customPlayerId} />
     </main>
   );

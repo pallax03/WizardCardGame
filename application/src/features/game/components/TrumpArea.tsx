@@ -10,39 +10,41 @@ interface TrumpAreaProps {
 }
 
 const colorBadgeStyles: Record<CardColor, string> = {
-  Red: "bg-rose-900 text-rose-200 border-rose-700",
-  Blue: "bg-blue-900 text-blue-200 border-blue-700",
-  Green: "bg-emerald-900 text-emerald-200 border-emerald-700",
-  Yellow: "bg-amber-900 text-amber-200 border-amber-700",
+  Red: "bg-rose-950/90 text-rose-200 border-rose-600 shadow-rose-950/50",
+  Blue: "bg-blue-950/90 text-blue-200 border-blue-600 shadow-blue-950/50",
+  Green: "bg-emerald-950/90 text-emerald-200 border-emerald-600 shadow-emerald-950/50",
+  Yellow: "bg-amber-950/90 text-amber-200 border-amber-500 shadow-amber-950/50",
 };
 
 export function TrumpArea({ trump, effectiveTrumpColor }: TrumpAreaProps) {
   return (
-    <UiCard className="bg-zinc-900/60 border-zinc-800">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
-          Trump Card
+    <UiCard className="bg-zinc-950/80 border-amber-500/40 backdrop-blur-md shadow-2xl">
+      <CardHeader className="p-3 pb-1 text-center border-b border-zinc-800/60">
+        <CardTitle className="text-xs font-black uppercase tracking-widest text-amber-400">
+          👑 Briscola
         </CardTitle>
       </CardHeader>
-      <CardContent className="flex flex-col items-center justify-center gap-3">
+      <CardContent className="p-3 flex flex-col items-center justify-center gap-2">
         {trump ? (
           <div className="flex flex-col items-center gap-2">
             {"card" in trump && trump.card && (
               <GameCardView card={trump.card} size="sm" isClickable={false} />
             )}
-            <div className="text-xs text-center text-zinc-300">
-              <p className="font-semibold">{trump.type}</p>
+            <div className="text-xs text-center text-zinc-200 font-medium">
+              <p className="font-bold text-[11px] uppercase tracking-wide text-zinc-400">
+                Tipo: {trump.type}
+              </p>
               {effectiveTrumpColor && (
                 <span
-                  className={`inline-block mt-1 px-2.5 py-0.5 rounded font-bold text-xs border ${colorBadgeStyles[effectiveTrumpColor]}`}
+                  className={`inline-block mt-1 px-3 py-0.5 rounded-full font-black text-[11px] border shadow-md uppercase tracking-wider ${colorBadgeStyles[effectiveTrumpColor]}`}
                 >
-                  Trump: {effectiveTrumpColor}
+                  Colore: {effectiveTrumpColor}
                 </span>
               )}
             </div>
           </div>
         ) : (
-          <p className="text-zinc-500 text-sm italic py-4">No trump dealt yet</p>
+          <p className="text-zinc-500 text-xs italic py-4">In attesa della briscola...</p>
         )}
       </CardContent>
     </UiCard>

@@ -13,11 +13,31 @@ interface GameCardViewProps {
   size?: "sm" | "md" | "lg";
 }
 
-const colorStyles: Record<CardColor, string> = {
-  Red: "border-rose-500/60 bg-rose-950/40 text-rose-300 hover:border-rose-400",
-  Blue: "border-blue-500/60 bg-blue-950/40 text-blue-300 hover:border-blue-400",
-  Green: "border-emerald-500/60 bg-emerald-950/40 text-emerald-300 hover:border-emerald-400",
-  Yellow: "border-amber-500/60 bg-amber-950/40 text-amber-300 hover:border-amber-400",
+const colorStyles: Record<CardColor, { bg: string; text: string; border: string; glow: string }> = {
+  Red: {
+    bg: "bg-gradient-to-b from-rose-950/90 to-rose-900/80",
+    text: "text-rose-300",
+    border: "border-rose-500/60",
+    glow: "shadow-rose-900/40",
+  },
+  Blue: {
+    bg: "bg-gradient-to-b from-blue-950/90 to-blue-900/80",
+    text: "text-blue-300",
+    border: "border-blue-500/60",
+    glow: "shadow-blue-900/40",
+  },
+  Green: {
+    bg: "bg-gradient-to-b from-emerald-950/90 to-emerald-900/80",
+    text: "text-emerald-300",
+    border: "border-emerald-500/60",
+    glow: "shadow-emerald-900/40",
+  },
+  Yellow: {
+    bg: "bg-gradient-to-b from-amber-950/90 to-amber-900/80",
+    text: "text-amber-300",
+    border: "border-amber-500/60",
+    glow: "shadow-amber-900/40",
+  },
 };
 
 export function GameCardView({
@@ -29,27 +49,28 @@ export function GameCardView({
   size = "md",
 }: GameCardViewProps) {
   const sizeClasses = {
-    sm: "w-16 h-22 text-xs p-1.5",
-    md: "w-20 h-28 text-sm p-2",
-    lg: "w-24 h-34 text-base p-2.5",
+    sm: "w-14 h-20 text-xs p-1.5 rounded-lg",
+    md: "w-20 h-28 text-sm p-2 rounded-xl",
+    lg: "w-24 h-36 text-base p-2.5 rounded-xl sm:w-28 sm:h-40",
   }[size];
 
-  let cardStyle = "border-zinc-700 bg-zinc-900 text-zinc-300";
+  let cardStyle = "border-zinc-700 bg-zinc-900 text-zinc-300 shadow-black/60";
   let label = "";
   let subLabel = "";
 
   if (card.type === "Standard") {
-    cardStyle = colorStyles[card.color];
+    const style = colorStyles[card.color];
+    cardStyle = `${style.border} ${style.bg} ${style.text} ${style.glow}`;
     label = String(card.rank);
     subLabel = card.color;
   } else if (card.type === "Wizard") {
     cardStyle =
-      "border-purple-500/70 bg-purple-950/50 text-purple-300 shadow-purple-900/20";
+      "border-amber-400/80 bg-gradient-to-b from-purple-950 via-purple-900 to-indigo-950 text-amber-300 shadow-purple-900/60 ring-1 ring-amber-400/30";
     label = "W";
     subLabel = `Wizard #${card.id}`;
   } else if (card.type === "Jester") {
     cardStyle =
-      "border-cyan-500/70 bg-cyan-950/50 text-cyan-300 shadow-cyan-900/20";
+      "border-cyan-400/80 bg-gradient-to-b from-slate-950 via-cyan-950 to-slate-900 text-cyan-300 shadow-cyan-900/60 ring-1 ring-cyan-400/30";
     label = "J";
     subLabel = `Jester #${card.id}`;
   }
@@ -61,26 +82,29 @@ export function GameCardView({
       disabled={!isClickable}
       onClick={onClick}
       className={cn(
-        "relative flex flex-col justify-between rounded-xl border-2 font-mono font-bold shadow-md transition-all select-none text-left",
+        "relative flex flex-col justify-between border-2 font-mono font-bold shadow-xl transition-all duration-200 select-none text-left backdrop-blur-md transform-gpu",
         sizeClasses,
         cardStyle,
-        isClickable && "cursor-pointer hover:-translate-y-1 hover:shadow-lg",
+        isClickable && "cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:brightness-110",
         !isClickable && "cursor-default",
-        !isLegal && "opacity-40 grayscale-[40%]",
-        isSelected && "ring-3 ring-indigo-400 -translate-y-2 shadow-indigo-500/30"
+        !isLegal && "opacity-35 grayscale-[60%] hover:translate-y-0",
+        isSelected &&
+          "ring-4 ring-amber-400 -translate-y-4 shadow-2xl shadow-amber-500/50 scale-105 z-20"
       )}
     >
       <div className="flex justify-between items-start">
-        <span className="text-base sm:text-lg leading-none">{label}</span>
+        <span className="text-base sm:text-lg leading-none font-extrabold tracking-tighter">
+          {label}
+        </span>
       </div>
 
       <div className="my-auto text-center">
-        <span className="text-xl sm:text-2xl leading-none">
+        <span className="text-2xl sm:text-3xl leading-none drop-shadow-md">
           {card.type === "Standard" ? "♦" : card.type === "Wizard" ? "🧙" : "🃏"}
         </span>
       </div>
 
-      <div className="truncate text-[10px] sm:text-xs uppercase font-sans font-semibold tracking-wider opacity-80">
+      <div className="truncate text-[9px] sm:text-[10px] uppercase font-sans font-black tracking-wider opacity-90 text-center">
         {subLabel}
       </div>
     </button>

@@ -21,20 +21,20 @@ export function PlayerHand({
   onSelectCard,
 }: PlayerHandProps) {
   return (
-    <UiCard className="bg-zinc-900/60 border-zinc-800">
-      <CardHeader className="pb-2 flex flex-row items-center justify-between">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wider text-zinc-400">
-          Your Hand ({hand.length} cards)
+    <UiCard className="bg-zinc-950/80 border-amber-500/40 backdrop-blur-md shadow-2xl">
+      <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between border-b border-zinc-800/60">
+        <CardTitle className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
+          <span>🃏</span> La Tua Mano ({hand.length} carte)
         </CardTitle>
         {canPlay && (
-          <span className="text-xs text-indigo-400 font-semibold animate-pulse">
-            Select a card to play
+          <span className="text-xs text-amber-300 font-bold animate-pulse">
+            Seleziona la carta da giocare
           </span>
         )}
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-3">
         {hand.length > 0 ? (
-          <div className="flex flex-wrap gap-3 items-center justify-center p-4 bg-zinc-950/40 rounded-xl border border-zinc-800/80 min-h-36">
+          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center p-3 bg-zinc-900/60 rounded-xl border border-zinc-800/80 min-h-[140px]">
             {hand.map((card, index) => {
               const isSelected = cardEquals(card, selectedCard);
               const isLegal = isCardPlayable(card);
@@ -57,8 +57,8 @@ export function PlayerHand({
             })}
           </div>
         ) : (
-          <div className="text-center py-8 text-zinc-500 text-sm">
-            Your hand is empty (waiting for next round cards)
+          <div className="text-center py-8 text-zinc-500 text-xs">
+            Mano vuota (in attesa delle carte del prossimo round)
           </div>
         )}
       </CardContent>

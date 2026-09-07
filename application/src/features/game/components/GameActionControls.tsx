@@ -41,28 +41,29 @@ export function GameActionControls({
   isSubmitting,
 }: GameActionControlsProps) {
   return (
-    <UiCard className="bg-zinc-900/80 border-indigo-500/30">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-semibold uppercase tracking-wider text-zinc-300">
-          Current Action Controls
+    <UiCard className="bg-zinc-950/80 border-amber-500/40 backdrop-blur-md shadow-2xl h-full">
+      <CardHeader className="p-3 pb-2 border-b border-zinc-800/60">
+        <CardTitle className="text-xs font-black uppercase tracking-widest text-amber-400">
+          Pulsantiera Azioni
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* A. Choose Trump Color */}
+      <CardContent className="p-3 space-y-3">
+        {/* Scelta Colore Briscola */}
         {canChooseTrump && (
-          <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/50 space-y-3">
-            <p className="text-sm font-semibold text-white">Choose Trump Color:</p>
-            <div className="flex flex-wrap gap-2">
+          <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-2">
+            <p className="text-xs font-bold text-white">Scegli Colore Briscola:</p>
+            <div className="grid grid-cols-2 gap-2">
               {TRUMP_COLORS.map((color) => (
                 <Button
                   key={color}
-                  size="lg"
+                  size="sm"
                   variant={selectedColor === color ? "confirming" : "outline"}
                   disabled={isSubmitting}
                   onClick={() => {
                     onSelectColor(color);
                     onChooseTrump(color);
                   }}
+                  className="w-full font-bold text-xs"
                 >
                   {color}
                 </Button>
@@ -71,13 +72,13 @@ export function GameActionControls({
           </div>
         )}
 
-        {/* B. Place Bid */}
+        {/* Inserimento Puntata / Bid */}
         {canBid && (
-          <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/50 space-y-3">
-            <p className="text-sm font-semibold text-white">
-              Place your Bid for Round {round}:
+          <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-2">
+            <p className="text-xs font-bold text-white">
+              Puntata Round {round}:
             </p>
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap gap-1.5 justify-center mb-2">
               {Array.from({ length: round + 1 }, (_, i) => (
                 <Button
                   key={i}
@@ -85,34 +86,31 @@ export function GameActionControls({
                   variant={bidInput === i ? "confirming" : "outline"}
                   disabled={isSubmitting}
                   onClick={() => onSelectBid(i)}
+                  className="w-8 h-8 p-0 text-xs font-mono font-bold"
                 >
                   {i}
                 </Button>
               ))}
-              <Button
-                size="default"
-                variant="primary"
-                disabled={isSubmitting}
-                onClick={() => onPlaceBid(bidInput)}
-                className="ml-auto"
-              >
-                Confirm Bid ({bidInput})
-              </Button>
             </div>
+            <Button
+              size="default"
+              variant="primary"
+              disabled={isSubmitting}
+              onClick={() => onPlaceBid(bidInput)}
+              className="w-full font-bold bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-lg"
+            >
+              Conferma Puntata ({bidInput})
+            </Button>
           </div>
         )}
 
-        {/* C. Play Card */}
+        {/* Gioca Carta */}
         {canPlay && (
-          <div className="p-4 rounded-xl bg-indigo-950/40 border border-indigo-500/50 flex flex-wrap items-center justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-white">Play Card:</p>
-              <p className="text-xs text-zinc-400">
-                {selectedCard
-                  ? `Selected: ${cardToString(selectedCard)}`
-                  : "Click one of the legal cards in your hand above"}
-              </p>
-            </div>
+          <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-2">
+            <p className="text-xs font-bold text-white">Carta Selezionata:</p>
+            <p className="text-[11px] text-amber-200/80 font-mono truncate">
+              {selectedCard ? cardToString(selectedCard) : "Seleziona una carta dalla mano"}
+            </p>
             <Button
               size="lg"
               variant="primary"
@@ -120,16 +118,17 @@ export function GameActionControls({
               onClick={() => {
                 if (selectedCard) onPlayCard(selectedCard);
               }}
+              className="w-full font-black bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 shadow-xl"
             >
-              Play Selected Card
+              GIOCA CARTA
             </Button>
           </div>
         )}
 
         {!isMyTurn && (
-          <p className="text-xs text-zinc-500 italic">
-            Controls will activate when it is your turn.
-          </p>
+          <div className="p-4 text-center text-xs text-zinc-500 italic bg-zinc-900/40 rounded-xl border border-zinc-800">
+            Attendi il tuo turno per abilitare i comandi di gioco.
+          </div>
         )}
       </CardContent>
     </UiCard>
