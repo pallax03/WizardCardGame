@@ -2,11 +2,12 @@ package io.github.pallax03.wizard.codecs.engine.model.basic
 
 import io.circe.*
 import io.circe.syntax.*
-import sttp.tapir.Schema
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
+
+import sttp.tapir.Schema
 
 object TableCodecs:
   import CardCodecs.given

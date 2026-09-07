@@ -50,32 +50,34 @@ object WizardEventsCodecs:
   given Decoder[WizardEvent] = Decoder.instance: c =>
     val ev = c.downField("event")
     val fields = ev.downField("fields")
-    ev.downField("action").as[String].flatMap:
-      case "GameStarted" =>
-        fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameStarted.apply)
-      case "GameResumed" =>
-        fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameResumed.apply)
-      case "WaitingForTrump" =>
-        ev.get[PlayerId]("playerId").map(InvitationEvent.WaitingForTrump.apply)
-      case "WaitingForBid" =>
-        for {
-          p <- ev.get[PlayerId]("playerId")
-          r <- fields.get[Round]("round")
-          i <- fields.get[Option[Bid]]("invalidBid")
-        } yield InvitationEvent.WaitingForBid(p, r, i)
-      case "WaitingForCard" =>
-        for {
-          p <- ev.get[PlayerId]("playerId")
-          cards <- fields.get[List[Card]]("legalCards")
-        } yield InvitationEvent.WaitingForCard(p, cards)
-      case "ActionFailed" =>
-        for {
-          p <- fields.get[PlayerId]("playerId")
-          err <- fields.get[GameError]("reason")
-        } yield FailureEvent.ActionFailed(p, err)
-      case "StateRecovered" =>
-        Right(LifecycleEvent.StateRecovered())
-      case "GameAborted" =>
-        fields.get[String]("reason").map(LifecycleEvent.GameAborted.apply)
-      case other =>
-        Left(DecodingFailure(s"No decoding for $other.", c.history))
+    ev.downField("action")
+      .as[String]
+      .flatMap:
+        case "GameStarted" =>
+          fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameStarted.apply)
+        case "GameResumed" =>
+          fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameResumed.apply)
+        case "WaitingForTrump" =>
+          ev.get[PlayerId]("playerId").map(InvitationEvent.WaitingForTrump.apply)
+        case "WaitingForBid" =>
+          for {
+            p <- ev.get[PlayerId]("playerId")
+            r <- fields.get[Round]("round")
+            i <- fields.get[Option[Bid]]("invalidBid")
+          } yield InvitationEvent.WaitingForBid(p, r, i)
+        case "WaitingForCard" =>
+          for {
+            p <- ev.get[PlayerId]("playerId")
+            cards <- fields.get[List[Card]]("legalCards")
+          } yield InvitationEvent.WaitingForCard(p, cards)
+        case "ActionFailed" =>
+          for {
+            p <- fields.get[PlayerId]("playerId")
+            err <- fields.get[GameError]("reason")
+          } yield FailureEvent.ActionFailed(p, err)
+        case "StateRecovered" =>
+          Right(LifecycleEvent.StateRecovered())
+        case "GameAborted" =>
+          fields.get[String]("reason").map(LifecycleEvent.GameAborted.apply)
+        case other =>
+          Left(DecodingFailure(s"No decoding for $other.", c.history))

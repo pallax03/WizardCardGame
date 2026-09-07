@@ -2,11 +2,10 @@ package io.github.pallax03.wizard
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import io.vertx.core.{AbstractVerticle, Vertx}
 import io.vertx.redis.client.{Redis, RedisOptions}
-
 import io.github.pallax03.wizard.application.bot.BotManagerVerticle
+import io.github.pallax03.wizard.application.logging.PubSubLoggerVerticle
 import io.github.pallax03.wizard.application.timer.TurnTimerVerticle
 import io.github.pallax03.wizard.application.web.http.HttpServerVerticle
 import io.github.pallax03.wizard.application.web.http.routes.*
@@ -15,7 +14,6 @@ import io.github.pallax03.wizard.engine.adapters.VertxWebSocketsAdapter
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologAdapter
 import io.github.pallax03.wizard.engine.adapters.redis.*
 import io.github.pallax03.wizard.engine.ports.*
-
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 object Main:
@@ -44,7 +42,7 @@ object Main:
 
     deploy(
       vertx,
-      io.github.pallax03.wizard.application.logging.PubSubLoggerVerticle(pubSubPort),
+      PubSubLoggerVerticle(pubSubPort),
       "pubsub logger verticle",
       0
     )

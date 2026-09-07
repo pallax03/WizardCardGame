@@ -12,7 +12,7 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 enum GameAction:
   def playerId: PlayerId
   override def toString: String = this.productPrefix
-  
+
   case ResolveTrumpColor(playerId: PlayerId, color: Card.Color)
   case PlaceBid(playerId: PlayerId, bid: Bid)
   case PlayCard(playerId: PlayerId, card: Card)

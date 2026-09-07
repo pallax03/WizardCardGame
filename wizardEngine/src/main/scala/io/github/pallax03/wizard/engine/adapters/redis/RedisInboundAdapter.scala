@@ -155,8 +155,7 @@ class RedisInboundAdapter(
                   .flatMap: _ =>
                     outboundPort.publish(
                       lobbyId,
-                      io.github.pallax03.wizard.engine.model.events.SystemEvent
-                        .timeout(playerId)
+                      SystemEvent.timeout(playerId)
                     )
                     submitAction(lobbyId, fallbackAction).void
         case None =>

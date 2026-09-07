@@ -1,11 +1,16 @@
 package io.github.pallax03.wizard.engine.model.core
 
 import scala.language.postfixOps
+
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids, Tricks}
 import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.*
-import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState, ServerGameState}
+import io.github.pallax03.wizard.engine.model.core.state.{
+  GameState,
+  ServerCoreState,
+  ServerGameState
+}
 import io.github.pallax03.wizard.engine.model.events.*
 import io.github.pallax03.wizard.engine.model.rules.*
 
@@ -125,7 +130,10 @@ object GameEngine:
         table = updatedTable,
         playerTurn = nextPlayer
       )
-      .toGameEngine(ProgressEvent.TurnOf(nextPlayer, GameAction.PlayCard.toString), InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable)))
+      .toGameEngine(
+        ProgressEvent.TurnOf(nextPlayer, GameAction.PlayCard.toString),
+        InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable))
+      )
 
   /** Handles the action of placing a bid during the Bidding phase. */
   private def handlePlaceBid(
@@ -324,5 +332,6 @@ object GameEngine:
     val cardsDeals: List[WizardEvent] = newCore.playersIds.map: pId =>
       ProgressEvent.CardsDealt(pId, newCore.hands.getHand(pId), newCore.trump, newCore.round)
 
-    val allEvents = cardsDeals ::: ProgressEvent.PhaseChanged(gameState.toString) :: invitationEvents
+    val allEvents =
+      cardsDeals ::: ProgressEvent.PhaseChanged(gameState.toString) :: invitationEvents
     gameState.toGameEngine(allEvents*)

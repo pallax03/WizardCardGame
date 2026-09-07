@@ -31,7 +31,7 @@ object LobbyRequestCodecs:
   given Decoder[PublicPlayerInfo] = deriveDecoder
   given Encoder[LobbyStateResponse] = deriveEncoder
   given Decoder[LobbyStateResponse] = deriveDecoder
-  
+
   given Schema[JoinLobbyRequest] = Schema.derived
   given Schema[PublicPlayerInfo] = Schema.derived
   given Schema[LobbyStateResponse] = Schema.derived

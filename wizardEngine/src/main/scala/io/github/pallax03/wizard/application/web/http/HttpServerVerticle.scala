@@ -5,9 +5,8 @@ import scala.concurrent.Future
 import io.vertx.core.AbstractVerticle
 import io.vertx.ext.web.Router
 
-import io.github.pallax03.wizard.engine.lobby.LobbyError
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
-
+import io.github.pallax03.wizard.engine.lobby.LobbyError
 import io.github.pallax03.wizard.engine.model.core.{
   AbortedGameException,
   GameException,

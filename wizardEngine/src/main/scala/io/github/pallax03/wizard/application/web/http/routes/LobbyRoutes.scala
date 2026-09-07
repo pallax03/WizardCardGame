@@ -32,7 +32,7 @@ class LobbyRoutes(
       .addPlayer(lobbyId, req.name, req.difficulty, actualSecret)
       .map:
         case Right(player) => Right(AuthLobbyPlayer(lobbyId, player.id, player.secret))
-        case Left(error) => Left(error)
+        case Left(error)   => Left(error)
 
   private val createLobbyEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.createLobby.serverLogic { req => addPlayerToLobby(LobbyId.generate, req) }
@@ -74,8 +74,8 @@ class LobbyRoutes(
             (),
             LobbyError.GameInProgress
           )
-          state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recover {
-            case _ => Left(LobbyError.GameInProgress)
+          state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recover { case _ =>
+            Left(LobbyError.GameInProgress)
           })
         yield state).value
       }
@@ -105,7 +105,9 @@ class LobbyRoutes(
         val (lobbyId, config) = input
         (for
           (_, lobby) <- getAuthLobbyT(lobbyId, secret)
-          _ <- EitherT.right[LobbyError](lobbyStatePort.saveLobby(lobby.copy(configuration = config)))
+          _ <- EitherT.right[LobbyError](
+            lobbyStatePort.saveLobby(lobby.copy(configuration = config))
+          )
         yield config).value
       }
 

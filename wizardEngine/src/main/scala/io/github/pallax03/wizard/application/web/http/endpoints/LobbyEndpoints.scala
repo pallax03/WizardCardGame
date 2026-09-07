@@ -1,6 +1,5 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
@@ -8,8 +7,10 @@ import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
+
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*

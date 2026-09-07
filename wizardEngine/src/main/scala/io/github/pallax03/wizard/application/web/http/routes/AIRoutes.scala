@@ -47,16 +47,14 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
     AIEndpoints.bestBid
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
       .serverLogic(secret =>
-        lobbyId =>
-          handleHint(secret, lobbyId, playerId => aiPort.placeBid(lobbyId, playerId))
+        lobbyId => handleHint(secret, lobbyId, playerId => aiPort.placeBid(lobbyId, playerId))
       )
 
   private val hintBestCard: ServerEndpoint[Any, Future] =
     AIEndpoints.bestCard
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
       .serverLogic(secret =>
-        lobbyId =>
-          handleHint(secret, lobbyId, playerId => aiPort.bestCard(lobbyId, playerId))
+        lobbyId => handleHint(secret, lobbyId, playerId => aiPort.bestCard(lobbyId, playerId))
       )
 
   val all: List[ServerEndpoint[Any, Future]] = List(

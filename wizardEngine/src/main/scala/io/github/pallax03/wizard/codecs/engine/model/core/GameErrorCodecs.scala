@@ -3,13 +3,13 @@ package io.github.pallax03.wizard.codecs.engine.model.core
 import io.circe.*
 import io.circe.syntax.*
 
-import sttp.tapir.Schema
-
 import io.github.pallax03.wizard.codecs.combinators.DiscriminatedCodecs.*
-import io.github.pallax03.wizard.codecs.engine.model._
-import io.github.pallax03.wizard.engine.model.basic._
+import io.github.pallax03.wizard.codecs.engine.model.*
+import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.{CardNotAllowedReasons, GameError}
 import io.github.pallax03.wizard.engine.model.events.{InvitationEvent, WizardEvent}
+
+import sttp.tapir.Schema
 
 object GameErrorCodecs:
   import basic.CardCodecs.given
@@ -17,7 +17,7 @@ object GameErrorCodecs:
   import WizardEventsCodecs.given
   import gameplay.Round
   import bidding.Bid
-  
+
   given Encoder[CardNotAllowedReasons] = Encoder.instance:
     case CardNotAllowedReasons.CardNotInHand(cards) =>
       Json.obj("legalCards" -> cards.asJson).withTag("type", "CardNotInHand")
@@ -54,6 +54,6 @@ object GameErrorCodecs:
         GameError.InvalidAction(ev.map(_.asInstanceOf[InvitationEvent]))
       }
     case "CardNotAllowed" => Decoder.forProduct1("reason")(GameError.CardNotAllowed.apply)
-  
+
   given Schema[CardNotAllowedReasons] = Schema.string
   given Schema[GameError] = Schema.string

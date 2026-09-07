@@ -40,18 +40,34 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         case response => response.toString.decodeAs[Lobby].toOption
 
   /** @inheritdoc */
-  private def updateLobbyCAS[A](lobbyId: LobbyId)(f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[SystemEvent])]): Future[Either[LobbyError, A]] =
+  private def updateLobbyCAS[A](lobbyId: LobbyId)(
+      f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
+  ): Future[Either[LobbyError, A]] =
     getLobby(lobbyId).flatMap { optLobby =>
       val expectedVersion = optLobby.map(_.version).getOrElse(0)
       f(optLobby) match
         case Left(err) => Future.successful(Left(err))
         case Right((res, newLobby, eventOpt)) =>
-          val req = Request.cmd(Command.EVAL).arg(RedisLobbyScripts.casLobbyScript).arg("1")
-            .arg(ChannelsKeys.lobby(lobbyId)).arg(expectedVersion.toString).arg(newLobby.toJson)
+          val req = Request
+            .cmd(Command.EVAL)
+            .arg(RedisLobbyScripts.casLobbyScript)
+            .arg("1")
+            .arg(ChannelsKeys.lobby(lobbyId))
+            .arg(expectedVersion.toString)
+            .arg(newLobby.toJson)
           redisClient.send(req).asScala.flatMap { resp =>
             if (resp != null && resp.toString == "OK") {
               eventOpt match
-                case Some(ev) => redisClient.send(Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(ev.toJson)).asScala.map(_ => Right(res))
+                case Some(ev) =>
+                  redisClient
+                    .send(
+                      Request
+                        .cmd(Command.PUBLISH)
+                        .arg(ChannelsKeys.pubSubLobbyChannel(lobbyId))
+                        .arg(ev.toJson)
+                    )
+                    .asScala
+                    .map(_ => Right(res))
                 case None => Future.successful(Right(res))
             } else updateLobbyCAS(lobbyId)(f)
           }
@@ -66,7 +82,8 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
   ): Future[Either[LobbyError, Player]] =
     import io.github.pallax03.wizard.engine.configuration.GameConfiguration
     updateLobbyCAS(lobbyId) { optLobby =>
-      val lobby = optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
+      val lobby =
+        optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
       lobby.addPlayer(name, difficulty, secret).map { case (p, l) =>
         (p, l, Some(SystemEvent.joined(p.id)))
       }
@@ -76,9 +93,10 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
   override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
     updateLobbyCAS[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)
-      case Some(lobby) => lobby.removePlayer(playerId).map { newLobby =>
-        (true, newLobby, Some(SystemEvent.left(playerId)))
-      }
+      case Some(lobby) =>
+        lobby.removePlayer(playerId).map { newLobby =>
+          (true, newLobby, Some(SystemEvent.left(playerId)))
+        }
     }.map(_.getOrElse(false))
 
   /** @inheritdoc */
@@ -113,9 +131,10 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
   ): Future[Boolean] =
     updateLobbyCAS[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)
-      case Some(lobby) => lobby.setPlayerOnlineStatus(playerId, isOnline).map { newLobby =>
-        (true, newLobby, None)
-      }
+      case Some(lobby) =>
+        lobby.setPlayerOnlineStatus(playerId, isOnline).map { newLobby =>
+          (true, newLobby, None)
+        }
     }.map(_.getOrElse(false))
 
   /** @inheritdoc */

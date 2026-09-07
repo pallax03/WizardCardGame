@@ -1,6 +1,7 @@
 package io.github.pallax03.wizard.engine.lobby
 
 import java.util.UUID
+
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
@@ -15,7 +16,8 @@ object LobbyId:
   def generate: LobbyId = UUID.randomUUID().toString
 
 enum LobbyError:
-  case Full, GameInProgress, NotEnoughPlayers, PlayersOffline, PlayerNotFound, LobbyNotFound, NotAuthenticated
+  case Full, GameInProgress, NotEnoughPlayers, PlayersOffline, PlayerNotFound, LobbyNotFound,
+    NotAuthenticated
   case GameActionRejected(code: String)
 
 case class Lobby(
@@ -65,4 +67,3 @@ case class Lobby(
       case idx =>
         val updatedPlayers = players.updated(idx, players(idx).copy(isOnline = isOnline))
         Right(copy(players = updatedPlayers, version = version + 1))
-

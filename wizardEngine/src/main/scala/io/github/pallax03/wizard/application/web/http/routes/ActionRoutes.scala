@@ -30,7 +30,7 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
                 .submitAction(lobbyId, actionBuilder(player.id))
                 .map:
                   case Left(gameError) => Left(LobbyError.GameActionRejected(gameError.toString))
-                  case Right(_) => Right(())
+                  case Right(_)        => Right(())
             case Left(err) => Future.successful(Left(err))
         case None =>
           Future.successful(Left(LobbyError.LobbyNotFound))

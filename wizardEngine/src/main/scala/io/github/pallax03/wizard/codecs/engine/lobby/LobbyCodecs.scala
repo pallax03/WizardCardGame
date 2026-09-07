@@ -3,15 +3,14 @@ package io.github.pallax03.wizard.codecs.engine.lobby
 import scala.util.Try
 
 import io.circe.*
-
 import io.circe.generic.semiauto.*
-import sttp.tapir.generic.auto.*
 
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.*
 
 import sttp.tapir.Schema
+import sttp.tapir.generic.auto.*
 
 object LobbyCodecs:
 
