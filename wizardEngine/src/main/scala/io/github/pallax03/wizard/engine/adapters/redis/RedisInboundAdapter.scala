@@ -53,7 +53,9 @@ class RedisInboundAdapter(
 
     val reqs = newState.state match
       case _: GameState.Ended =>
-        List(Request.cmd(Command.DEL).arg(key), Request.cmd(Command.DEL).arg(checkpointKey))
+        val saveEnded = Request.cmd(Command.SET).arg(checkpointKey).arg(newState.state.toJson)
+        val delActive = Request.cmd(Command.DEL).arg(key)
+        List(saveEnded, delActive)
       case _ =>
         val mainSave = Request.cmd(Command.SET).arg(key).arg(newState.state.toJson)
         if newState.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]) then
@@ -62,12 +64,24 @@ class RedisInboundAdapter(
 
     Future.sequence(reqs.map(r => redisClient.send(r).asScala)).void
 
+  private def fetchCheckpointState(lobbyId: LobbyId): Future[Option[ServerGameState]] =
+    redisClient
+      .send(Request.cmd(Command.GET).arg(ChannelsKeys.gameCheckpoint(lobbyId)))
+      .asScala
+      .map(Option(_).map(r => decodeGameState(r.toString)))
+
   /** @inheritdoc */
   override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState] =
     withRecovery(lobbyId):
-      fetchGameState(lobbyId).map:
-        case Some(state) => PlayerGameState.from(state, playerId)
-        case None        => throw GameException(GameNotFound)
+      fetchGameState(lobbyId).flatMap:
+        case Some(state) =>
+          Future.successful(PlayerGameState.from(state, playerId))
+        case None =>
+          fetchCheckpointState(lobbyId).map:
+            case Some(endedState) if endedState.isInstanceOf[GameState.Ended] =>
+              PlayerGameState.from(endedState, playerId)
+            case _ =>
+              throw GameException(GameNotFound)
 
   /** @inheritdoc */
   override def startGame(

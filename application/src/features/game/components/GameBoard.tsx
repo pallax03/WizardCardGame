@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useRouter } from "next/navigation";
 import { useGameBoard } from "../hooks/useGameBoard";
 import { GameActionControls } from "./GameActionControls";
 import { GameEventLog } from "./GameEventLog";
@@ -11,13 +12,16 @@ import { PlayerHand } from "./PlayerHand";
 import { TrickTable } from "./TrickTable";
 import { TrumpArea } from "./TrumpArea";
 import { Badge } from "@/ui/components/badge";
-import { Card as UiCard, CardContent } from "@/ui/components/card";
+import { Button } from "@/ui/components/button";
+import { Card as UiCard, CardContent, CardHeader, CardTitle, CardDescription } from "@/ui/components/card";
+import { useState } from "react";
 
 interface GameBoardProps {
   customPlayerId?: number;
 }
 
 export function GameBoard({ customPlayerId }: GameBoardProps) {
+  const router = useRouter();
   const {
     lobbyId,
     playerId,
@@ -51,25 +55,137 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const players = lobby?.players ?? [];
 
   // Mappatura posizioni radiale al tavolo stile Texas Hold'em
-  // Ordiniamo i player partendo dal client locale (in basso / Sud)
   const myIndex = players.findIndex((p) => p.id === playerId);
   const orderedPlayers =
     myIndex !== -1
       ? [...players.slice(myIndex), ...players.slice(0, myIndex)]
       : players;
 
-  // Stili per disporre i player attorno al tavolo ovale
   const positionStyles = [
     "bottom-[-20px] left-1/2 -translate-x-1/2 z-20", // Sud (You)
     "top-1/2 left-[-15px] -translate-y-1/2 z-10",     // Ovest
     "top-[-20px] left-1/2 -translate-x-1/2 z-10",    // Nord
     "top-1/2 right-[-15px] -translate-y-1/2 z-10",    // Est
-    "top-8 left-8 z-10",                             // Nord-Ovest (in caso di 5+ giocatori)
-    "top-8 right-8 z-10",                            // Nord-Est (in caso di 6+ giocatori)
+    "top-8 left-8 z-10",                             // Nord-Ovest
+    "top-8 right-8 z-10",                            // Nord-Est
   ];
 
+  const handleReturnToLobby = () => {
+    // Naviga alla vista della lobby o alla pagina principale/selezione stanze
+    if (lobbyId) {
+      router.push(`/lobby/${lobbyId}`);
+    } else {
+      router.push("/");
+    }
+  };
+
+    // 1. Aggiungi uno stato locale per il testing
+  const [forceGameEnded, setForceGameEnded] = useState(false);
+
+  // 2. Aggiorna il controllo dello stato Ended
+  const isGameEnded = gameState.status === "GAME_ENDED" || forceGameEnded;
+
+  const sortedScoreboard = gameState.scoreboard
+    ? Object.entries(gameState.scoreboard)
+        .map(([pIdStr, entries]) => {
+          const pId = Number(pIdStr);
+          const playerObj = playersMap.get(pId);
+          const playerName =
+            typeof playerObj === "object" && playerObj !== null
+              ? playerObj.name
+              : playerObj ?? `Giocatore ${pId}`;
+
+          // Se entries è un array (storico del tabellone), prendiamo il punteggio dell'ultimo round
+          let finalScore = 0;
+          if (Array.isArray(entries) && entries.length > 0) {
+            const lastEntry = entries[entries.length - 1];
+            finalScore = Number(lastEntry?.score ?? 0);
+          } else if (typeof entries === "number") {
+            finalScore = entries;
+          } else if (entries && typeof entries === "object" && "score" in entries) {
+            finalScore = Number((entries as { score: unknown }).score ?? 0);
+          }
+
+          return {
+            id: pId,
+            name: playerName,
+            score: Number.isNaN(finalScore) ? 0 : finalScore,
+          };
+        })
+        .sort((a, b) => b.score - a.score)
+    : [];
+
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
+    <div className="relative w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
+      {isGameEnded && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <UiCard className="w-full max-w-lg bg-zinc-900/95 border-2 border-amber-500/80 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-center overflow-hidden">
+            <CardHeader className="bg-gradient-to-b from-amber-500/10 to-transparent pb-4 border-b border-zinc-800">
+              <Badge variant="outline" className="w-fit mx-auto mb-2 border-amber-500/50 text-amber-400 bg-amber-500/10 px-3 py-0.5 text-xs font-semibold uppercase tracking-wider">
+                Partita Conclusa
+              </Badge>
+              <CardTitle className="text-3xl font-black text-amber-400 tracking-wider uppercase">
+                🏆 Risultati Finali
+              </CardTitle>
+              <CardDescription className="text-zinc-400 text-sm mt-1">
+                Ecco la classifica finale della partita
+              </CardDescription>
+            </CardHeader>
+
+            <CardContent className="p-6 space-y-6">
+              {/* Tabella Classifica Finale */}
+              {sortedScoreboard.length > 0 && (
+                <div className="space-y-2 bg-zinc-950/60 rounded-xl p-3 border border-zinc-800/80">
+                  {sortedScoreboard.map((item, index) => {
+                    const isWinner = index === 0;
+                    const isMe = item.id === playerId;
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`flex items-center justify-between px-4 py-2.5 rounded-lg transition-all ${
+                          isWinner
+                            ? "bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold"
+                            : isMe
+                            ? "bg-zinc-800/80 text-white border border-zinc-700"
+                            : "bg-zinc-900/50 text-zinc-300"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <span
+                            className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-black ${
+                              isWinner
+                                ? "bg-amber-400 text-zinc-950"
+                                : "bg-zinc-800 text-zinc-400"
+                            }`}
+                          >
+                            {index + 1}
+                          </span>
+                          <span className="text-sm font-semibold truncate max-w-[180px]">
+                            {item.name} {isMe && "(Tu)"}
+                          </span>
+                        </div>
+                        <span className="font-mono font-extrabold text-base">
+                          {item.score} <span className="text-xs font-normal text-zinc-500">pt</span>
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              {/* Bottone per tornare alla lobby */}
+              <Button
+                onClick={handleReturnToLobby}
+                className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-6 text-base tracking-wide uppercase transition-all shadow-lg hover:shadow-amber-500/25"
+              >
+                Torna Alla Lobby
+              </Button>
+            </CardContent>
+          </UiCard>
+        </div>
+      )}
+
       {/* 1. Header & Stato Connessione */}
       <GameHeader
         lobbyId={lobbyId}
@@ -247,6 +363,18 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           onChooseTrump={handleChooseTrump}
           isSubmitting={isSubmitting}
         />
+
+        <div className="flex gap-2 items-center p-4 bg-zinc-900 border border-dashed border-amber-500/50 rounded-xl">
+          <span className="text-xs font-mono text-amber-400">DEV TOOL:</span>
+          <Button
+            size="sm"
+            variant="outline"
+            className="border-amber-500 text-amber-400 hover:bg-amber-500/20"
+            onClick={() => setForceGameEnded((prev) => !prev)}
+          >
+            {forceGameEnded ? "Disattiva Modal fine partita" : "⚡ Simula Modal GAME_ENDED"}
+          </Button>
+        </div>
 
         <GameEventLog gameEvents={gameEvents} />
       </div>
