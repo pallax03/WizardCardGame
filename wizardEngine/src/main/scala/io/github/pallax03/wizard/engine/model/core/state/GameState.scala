@@ -8,7 +8,8 @@ import io.github.pallax03.wizard.engine.model.rules.BiddingRules.notValidBid
 import io.github.pallax03.wizard.engine.model.rules.TableRules.legalCards
 
 /** Represents the various phases and states of the Wizard card game. */
-sealed trait GameState[+C <: CoreState]:
+sealed trait GameState[+C <: CoreState] extends Product:
+  override def toString: String = this.productPrefix
   def playersIds: List[PlayerId] = this match
     case GameState.ChoosingTrump(core)       => core.playersIds
     case GameState.Bidding(core, _, _)       => core.playersIds
@@ -16,7 +17,6 @@ sealed trait GameState[+C <: CoreState]:
     case GameState.Ended(ids, _)             => ids
 
 object GameState:
-
   case class ChoosingTrump[C <: CoreState](
       core: C
   ) extends GameState[C]

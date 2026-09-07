@@ -18,4 +18,5 @@ object ProgressEvent:
         PlayerScoped:
     override def playerId: PlayerId = winnerId
   case class RoundScored(playersIds: List[PlayerId], scoreboard: Scoreboard) extends ProgressEvent
+  case class TurnOf(playerId: PlayerId, actionRequested: String) extends ProgressEvent with PlayerScoped
   case class PhaseChanged(phaseName: String) extends ProgressEvent

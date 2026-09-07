@@ -79,7 +79,7 @@ class BotManagerVerticle(
       rawJson: String
   ): Unit =
     rawJson.decodeAs[WizardEvent] match
-      case Right(invitation: InvitationEvent) if playerId == invitation.playerId =>
+      case Right(invitation: InvitationEvent) if playerId == invitation.destinationId =>
         executeInvitationStrategy(lobbyId, playerId, strategy, invitation)
       case Right(LifecycleEvent.GameEnded(_, _)) =>
         activeSubscriptions.remove((lobbyId, playerId)).foreach(_.cancel())

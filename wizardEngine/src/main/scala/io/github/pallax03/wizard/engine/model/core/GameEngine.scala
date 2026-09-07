@@ -1,16 +1,11 @@
 package io.github.pallax03.wizard.engine.model.core
 
 import scala.language.postfixOps
-
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids, Tricks}
 import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.*
-import io.github.pallax03.wizard.engine.model.core.state.{
-  GameState,
-  ServerCoreState,
-  ServerGameState
-}
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState, ServerGameState}
 import io.github.pallax03.wizard.engine.model.events.*
 import io.github.pallax03.wizard.engine.model.rules.*
 
@@ -130,7 +125,7 @@ object GameEngine:
         table = updatedTable,
         playerTurn = nextPlayer
       )
-      .toGameEngine(InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable)))
+      .toGameEngine(ProgressEvent.TurnOf(nextPlayer, GameAction.PlayCard.toString), InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable)))
 
   /** Handles the action of placing a bid during the Bidding phase. */
   private def handlePlaceBid(
@@ -172,6 +167,7 @@ object GameEngine:
       )
       .toGameEngine(
         ProgressEvent.PhaseChanged(GameState.Playing.toString),
+        ProgressEvent.TurnOf(firstPlayer, GameAction.PlayCard.toString),
         InvitationEvent.WaitingForCard(firstPlayer, hand.legalCards(Table.empty))
       )
 
@@ -188,6 +184,7 @@ object GameEngine:
         playerTurn = nextPlayer
       )
       .toGameEngine(
+        ProgressEvent.TurnOf(nextPlayer, GameAction.PlaceBid.toString),
         InvitationEvent.WaitingForBid(
           nextPlayer,
           currentState.core.round,
@@ -222,6 +219,7 @@ object GameEngine:
       .toGameEngine(
         trumpResolvedEvent,
         ProgressEvent.PhaseChanged(GameState.Bidding.toString),
+        ProgressEvent.TurnOf(currentState.core.dealerId, GameAction.PlaceBid.toString),
         InvitationEvent.WaitingForBid(
           currentState.core.dealerId,
           currentState.core.round,
@@ -270,6 +268,7 @@ object GameEngine:
         tricksWon = updatedTricks
       )
       .toGameEngine(
+        ProgressEvent.TurnOf(winnerId, GameAction.PlayCard.toString),
         InvitationEvent
           .WaitingForCard(winnerId, updatedCore.hands.getHand(winnerId).legalCards(Table.empty))
       )
@@ -307,9 +306,13 @@ object GameEngine:
 
     val invitationEvents: List[WizardEvent] = gameState match
       case GameState.ChoosingTrump(_) =>
-        List(InvitationEvent.WaitingForTrump(newCore.dealerId))
+        List(
+          ProgressEvent.TurnOf(newCore.dealerId, GameAction.ResolveTrumpColor.toString),
+          InvitationEvent.WaitingForTrump(newCore.dealerId)
+        )
       case GameState.Bidding(_, _, playerTurn) =>
         List(
+          ProgressEvent.TurnOf(playerTurn, GameAction.PlaceBid.toString),
           InvitationEvent.WaitingForBid(
             playerTurn,
             round,
@@ -321,7 +324,5 @@ object GameEngine:
     val cardsDeals: List[WizardEvent] = newCore.playersIds.map: pId =>
       ProgressEvent.CardsDealt(pId, newCore.hands.getHand(pId), newCore.trump, newCore.round)
 
-    val allEvents = cardsDeals ::: ProgressEvent.PhaseChanged(
-      gameState.getClass.getSimpleName
-    ) :: invitationEvents
+    val allEvents = cardsDeals ::: ProgressEvent.PhaseChanged(gameState.toString) :: invitationEvents
     gameState.toGameEngine(allEvents*)

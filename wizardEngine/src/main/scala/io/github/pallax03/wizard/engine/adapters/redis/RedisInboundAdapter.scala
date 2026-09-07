@@ -128,42 +128,36 @@ class RedisInboundAdapter(
 
   /** @inheritdoc */
   override def handleTimeout(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
-    val clearTimerF = redisClient
-      .send(Request.cmd(Command.DEL).arg(ChannelsKeys.turnTimer(lobbyId, playerId)))
-      .asScala
-    clearTimerF.flatMap:
-      case resp if resp != null && resp.toInteger == 1 =>
-        getState(lobbyId, playerId).flatMap: playerGameState =>
-          playerGameState.pendingInvitation(playerId) match
-            case Some(invitationEvent: InvitationEvent) =>
-              val fallbackAction = FallbackStrategy.fallbackMove(invitationEvent)
-              val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
-              lobbyStatePort
-                .getLobby(lobbyId)
-                .flatMap:
-                  case None => Future.unit
-                  case Some(lobby) =>
-                    redisClient
-                      .send(Request.cmd(Command.INCR).arg(strikesKey))
-                      .asScala
-                      .flatMap: strikes =>
-                        if strikes.toLong >= lobby.configuration.maxStrikes then
-                          lobbyStatePort
-                            .setPlayerOnlineStatus(lobbyId, playerId, false)
-                            .flatMap: _ =>
-                              lobbyStatePort.saveLobby(
-                                lobby.copy(status =
-                                  io.github.pallax03.wizard.engine.lobby.LobbyStatus.PAUSED
-                                )
-                              )
-                        else Future.unit
-                      .flatMap: _ =>
-                        outboundPort.publish(
-                          lobbyId,
-                          io.github.pallax03.wizard.engine.model.events.SystemEvent
-                            .timeout(playerId)
-                        )
-                        submitAction(lobbyId, fallbackAction).void
-            case None =>
-              Future.unit // maybe a GameException... #82 issue: https://github.com/pallax03/WizardCardGame/issues/82
-      case _ => Future.unit
+    getState(lobbyId, playerId).flatMap: playerGameState =>
+      playerGameState.pendingInvitation(playerId) match
+        case Some(invitationEvent: InvitationEvent) =>
+          val fallbackAction = FallbackStrategy.fallbackMove(invitationEvent)
+          val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
+          lobbyStatePort
+            .getLobby(lobbyId)
+            .flatMap:
+              case None => Future.unit
+              case Some(lobby) =>
+                redisClient
+                  .send(Request.cmd(Command.INCR).arg(strikesKey))
+                  .asScala
+                  .flatMap: strikes =>
+                    if strikes.toLong >= lobby.configuration.maxStrikes then
+                      lobbyStatePort
+                        .setPlayerOnlineStatus(lobbyId, playerId, false)
+                        .flatMap: _ =>
+                          lobbyStatePort.saveLobby(
+                            lobby.copy(status =
+                              io.github.pallax03.wizard.engine.lobby.LobbyStatus.PAUSED
+                            )
+                          )
+                    else Future.unit
+                  .flatMap: _ =>
+                    outboundPort.publish(
+                      lobbyId,
+                      io.github.pallax03.wizard.engine.model.events.SystemEvent
+                        .timeout(playerId)
+                    )
+                    submitAction(lobbyId, fallbackAction).void
+        case None =>
+          Future.unit

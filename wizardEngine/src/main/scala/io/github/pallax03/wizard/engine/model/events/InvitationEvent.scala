@@ -6,10 +6,10 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
 
 /** Represents a request for input for a specific player. */
-sealed trait InvitationEvent extends WizardEvent, PlayerScoped
+sealed trait InvitationEvent extends WizardEvent, DestinationScoped
 
 object InvitationEvent:
-  case class WaitingForBid(playerId: PlayerId, round: Round, invalidBid: Option[Bid] = None)
+  case class WaitingForBid(destinationId: PlayerId, round: Round, invalidBid: Option[Bid] = None)
       extends InvitationEvent
-  case class WaitingForCard(playerId: PlayerId, legalCards: List[Card]) extends InvitationEvent
-  case class WaitingForTrump(playerId: PlayerId) extends InvitationEvent
+  case class WaitingForCard(destinationId: PlayerId, legalCards: List[Card]) extends InvitationEvent
+  case class WaitingForTrump(destinationId: PlayerId) extends InvitationEvent
