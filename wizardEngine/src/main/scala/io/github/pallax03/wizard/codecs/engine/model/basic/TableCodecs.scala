@@ -2,14 +2,13 @@ package io.github.pallax03.wizard.codecs.engine.model.basic
 
 import io.circe.*
 import io.circe.syntax.*
+import sttp.tapir.Schema
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
 
 object TableCodecs:
-  import sttp.tapir.Schema
-  given Schema[Table] = Schema.anyObject[Table].name(Schema.SName("Table"))
   import CardCodecs.given
   import PlayerIdCodecs.given
 
@@ -26,3 +25,5 @@ object TableCodecs:
 
   given Decoder[Table] = Decoder.instance: cursor =>
     cursor.downField("playedCards").as[List[(PlayerId, Card)]].map(_.asInstanceOf[Table])
+
+  given Schema[Table] = Schema.anyObject[Table].name(Schema.SName("Table"))

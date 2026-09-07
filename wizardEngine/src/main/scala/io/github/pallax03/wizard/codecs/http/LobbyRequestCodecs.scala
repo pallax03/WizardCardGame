@@ -4,7 +4,6 @@ import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 
 import io.github.pallax03.wizard.application.web.http.{
-  GameStartedResponse,
   JoinLobbyRequest,
   LobbyStateResponse,
   PublicPlayerInfo
@@ -26,18 +25,13 @@ import sttp.tapir.generic.auto.*
  * (Player, LobbyId, BotsDifficulty, PlayerId) they reference.
  */
 object LobbyRequestCodecs:
-  // --- Circe ---
   given Encoder[JoinLobbyRequest] = deriveEncoder
   given Decoder[JoinLobbyRequest] = deriveDecoder
   given Encoder[PublicPlayerInfo] = deriveEncoder
   given Decoder[PublicPlayerInfo] = deriveDecoder
   given Encoder[LobbyStateResponse] = deriveEncoder
   given Decoder[LobbyStateResponse] = deriveDecoder
-  given Encoder[GameStartedResponse] = deriveEncoder
-  given Decoder[GameStartedResponse] = deriveDecoder
-
-  // --- Tapir Schemas ---
+  
   given Schema[JoinLobbyRequest] = Schema.derived
   given Schema[PublicPlayerInfo] = Schema.derived
   given Schema[LobbyStateResponse] = Schema.derived
-  given Schema[GameStartedResponse] = Schema.derived

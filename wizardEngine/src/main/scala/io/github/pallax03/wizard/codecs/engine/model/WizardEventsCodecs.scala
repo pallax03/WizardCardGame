@@ -4,7 +4,6 @@ import io.circe.*
 import io.circe.syntax.*
 
 import io.github.pallax03.wizard.engine.model.basic.*
-import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.core.GameError
 import io.github.pallax03.wizard.engine.model.events.*
 
@@ -12,6 +11,7 @@ object WizardEventsCodecs:
 
   import gameplay.Round
   import cards.Card
+  import bidding.Bid
   import basic.PlayerIdCodecs.given
   import basic.HandsCodecs.given
   import basic.TrumpCodecs.given
@@ -47,11 +47,10 @@ object WizardEventsCodecs:
 
     Json.obj("event" -> Json.obj(eventFields*))
 
-  given Decoder[WizardEvent] = Decoder.instance { c =>
+  given Decoder[WizardEvent] = Decoder.instance: c =>
     val ev = c.downField("event")
     val fields = ev.downField("fields")
-
-    ev.downField("action").as[String].flatMap {
+    ev.downField("action").as[String].flatMap:
       case "GameStarted" =>
         fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameStarted.apply)
       case "GameResumed" =>
@@ -80,5 +79,3 @@ object WizardEventsCodecs:
         fields.get[String]("reason").map(LifecycleEvent.GameAborted.apply)
       case other =>
         Left(DecodingFailure(s"No decoding for $other.", c.history))
-    }
-  }

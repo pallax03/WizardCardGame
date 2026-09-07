@@ -4,7 +4,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import cats.syntax.all.*
-import io.github.pallax03.wizard.application.web.ResponseErrors
 
 import io.vertx.redis.client.{Command, Redis, Request}
 
@@ -40,72 +39,47 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         case null     => None
         case response => response.toString.decodeAs[Lobby].toOption
 
-  /**
-   * @inheritdoc
-   *
-   * // redis response: see [[io.github.pallax03.wizard.engine.adapters.redis.RedisLobbyScripts]]
-   */
+  /** @inheritdoc */
+  private def updateLobbyCAS[A](lobbyId: LobbyId)(f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[SystemEvent])]): Future[Either[LobbyError, A]] =
+    getLobby(lobbyId).flatMap { optLobby =>
+      val expectedVersion = optLobby.map(_.version).getOrElse(0)
+      f(optLobby) match
+        case Left(err) => Future.successful(Left(err))
+        case Right((res, newLobby, eventOpt)) =>
+          val req = Request.cmd(Command.EVAL).arg(RedisLobbyScripts.casLobbyScript).arg("1")
+            .arg(ChannelsKeys.lobby(lobbyId)).arg(expectedVersion.toString).arg(newLobby.toJson)
+          redisClient.send(req).asScala.flatMap { resp =>
+            if (resp != null && resp.toString == "OK") {
+              eventOpt match
+                case Some(ev) => redisClient.send(Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(ev.toJson)).asScala.map(_ => Right(res))
+                case None => Future.successful(Right(res))
+            } else updateLobbyCAS(lobbyId)(f)
+          }
+    }
+
+  /** @inheritdoc */
   override def addPlayer(
       lobbyId: LobbyId,
       name: String,
       difficulty: Option[BotsDifficulty],
       secret: Option[String] = None
-  ): Future[Either[ResponseErrors, Player]] =
+  ): Future[Either[LobbyError, Player]] =
     import io.github.pallax03.wizard.engine.configuration.GameConfiguration
-    val req = Request
-      .cmd(Command.EVAL)
-      .arg(RedisLobbyScripts.addPlayerScript)
-      .arg("1")
-      .arg(ChannelsKeys.lobby(lobbyId))
-      .arg(name)
-      .arg(difficulty.map(_.toString).getOrElse(""))
-      .arg(lobbyId.toString)
-      .arg(secret.getOrElse(""))
-      .arg(GameConfiguration().toJson)
-
-    redisClient
-      .send(req)
-      .asScala
-      .map:
-        case null => Left(ResponseErrors.LobbyFull)
-        case response =>
-          response.toString match
-            case "ERR_IN_PROGRESS" => Left(ResponseErrors.GameInProgress)
-            case "ERR_LOBBY_FULL"  => Left(ResponseErrors.LobbyFull)
-            case json              => Right(json.decodeAs[Player].toOption.get)
-      .flatMap:
-        case Right(player) =>
-          val msg = SystemEvent.joined(player.id).toJson
-          redisClient
-            .send(
-              Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
-            )
-            .asScala
-            .map(_ => Right(player))
-        case Left(error) => Future.successful(Left(error))
+    updateLobbyCAS(lobbyId) { optLobby =>
+      val lobby = optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
+      lobby.addPlayer(name, difficulty, secret).map { case (p, l) =>
+        (p, l, Some(SystemEvent.joined(p.id)))
+      }
+    }
 
   /** @inheritdoc */
   override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
-    val req = Request
-      .cmd(Command.EVAL)
-      .arg(RedisLobbyScripts.removePlayerScript)
-      .arg("1")
-      .arg(ChannelsKeys.lobby(lobbyId))
-      .arg(playerId.toInt.toString)
-
-    redisClient
-      .send(req)
-      .asScala
-      .flatMap: resp =>
-        if resp != null && resp.toInteger == 1 then
-          val msg = SystemEvent.left(playerId).toJson
-          redisClient
-            .send(
-              Request.cmd(Command.PUBLISH).arg(ChannelsKeys.pubSubLobbyChannel(lobbyId)).arg(msg)
-            )
-            .asScala
-            .as(true)
-        else Future.successful(false)
+    updateLobbyCAS[Boolean](lobbyId) {
+      case None => Left(LobbyError.LobbyNotFound)
+      case Some(lobby) => lobby.removePlayer(playerId).map { newLobby =>
+        (true, newLobby, Some(SystemEvent.left(playerId)))
+      }
+    }.map(_.getOrElse(false))
 
   /** @inheritdoc */
   override def getAllLobbies: Future[List[Lobby]] =
@@ -137,14 +111,12 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       playerId: PlayerId,
       isOnline: Boolean
   ): Future[Boolean] =
-    val req = Request
-      .cmd(Command.EVAL)
-      .arg(RedisLobbyScripts.setPlayerOnlineScript)
-      .arg("1")
-      .arg(ChannelsKeys.lobby(lobbyId))
-      .arg(playerId.toInt.toString)
-      .arg(isOnline.toString)
-    redisClient.send(req).asScala.map(resp => resp != null && resp.toInteger == 1)
+    updateLobbyCAS[Boolean](lobbyId) {
+      case None => Left(LobbyError.LobbyNotFound)
+      case Some(lobby) => lobby.setPlayerOnlineStatus(playerId, isOnline).map { newLobby =>
+        (true, newLobby, None)
+      }
+    }.map(_.getOrElse(false))
 
   /** @inheritdoc */
   override def tryAcquireBotLock(

@@ -1,6 +1,5 @@
 package io.github.pallax03.wizard.engine.ports
 
-import io.github.pallax03.wizard.application.web.ResponseErrors
 import scala.concurrent.Future
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
@@ -60,7 +59,7 @@ trait LobbyStatePort:
       name: String,
       difficulty: Option[BotsDifficulty] = None,
       secret: Option[String] = None
-  ): Future[Either[ResponseErrors, Player]]
+  ): Future[Either[LobbyError, Player]]
 
   /**
    * Atomically removes a player from the lobby by ID.

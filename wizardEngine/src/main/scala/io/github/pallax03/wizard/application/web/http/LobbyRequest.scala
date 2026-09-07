@@ -3,8 +3,6 @@ package io.github.pallax03.wizard.application.web.http
 import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
-// --- Lobby Endpoints Payloads ---
-
 case class JoinLobbyRequest(
     name: String,
     difficulty: Option[BotsDifficulty],
@@ -23,11 +21,5 @@ case class LobbyStateResponse(
     status: LobbyStatus,
     players: List[PublicPlayerInfo]
 )
-
-case class GameStartedResponse(message: String)
-
-// --- Shared & Auth Payloads ---
-
-case class ActionSuccessResponse(message: String)
 
 case class AuthLobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)

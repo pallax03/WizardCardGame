@@ -1,13 +1,9 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
-import io.github.pallax03.wizard.application.web.ResponseErrors
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
 import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
-import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.{AIPort, LobbyStatePort}
 
@@ -18,23 +14,22 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
   private def handleHint[A](
       secret: String,
       lobbyId: LobbyId,
-      action: PlayerId => Future[A],
-      encode: A => String
-  ): Future[Either[ResponseErrors, ActionSuccessResponse]] =
+      action: PlayerId => Future[A]
+  ): Future[Either[LobbyError, A]] =
     lobbyStatePort
       .getLobby(lobbyId)
       .flatMap:
         case Some(lobby) =>
-          lobby.players.find(_.secret.contains(secret)) match
-            case Some(player) =>
-              action(player.id).map(res => Right(ActionSuccessResponse(encode(res))))
-            case None =>
-              Future.successful(Left(ResponseErrors.NotAuthenticated))
+          lobby.authenticate(secret) match
+            case Right(player) =>
+              action(player.id).map(Right(_))
+            case Left(err) =>
+              Future.successful(Left(err))
         case None =>
-          Future.successful(Left(ResponseErrors.LobbyNotFound(lobbyId)))
+          Future.successful(Left(LobbyError.LobbyNotFound))
       .recover:
         case ex: Throwable =>
-          Left(ResponseErrors.InternalServerError(ex.getMessage))
+          Left(LobbyError.GameActionRejected(ex.getMessage))
 
   private val hintBestTrump: ServerEndpoint[Any, Future] =
     AIEndpoints.bestTrump
@@ -44,8 +39,7 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
           handleHint(
             secret,
             lobbyId,
-            playerId => aiPort.resolvedTrumpColor(lobbyId, playerId),
-            _.toJson
+            playerId => aiPort.resolvedTrumpColor(lobbyId, playerId)
           )
       )
 
@@ -54,7 +48,7 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
       .serverLogic(secret =>
         lobbyId =>
-          handleHint(secret, lobbyId, playerId => aiPort.placeBid(lobbyId, playerId), _.toJson)
+          handleHint(secret, lobbyId, playerId => aiPort.placeBid(lobbyId, playerId))
       )
 
   private val hintBestCard: ServerEndpoint[Any, Future] =
@@ -62,7 +56,7 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
       .serverSecurityLogicSuccess(secret => Future.successful(secret))
       .serverLogic(secret =>
         lobbyId =>
-          handleHint(secret, lobbyId, playerId => aiPort.bestCard(lobbyId, playerId), _.toJson)
+          handleHint(secret, lobbyId, playerId => aiPort.bestCard(lobbyId, playerId))
       )
 
   val all: List[ServerEndpoint[Any, Future]] = List(

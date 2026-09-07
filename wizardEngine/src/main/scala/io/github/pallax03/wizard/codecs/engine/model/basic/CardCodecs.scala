@@ -10,7 +10,6 @@ import sttp.tapir.Schema
 import sttp.tapir.generic.Configuration
 
 object CardCodecs:
-  // --- Circe ---
 
   given Encoder[Card.Color] = Encoder.encodeString.contramap(_.toString)
   given Decoder[Card.Color] =
@@ -30,8 +29,6 @@ object CardCodecs:
     case "Standard" => Decoder.forProduct2("color", "rank")(Card.Standard.apply)
     case "Wizard"   => Decoder.forProduct1("id")(Card.Wizard.apply)
     case "Jester"   => Decoder.forProduct1("id")(Card.Jester.apply)
-
-  // --- Tapir Schemas ---
 
   given Schema[Card.Color] = Schema.string
   given Schema[Card.Rank] =

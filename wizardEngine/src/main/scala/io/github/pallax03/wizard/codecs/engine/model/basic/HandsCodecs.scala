@@ -1,14 +1,11 @@
 package io.github.pallax03.wizard.codecs.engine.model.basic
 
 import io.circe.*
+import sttp.tapir.Schema
 
 import io.github.pallax03.wizard.engine.model.basic.*
 
 object HandsCodecs:
-  import cards.{Hands, Hand}
-  import sttp.tapir.Schema
-  given Schema[Hand] = Schema.anyObject[Hand].name(Schema.SName("Hand"))
-  given Schema[Hands] = Schema.anyObject[Hands].name(Schema.SName("Hands"))
   import CardCodecs.given
   import PlayerIdCodecs.given
   import cards.{Hands, Hand, Card}
@@ -22,3 +19,6 @@ object HandsCodecs:
     Decoder[Map[PlayerId, Hand]].map(Hands.apply),
     Encoder[Map[PlayerId, Hand]].contramap(_.toMap)
   )
+
+  given Schema[Hand] = Schema.anyObject[Hand].name(Schema.SName("Hand"))
+  given Schema[Hands] = Schema.anyObject[Hands].name(Schema.SName("Hands"))
