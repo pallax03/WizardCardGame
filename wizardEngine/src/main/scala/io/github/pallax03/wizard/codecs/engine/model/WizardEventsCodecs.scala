@@ -2,6 +2,7 @@ package io.github.pallax03.wizard.codecs.engine.model
 
 import io.circe.*
 import io.circe.syntax.*
+
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.core.GameError

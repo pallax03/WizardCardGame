@@ -6,7 +6,7 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 object ChannelsKeys:
   /** Key for trigger bots spawn [[io.github.pallax03.wizard.application.bot.BotManagerVerticle]]. */
   val SPAWN_BOT_CHANNEL: String = "bots:spawn"
-  
+
   /** Key to guarantee lock for [[io.github.pallax03.wizard.application.bot.BotManagerVerticle]] (avoiding race-conditions). */
   def botLock(id: LobbyId): String = s"lock:bot:${id.toString}"
 
@@ -16,6 +16,7 @@ object ChannelsKeys:
 
   /** Key that stores game relative to a lobby (1:1). */
   def game(id: LobbyId): String = s"game:${id.toString}"
+
   /** Key that stores game checkpoints relative to a game. */
   def gameCheckpoint(id: LobbyId): String = s"${game(id)}:checkpoint"
 
@@ -23,7 +24,7 @@ object ChannelsKeys:
   def pubSubLobbyChannel(id: LobbyId): String = s"channel:${id.toString}"
   def pubSubLobbyPlayerChannel(id: LobbyId, playerId: PlayerId): String =
     s"channel:${id.toString}:${playerId.toInt}"
-  
+
   /** Key that stores every log. */
   val LOGS_CHANNEL: String = "system:logs"
 

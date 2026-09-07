@@ -34,7 +34,10 @@ object BiddingRules:
     /** Returns the invalid bid for the last player, if applicable. */
     def notValidBid(round: Round, totalPlayers: Int): Option[Bid] =
       val suspectedInvalid = round - currentBids.total
-      Option.when(suspectedInvalid.validateBid(round, currentBids, totalPlayers).isLeft)(suspectedInvalid)
+      Option
+        .when(suspectedInvalid.validateBid(round, currentBids, totalPlayers).isLeft)(
+          suspectedInvalid
+        )
         .filter(isWithinBounds(_, round))
 
   extension (bid: Bid)

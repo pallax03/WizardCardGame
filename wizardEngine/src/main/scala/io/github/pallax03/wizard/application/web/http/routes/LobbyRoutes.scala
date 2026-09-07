@@ -1,17 +1,16 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
+
 import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.*
-
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
+
 import sttp.tapir.server.ServerEndpoint
 
-/**
- * HTTP routes for the Lobby domain.
- */
+/** HTTP routes for the Lobby domain. */
 class LobbyRoutes(
     lobbyStatePort: LobbyStatePort,
     gameEngine: InboundPort
@@ -43,16 +42,25 @@ class LobbyRoutes(
   private def getLobbyT(lobbyId: LobbyId): EitherT[Future, AppError, Lobby] =
     EitherT(lobbyStatePort.getLobby(lobbyId).map(_.toRight(AppError.LobbyNotFound(lobbyId))))
 
-  private def getAuthLobbyT(lobbyId: LobbyId, secret: String): EitherT[Future, AppError, (Player, Lobby)] =
+  private def getAuthLobbyT(
+      lobbyId: LobbyId,
+      secret: String
+  ): EitherT[Future, AppError, (Player, Lobby)] =
     for
       lobby <- getLobbyT(lobbyId)
-      player <- EitherT.fromEither[Future](lobby.players.find(_.secret.contains(secret)).toRight[AppError](AppError.NotAuthenticated))
+      player <- EitherT.fromEither[Future](
+        lobby.players.find(_.secret.contains(secret)).toRight[AppError](AppError.NotAuthenticated)
+      )
     yield (player, lobby)
 
   private val getLobbyInfoEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.getLobbyInfo.serverLogic { lobbyId =>
       getLobbyT(lobbyId).map { lobby =>
-        LobbyStateResponse(lobbyId, lobby.status, lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline)))
+        LobbyStateResponse(
+          lobbyId,
+          lobby.status,
+          lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline))
+        )
       }.value
     }
 
@@ -62,8 +70,14 @@ class LobbyRoutes(
       .serverLogic { secret => lobbyId =>
         (for
           (player, lobby) <- getAuthLobbyT(lobbyId, secret)
-          _ <- EitherT.cond[Future](lobby.status == LobbyStatus.IN_GAME || lobby.status == LobbyStatus.PAUSED, (), AppError.GameNotFound(lobbyId): AppError)
-          state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recover { case ex => Left(AppError.InternalServerError(ex.getMessage)) })
+          _ <- EitherT.cond[Future](
+            lobby.status == LobbyStatus.IN_GAME || lobby.status == LobbyStatus.PAUSED,
+            (),
+            AppError.GameNotFound(lobbyId): AppError
+          )
+          state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recover {
+            case ex => Left(AppError.InternalServerError(ex.getMessage))
+          })
         yield state).value
       }
 
@@ -74,12 +88,17 @@ class LobbyRoutes(
         (for
           (_, lobby) <- getAuthLobbyT(lobbyId, secret)
           _ <- EitherT.fromEither[Future](lobby.validateStartOrResume)
-          _ <- EitherT.right[AppError](lobbyStatePort.saveLobby(lobby.copy(status = LobbyStatus.IN_GAME)))
           _ <- EitherT.right[AppError](
-            if lobby.status == LobbyStatus.WAITING then gameEngine.startGame(lobbyId, lobby.players.map(_.id), lobby.configuration)
+            lobbyStatePort.saveLobby(lobby.copy(status = LobbyStatus.IN_GAME))
+          )
+          _ <- EitherT.right[AppError](
+            if lobby.status == LobbyStatus.WAITING then
+              gameEngine.startGame(lobbyId, lobby.players.map(_.id), lobby.configuration)
             else gameEngine.resumeGame(lobbyId)
           )
-        yield GameStartedResponse(if lobby.status == LobbyStatus.WAITING then "Game started" else "Game resumed")).value
+        yield GameStartedResponse(
+          if lobby.status == LobbyStatus.WAITING then "Game started" else "Game resumed"
+        )).value
       }
 
   private val updateConfigurationEndpoint: ServerEndpoint[Any, Future] =

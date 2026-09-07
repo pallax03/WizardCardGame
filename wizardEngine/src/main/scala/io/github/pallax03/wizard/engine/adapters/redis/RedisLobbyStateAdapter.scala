@@ -2,8 +2,11 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import cats.syntax.all.*
+
 import io.vertx.redis.client.{Command, Redis, Request}
+
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
@@ -41,7 +44,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
    * @inheritdoc
    *
    * // redis response: see [[io.github.pallax03.wizard.engine.adapters.redis.RedisLobbyScripts]]
-   * */
+   */
   override def addPlayer(
       lobbyId: LobbyId,
       name: String,

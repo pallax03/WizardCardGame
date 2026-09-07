@@ -9,8 +9,6 @@ import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
-
-
 /**
  * Shared HTTP protocol definitions for all Tapir endpoints.
  *

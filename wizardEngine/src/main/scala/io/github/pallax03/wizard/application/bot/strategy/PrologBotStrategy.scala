@@ -24,11 +24,15 @@ class PrologBotStrategy(port: AIPort) extends BotStrategy:
   ): Future[GameAction] =
     invitation match
       case InvitationEvent.WaitingForCard(playerId, _) =>
-        port.bestCard(lobbyId, playerId).map(card => GameAction.PlayCard(playerId, card))
+        port
+          .bestCard(lobbyId, playerId)
+          .map(card => GameAction.PlayCard(playerId, card))
           .recover { _ => FallbackStrategy.fallbackMove(invitation) }
 
       case InvitationEvent.WaitingForBid(playerId, _, _) =>
-        port.placeBid(lobbyId, playerId).map(bid => GameAction.PlaceBid(playerId, bid))
+        port
+          .placeBid(lobbyId, playerId)
+          .map(bid => GameAction.PlaceBid(playerId, bid))
           .recover { _ => FallbackStrategy.fallbackMove(invitation) }
 
       case InvitationEvent.WaitingForTrump(playerId) =>
@@ -42,8 +46,14 @@ class PrologBotStrategy(port: AIPort) extends BotStrategy:
       case FailureEvent.ActionFailed(playerId, reason) =>
         reason match
           case GameError.InvalidBid(round, invalidBid) =>
-            port.adjustBid(lobbyId, playerId).map(bid => GameAction.PlaceBid(playerId, bid))
-              .recover { _ => FallbackStrategy.fallbackMove(InvitationEvent.WaitingForBid(playerId, round, Option(invalidBid))) }
+            port
+              .adjustBid(lobbyId, playerId)
+              .map(bid => GameAction.PlaceBid(playerId, bid))
+              .recover { _ =>
+                FallbackStrategy.fallbackMove(
+                  InvitationEvent.WaitingForBid(playerId, round, Option(invalidBid))
+                )
+              }
 
           case GameError.CardNotAllowed(notAllowedReason) =>
             Future.successful(GameAction.PlayCard(playerId, notAllowedReason.legitCards.head))

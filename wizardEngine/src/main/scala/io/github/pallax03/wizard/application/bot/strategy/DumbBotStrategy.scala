@@ -1,6 +1,7 @@
 package io.github.pallax03.wizard.application.bot.strategy
 
 import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.core.{GameAction, GameError}
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent.{WaitingForBid, WaitingForCard}
@@ -28,7 +29,7 @@ class DumbBotStrategy extends BotStrategy:
           reason match
             case GameError.InvalidBid(round, invalidBid) =>
               FallbackStrategy.fallbackMove(WaitingForBid(playerId, round, Option(invalidBid)))
-              
+
             case GameError.CardNotAllowed(notAllowedReason) =>
               FallbackStrategy.fallbackMove(WaitingForCard(playerId, notAllowedReason.legitCards))
 

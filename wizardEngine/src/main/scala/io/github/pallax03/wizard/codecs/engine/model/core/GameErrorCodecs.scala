@@ -38,14 +38,17 @@ object GameErrorCodecs:
     case GameError.InvalidBid(round, bid) =>
       Json.obj("round" -> round.asJson, "bid" -> bid.asJson).withTag("error", "InvalidBid")
     case GameError.InvalidAction(invitationEvent) =>
-      Json.obj("invitationEvent" -> invitationEvent.map(_.asInstanceOf[WizardEvent]).asJson).withTag("error", "InvalidAction")
+      Json
+        .obj("invitationEvent" -> invitationEvent.map(_.asInstanceOf[WizardEvent]).asJson)
+        .withTag("error", "InvalidAction")
     case GameError.CardNotAllowed(reason) =>
       Json.obj("reason" -> reason.asJson).withTag("error", "CardNotAllowed")
 
   given Decoder[GameError] = decodeByTag("error"):
-    case "NotYourTurn"    => Decoder.forProduct1("turnOf")(GameError.NotYourTurn.apply)
-    case "InvalidBid"     => Decoder.forProduct2("round", "bid")(GameError.InvalidBid.apply)
-    case "InvalidAction"  => Decoder.forProduct1[GameError, Option[WizardEvent]]("invitationEvent") { ev =>
-      GameError.InvalidAction(ev.map(_.asInstanceOf[InvitationEvent]))
-    }
+    case "NotYourTurn" => Decoder.forProduct1("turnOf")(GameError.NotYourTurn.apply)
+    case "InvalidBid"  => Decoder.forProduct2("round", "bid")(GameError.InvalidBid.apply)
+    case "InvalidAction" =>
+      Decoder.forProduct1[GameError, Option[WizardEvent]]("invitationEvent") { ev =>
+        GameError.InvalidAction(ev.map(_.asInstanceOf[InvitationEvent]))
+      }
     case "CardNotAllowed" => Decoder.forProduct1("reason")(GameError.CardNotAllowed.apply)

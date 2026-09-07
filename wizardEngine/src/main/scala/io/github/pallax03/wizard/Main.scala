@@ -33,12 +33,13 @@ object Main:
       .setMaxPoolSize(redisPoolSize)
     val redisClient = Redis.createClient(vertx, redisOptions)
 
-    val pubSubPort: PubSubPort       = RedisPubSubAdapter(redisClient)
+    val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
-    val outPort: OutboundPort        = RedisOutboundAdapter(pubSubPort, redisClient, lobbyStatePort)
+    val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort, redisClient, lobbyStatePort)
     val recoveryPort: GameRecoveryPort =
       RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort, pubSubPort)
-    val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort, lobbyStatePort)
+    val inPort: InboundPort =
+      RedisInboundAdapter(redisClient, outPort, recoveryPort, lobbyStatePort)
     val prologPort = WizardPrologAdapter(inPort)
 
     deploy(

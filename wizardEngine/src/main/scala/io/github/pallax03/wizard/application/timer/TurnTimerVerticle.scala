@@ -19,7 +19,9 @@ class TurnTimerVerticle(
 
   override def start(): Unit =
     redisClient
-      .send(Request.cmd(Command.create("CONFIG")).arg("SET").arg("notify-keyspace-events").arg("Ex"))
+      .send(
+        Request.cmd(Command.create("CONFIG")).arg("SET").arg("notify-keyspace-events").arg("Ex")
+      )
       .onComplete(_ => ())
 
     pubSubPort.subscribe(ChannelsKeys.TURN_TIMER_KEYSPACE, handleExpiredKey)
@@ -28,8 +30,13 @@ class TurnTimerVerticle(
     expiredKey.split(':') match
       case Array("timer", lobbyId, playerIdStr) =>
         Try(playerIdStr.toInt).toOption.foreach: pid =>
-          inboundPort.handleTimeout(LobbyId(lobbyId), PlayerId(pid)).onComplete:
-            case Failure(ex) =>
-              pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:[TurnTimer] Failed for $lobbyId/$pid: ${ex.getMessage}")
-            case Success(_) => ()
+          inboundPort
+            .handleTimeout(LobbyId(lobbyId), PlayerId(pid))
+            .onComplete:
+              case Failure(ex) =>
+                pubSubPort.publish(
+                  ChannelsKeys.LOGS_CHANNEL,
+                  s"ERROR:[TurnTimer] Failed for $lobbyId/$pid: ${ex.getMessage}"
+                )
+              case Success(_) => ()
       case _ => ()

@@ -1,11 +1,13 @@
 package io.github.pallax03.wizard.engine.model.core
 
 import scala.language.postfixOps
+
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.GameError.*
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent.WaitingForTrump
 import io.github.pallax03.wizard.engine.model.events.{ActionEvent, LifecycleEvent, ProgressEvent}
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -145,7 +147,7 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       val core = createMockCore(1)
       val biddingState = GameState.Bidding(core, Bids.empty, p1)
       val p2Action = GameAction.PlaceBid(p2, 3)
-      
+
       GameEngine.processAction(biddingState, p2Action) shouldBe Left(NotYourTurn(p1))
 
     "transition from Bidding to Playing phase when the last player places their bid" in:
@@ -239,4 +241,6 @@ class TestGameEngine extends AnyWordSpec with Matchers:
       val choosingState = GameState.ChoosingTrump(core)
       val p1Action = GameAction.PlaceBid(p1, 1)
 
-      GameEngine.processAction(choosingState, p1Action) shouldBe Left(InvalidAction(Option(WaitingForTrump(p1))))
+      GameEngine.processAction(choosingState, p1Action) shouldBe Left(
+        InvalidAction(Option(WaitingForTrump(p1)))
+      )

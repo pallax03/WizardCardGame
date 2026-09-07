@@ -28,7 +28,7 @@ enum InconsistentState:
 
   /** Occurs when playerId is not found in [[io.github.pallax03.wizard.engine.model.core.state.CoreState]]. */
   case PlayerNotFound(playerId: PlayerId)
-  
+
   /** Occurs when there is not any lobbyId with a related game. */
   case GameNotFound
 

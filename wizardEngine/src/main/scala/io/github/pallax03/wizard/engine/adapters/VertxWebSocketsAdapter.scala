@@ -5,8 +5,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
 
-import io.vertx.core.buffer.Buffer
 import io.vertx.core.Vertx
+import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.ServerWebSocket
 import io.vertx.core.json.JsonObject
 
@@ -63,21 +63,22 @@ class VertxWebSocketsAdapter(
         lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, true)
         val msg = SystemEvent.online(playerId).toJson
         pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
-        
+
         val pingTimerId = setupHeartbeat(ws)
         sessions.put((lobbyId, playerId), ClientSession(ws, sub, pingTimerId))
 
   private def setupHeartbeat(ws: ServerWebSocket): Long =
     var lastPong = System.currentTimeMillis()
     ws.pongHandler(_ => lastPong = System.currentTimeMillis())
-    
-    vertx.setPeriodic(VertxWebSocketsAdapter.PING_INTERVAL_MS, _ => {
-      if System.currentTimeMillis() - lastPong > VertxWebSocketsAdapter.PONG_TIMEOUT_MS then
-        if !ws.isClosed then ws.close()
-      else if !ws.isClosed then
-        ws.writePing(Buffer.buffer("ping"))
-    })
 
+    vertx.setPeriodic(
+      VertxWebSocketsAdapter.PING_INTERVAL_MS,
+      _ => {
+        if System.currentTimeMillis() - lastPong > VertxWebSocketsAdapter.PONG_TIMEOUT_MS then
+          if !ws.isClosed then ws.close()
+        else if !ws.isClosed then ws.writePing(Buffer.buffer("ping"))
+      }
+    )
 
   /** @inheritdoc */
   override def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =

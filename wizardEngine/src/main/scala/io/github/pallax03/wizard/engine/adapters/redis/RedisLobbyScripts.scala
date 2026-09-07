@@ -6,7 +6,7 @@ import io.github.pallax03.wizard.engine.lobby.LobbyStatus
 
 private[redis] object RedisLobbyScripts:
 
-  val addPlayerScript: String =  
+  val addPlayerScript: String =
     s"""
       |local lobbyStr = redis.call('GET', KEYS[1])
       |local lobby

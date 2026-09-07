@@ -62,5 +62,3 @@ trait InboundPort:
    * @param playerId the player whose timer expired
    */
   def handleTimeout(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]
-
-

@@ -1,8 +1,9 @@
 package io.github.pallax03.wizard.engine.model.rules
 
 import io.github.pallax03.wizard.engine.model.basic.*
-import io.github.pallax03.wizard.engine.model.core.{GameError, GameException}
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
+import io.github.pallax03.wizard.engine.model.core.{GameError, GameException}
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -22,7 +23,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         playersIds.nextAfter(p3) shouldBe p1
 
       "fail if current player is not in the list" in:
-        an [GameException] shouldBe thrownBy (playersIds.nextAfter(PlayerId(99)))
+        an[GameException] shouldBe thrownBy(playersIds.nextAfter(PlayerId(99)))
 
     "determining the first player of a round" should:
       "rotate correctly based on the round number" in:

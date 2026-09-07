@@ -2,10 +2,11 @@ package io.github.pallax03.wizard.codecs.engine.model.core.state
 
 import io.circe.*
 import io.circe.syntax.*
+
 import io.github.pallax03.wizard.codecs.engine.model.*
-import io.github.pallax03.wizard.engine.model.basic.gameplay._
-import io.github.pallax03.wizard.engine.model.basic.cards._
 import io.github.pallax03.wizard.engine.model.basic.Scoreboard
+import io.github.pallax03.wizard.engine.model.basic.cards.*
+import io.github.pallax03.wizard.engine.model.basic.gameplay.*
 import io.github.pallax03.wizard.engine.model.core.state.*
 import io.github.pallax03.wizard.engine.model.rules.TableRules.*
 
@@ -53,6 +54,3 @@ object GameStateCodecs:
   given Schema[GameState.Playing[PlayerCoreState]] = Schema.derived
   given Schema[GameState.Ended] = Schema.derived
   given Schema[PlayerGameState] = Schema.derived
-
-
-

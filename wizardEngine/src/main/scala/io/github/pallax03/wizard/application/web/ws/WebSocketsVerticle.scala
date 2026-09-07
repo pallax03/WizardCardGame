@@ -1,12 +1,14 @@
 package io.github.pallax03.wizard.application.web.ws
 
 import scala.util.Success
+
 import io.vertx.core.AbstractVerticle
+import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.Router
+
 import io.github.pallax03.wizard.engine.lobby.{Lobby, LobbyId}
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, WebSocketsPort}
 import io.github.pallax03.wizard.util.FutureSyntax.*
-import io.vertx.core.http.HttpServerOptions
 
 class WebSocketsVerticle(
     wsPortAdapter: WebSocketsPort,

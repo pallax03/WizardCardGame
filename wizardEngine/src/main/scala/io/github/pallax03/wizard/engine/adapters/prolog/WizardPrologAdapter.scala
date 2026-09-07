@@ -2,6 +2,7 @@ package io.github.pallax03.wizard.engine.adapters.prolog
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologEngine
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
@@ -55,7 +56,9 @@ class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
     onRunningPhase(lobbyId, "choose trump color")(playerId):
       case state @ GameState.ChoosingTrump(_) =>
         withHand(Some(state.core.hand)): hand =>
-          engine.chooseTrumpColor(hand).getOrElse(throw IllegalStateException("AI failed to choose a color"))
+          engine
+            .chooseTrumpColor(hand)
+            .getOrElse(throw IllegalStateException("AI failed to choose a color"))
 
   /**
    * @inheritdoc

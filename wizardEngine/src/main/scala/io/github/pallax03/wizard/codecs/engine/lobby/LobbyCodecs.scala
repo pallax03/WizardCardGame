@@ -37,8 +37,11 @@ object LobbyCodecs:
   given Decoder[GameConfiguration] = deriveDecoder
 
   given Encoder[Lobby] =
-    Encoder.forProduct4("lobbyId", "players", "status", "configuration")(l => (l.uuid, l.players, l.status, l.configuration))
-  given Decoder[Lobby] = Decoder.forProduct4("lobbyId", "players", "status", "configuration")(Lobby.apply)
+    Encoder.forProduct4("lobbyId", "players", "status", "configuration")(l =>
+      (l.uuid, l.players, l.status, l.configuration)
+    )
+  given Decoder[Lobby] =
+    Decoder.forProduct4("lobbyId", "players", "status", "configuration")(Lobby.apply)
 
   // --- Tapir Schemas ---
 

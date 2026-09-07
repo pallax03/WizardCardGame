@@ -1,13 +1,12 @@
 package io.github.pallax03.wizard.engine.lobby
 
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
-
 import java.util.UUID
+
+import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 
 /** Represents the status of a Lobby. */
 enum LobbyStatus:
   case WAITING, IN_GAME, PAUSED, FINISHED
-
 
 opaque type LobbyId = String
 
@@ -36,5 +35,4 @@ case class Lobby(
       else if !players.forall(_.isOnline) then Left(AppError.PlayersOffline)
       else Right(())
     case LobbyStatus.PAUSED => Right(())
-    case _ => Left(AppError.GameInProgress)
-
+    case _                  => Left(AppError.GameInProgress)
