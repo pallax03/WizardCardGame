@@ -27,12 +27,13 @@ case class Lobby(
     status: LobbyStatus,
     configuration: GameConfiguration
 ):
-  import io.github.pallax03.wizard.engine.errors.AppError
 
-  def validateStartOrResume: Either[AppError, Unit] = status match
+  import io.github.pallax03.wizard.application.web.ResponseErrors
+
+  def validateStartOrResume: Either[ResponseErrors, Unit] = status match
     case LobbyStatus.WAITING =>
-      if players.size < 3 then Left(AppError.NotEnoughPlayer)
-      else if !players.forall(_.isOnline) then Left(AppError.PlayersOffline)
+      if players.size < 3 then Left(ResponseErrors.NotEnoughPlayer)
+      else if !players.forall(_.isOnline) then Left(ResponseErrors.PlayersOffline)
       else Right(())
     case LobbyStatus.PAUSED => Right(())
-    case _                  => Left(AppError.GameInProgress)
+    case _                  => Left(ResponseErrors.GameInProgress)

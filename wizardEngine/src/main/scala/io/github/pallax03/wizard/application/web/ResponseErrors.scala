@@ -1,17 +1,25 @@
-package io.github.pallax03.wizard.engine.errors
+package io.github.pallax03.wizard.application.web
 
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 
-sealed trait AppError:
+sealed trait ResponseErrors:
   def message: String
   def code: String
+  def statusCode: Int
 
-object AppError:
+object ResponseErrors:
 
-  sealed trait NotFoundError extends AppError
-  sealed trait BadRequestError extends AppError
-  sealed trait InternalError extends AppError
-  sealed trait UnauthorizedError extends AppError
+  sealed trait NotFoundError extends ResponseErrors:
+    override def statusCode: Int = 404
+
+  sealed trait BadRequestError extends ResponseErrors:
+    override def statusCode: Int = 400
+
+  sealed trait InternalError extends ResponseErrors:
+    override def statusCode: Int = 500
+
+  sealed trait UnauthorizedError extends ResponseErrors:
+    override def statusCode: Int = 401
 
   case class LobbyNotFound(lobbyId: LobbyId) extends NotFoundError:
     val message: String = s"Lobby $lobbyId not found"
@@ -53,4 +61,7 @@ object AppError:
     val message: String = s"Internal error: $exMsg"
     val code = "INTERNAL_ERROR"
 
-  case class UnknownAppError(message: String, code: String) extends AppError
+  case class CustomBadRequest(message: String, code: String) extends BadRequestError
+  
+  case class UnknownResponseError(message: String, code: String) extends ResponseErrors:
+    override def statusCode: Int = 500

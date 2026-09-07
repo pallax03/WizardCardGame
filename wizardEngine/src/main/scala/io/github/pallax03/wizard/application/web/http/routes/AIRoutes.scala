@@ -1,12 +1,12 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
+import io.github.pallax03.wizard.application.web.ResponseErrors
 import scala.concurrent.{ExecutionContext, Future}
 
 import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
 import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.{AIPort, LobbyStatePort}
@@ -20,7 +20,7 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
       lobbyId: LobbyId,
       action: PlayerId => Future[A],
       encode: A => String
-  ): Future[Either[AppError, ActionSuccessResponse]] =
+  ): Future[Either[ResponseErrors, ActionSuccessResponse]] =
     lobbyStatePort
       .getLobby(lobbyId)
       .flatMap:
@@ -29,12 +29,12 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
             case Some(player) =>
               action(player.id).map(res => Right(ActionSuccessResponse(encode(res))))
             case None =>
-              Future.successful(Left(AppError.NotAuthenticated))
+              Future.successful(Left(ResponseErrors.NotAuthenticated))
         case None =>
-          Future.successful(Left(AppError.LobbyNotFound(lobbyId)))
+          Future.successful(Left(ResponseErrors.LobbyNotFound(lobbyId)))
       .recover:
         case ex: Throwable =>
-          Left(AppError.InternalServerError(ex.getMessage))
+          Left(ResponseErrors.InternalServerError(ex.getMessage))
 
   private val hintBestTrump: ServerEndpoint[Any, Future] =
     AIEndpoints.bestTrump

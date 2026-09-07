@@ -1,10 +1,10 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
+import io.github.pallax03.wizard.application.web.ResponseErrors
 import scala.concurrent.{ExecutionContext, Future}
 
 import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
 import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
-import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.GameAction
@@ -21,7 +21,7 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
       secret: String,
       lobbyId: LobbyId,
       actionBuilder: PlayerId => GameAction
-  ): Future[Either[AppError, ActionSuccessResponse]] =
+  ): Future[Either[ResponseErrors, ActionSuccessResponse]] =
     lobbyStatePort
       .getLobby(lobbyId)
       .flatMap:
@@ -31,7 +31,7 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
               gameEnginePort
                 .submitAction(lobbyId, actionBuilder(player.id))
                 .map:
-                  case Left(gameError) => Left(AppError.GameError(gameError.toString))
+                  case Left(gameError) => Left(ResponseErrors.GameError(gameError.toString))
                   case Right(_) =>
                     Right(
                       ActionSuccessResponse(
@@ -39,9 +39,9 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
                       )
                     )
             case None =>
-              Future.successful(Left(AppError.NotAuthenticated))
+              Future.successful(Left(ResponseErrors.NotAuthenticated))
         case None =>
-          Future.successful(Left(AppError.LobbyNotFound(lobbyId)))
+          Future.successful(Left(ResponseErrors.LobbyNotFound(lobbyId)))
 
   private val chooseEndpoint: ServerEndpoint[Any, Future] =
     ActionEndpoints.chooseAction

@@ -4,13 +4,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 import cats.syntax.all.*
+import io.github.pallax03.wizard.application.web.ResponseErrors
 
 import io.vertx.redis.client.{Command, Redis, Request}
 
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
@@ -50,7 +50,8 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       name: String,
       difficulty: Option[BotsDifficulty],
       secret: Option[String] = None
-  ): Future[Either[AppError, Player]] =
+  ): Future[Either[ResponseErrors, Player]] =
+    import io.github.pallax03.wizard.engine.configuration.GameConfiguration
     val req = Request
       .cmd(Command.EVAL)
       .arg(RedisLobbyScripts.addPlayerScript)
@@ -60,17 +61,18 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       .arg(difficulty.map(_.toString).getOrElse(""))
       .arg(lobbyId.toString)
       .arg(secret.getOrElse(""))
+      .arg(GameConfiguration().toJson)
 
     redisClient
       .send(req)
       .asScala
       .map:
-        case null => Left(AppError.LobbyFull)
+        case null => Left(ResponseErrors.LobbyFull)
         case response =>
           response.toString match
-            case AppError.GameInProgress.code => Left(AppError.GameInProgress)
-            case AppError.LobbyFull.code      => Left(AppError.LobbyFull)
-            case json                         => Right(json.decodeAs[Player].toOption.get)
+            case "ERR_IN_PROGRESS" => Left(ResponseErrors.GameInProgress)
+            case "ERR_LOBBY_FULL"  => Left(ResponseErrors.LobbyFull)
+            case json              => Right(json.decodeAs[Player].toOption.get)
       .flatMap:
         case Right(player) =>
           val msg = SystemEvent.joined(player.id).toJson

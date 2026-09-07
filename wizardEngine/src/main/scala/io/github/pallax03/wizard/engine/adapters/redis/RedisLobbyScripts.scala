@@ -1,7 +1,5 @@
 package io.github.pallax03.wizard.engine.adapters.redis
 
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
-import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyStatus
 
 private[redis] object RedisLobbyScripts:
@@ -11,12 +9,12 @@ private[redis] object RedisLobbyScripts:
       |local lobbyStr = redis.call('GET', KEYS[1])
       |local lobby
       |if not lobbyStr then
-      |  lobby = { lobbyId = ARGV[3], players = {}, status = "${LobbyStatus.WAITING}", configuration = { timer = ${GameConfiguration().timer}, gracePeriodSeconds = ${GameConfiguration().gracePeriodSeconds}, maxStrikes = ${GameConfiguration().maxStrikes} } }
+      |  lobby = { lobbyId = ARGV[3], players = {}, status = "${LobbyStatus.WAITING}", configuration = cjson.decode(ARGV[5]) }
       |else
       |  lobby = cjson.decode(lobbyStr)
       |end
       |
-      |if lobby.status ~= "${LobbyStatus.WAITING}" then return "${AppError.GameInProgress.code}" end
+      |if lobby.status ~= "${LobbyStatus.WAITING}" then return "ERR_IN_PROGRESS" end
       |
       |local inputName = ARGV[1]
       |local isBot = ARGV[2] ~= ''
@@ -32,7 +30,7 @@ private[redis] object RedisLobbyScripts:
       |  end
       |end
       |
-      |if #lobby.players >= 6 then return "${AppError.LobbyFull.code}" end
+      |if #lobby.players >= 6 then return "ERR_LOBBY_FULL" end
       |
       |local maxId = -1
       |for i, p in ipairs(lobby.players) do

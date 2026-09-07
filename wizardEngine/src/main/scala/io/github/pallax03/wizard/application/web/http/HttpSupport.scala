@@ -1,7 +1,7 @@
 package io.github.pallax03.wizard.application.web.http
 
-import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
-import io.github.pallax03.wizard.engine.errors.AppError
+import io.github.pallax03.wizard.application.web.ResponseErrors
+import io.github.pallax03.wizard.codecs.http.ResponseErrorsCodec.given
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
@@ -30,19 +30,19 @@ object HttpSupport:
   val playerIdPath: EndpointInput[PlayerId] =
     path[String]("playerId").map(s => PlayerId(s.toInt))(_.toInt.toString)
 
-  /** Shared error output: maps [[AppError]] to 400 / 401 / 404 / 500 for Swagger. */
-  val errorOutput: EndpointOutput[AppError] =
-    oneOf[AppError](
-      oneOfVariantValueMatcher(StatusCode.NotFound, jsonBody[AppError]) {
-        case _: AppError.NotFoundError => true
+  /** Shared error output: maps [[ResponseErrors]] to 400 / 401 / 404 / 500 for Swagger. */
+  val errorOutput: EndpointOutput[ResponseErrors] =
+    oneOf[ResponseErrors](
+      oneOfVariantValueMatcher(StatusCode.NotFound, jsonBody[ResponseErrors]) {
+        case _: ResponseErrors.NotFoundError => true
       },
-      oneOfVariantValueMatcher(StatusCode.Unauthorized, jsonBody[AppError]) {
-        case _: AppError.UnauthorizedError => true
+      oneOfVariantValueMatcher(StatusCode.Unauthorized, jsonBody[ResponseErrors]) {
+        case _: ResponseErrors.UnauthorizedError => true
       },
-      oneOfVariantValueMatcher(StatusCode.BadRequest, jsonBody[AppError]) {
-        case _: AppError.BadRequestError => true
+      oneOfVariantValueMatcher(StatusCode.BadRequest, jsonBody[ResponseErrors]) {
+        case _: ResponseErrors.BadRequestError => true
       },
-      oneOfVariantValueMatcher(StatusCode.InternalServerError, jsonBody[AppError]) {
-        case _: AppError.InternalError => true
+      oneOfVariantValueMatcher(StatusCode.InternalServerError, jsonBody[ResponseErrors]) {
+        case _: ResponseErrors.InternalError => true
       }
     )
