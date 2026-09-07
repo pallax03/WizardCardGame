@@ -1,10 +1,11 @@
 ﻿"use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLobbySession } from "@/features/lobby-session";
 import type { EventMessage } from "@/features/chat/types";
-import { chooseTrumpColor, placeBid, playCard } from "../api";
+import { chooseTrumpColor, getPlayerGameSnapshot, placeBid, playCard } from "../api";
 import { gameReducer, initialGameBoardState, isCardInList } from "../state/gameReducer";
+import { mapSnapshotToBoardState } from "../state/snapshotMapper";
 import type { Card, CardColor, GameBoardState } from "../types";
 
 export function useGameBoard(customPlayerId?: number) {
@@ -17,7 +18,8 @@ export function useGameBoard(customPlayerId?: number) {
     connectedPlayerIds,
   } = useLobbySession();
 
-  const playerId = customPlayerId ?? sessionPlayerId ?? 1;
+  const resolvedPlayerId = customPlayerId ?? sessionPlayerId;
+  const playerId = resolvedPlayerId ?? 1;
 
   // Local selection states for user interaction
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
@@ -26,19 +28,134 @@ export function useGameBoard(customPlayerId?: number) {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
 
+  // Snapshot ripristinato dal backend (GET /api/lobby/{lobbyId}/game).
+  // Serve da base quando la cronologia WS e' andata persa (reload/chiusura
+  // finestra). Gli eventi arrivati dopo il fetch vengono ridotti sopra.
+  const [snapshotState, setSnapshotState] = useState<GameBoardState | null>(null);
+  const [snapshotBaseline, setSnapshotBaseline] = useState(0);
+  const [isRestoring, setIsRestoring] = useState(false);
+  const [snapshotError, setSnapshotError] = useState<string | null>(null);
+
   // Filter all EventMessage received from WebSocket
   const gameEvents = useMemo(
     () => messages.filter((m): m is EventMessage => m.type === "event"),
     [messages]
   );
 
-  // Reduce all events sequentially to derive current GameBoardState
-  const gameState = useMemo<GameBoardState>(() => {
+  const gameEventsLengthRef = useRef(0);
+  const snapshotRequestIdRef = useRef(0);
+  const hasConnectedRef = useRef(false);
+  const hasSnapshotRef = useRef(false);
+
+  useEffect(() => {
+    gameEventsLengthRef.current = gameEvents.length;
+  }, [gameEvents.length]);
+
+  useEffect(() => {
+    hasSnapshotRef.current = snapshotState !== null;
+  }, [snapshotState]);
+
+  const refreshSnapshot = useCallback(
+    async (reason: string = "manual") => {
+      if (resolvedPlayerId === null || resolvedPlayerId === undefined) return;
+      if (!lobbyId) return;
+      const requestId = (snapshotRequestIdRef.current += 1);
+      // Baseline catturata a inizio fetch: gli eventi gia' bufferati sono
+      // (quasi sempre) gia' inclusi nello snapshot del server e vanno saltati.
+      const baselineAtStart = gameEventsLengthRef.current;
+      setIsRestoring(true);
+      setSnapshotError(null);
+      try {
+        const snapshot = await getPlayerGameSnapshot(lobbyId);
+        if (snapshotRequestIdRef.current !== requestId) return;
+        if (snapshot) {
+          setSnapshotState(mapSnapshotToBoardState(snapshot, playerId));
+          setSnapshotBaseline(baselineAtStart);
+        } else {
+          // Nessuna partita sul backend (lobby in attesa): si resta in
+          // modalita' solo-eventi senza sporcare lo stato precedente.
+          setSnapshotBaseline(baselineAtStart);
+        }
+      } catch (error) {
+        if (snapshotRequestIdRef.current !== requestId) return;
+        const msg = error instanceof Error ? error.message : String(error);
+        setSnapshotError(`Ripristino stato fallito (${reason}): ${msg}`);
+      } finally {
+        if (snapshotRequestIdRef.current === requestId) setIsRestoring(false);
+      }
+    },
+    [lobbyId, playerId, resolvedPlayerId]
+  );
+
+  // Reset snapshot quando si cambia lobby/player: la baseline sugli eventi
+  // non sarebbe piu' valida.
+  useEffect(() => {
+    queueMicrotask(() => {
+      snapshotRequestIdRef.current += 1;
+      setSnapshotState(null);
+      setSnapshotBaseline(0);
+      setSnapshotError(null);
+      setIsRestoring(false);
+      hasConnectedRef.current = false;
+    });
+  }, [lobbyId, resolvedPlayerId]);
+
+  // Primo caricamento: tenta subito il ripristino, anche se il WS non ha
+  // ancora recapitato alcun evento (caso finestra richiusa e riaperta).
+  useEffect(() => {
+    if (resolvedPlayerId === null || resolvedPlayerId === undefined) return;
+    queueMicrotask(() => {
+      void refreshSnapshot("mount");
+    });
+  }, [refreshSnapshot, resolvedPlayerId]);
+
+  // Riconnessione WS: quando la connessione torna "open" dopo un'interruzione,
+  // la cronologia locale potrebbe essere incompleta -> re-fetch. Alla prima
+  // apertura si rifetcha solo se il fetch iniziale non ha prodotto snapshot.
+  useEffect(() => {
+    if (connectionState !== "open") return;
+    const isFirstOpen = !hasConnectedRef.current;
+    hasConnectedRef.current = true;
+    if (isFirstOpen && hasSnapshotRef.current) return;
+    const reason = isFirstOpen ? "mount" : "reconnect";
+    queueMicrotask(() => {
+      void refreshSnapshot(reason);
+    });
+  }, [connectionState, refreshSnapshot]);
+
+  // Altri casi critici: ritorno in foreground, rete di nuovo online, focus.
+  useEffect(() => {
+    const onForeground = () => {
+      if (document.visibilityState === "visible") void refreshSnapshot("foreground");
+    };
+    const onOnline = () => void refreshSnapshot("online");
+    document.addEventListener("visibilitychange", onForeground);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("focus", onOnline);
+    return () => {
+      document.removeEventListener("visibilitychange", onForeground);
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("focus", onOnline);
+    };
+  }, [refreshSnapshot]);
+
+  // Reduce all events sequentially to derive current GameBoardState.
+  // Se esiste uno snapshot, si applicano sopra solo gli eventi successivi
+  // al fetch (baseline); altrimenti si parte dallo stato iniziale.
+  const eventBasedState = useMemo<GameBoardState>(() => {
     return gameEvents.reduce(
       (state, event) => gameReducer(state, event, playerId),
       initialGameBoardState
     );
   }, [gameEvents, playerId]);
+
+  const gameState = useMemo<GameBoardState>(() => {
+    if (!snapshotState) return eventBasedState;
+    const tail = snapshotBaseline <= gameEvents.length
+      ? gameEvents.slice(snapshotBaseline)
+      : gameEvents;
+    return tail.reduce((state, event) => gameReducer(state, event, playerId), snapshotState);
+  }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, playerId]);
 
   // Derived helpers
   const isMyTurn = gameState.currentTurn.isMyTurn;
@@ -187,6 +304,11 @@ export function useGameBoard(customPlayerId?: number) {
     playersMap,
     gameState,
     gameEvents,
+    // Snapshot restore state
+    isRestoring,
+    snapshotError,
+    hasSnapshot: snapshotState !== null,
+    refreshSnapshot,
     // Turn & capability flags
     isMyTurn,
     canChooseTrump,

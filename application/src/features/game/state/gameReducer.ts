@@ -246,8 +246,14 @@ export function gameReducer(
       const winningCard = (fields.winningCard as Card | undefined) ?? null;
       const followingColor = (fields.followingColor as CardColor | undefined) ?? null;
 
-      // Add to table
-      const newTable = [...state.table, { playerId: cardPlayerId, card: playedCard }];
+      // Idempotenza: dopo un restore da snapshot lo stesso evento potrebbe
+      // essere riapplicato (baseline approssimata). Evita doppioni sul tavolo.
+      const alreadyOnTable = state.table.some(
+        (entry) => entry.playerId === cardPlayerId && cardEquals(entry.card, playedCard)
+      );
+      const newTable = alreadyOnTable
+        ? state.table
+        : [...state.table, { playerId: cardPlayerId, card: playedCard }];
 
       // If it was my card, remove it from my hand and clear legalCards
       let newHand = state.hand;

@@ -40,6 +40,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     setSelectedColor,
     isSubmitting,
     actionStatus,
+    isRestoring,
+    snapshotError,
+    refreshSnapshot,
     handleChooseTrump,
     handlePlaceBid,
     handlePlayCard,
@@ -75,6 +78,25 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         round={gameState.round}
         status={gameState.status}
       />
+
+      {/* 1b. Ripristino snapshot dal backend (reload/riconnessione) */}
+      {isRestoring && (
+        <div className="p-3 rounded-2xl border border-amber-400/50 bg-amber-950/60 text-amber-200 text-sm font-semibold text-center animate-pulse">
+          🔄 Ripristino stato partita dal server...
+        </div>
+      )}
+      {snapshotError && !isRestoring && (
+        <div className="p-3 rounded-2xl border border-rose-700/60 bg-rose-950/60 text-rose-200 text-sm text-center space-y-2">
+          <p className="font-semibold">⚠️ {snapshotError}</p>
+          <button
+            type="button"
+            onClick={() => void refreshSnapshot("manual")}
+            className="px-4 py-1.5 rounded-xl bg-rose-500 text-white text-xs font-bold uppercase tracking-wider hover:bg-rose-400 transition-colors"
+          >
+            Riprova sincronizzazione
+          </button>
+        </div>
+      )}
 
       {/* 2. TAVOLO DA GIOCO TEXAS HOLD'EM (Poker Table Felt) */}
       <div className="relative w-full my-8 py-10 px-4 min-h-[580px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)] flex flex-col items-center justify-between overflow-hidden">
