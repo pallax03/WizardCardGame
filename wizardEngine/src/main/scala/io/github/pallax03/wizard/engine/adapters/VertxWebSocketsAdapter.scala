@@ -37,9 +37,9 @@ class VertxWebSocketsAdapter(
       ws: ServerWebSocket
   ): Future[Unit] =
     ws.closeHandler: _ =>
-      this.close(lobbyId, playerId)
+      this.close(lobbyId, playerId, ws)
     ws.exceptionHandler: _ =>
-      this.close(lobbyId, playerId)
+      this.close(lobbyId, playerId, ws)
 
     // Forwarding Messages
     ws.textMessageHandler: text =>
@@ -59,13 +59,15 @@ class VertxWebSocketsAdapter(
         sessions.put((lobbyId, playerId), ClientSession(ws, sub))
 
   /** @inheritdoc */
-  override def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
-    sessions.remove((lobbyId, playerId)) match
-      case Some(session) =>
+  override def close(lobbyId: LobbyId, playerId: PlayerId, ws: ServerWebSocket): Future[Unit] =
+    sessions.get((lobbyId, playerId)) match
+      // A stale close must not drop a newer session nor mark its player offline.
+      case Some(session) if session.ws eq ws =>
+        sessions.remove((lobbyId, playerId))
         Try(session.ws.close())
         lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, false)
         val msg = SystemEvent.offline(playerId).toJson
         pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
         session.sub.cancel()
-      case None =>
+      case _ =>
         Future.unit

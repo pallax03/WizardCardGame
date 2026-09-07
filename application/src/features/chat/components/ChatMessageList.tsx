@@ -16,6 +16,7 @@ interface ChatMessageListProps {
   playerId: number;
   activePrivateId: number | null;
   playersMap: Record<number, string>;
+  botIds?: ReadonlySet<number>;
 }
 
 export function ChatMessageList({
@@ -23,6 +24,7 @@ export function ChatMessageList({
   playerId,
   activePrivateId,
   playersMap,
+  botIds,
 }: ChatMessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -31,9 +33,11 @@ export function ChatMessageList({
   }, [messages.length, activePrivateId]);
 
   // "L'idea e' quello di togliere i messaggi di Entrato e abbandonato in lobby per i giocatore corrente."
+  // I bot non devono mai apparire come giocatori che si connettono (joined/online/left/offline).
   const filteredMessages = messages.filter((message) => {
-    if (message.type === "system" && message.playerId === playerId) {
-      return false;
+    if (message.type === "system") {
+      if (message.playerId === playerId) return false;
+      if (botIds?.has(message.playerId)) return false;
     }
     return true;
   });

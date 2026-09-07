@@ -91,7 +91,8 @@ class LobbyRoutes(lobbyStatePort: LobbyStatePort, gameEngine: InboundPort)(using
       .serverLogic { secret => lobbyId =>
         withAuth(secret, lobbyId) { (_, lobby) =>
           if lobby.status == LobbyStatus.WAITING then
-            if lobby.players.forall(_.isOnline) then
+            // Bots have no socket presence, so only human players gate the start.
+            if lobby.players.forall(p => p.isOnline || p.difficulty.isDefined) then
               lobbyStatePort
                 .saveLobby(lobby.copy(status = LobbyStatus.IN_GAME))
                 .flatMap(_ =>

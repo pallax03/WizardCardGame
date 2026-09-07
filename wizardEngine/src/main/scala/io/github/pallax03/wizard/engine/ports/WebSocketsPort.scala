@@ -28,8 +28,13 @@ trait WebSocketsPort:
   /**
    * Close socket.
    *
+   * The close only takes effect when `ws` is still the current session for
+   * the player: a stale close (e.g. a previous socket processed after a
+   * reconnect) must not drop a newer session nor mark the player offline.
+   *
    * @param lobbyId       the unique identifier of the lobby.
    * @param playerId      the unique identifier of the player.
+   * @param ws            the WebSocket connection being closed.
    * @return a Future completing when the socket is successfully closed.
    */
-  def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]
+  def close(lobbyId: LobbyId, playerId: PlayerId, ws: ServerWebSocket): Future[Unit]
