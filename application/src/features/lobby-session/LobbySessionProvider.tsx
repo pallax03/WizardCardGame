@@ -185,12 +185,11 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       gameRefreshQueuedRef.current = true;
       return gameRequestRef.current;
     }
-    const playerId = state.playerId;
     const request = (async () => {
       do {
         gameRefreshQueuedRef.current = false;
         try {
-          const game = await getGameState(lobbyId, playerId);
+          const game = await getGameState(lobbyId);
           gameWasLoadedRef.current = true;
            if (game) {
             gameWasLoadedRef.current = true;

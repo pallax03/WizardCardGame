@@ -112,7 +112,7 @@ export function useGameBoard(customPlayerId?: number) {
       try {
         setIsSubmitting(true);
         setActionStatus(`Choosing trump color ${colorToChoose}...`);
-        await chooseTrumpColor(lobbyId, playerId, colorToChoose);
+        await chooseTrumpColor(lobbyId, colorToChoose);
         setActionStatus(`Trump color chosen: ${colorToChoose}`);
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -121,7 +121,7 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(false);
       }
     },
-    [lobbyId, playerId, selectedColor]
+    [lobbyId, selectedColor]
   );
 
   // Action: Place Bid
@@ -131,7 +131,7 @@ export function useGameBoard(customPlayerId?: number) {
       try {
         setIsSubmitting(true);
         setActionStatus(`Placing bid ${bidToPlace}...`);
-        await placeBid(lobbyId, playerId, bidToPlace);
+        await placeBid(lobbyId, bidToPlace);
         setActionStatus(`Bid placed successfully: ${bidToPlace}`);
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -140,7 +140,7 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(false);
       }
     },
-    [bidInput, lobbyId, playerId]
+    [bidInput, lobbyId]
   );
 
   // Action: Play Card
@@ -156,7 +156,7 @@ export function useGameBoard(customPlayerId?: number) {
       try {
         setIsSubmitting(true);
         setActionStatus("Playing card...");
-        await playCard(lobbyId, playerId, cardToPlay);
+        await playCard(lobbyId, cardToPlay);
         setActionStatus("Card played successfully");
         setSelectedCard(null);
       } catch (error) {
@@ -166,7 +166,7 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(false);
       }
     },
-    [gameState.hand, gameState.legalCards, lobbyId, playerId, selectedCard]
+    [gameState.hand, gameState.legalCards, lobbyId, selectedCard]
   );
 
   // Helper to check if a specific card in hand is playable
