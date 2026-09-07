@@ -17,7 +17,7 @@ object LobbyId:
 
 enum LobbyError:
   case Full, GameInProgress, NotEnoughPlayers, PlayersOffline, PlayerNotFound, LobbyNotFound,
-    NotAuthenticated
+    NotAuthenticated, GameNotFound
   case GameActionRejected(code: String)
 
 case class Lobby(

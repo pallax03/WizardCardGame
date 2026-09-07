@@ -1,12 +1,10 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
-
 import sttp.tapir.server.ServerEndpoint
 
 /** HTTP routes for the Lobby domain. */
@@ -70,12 +68,14 @@ class LobbyRoutes(
         (for
           (player, lobby) <- getAuthLobbyT(lobbyId, secret)
           _ <- EitherT.cond[Future](
-            lobby.status == LobbyStatus.WAITING,
+            lobby.status != LobbyStatus.WAITING,
             (),
-            LobbyError.GameInProgress
+            LobbyError.GameNotFound
           )
           state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recover { case _ =>
-            Left(LobbyError.GameInProgress)
+            // todo: use CAS
+            lobbyStatePort.saveLobby(lobby.copy(status = LobbyStatus.WAITING))
+            Left(LobbyError.GameNotFound)
           })
         yield state).value
       }
