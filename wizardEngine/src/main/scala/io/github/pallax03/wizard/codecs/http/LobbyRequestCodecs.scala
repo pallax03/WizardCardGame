@@ -6,9 +6,11 @@ import io.circe.{Decoder, Encoder}
 import io.github.pallax03.wizard.application.web.http.endpoints.{
   GameStartedResponse,
   JoinLobbyRequest,
-  LobbyStateResponse
+  LobbyStateResponse,
+  PublicPlayerInfo
 }
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
+import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 
 import sttp.tapir.Schema
 import sttp.tapir.generic.auto.*
@@ -27,6 +29,8 @@ object LobbyRequestCodecs:
   // --- Circe ---
   given Encoder[JoinLobbyRequest] = deriveEncoder
   given Decoder[JoinLobbyRequest] = deriveDecoder
+  given Encoder[PublicPlayerInfo] = deriveEncoder
+  given Decoder[PublicPlayerInfo] = deriveDecoder
   given Encoder[LobbyStateResponse] = deriveEncoder
   given Decoder[LobbyStateResponse] = deriveDecoder
   given Encoder[GameStartedResponse] = deriveEncoder
@@ -34,5 +38,6 @@ object LobbyRequestCodecs:
 
   // --- Tapir Schemas ---
   given Schema[JoinLobbyRequest] = Schema.derived
+  given Schema[PublicPlayerInfo] = Schema.derived
   given Schema[LobbyStateResponse] = Schema.derived
   given Schema[GameStartedResponse] = Schema.derived

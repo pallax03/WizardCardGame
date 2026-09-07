@@ -41,3 +41,7 @@ object GameStateCodecs:
       }
     )
   given playerGameStateCodec: Codec[PlayerGameState] = Codec.AsObject.derived
+
+  import sttp.tapir.Schema
+  import sttp.tapir.SchemaType
+  given Schema[PlayerGameState] = Schema(SchemaType.SProduct(Nil))

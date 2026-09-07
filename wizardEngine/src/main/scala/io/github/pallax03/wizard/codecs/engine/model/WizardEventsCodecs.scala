@@ -74,8 +74,6 @@ object WizardEventsCodecs:
         Right(LifecycleEvent.StateRecovered())
       case "GameAborted" =>
         fields.get[String]("reason").map(LifecycleEvent.GameAborted.apply)
-      case "RoundStarted" =>
-        fields.get[Round]("round").map(ProgressEvent.RoundStarted.apply)
       case other =>
         Left(DecodingFailure(s"No decoding for $other.", c.history))
     }
