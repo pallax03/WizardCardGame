@@ -13,14 +13,21 @@ object AppError:
   sealed trait InternalError extends AppError
   sealed trait UnauthorizedError extends AppError
 
-  // Lobby Errors
   case class LobbyNotFound(lobbyId: LobbyId) extends NotFoundError:
     val message: String = s"Lobby $lobbyId not found"
     val code = "LOBBY_NOT_FOUND"
 
+  case class GameNotFound(lobbyId: LobbyId) extends NotFoundError:
+    val message: String = s"Game not found for lobby: $lobbyId"
+    val code = "GAME_NOT_FOUND"
+
   case object LobbyFull extends BadRequestError:
     val message = "Lobby is full"
     val code = "LOBBY_FULL"
+
+  case object NotEnoughPlayer extends BadRequestError:
+    val message = "Need at least 3 player to start a game"
+    val code = "NOT_ENOUGH_PLAYER"
 
   case object GameInProgress extends BadRequestError:
     val message = "Game already started or finished"
@@ -30,20 +37,18 @@ object AppError:
     val message = "Not all players are online"
     val code = "PLAYERS_OFFLINE"
 
-  case object PlayerOrLobbyNotFound extends NotFoundError:
-    val message = "Player or lobby not found"
-    val code = "NOT_FOUND"
+  case object PlayerNotFound extends NotFoundError:
+    val message = "Player not found"
+    val code = "PLAYER_NOT_FOUND"
 
   case object NotAuthenticated extends UnauthorizedError:
     val message = "Not authenticated or invalid secret"
     val code = "NOT_AUTHENTICATED"
 
-  // Action / Game Errors
   case class GameError(gameError: String) extends BadRequestError:
     val message: String = gameError
     val code = "GAME_ERROR"
 
-  // Internal Errors
   case class InternalServerError(exMsg: String) extends InternalError:
     val message: String = s"Internal error: $exMsg"
     val code = "INTERNAL_ERROR"

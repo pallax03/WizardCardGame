@@ -11,12 +11,12 @@ private[redis] object RedisLobbyScripts:
       |local lobbyStr = redis.call('GET', KEYS[1])
       |local lobby
       |if not lobbyStr then
-      |  lobby = { lobbyId = ARGV[3], players = {}, status = ${LobbyStatus.WAITING}, configuration = { timer = ${GameConfiguration().timer} } }
+      |  lobby = { lobbyId = ARGV[3], players = {}, status = "${LobbyStatus.WAITING}", configuration = { timer = ${GameConfiguration().timer}, gracePeriodSeconds = ${GameConfiguration().gracePeriodSeconds}, maxStrikes = ${GameConfiguration().maxStrikes} } }
       |else
       |  lobby = cjson.decode(lobbyStr)
       |end
       |
-      |if lobby.status ~= ${LobbyStatus.WAITING} then return ${AppError.GameInProgress.code} end
+      |if lobby.status ~= "${LobbyStatus.WAITING}" then return "${AppError.GameInProgress.code}" end
       |
       |local inputName = ARGV[1]
       |local isBot = ARGV[2] ~= ''
@@ -32,7 +32,7 @@ private[redis] object RedisLobbyScripts:
       |  end
       |end
       |
-      |if #lobby.players >= 6 then return ${AppError.LobbyFull.code} end
+      |if #lobby.players >= 6 then return "${AppError.LobbyFull.code}" end
       |
       |local maxId = -1
       |for i, p in ipairs(lobby.players) do
@@ -47,7 +47,7 @@ private[redis] object RedisLobbyScripts:
       |  newPlayer.secret = secret ~= '' and secret or cjson.null
       |else
       |  newPlayer.difficulty = ARGV[2]
-      |  newPlayer.name = 'Bot-' .. (newId+1)
+      |  newPlayer.name = 'Bot-' .. (newId)
       |  newPlayer.isOnline = true
       |  newPlayer.secret = cjson.null
       |end

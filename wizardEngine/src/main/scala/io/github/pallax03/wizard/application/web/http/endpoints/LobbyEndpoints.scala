@@ -5,9 +5,11 @@ import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
+import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given 
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
 import sttp.model.StatusCode
 import sttp.tapir.*
@@ -77,9 +79,10 @@ object LobbyEndpoints:
       .out(jsonBody[GameConfiguration])
 
   /** DELETE /api/lobby — remove a player (body-based for backward compat with frontend). */
-  val removePlayer: Endpoint[String, LobbyPlayer, AppError, Unit, Any] =
+  val removePlayer: Endpoint[String, (LobbyId, PlayerId), AppError, Unit, Any] =
     secureBase.delete
       .summary("Remove player")
       .description("Removes playerId from lobbyId. Authenticated player must be in the lobby.")
-      .in(jsonBody[LobbyPlayer])
+      .in(HttpSupport.lobbyIdPath)
+      .in(jsonBody[PlayerId])
       .out(statusCode(StatusCode.NoContent))

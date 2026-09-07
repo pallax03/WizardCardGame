@@ -7,7 +7,7 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 case class JoinLobbyRequest(
     name: String,
-    bot: Option[BotsDifficulty],
+    difficulty: Option[BotsDifficulty],
     secret: Option[String] = None
 )
 
@@ -31,5 +31,3 @@ case class GameStartedResponse(message: String)
 case class ActionSuccessResponse(message: String)
 
 case class AuthLobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
-
-case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId)
