@@ -1,10 +1,7 @@
 package io.github.pallax03.wizard.application.web.http
 
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
-import io.github.pallax03.wizard.engine.lobby.{
-  LobbyError,
-  LobbyId
-}
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 import sttp.model.StatusCode

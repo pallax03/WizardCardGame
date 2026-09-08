@@ -3,10 +3,7 @@ package io.github.pallax03.wizard.application.web.http.endpoints
 import io.github.pallax03.wizard.application.web.http.HttpSupport
 import io.github.pallax03.wizard.codecs.engine.model.basic.BiddingCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
-import io.github.pallax03.wizard.engine.lobby.{
-  LobbyError,
-  LobbyId
-}
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 

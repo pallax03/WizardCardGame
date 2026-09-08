@@ -38,6 +38,6 @@ object ChannelsKeys:
 
   /** Redis Pub/Sub channel for expired-key notifications (keyspace events). */
   val TURN_TIMER_KEYSPACE: String = "__keyevent@0__:expired"
-  
+
   /** Channel to notify TurnTimerVerticle of a new turn. */
   val TURN_EVENTS_CHANNEL: String = "system:turn_events"

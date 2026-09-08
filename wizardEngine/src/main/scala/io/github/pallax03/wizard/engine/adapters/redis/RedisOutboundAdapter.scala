@@ -7,14 +7,19 @@ import cats.syntax.all.*
 import io.vertx.redis.client.Redis
 
 import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer}
-import io.github.pallax03.wizard.engine.model.events.{DestinationScoped, InvitationEvent, LifecycleEvent, WizardEvent}
+import io.github.pallax03.wizard.engine.model.events.{
+  DestinationScoped,
+  InvitationEvent,
+  LifecycleEvent,
+  WizardEvent
+}
 import io.github.pallax03.wizard.engine.ports.{OutboundPort, PubSubPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
 
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 
 import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
-import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given 
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 
 /**
  * Redis implementation of [[OutboundPort]].
@@ -52,7 +57,10 @@ class RedisOutboundAdapter(
 
         val turnEventFut = ev match
           case inv: InvitationEvent =>
-            pubSubPort.publish(ChannelsKeys.TURN_EVENTS_CHANNEL, LobbyPlayer(lobbyId, inv.destinationId).toJson)
+            pubSubPort.publish(
+              ChannelsKeys.TURN_EVENTS_CHANNEL,
+              LobbyPlayer(lobbyId, inv.destinationId).toJson
+            )
           case _ => Future.unit
 
         publishFut.zip(turnEventFut).void

@@ -13,7 +13,7 @@ import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubS
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
-import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given 
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 
 class TurnTimerVerticle(
     pubSubPort: PubSubPort,
@@ -37,18 +37,28 @@ class TurnTimerVerticle(
       case Right(payload) =>
         val lobbyId = payload.lobbyId
         val playerId = payload.playerId
-        lobbyStatePort.getLobby(lobbyId).onComplete:
-          case Success(Some(lobby)) =>
-            val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
-            redisClient.send(Request.cmd(Command.GET).arg(strikesKey)).asScala.onComplete:
-              case Success(strikesResp) =>
-                val strikes = Option(strikesResp).map(_.toString.toInt).getOrElse(0)
-                val baseTtl = lobby.configuration.timer + lobby.configuration.gracePeriodSeconds
-                val ttl = Math.max(1, baseTtl / Math.pow(2, strikes).toInt)
-                val req = Request.cmd(Command.SET).arg(ChannelsKeys.turnTimer(lobbyId, playerId)).arg("1").arg("EX").arg(ttl.toString)
-                redisClient.send(req)
-              case _ => ()
-          case _ => ()
+        lobbyStatePort
+          .getLobby(lobbyId)
+          .onComplete:
+            case Success(Some(lobby)) =>
+              val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
+              redisClient
+                .send(Request.cmd(Command.GET).arg(strikesKey))
+                .asScala
+                .onComplete:
+                  case Success(strikesResp) =>
+                    val strikes = Option(strikesResp).map(_.toString.toInt).getOrElse(0)
+                    val baseTtl = lobby.configuration.timer + lobby.configuration.gracePeriodSeconds
+                    val ttl = Math.max(1, baseTtl / Math.pow(2, strikes).toInt)
+                    val req = Request
+                      .cmd(Command.SET)
+                      .arg(ChannelsKeys.turnTimer(lobbyId, playerId))
+                      .arg("1")
+                      .arg("EX")
+                      .arg(ttl.toString)
+                    redisClient.send(req)
+                  case _ => ()
+            case _ => ()
       case Left(_) => ()
 
   private def handleExpiredKey(expiredKey: String): Unit =
@@ -63,7 +73,14 @@ class TurnTimerVerticle(
           strikesResp <- redisClient.send(Request.cmd(Command.INCR).arg(strikesKey)).asScala
           strikes = strikesResp.toLong
           _ <- redisClient.send(Request.cmd(Command.EXPIRE).arg(strikesKey).arg("86400")).asScala
-          _ <- if strikes >= lobby.configuration.maxStrikes then lobbyStatePort.disconnectAndPauseLobby(lobbyId, playerId) else inboundPort.forceFallbackAction(lobbyId, playerId)
+          _ <-
+            if strikes >= lobby.configuration.maxStrikes then
+              lobbyStatePort.disconnectAndPauseLobby(lobbyId, playerId)
+            else inboundPort.forceFallbackAction(lobbyId, playerId)
         yield ()).recover:
-          case ex => pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:[TurnTimer] Failed for $lobbyIdStr/$playerIdStr: ${ex.getMessage}")
+          case ex =>
+            pubSubPort.publish(
+              ChannelsKeys.LOGS_CHANNEL,
+              s"ERROR:[TurnTimer] Failed for $lobbyIdStr/$playerIdStr: ${ex.getMessage}"
+            )
       case _ => ()
