@@ -1,19 +1,19 @@
 package io.github.pallax03.wizard.application.timer
 
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Success
+
 import io.vertx.core.AbstractVerticle
 import io.vertx.redis.client.{Command, Redis, Request}
+
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubSubPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
-
-import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 
 class TurnTimerVerticle(
     pubSubPort: PubSubPort,

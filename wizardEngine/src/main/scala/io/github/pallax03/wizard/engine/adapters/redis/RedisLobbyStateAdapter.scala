@@ -10,10 +10,10 @@ import io.vertx.redis.client.{Command, Redis, Request}
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
@@ -86,12 +86,11 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
   override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId):
+    updateLobbyCAS[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)
       case Some(lobby) =>
-        lobby.removePlayer(playerId).map: newLobby =>
-          (true, newLobby, Some(SystemEvent.left(playerId)))
-    .map(_.getOrElse(false))
+        lobby.removePlayer(playerId).map(newLobby => (true, newLobby, Some(SystemEvent.left(playerId))))
+    }.map(_.getOrElse(false))
 
   /** @inheritdoc */
   override def getAllLobbies: Future[List[Lobby]] =
@@ -123,12 +122,11 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       playerId: PlayerId,
       isOnline: Boolean
   ): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId):
+    updateLobbyCAS[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)
       case Some(lobby) =>
-        lobby.setPlayerOnlineStatus(playerId, isOnline).map: newLobby =>
-          (true, newLobby, None)
-    .map(_.getOrElse(false))
+        lobby.setPlayerOnlineStatus(playerId, isOnline).map(newLobby => (true, newLobby, None))
+    }.map(_.getOrElse(false))
 
   /** @inheritdoc */
   override def tryAcquireBotLock(
@@ -146,22 +144,26 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
     redisClient.send(req).asScala.map(_ != null)
 
   override def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId):
+    updateLobbyCAS[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)
       case Some(lobby) =>
-        lobby.setPlayerOnlineStatus(playerId, false).map: newLobby =>
+        lobby.setPlayerOnlineStatus(playerId, false).map { newLobby =>
           val pausedLobby = if newLobby.status == LobbyStatus.IN_GAME then newLobby.copy(status = LobbyStatus.PAUSED) else newLobby
           (true, pausedLobby, Some(SystemEvent.offline(playerId)))
-    .flatMap:
+        }
+    }.flatMap {
       case Left(_) => Future.successful(false)
       case Right(res) =>
-        getLobby(lobbyId).flatMap:
+        getLobby(lobbyId).flatMap {
           case None => Future.successful(res)
           case Some(lobby) =>
-            val keysToDelete = lobby.players.flatMap: p =>
+            val keysToDelete = lobby.players.flatMap { p =>
               List(ChannelsKeys.turnTimer(lobbyId, p.id), ChannelsKeys.afkStrikes(lobbyId, p.id))
+            }
             if keysToDelete.nonEmpty then
               val delReq = Request.cmd(Command.DEL)
               keysToDelete.foreach(delReq.arg)
               redisClient.send(delReq).asScala.map(_ => res)
             else Future.successful(res)
+        }
+    }

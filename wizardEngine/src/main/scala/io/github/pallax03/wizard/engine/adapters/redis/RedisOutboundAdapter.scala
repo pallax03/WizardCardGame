@@ -2,10 +2,14 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import cats.syntax.all.*
 
 import io.vertx.redis.client.Redis
 
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
+import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer}
 import io.github.pallax03.wizard.engine.model.events.{
   DestinationScoped,
@@ -15,11 +19,6 @@ import io.github.pallax03.wizard.engine.model.events.{
 }
 import io.github.pallax03.wizard.engine.ports.{OutboundPort, PubSubPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
-
-import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-
-import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
-import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 
 /**
  * Redis implementation of [[OutboundPort]].
