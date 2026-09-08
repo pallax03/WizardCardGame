@@ -10,8 +10,6 @@ import org.scalatest.wordspec.AnyWordSpec
 class TestWizardPrologEngine extends AnyWordSpec with Matchers:
 
   import BasicTestDSL.*
-  import cards.Card.*
-  import cards.Hand.*
   import gameplay.Table
 
   "WizardPrologEngine" should:

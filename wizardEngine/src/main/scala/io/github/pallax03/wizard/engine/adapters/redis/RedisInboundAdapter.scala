@@ -16,14 +16,15 @@ import io.github.pallax03.wizard.engine.model.core.*
 import io.github.pallax03.wizard.engine.model.core.InconsistentState.*
 import io.github.pallax03.wizard.engine.model.core.state.*
 import io.github.pallax03.wizard.engine.model.events.*
-import io.github.pallax03.wizard.engine.ports.{InboundPort, OutboundPort}
+import io.github.pallax03.wizard.engine.model.rules.FallbackStrategy
+import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, InboundPort, OutboundPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
 class RedisInboundAdapter(
     private val redisClient: Redis,
     private val outboundPort: OutboundPort,
-    private val recoveryPort: io.github.pallax03.wizard.engine.ports.GameRecoveryPort
+    private val recoveryPort: GameRecoveryPort
 ) extends InboundPort:
 
   private def decodeGameState(rawGameState: String): ServerGameState =
@@ -78,16 +79,23 @@ class RedisInboundAdapter(
     fetchGameState(lobbyId).flatMap:
       case Some(_) => Future.unit
       case None =>
-        val playersIds = config.players.map(_.id)
-        val initialState = GameEngine.initializeGame(playersIds)
+        val initialState = GameEngine.initializeGame(players)
         redisClient
           .send(
             Request.cmd(Command.SET).arg(ChannelsKeys.game(lobbyId)).arg(initialState.state.toJson)
           )
           .asScala
           .map: _ =>
-            outboundPort.publish(lobbyId, LifecycleEvent.GameStarted(playersIds))
             outboundPort.publish(lobbyId, initialState.events*)
+
+  /** @inheritdoc */
+  override def resumeGame(lobbyId: LobbyId): Future[Unit] =
+    fetchGameState(lobbyId).flatMap:
+      case Some(state) =>
+        outboundPort.publish(lobbyId, LifecycleEvent.GameResumed(state.playersIds))
+        Future.unit
+      case None =>
+        Future.failed(GameException(GameNotFound))
 
   /** @inheritdoc */
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]] =
@@ -98,6 +106,26 @@ class RedisInboundAdapter(
           GameEngine.processAction(state, action) match
             case Left(error) => Future.successful(Left(error))
             case Right(newState) =>
-              saveState(lobbyId, newState).map: _ =>
-                outboundPort.publish(lobbyId, newState.events*)
-                Right(())
+              val playerId = action.playerId
+              val clearTimer = redisClient
+                .send(Request.cmd(Command.DEL).arg(ChannelsKeys.turnTimer(lobbyId, playerId)))
+                .asScala
+              val clearStrikes = redisClient
+                .send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId)))
+                .asScala
+
+              saveState(lobbyId, newState)
+                .zip(clearTimer.zip(clearStrikes))
+                .map: _ =>
+                  outboundPort.publish(lobbyId, newState.events*)
+                  Right(())
+
+  /** @inheritdoc */
+  override def forceFallbackAction(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    getState(lobbyId, playerId).flatMap: playerGameState =>
+      playerGameState.pendingInvitation(playerId) match
+        case Some(invitationEvent: InvitationEvent) =>
+          submitAction(lobbyId, FallbackStrategy.fallbackMove(invitationEvent)).flatMap:
+            case Left(err) => Future.failed(GameException(CorruptedState(s"Fallback failed: $err")))
+            case Right(_)  => Future.unit
+        case None => Future.unit

@@ -3,36 +3,16 @@ package io.github.pallax03.wizard.codecs.http
 import io.circe.generic.semiauto.*
 import io.circe.{Decoder, Encoder}
 
-import io.github.pallax03.wizard.application.web.http.{
-  ActionSuccessResponse,
-  AuthLobbyPlayer,
-  LobbyPlayer
-}
+import io.github.pallax03.wizard.application.web.http.AuthLobbyPlayer
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 
 import sttp.tapir.Schema
 import sttp.tapir.generic.auto.*
 
-/**
- * Circe codecs and Tapir schemas for the shared HTTP response/error types.
- *
- * These types are defined in the application web layer but their serialization
- * contract lives here, following the same codec-per-type pattern used for
- * engine types in [[io.github.pallax03.wizard.codecs.engine]].
- */
 object HttpCodecs:
-  // --- Circe ---
 
-  given Encoder[ActionSuccessResponse] = deriveEncoder
-  given Decoder[ActionSuccessResponse] = deriveDecoder
   given Encoder[AuthLobbyPlayer] = deriveEncoder
   given Decoder[AuthLobbyPlayer] = deriveDecoder
-  given Encoder[LobbyPlayer] = deriveEncoder
-  given Decoder[LobbyPlayer] = deriveDecoder
 
-  // --- Tapir Schemas ---
-
-  given Schema[ActionSuccessResponse] = Schema.derived
   given Schema[AuthLobbyPlayer] = Schema.derived
-  given Schema[LobbyPlayer] = Schema.derived

@@ -5,9 +5,8 @@ import scala.concurrent.Future
 import io.vertx.core.AbstractVerticle
 import io.vertx.ext.web.Router
 
-import io.github.pallax03.wizard.application.web.*
-import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
-import io.github.pallax03.wizard.engine.errors.AppError
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
+import io.github.pallax03.wizard.engine.lobby.LobbyError
 import io.github.pallax03.wizard.engine.model.core.{
   AbortedGameException,
   GameException,
@@ -58,11 +57,12 @@ class HttpServerVerticle(
   )
 
   private def exceptionHandler = ExceptionHandler[Future](ctx =>
-    val lobbyIdOpt = ctx.request.extractLobbyIdStr
-    val playerIdOpt = ctx.request.extractPlayerIdStr
+    val uri = ctx.request.uri.toString
+    val lobbyIdOpt = "(?<=/lobby/)[^/?]+".r.findFirstIn(uri)
+    val playerIdOpt = "(?<=/player/)[^/?]+".r.findFirstIn(uri)
 
     WizardLogger.withContext(lobbyIdOpt, playerIdOpt):
-      val (logMsg, clientMsg, code) = ctx.e match
+      val (logMsg, _, code) = ctx.e match
         case rge: RecoveredGameException =>
           (
             s"RECOVERED GameException (${rge.ge}), endpoint: ${ctx.endpoint.show}",
@@ -81,12 +81,12 @@ class HttpServerVerticle(
           (s"CRASH ${ctx.endpoint.show}", "Internal Server Error", "INTERNAL_ERROR")
 
       WizardLogger.error(logMsg, ctx.e)
-      val errorOutput = jsonBody[AppError].and(statusCode(StatusCode.InternalServerError))
+      val errorOutput = jsonBody[LobbyError].and(statusCode(StatusCode.InternalServerError))
       Future.successful(
         Some(
           ValuedEndpointOutput(
             errorOutput,
-            AppError.InternalServerError(s"$clientMsg (code: $code)")
+            LobbyError.GameActionRejected(s"CRASH_$code")
           )
         )
       )

@@ -2,7 +2,6 @@ package io.github.pallax03.wizard.engine.ports
 
 import scala.concurrent.Future
 
-import io.github.pallax03.wizard.engine.errors.AppError
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
@@ -61,7 +60,7 @@ trait LobbyStatePort:
       name: String,
       difficulty: Option[BotsDifficulty] = None,
       secret: Option[String] = None
-  ): Future[Either[AppError, Player]]
+  ): Future[Either[LobbyError, Player]]
 
   /**
    * Atomically removes a player from the lobby by ID.
@@ -95,3 +94,9 @@ trait LobbyStatePort:
       playerId: PlayerId,
       isOnline: Boolean
   ): Future[Boolean]
+
+  /**
+   * Disconnects a player, sets the lobby status to PAUSED, and clears all timers/strikes.
+   * Used when a player goes offline via WebSocket or reaches max AFK strikes.
+   */
+  def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]

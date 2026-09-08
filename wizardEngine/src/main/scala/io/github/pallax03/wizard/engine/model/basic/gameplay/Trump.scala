@@ -67,4 +67,4 @@ object Trump:
      */
     infix def resolveWizard(color: Card.Color): Either[GameError, Trump] = t match
       case Trump.WizardUnresolved(c) => Right(Trump.WizardResolved(c, color))
-      case _                         => Left(GameError.InvalidAction)
+      case _                         => Left(GameError.InvalidAction(None))

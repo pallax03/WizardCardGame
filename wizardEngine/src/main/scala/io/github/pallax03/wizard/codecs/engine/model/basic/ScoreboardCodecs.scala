@@ -4,8 +4,9 @@ import io.circe.*
 
 import io.github.pallax03.wizard.engine.model.basic.*
 
-object ScoreboardCodecs:
+import sttp.tapir.Schema
 
+object ScoreboardCodecs:
   import gameplay.Round
   import bidding.Bid
   import PlayerIdCodecs.given
@@ -28,3 +29,5 @@ object ScoreboardCodecs:
     Decoder[Map[PlayerId, Map[Round, (Score, Bid)]]].map(Scoreboard.apply),
     Encoder[Map[PlayerId, Map[Round, (Score, Bid)]]].contramap(_.toMap)
   )
+
+  given Schema[Scoreboard] = Schema.anyObject[Scoreboard].name(Schema.SName("Scoreboard"))

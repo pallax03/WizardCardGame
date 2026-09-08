@@ -16,7 +16,6 @@ class TestDeck extends AnyWordSpec with Matchers:
       d.length shouldBe TOTAL_SIZE
 
   "A custom Deck" should:
-    import Card.*
     val c1: Card = One of Red
     val c2: Card = One of Blue
     val c3: Card = Thirteen of Green

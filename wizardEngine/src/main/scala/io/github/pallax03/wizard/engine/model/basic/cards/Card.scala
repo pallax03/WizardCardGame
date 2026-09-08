@@ -59,8 +59,12 @@ object Card:
 
   extension (rank: Rank) infix def of(color: Color): Card = Standard(color, rank)
 
+  extension (optCard: Option[Card])
+    def asTrump: Trump = optCard match
+      case Some(card) => Trump(card)
+      case None       => Trump.Absent
+
   extension (c: Card)
-    infix def -(other: Card): List[Card] = List(c, other)
     def isWizard: Boolean = c match
       case _: Wizard => true
       case _         => false
@@ -68,9 +72,4 @@ object Card:
       case _: Jester => true
       case _         => false
 
-  extension (optCard: Option[Card])
-    def asTrump: Trump = optCard match
-      case Some(card) => Trump(card)
-      case None       => Trump.Absent
-
-  extension (cards: List[Card]) infix def -(other: Card): List[Card] = cards :+ other
+export Card.{wizard, jester}

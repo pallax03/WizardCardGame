@@ -7,6 +7,8 @@ import io.github.pallax03.wizard.codecs.combinators.DiscriminatedCodecs.*
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 
+import sttp.tapir.Schema
+
 object TrumpCodecs:
   import CardCodecs.given
 
@@ -29,3 +31,5 @@ object TrumpCodecs:
             case _ => Left(DecodingFailure("Wizard expected for WizardResolved", cursor.history))
         yield Trump.WizardResolved(wiz, color)
     case "Jester" | "Standard" | "WizardUnresolved" => Decoder.forProduct1("card")(Trump.apply)
+
+  given Schema[Trump] = Schema.anyObject[Trump].name(Schema.SName("Trump"))
