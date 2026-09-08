@@ -62,7 +62,7 @@ case class Lobby(
     if newPlayers.size == players.size then Left(LobbyError.PlayerNotFound)
     else Right(copy(players = newPlayers, version = version + 1))
 
-  def setPlayerOnlineStatus(playerId: PlayerId, isOnline: Boolean): Either[LobbyError, Lobby] =
+  def handleOnlineStatusChange(playerId: PlayerId, isOnline: Boolean): Either[LobbyError, Lobby] =
     players.indexWhere(_.id == playerId) match
       case -1 => Left(LobbyError.PlayerNotFound)
       case idx =>
@@ -70,4 +70,13 @@ case class Lobby(
         val updatedPlayer =
           if isOnline && player.isBot && player.isHuman then player.returnHuman
           else player.copy(isOnline = isOnline)
-        Right(copy(players = players.updated(idx, updatedPlayer), version = version + 1))
+        val newPlayers = players.updated(idx, updatedPlayer)
+
+        val humans = newPlayers.filter(_.isHumanPlaying)
+        val newStatus =
+          if status == LobbyStatus.WAITING || status == LobbyStatus.FINISHED then status
+          else if humans.isEmpty then LobbyStatus.PAUSED
+          else if humans.forall(_.isOnline) then LobbyStatus.IN_GAME
+          else LobbyStatus.PAUSED
+
+        Right(copy(players = newPlayers, status = newStatus, version = version + 1))

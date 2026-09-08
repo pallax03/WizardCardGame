@@ -82,10 +82,10 @@ trait LobbyStatePort:
    * @param lobbyId the UUID of the lobby.
    * @param playerId the ID of the player.
    * @param isOnline the new online status.
-   * @return a Future containing true if the player was found and updated, false otherwise.
+   * @return a Future containing the new LobbyStatus if updated, or a failed Future.
    */
   def setPlayerOnlineStatus(
       lobbyId: LobbyId,
       playerId: PlayerId,
       isOnline: Boolean
-  ): Future[Boolean]
+  ): Future[LobbyStatus]

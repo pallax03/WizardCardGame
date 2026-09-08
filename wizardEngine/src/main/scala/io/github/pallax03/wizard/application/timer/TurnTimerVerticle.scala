@@ -3,13 +3,13 @@ package io.github.pallax03.wizard.application.timer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Success
-
+import cats.syntax.all.*
 import io.vertx.core.AbstractVerticle
 import io.vertx.redis.client.{Command, Redis, Request}
-
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer, LobbyStatus}
+import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId, LobbyPlayer, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubSubPort}
@@ -71,27 +71,41 @@ class TurnTimerVerticle(
         (for
           eitherLobby <- lobbyStatePort.getLobby(lobbyId)
           lobby <- Future.successful(eitherLobby.toOption.get)
-          isOffline = !lobby.players.find(_.id == playerId).exists(_.isOnline)
+          player = lobby.players.find(_.id == playerId).get
           strikesResp <- redisClient.send(Request.cmd(Command.INCR).arg(strikesKey)).asScala
-          strikes = strikesResp.toLong
           _ <- redisClient.send(Request.cmd(Command.EXPIRE).arg(strikesKey).arg("86400")).asScala
           _ <-
             if lobby.status == LobbyStatus.PAUSED then Future.unit
-            else if isOffline || strikes >= lobby.configuration.maxStrikes then
-              lobbyStatePort
-                .updateLobby[Unit](lobbyId) { l =>
-                  val newPlayers = l.players.map(p =>
-                    if p.id == playerId then p.replaceWithABot()
-                    else p
-                  )
-                  Right(((), l.copy(players = newPlayers), Option(SystemEvent.timeout(playerId))))
-                }
-                .flatMap(_ => inboundPort.forceFallbackAction(lobbyId, playerId))
+            else if player.isBot then
+              inboundPort.forceFallbackAction(lobbyId, playerId)
+            else if strikesResp.toLong >= lobby.configuration.maxStrikes then
+              lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, false).flatMap { _ =>
+                val msg = SystemEvent.offline(playerId).toJson
+                pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg).void
+              }
             else inboundPort.forceFallbackAction(lobbyId, playerId)
         yield ()).recover:
           case ex =>
-            pubSubPort.publish(
-              ChannelsKeys.LOGS_CHANNEL,
-              s"ERROR:[TurnTimer] Failed for $lobbyIdStr/$playerIdStr: ${ex.getMessage}"
-            )
+            pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:[TurnTimer] Failed for $lobbyIdStr/$playerIdStr: ${ex.getMessage}")
+
+      case Array("disconnect", lobbyIdStr) =>
+        val lobbyId = LobbyId(lobbyIdStr)
+        lobbyStatePort.updateLobby[List[PlayerId]](lobbyId) { lobby =>
+           if lobby.status == LobbyStatus.PAUSED then
+             val humans = lobby.players.filter(_.isHumanPlaying)
+             if humans.nonEmpty && !humans.forall(_.isOnline) then
+               val offlinePlayerIds = lobby.players.filter(p => p.isHumanPlaying && !p.isOnline).map(_.id)
+               val newPlayers = lobby.players.map(p => if offlinePlayerIds.contains(p.id) then p.replaceWithABot() else p)
+               Right((offlinePlayerIds, lobby.copy(players = newPlayers, status = LobbyStatus.IN_GAME), None))
+             else Left(LobbyError.GameInProgress)
+           else Left(LobbyError.GameInProgress)
+        }.flatMap {
+           case Right(offlinePlayerIds) =>
+             Future.sequence(offlinePlayerIds.map { pid =>
+               pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), SystemEvent.timeout(pid).toJson)
+             }).flatMap(_ => inboundPort.resumeGame(lobbyId))
+           case Left(_) => Future.unit
+        }.recover {
+           case ex => pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"ERROR:[DisconnectTimer] Failed for $lobbyIdStr: ${ex.getMessage}")
+        }
       case _ => ()

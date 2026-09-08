@@ -89,7 +89,7 @@ object Main:
           0
         )
         runHTTPServer(vertx, inPort, lobbyStatePort, prologPort)
-        runWSServer(vertx, lobbyStatePort, pubSubPort)
+        runWSServer(vertx, inPort, lobbyStatePort, pubSubPort)
 
   private def isProduction: Boolean =
     sys.env.getOrElse("APP_ENV", "development").toLowerCase == "production"
@@ -115,10 +115,11 @@ object Main:
 
   private def runWSServer(
       vertx: Vertx,
+      inPort: InboundPort,
       lobbyStatePort: LobbyStatePort,
       pubSubPort: PubSubPort
   ): Unit =
-    val wsAdapter = VertxWebSocketsAdapter(vertx, pubSubPort, lobbyStatePort)
+    val wsAdapter = VertxWebSocketsAdapter(vertx, pubSubPort, lobbyStatePort, inPort)
     deploy(vertx, WebSocketsVerticle(wsAdapter, lobbyStatePort, wsPort), "WebSocket", wsPort)
 
   private def deploy(vertx: Vertx, verticle: AbstractVerticle, name: String, port: Int): Unit =

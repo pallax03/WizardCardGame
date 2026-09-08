@@ -31,6 +31,9 @@ object ChannelsKeys:
   def turnTimer(lobbyId: LobbyId, playerId: PlayerId): String =
     s"timer:${lobbyId.toString}:${playerId.toInt}"
 
+  def disconnectTimer(lobbyId: LobbyId): String =
+    s"disconnect:${lobbyId.toString}"
+
   /** Key that stores the consecutive AFK strikes for a player. */
   def afkStrikes(lobbyId: LobbyId, playerId: PlayerId): String =
     s"strikes:${lobbyId.toString}:${playerId.toInt}"
