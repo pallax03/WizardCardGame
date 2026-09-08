@@ -16,7 +16,7 @@ object LobbyId:
   def generate: LobbyId = UUID.randomUUID().toString
 
 enum LobbyError:
-  case Full, GameInProgress, NotEnoughPlayers, PlayersOffline, PlayerNotFound, LobbyNotFound,
+  case Full, GameInProgress, GamePaused, NotEnoughPlayers, PlayersOffline, PlayerNotFound, LobbyNotFound,
     NotAuthenticated, GameNotFound
   case GameActionRejected(code: String)
 
@@ -32,11 +32,10 @@ case class Lobby(
     players.find(_.secret.contains(secret)).toRight(LobbyError.NotAuthenticated)
 
   def validateStartOrResume: Either[LobbyError, Unit] = status match
-    case LobbyStatus.WAITING =>
+    case LobbyStatus.WAITING | LobbyStatus.PAUSED =>
       if players.size < WizardRules.MinPlayers then Left(LobbyError.NotEnoughPlayers)
-      else if !players.filter(_.isHuman).forall(_.isOnline) then Left(LobbyError.PlayersOffline)
+      else if !players.filter(_.isHumanPlaying).forall(_.isOnline) then Left(LobbyError.PlayersOffline)
       else Right(())
-    case LobbyStatus.PAUSED => Right(())
     case _                  => Left(LobbyError.GameInProgress)
 
   def addPlayer(
@@ -65,5 +64,6 @@ case class Lobby(
     players.indexWhere(_.id == playerId) match
       case -1 => Left(LobbyError.PlayerNotFound)
       case idx =>
-        val updatedPlayers = players.updated(idx, players(idx).copy(isOnline = isOnline))
-        Right(copy(players = updatedPlayers, version = version + 1))
+        val player = players(idx)
+        val updatedPlayer = if isOnline && player.isBot && player.isHuman then player.returnHuman else player.copy(isOnline = isOnline)
+        Right(copy(players = players.updated(idx, updatedPlayer), version = version + 1))

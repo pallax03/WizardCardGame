@@ -4,16 +4,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success}
-
 import cats.syntax.all.*
-
 import io.vertx.core.AbstractVerticle
 import io.vertx.redis.client.{Command, Redis, Request, Response}
-
 import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
 import io.github.pallax03.wizard.codecs.engine.lobby.BotTaskCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.BotTask
+import io.github.pallax03.wizard.engine.lobby.{BotTask, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.events.{FailureEvent, InvitationEvent}
@@ -191,7 +188,7 @@ class BotManagerVerticle(
         ackEntry(entryId)
 
   private def submitAndAck(
-      lobbyId: io.github.pallax03.wizard.engine.lobby.LobbyId,
+      lobbyId: LobbyId,
       playerId: PlayerId,
       strategy: BotStrategy,
       action: GameAction,
@@ -225,7 +222,7 @@ class BotManagerVerticle(
     pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, msg)
 
 object BotManagerVerticle:
-  val DEFAULT_BOT_DELAY_MS: Long = 3_000L
+  private val DEFAULT_BOT_DELAY_MS: Long = 3_000L
   private val POLL_INTERVAL_MS: Long = 500L
   private val CLAIM_CHECK_INTERVAL_MS: Long = 10_000L
   private val CLAIM_IDLE_MS: Long = 15_000L

@@ -59,7 +59,7 @@ class RedisOutboundAdapter(
               .flatMap:
                 case Some(lobby)
                     if lobby.players
-                      .exists(p => p.id == inv.destinationId && p.difficulty.isDefined) =>
+                      .exists(p => p.id == inv.destinationId && p.isBot) =>
                   val taskJson = BotTask(lobbyId, inv).toJson
                   redisClient
                     .send(

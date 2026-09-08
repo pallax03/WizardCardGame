@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import cats.syntax.all.*
+
 
 import io.vertx.redis.client.{Command, Redis, Request}
 
@@ -21,16 +21,6 @@ import io.github.pallax03.wizard.util.FutureSyntax.*
 class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
-  override def saveLobby(lobby: Lobby): Future[Unit] =
-    val req = Request
-      .cmd(Command.SET)
-      .arg(ChannelsKeys.lobby(lobby.uuid))
-      .arg(lobby.toJson)
-      .arg("EX")
-      .arg("86400")
-    redisClient.send(req).asScala.void
-
-  /** @inheritdoc */
   override def getLobby(lobbyId: LobbyId): Future[Option[Lobby]] =
     val req = Request.cmd(Command.GET).arg(ChannelsKeys.lobby(lobbyId))
     redisClient
@@ -41,7 +31,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         case response => response.toString.decodeAs[Lobby].toOption
 
   /** @inheritdoc */
-  private def updateLobbyCAS[A](lobbyId: LobbyId)(
+  override def updateLobby[A](lobbyId: LobbyId)(
       f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]] =
     getLobby(lobbyId).flatMap: optLobby =>
@@ -73,7 +63,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
                       .asScala
                       .map(_ => Right(res))
                   case None => Future.successful(Right(res))
-              else updateLobbyCAS(lobbyId)(f)
+              else updateLobby(lobbyId)(f)
 
   /** @inheritdoc */
   override def addPlayer(
@@ -82,7 +72,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       difficulty: Option[BotsDifficulty],
       secret: Option[String] = None
   ): Future[Either[LobbyError, Player]] =
-    updateLobbyCAS(lobbyId): optLobby =>
+    updateLobby(lobbyId): optLobby =>
       val lobby =
         optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
       lobby
@@ -92,7 +82,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
   override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId) {
+    updateLobby[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)
       case Some(lobby) =>
         lobby
@@ -130,36 +120,13 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       playerId: PlayerId,
       isOnline: Boolean
   ): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId) {
+    updateLobby[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)
       case Some(lobby) =>
         lobby.setPlayerOnlineStatus(playerId, isOnline).map(newLobby => (true, newLobby, None))
-    }.map(_.getOrElse(false))
-
-  override def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId) {
-      case None => Left(LobbyError.LobbyNotFound)
-      case Some(lobby) =>
-        lobby.setPlayerOnlineStatus(playerId, false).map { newLobby =>
-          val pausedLobby =
-            if newLobby.status == LobbyStatus.IN_GAME then
-              newLobby.copy(status = LobbyStatus.PAUSED)
-            else newLobby
-          (true, pausedLobby, Some(SystemEvent.offline(playerId)))
-        }
     }.flatMap {
       case Left(_) => Future.successful(false)
       case Right(res) =>
-        getLobby(lobbyId).flatMap {
-          case None => Future.successful(res)
-          case Some(lobby) =>
-            val keysToDelete = lobby.players.flatMap { p =>
-              List(ChannelsKeys.turnTimer(lobbyId, p.id), ChannelsKeys.afkStrikes(lobbyId, p.id))
-            }
-            if keysToDelete.nonEmpty then
-              val delReq = Request.cmd(Command.DEL)
-              keysToDelete.foreach(delReq.arg)
-              redisClient.send(delReq).asScala.map(_ => res)
-            else Future.successful(res)
-        }
+        if isOnline then redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId))).asScala.map(_ => res)
+        else Future.successful(res)
     }

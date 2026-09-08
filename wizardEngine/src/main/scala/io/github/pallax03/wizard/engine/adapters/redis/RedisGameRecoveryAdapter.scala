@@ -2,25 +2,14 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import io.vertx.redis.client.{Command, Redis, Request}
-
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyStatus}
-import io.github.pallax03.wizard.engine.model.core.state.{
-  GameState,
-  ServerCoreState,
-  ServerGameState
-}
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId, LobbyStatus}
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState, ServerGameState}
 import io.github.pallax03.wizard.engine.model.core.{GameEngine, GameException}
 import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.ports.{
-  GameRecoveryPort,
-  LobbyStatePort,
-  OutboundPort,
-  PubSubPort
-}
+import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, LobbyStatePort, OutboundPort, PubSubPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
@@ -123,10 +112,10 @@ class RedisGameRecoveryAdapter(
       .asScala
       .flatMap: _ =>
         lobbyStatePort
-          .getLobby(lobbyId)
-          .flatMap:
-            case Some(lobby) => lobbyStatePort.saveLobby(lobby.copy(status = LobbyStatus.WAITING))
-            case None        => Future.unit
+          .updateLobby[Unit](lobbyId):
+            case Some(lobby) => Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
+            case None        => Left(LobbyError.LobbyNotFound)
+          .map(_ => ())
       .map: _ =>
         outboundPort.publish(lobbyId, LifecycleEvent.GameAborted(exception.getMessage))
         false

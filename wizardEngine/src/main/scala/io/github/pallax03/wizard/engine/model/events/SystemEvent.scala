@@ -10,4 +10,6 @@ object SystemEvent:
   def joined(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "joined")
   def left(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "left")
   def timeout(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "timeout")
-  // todo: config updated
+  def paused(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "paused")
+  def resumed(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "resumed")
+  def configUpdated(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "config_updated")

@@ -23,13 +23,7 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
  */
 trait LobbyStatePort:
 
-  /**
-   * Saves or updates the current state of the lobby.
-   *
-   * @param lobby the strongly-typed Lobby object to be saved.
-   * @return a Future completing when the operation is successfully stored.
-   */
-  def saveLobby(lobby: Lobby): Future[Unit]
+
 
   /**
    * Retrieves the current state of the lobby, if it exists.
@@ -45,6 +39,18 @@ trait LobbyStatePort:
    *   R* @return a Future containing a list of Lobbies, [[List.empty]] if no lobby found.
    */
   def getAllLobbies: Future[List[Lobby]]
+
+  /**
+   * Atomically updates the lobby state using CAS.
+   *
+   * @param lobbyId the UUID of the lobby.
+   * @param f function to apply the update. It receives the current lobby (or None).
+   *          It must return an Either containing a LobbyError, or a tuple:
+   *          (Return value of type A, The updated Lobby, An optional SystemEvent to publish).
+   */
+  def updateLobby[A](lobbyId: LobbyId)(
+      f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[io.github.pallax03.wizard.engine.model.events.SystemEvent])]
+  ): Future[Either[LobbyError, A]]
 
   /**
    * Atomically adds a player to the lobby, returning the assigned Player if successful.
@@ -84,9 +90,3 @@ trait LobbyStatePort:
       playerId: PlayerId,
       isOnline: Boolean
   ): Future[Boolean]
-
-  /**
-   * Disconnects a player, sets the lobby status to PAUSED, and clears all timers/strikes.
-   * Used when a player goes offline via WebSocket or reaches max AFK strikes.
-   */
-  def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]

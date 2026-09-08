@@ -72,6 +72,13 @@ object LobbyEndpoints:
       )
       .in(HttpSupport.lobbyIdPath / "start")
 
+  /** POST /api/lobby/{lobbyId}/pause — pause an active game. */
+  val pauseGame: Endpoint[String, LobbyId, LobbyError, Unit, Any] =
+    secureBase.post
+      .summary("Pause game")
+      .description("Transitions an IN_GAME lobby to PAUSED.")
+      .in(HttpSupport.lobbyIdPath / "pause")
+
   /** POST /api/lobby/{lobbyId}/configuration — update the game configuration. */
   val updateConfiguration
       : Endpoint[String, (LobbyId, GameConfiguration), LobbyError, GameConfiguration, Any] =
