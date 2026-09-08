@@ -33,6 +33,7 @@ export async function createLobbyAction(
   );
 
   if (error || !data) {
+    console.error("Error starting game:", error);
     return { error: error || LOBBY_ERRORS.CREATE_FAILED };
   }
 
@@ -66,6 +67,7 @@ export async function joinLobbyAction(
   );
 
   if (error || !data) {
+    console.error("Error starting game:", error);
     return { error: error || LOBBY_ERRORS.LOBBY_NOT_FOUND };
   }
 
@@ -95,10 +97,11 @@ export async function addBotAction(
 ): Promise<{ success?: boolean; error?: string }> {
   const { error } = await safeApiFetch(`/api/lobby/${lobbyId}`, {
     method: "POST",
-    body: { name: "", bot: botDifficulty },
+    body: { name: "", difficulty: botDifficulty },
   });
 
   if (error) {
+    console.error("Error adding bot:", error);
     return { error: LOBBY_ERRORS.ADD_BOT_FAILED };
   }
 
@@ -109,13 +112,14 @@ export async function leaveLobbyAction(
   lobbyId: string,
   playerId: number
 ): Promise<{ success?: boolean; error?: string }> {
-  const { error } = await safeApiFetch("/api/lobby", {
+  const { error } = await safeApiFetch(`/api/lobby/${lobbyId}`, {
     method: "DELETE",
     headers: await authHeadersForLobby(lobbyId),
-    body: { lobbyId, playerId },
+    body: playerId,
   });
 
   if (error) {
+    console.error("Error leaving lobby:", error);
     return { error: LOBBY_ERRORS.LEAVE_FAILED };
   }
 
@@ -129,10 +133,11 @@ export async function startGameAction(
 ): Promise<{ success?: boolean; error?: string }> {
   const { error } = await safeApiFetch(`/api/lobby/${lobbyId}/start`, {
     method: "POST",
-    headers: await authHeadersForLobby(lobbyId),
+    headers: await authHeadersForLobby(lobbyId)
   });
 
   if (error) {
+    console.error("Error starting game:", error);
     return { error };
   }
 
