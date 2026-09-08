@@ -54,7 +54,10 @@ lazy val root = (project in file("."))
         "io\\.github\\.pallax03\\.wizard\\.codecs\\..*;" +
         "io\\.github\\.pallax03\\.wizard\\.engine\\.adapters\\..*;" +
         "io\\.github\\.pallax03\\.wizard\\.engine\\.ports\\..*;" +
-        "io\\.github\\.pallax03\\.wizard\\.util\\..*",
+        "io\\.github\\.pallax03\\.wizard\\.util\\..*;" +
+        "io\\.github\\.pallax03\\.wizard\\.engine\\.configuration\\..*;" +
+        "io\\.github\\.pallax03\\.wizard\\.engine\\.lobby\\..*;" +
+        "io\\.github\\.pallax03\\.wizard\\.engine\\.model\\.events\\..*",
 
     semanticdbEnabled := true,
     coverageMinimumStmtTotal := 75,

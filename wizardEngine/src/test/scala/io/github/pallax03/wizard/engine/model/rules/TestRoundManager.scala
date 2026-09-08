@@ -76,7 +76,6 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         p2.validateTurnOf(p1) shouldBe Left(GameError.NotYourTurn(p2))
 
     "initializing a new round" should:
-      import Card.*
       val deckCards = (One of Red) - (Two of Yellow) - jester
       "correctly transition to Bidding state" in:
         val round = Round.start

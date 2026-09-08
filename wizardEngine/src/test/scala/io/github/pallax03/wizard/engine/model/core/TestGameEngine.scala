@@ -15,7 +15,6 @@ class TestGameEngine extends AnyWordSpec with Matchers:
 
   import BasicTestDSL._
   import bidding._
-  import cards.Card._
   import gameplay.Round
   import gameplay.Table
 

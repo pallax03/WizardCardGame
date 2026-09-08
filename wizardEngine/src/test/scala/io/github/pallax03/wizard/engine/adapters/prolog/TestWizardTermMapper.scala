@@ -6,8 +6,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestWizardTermMapper extends AnyWordSpec with Matchers:
-
-  import cards.Card.*
+  
   import gameplay.Trump
   "WizardTermMapper" when:
     import WizardTermMapper.*

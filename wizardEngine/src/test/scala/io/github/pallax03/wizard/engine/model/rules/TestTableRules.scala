@@ -13,7 +13,6 @@ class TestTableRules extends AnyWordSpec with Matchers:
 
   import BasicTestDSL._
   import cards.Card
-  import cards.Card._
   import gameplay.{Table, Trump}
   "TableRules Validation" when:
     val p1 = PlayerId(1)

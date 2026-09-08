@@ -12,7 +12,6 @@ class TestTable extends AnyWordSpec with Matchers:
 
   import BasicTestDSL.*
   import cards.Card
-  import cards.Card.*
 
   "A Table" when:
     val p1 = PlayerId(1)
