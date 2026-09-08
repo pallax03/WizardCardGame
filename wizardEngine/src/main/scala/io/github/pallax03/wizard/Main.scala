@@ -37,7 +37,6 @@ object Main:
   private val redisHost: String = sys.env.getOrElse("REDIS_HOST", "localhost")
   private val redisPort: Int = sys.env.getOrElse("REDIS_PORT", "6379").toInt
   private val redisPoolSize: Int = sys.env.getOrElse("REDIS_POOL_SIZE", "6").toInt
-  private val botDelayMs: Long = sys.env.getOrElse("BOT_DELAY_MS", "3000").toLong
   private val role: String = sys.env.getOrElse("ROLE", "engine").toLowerCase
 
   def main(args: Array[String]): Unit =
@@ -60,7 +59,7 @@ object Main:
     role match
       case "bot_worker" =>
         println(
-          s"[Main] Starting as BOT WORKER (delay=${botDelayMs}ms, redis=$redisHost:$redisPort)"
+          s"[Main] Starting as BOT WORKER (redis=$redisHost:$redisPort)"
         )
         deploy(
           vertx,
@@ -69,8 +68,7 @@ object Main:
             prologPort,
             lobbyStatePort,
             inPort,
-            redisClient,
-            botDelayMs
+            redisClient
           ),
           "bot worker",
           0
