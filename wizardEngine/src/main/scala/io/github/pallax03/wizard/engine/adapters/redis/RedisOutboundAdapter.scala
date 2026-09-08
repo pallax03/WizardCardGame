@@ -49,15 +49,13 @@ class RedisOutboundAdapter(
             )
           case _ =>
             pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)
-
-        // Push to the bot stream only when the destination is a bot player.
-        // getLobby is a cheap Redis GET — acceptable overhead for the correctness gain.
+        
         val botTaskFut = ev match
           case inv: InvitationEvent =>
             lobbyStatePort
               .getLobby(lobbyId)
               .flatMap:
-                case Some(lobby)
+                case Right(lobby)
                     if lobby.players
                       .exists(p => p.id == inv.destinationId && p.isBot) =>
                   val taskJson = BotTask(lobbyId, inv).toJson
@@ -72,7 +70,7 @@ class RedisOutboundAdapter(
                     )
                     .asScala
                     .void
-                case _ => Future.unit // human player or lobby not found: skip
+                case _ => Future.unit
           case _ => Future.unit
 
         val turnEventFut = ev match

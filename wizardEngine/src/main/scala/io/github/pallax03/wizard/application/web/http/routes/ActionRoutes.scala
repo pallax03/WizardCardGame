@@ -19,22 +19,19 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
       actionBuilder: PlayerId => GameAction
   ): Future[Either[LobbyError, Unit]] =
     lobbyStatePort
-      .getLobby(lobbyId)
+      .getAuthLobby(lobbyId, secret)
       .flatMap:
-        case Some(lobby) =>
+        case Right((player, lobby)) =>
           if lobby.status == LobbyStatus.PAUSED then
             Future.successful(Left(LobbyError.GamePaused))
           else
-            lobby.authenticate(secret) match
-              case Right(player) =>
-                gameEnginePort
-                  .submitAction(lobbyId, actionBuilder(player.id))
-                  .map:
-                    case Left(gameError) => Left(LobbyError.GameActionRejected(gameError.toString))
-                    case Right(_)        => Right(())
-              case Left(err) => Future.successful(Left(err))
-        case None =>
-          Future.successful(Left(LobbyError.LobbyNotFound))
+            gameEnginePort
+              .submitAction(lobbyId, actionBuilder(player.id))
+              .map:
+                case Left(gameError) => Left(LobbyError.GameActionRejected(gameError.toString))
+                case Right(_)        => Right(())
+        case Left(err) =>
+          Future.successful(Left(err))
 
   private val chooseEndpoint: ServerEndpoint[Any, Future] =
     ActionEndpoints.chooseAction

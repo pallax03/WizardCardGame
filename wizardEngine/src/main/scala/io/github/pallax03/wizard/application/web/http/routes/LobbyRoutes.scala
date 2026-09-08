@@ -40,21 +40,9 @@ class LobbyRoutes(
   private val joinLobbyEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.joinLobby.serverLogic { (lobbyId, req) => addPlayerToLobby(lobbyId, req) }
 
-  private def getLobbyT(lobbyId: LobbyId): EitherT[Future, LobbyError, Lobby] =
-    EitherT(lobbyStatePort.getLobby(lobbyId).map(_.toRight(LobbyError.LobbyNotFound)))
-
-  private def getAuthLobbyT(
-      lobbyId: LobbyId,
-      secret: String
-  ): EitherT[Future, LobbyError, (Player, Lobby)] =
-    for
-      lobby <- getLobbyT(lobbyId)
-      player <- EitherT.fromEither[Future](lobby.authenticate(secret))
-    yield (player, lobby)
-
   private val getLobbyInfoEndpoint: ServerEndpoint[Any, Future] =
     LobbyEndpoints.getLobbyInfo.serverLogic { lobbyId =>
-      getLobbyT(lobbyId).map { lobby =>
+      EitherT(lobbyStatePort.getLobby(lobbyId)).map { lobby =>
         LobbyStateResponse(
           lobbyId,
           lobby.status,
@@ -68,16 +56,15 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => lobbyId =>
         (for
-          (player, lobby) <- getAuthLobbyT(lobbyId, secret)
+          (player, lobby) <- EitherT(lobbyStatePort.getAuthLobby(lobbyId, secret))
           _ <- EitherT.cond[Future](
             lobby.status != LobbyStatus.WAITING,
             (),
             LobbyError.GameNotFound
           )
           state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recoverWith { case _ =>
-            lobbyStatePort.updateLobby[Unit](lobbyId) {
-              case None => Left(LobbyError.LobbyNotFound)
-              case Some(l) => Right(((), l.copy(status = LobbyStatus.WAITING), None))
+            lobbyStatePort.updateLobby[Unit](lobbyId) { l =>
+              Right(((), l.copy(status = LobbyStatus.WAITING), None))
             }.map(_ => Left(LobbyError.GameNotFound))
           })
         yield state).value
@@ -87,13 +74,10 @@ class LobbyRoutes(
     LobbyEndpoints.startGame
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => lobbyId =>
-        EitherT(lobbyStatePort.updateLobby[Lobby](lobbyId) {
-          case None => Left(LobbyError.LobbyNotFound)
-          case Some(lobby) =>
-            for
-              player <- lobby.authenticate(secret)
-              _ <- lobby.validateStartOrResume
-            yield (lobby, lobby.copy(status = LobbyStatus.IN_GAME), if lobby.status == LobbyStatus.PAUSED then Option(SystemEvent.resumed(player.id)) else Option.empty)
+        EitherT(lobbyStatePort.updateAuthLobby[Lobby](lobbyId, secret) { (player, lobby) =>
+          for
+            _ <- lobby.validateStartOrResume
+          yield (lobby, lobby.copy(status = LobbyStatus.IN_GAME), if lobby.status == LobbyStatus.PAUSED then Option(SystemEvent.resumed(player.id)) else Option.empty)
         }).flatMap { oldLobby =>
           EitherT.right[LobbyError](
             if oldLobby.status == LobbyStatus.WAITING then
@@ -107,14 +91,10 @@ class LobbyRoutes(
     LobbyEndpoints.pauseGame
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => lobbyId =>
-        EitherT(lobbyStatePort.updateLobby[Unit](lobbyId) {
-          case None => Left(LobbyError.LobbyNotFound)
-          case Some(lobby) =>
-            lobby.authenticate(secret).flatMap { player =>
-              if lobby.status == LobbyStatus.IN_GAME then
-                Right(((), lobby.copy(status = LobbyStatus.PAUSED), Some(SystemEvent.paused(player.id))))
-              else Left(LobbyError.GameActionRejected("Game not in progress"))
-            }
+        EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (player, lobby) =>
+          if lobby.status == LobbyStatus.IN_GAME then
+            Right(((), lobby.copy(status = LobbyStatus.PAUSED), Some(SystemEvent.paused(player.id))))
+          else Left(LobbyError.GameNotFound)
         }).value
       }
 
@@ -123,12 +103,8 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => input =>
         val (lobbyId, config) = input
-        EitherT(lobbyStatePort.updateLobby[GameConfiguration](lobbyId) {
-          case None => Left(LobbyError.LobbyNotFound)
-          case Some(lobby) =>
-            lobby.authenticate(secret).map { player =>
-              (config, lobby.copy(configuration = config), Some(SystemEvent.configUpdated(player.id)))
-            }
+        EitherT(lobbyStatePort.updateAuthLobby[GameConfiguration](lobbyId, secret) { (player, lobby) =>
+          Right((config, lobby.copy(configuration = config), Some(SystemEvent.configUpdated(player.id))))
         }).value
       }
 
@@ -136,11 +112,11 @@ class LobbyRoutes(
     LobbyEndpoints.removePlayer
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => (lobbyId, playerId) =>
-        (for
-          _ <- getAuthLobbyT(lobbyId, secret)
-          success <- EitherT.right[LobbyError](lobbyStatePort.removePlayer(lobbyId, playerId))
-          _ <- EitherT.cond[Future](success, (), LobbyError.PlayerNotFound: LobbyError)
-        yield ()).value
+        EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
+          for
+            newLobby <- lobby.removePlayer(playerId)
+          yield ((), newLobby, Some(SystemEvent.left(playerId)))
+        }).value
       }
 
   val all: List[ServerEndpoint[Any, Future]] = List(

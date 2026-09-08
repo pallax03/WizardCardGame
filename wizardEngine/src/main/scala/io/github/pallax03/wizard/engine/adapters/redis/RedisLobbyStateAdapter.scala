@@ -21,20 +21,26 @@ import io.github.pallax03.wizard.util.FutureSyntax.*
 class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
-  override def getLobby(lobbyId: LobbyId): Future[Option[Lobby]] =
+  override def getLobby(lobbyId: LobbyId): Future[Either[LobbyError, Lobby]] =
     val req = Request.cmd(Command.GET).arg(ChannelsKeys.lobby(lobbyId))
     redisClient
       .send(req)
       .asScala
       .map:
-        case null     => None
-        case response => response.toString.decodeAs[Lobby].toOption
+        case null     => Left(LobbyError.LobbyNotFound)
+        case response => response.toString.decodeAs[Lobby].left.map(_ => LobbyError.LobbyNotFound)
 
   /** @inheritdoc */
-  override def updateLobby[A](lobbyId: LobbyId)(
+  override def getAuthLobby(lobbyId: LobbyId, secret: String): Future[Either[LobbyError, (Player, Lobby)]] =
+    getLobby(lobbyId).map:
+      case Right(lobby) => lobby.authenticate(secret).map(player => (player, lobby))
+      case Left(err)    => Left(err)
+
+  private def upsertLobby[A](lobbyId: LobbyId)(
       f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]] =
-    getLobby(lobbyId).flatMap: optLobby =>
+    getLobby(lobbyId).flatMap: eitherLobby =>
+      val optLobby = eitherLobby.toOption
       val expectedVersion = optLobby.map(_.version).getOrElse(0)
       f(optLobby) match
         case Left(err) => Future.successful(Left(err))
@@ -63,7 +69,15 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
                       .asScala
                       .map(_ => Right(res))
                   case None => Future.successful(Right(res))
-              else updateLobby(lobbyId)(f)
+              else upsertLobby(lobbyId)(f)
+
+  /** @inheritdoc */
+  override def updateLobby[A](lobbyId: LobbyId)(
+      f: Lobby => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
+  ): Future[Either[LobbyError, A]] =
+    upsertLobby(lobbyId):
+      case Some(lobby) => f(lobby)
+      case None        => Left(LobbyError.LobbyNotFound)
 
   /** @inheritdoc */
   override def addPlayer(
@@ -72,7 +86,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       difficulty: Option[BotsDifficulty],
       secret: Option[String] = None
   ): Future[Either[LobbyError, Player]] =
-    updateLobby(lobbyId): optLobby =>
+    upsertLobby(lobbyId): optLobby =>
       val lobby =
         optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
       lobby
@@ -81,48 +95,12 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
           case (p, l) => (p, l, Some(SystemEvent.joined(p.id)))
 
   /** @inheritdoc */
-  override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
-    updateLobby[Boolean](lobbyId) {
-      case None => Left(LobbyError.LobbyNotFound)
-      case Some(lobby) =>
-        lobby
-          .removePlayer(playerId)
-          .map(newLobby => (true, newLobby, Some(SystemEvent.left(playerId))))
-    }.map(_.getOrElse(false))
-
-  /** @inheritdoc */
-  override def getAllLobbies: Future[List[Lobby]] =
-    redisClient
-      .send(Request.cmd(Command.KEYS).arg(ChannelsKeys.LOBBY_CHANNEL))
-      .asScala
-      .flatMap:
-        case null => Future.successful(List.empty)
-        case keysResp =>
-          import scala.jdk.CollectionConverters.*
-          val keys = keysResp.asScala.map(_.toString).toList
-          if keys.isEmpty then Future.successful(List.empty)
-          else
-            val getReq = Request.cmd(Command.MGET)
-            keys.foreach(getReq.arg)
-            redisClient
-              .send(getReq)
-              .asScala
-              .map:
-                case null => List.empty
-                case valsResp =>
-                  valsResp.asScala
-                    .flatMap(v => if v != null then v.toString.decodeAs[Lobby].toOption else None)
-                    .toList
-
-  /** @inheritdoc */
   override def setPlayerOnlineStatus(
       lobbyId: LobbyId,
       playerId: PlayerId,
       isOnline: Boolean
   ): Future[Boolean] =
-    updateLobby[Boolean](lobbyId) {
-      case None => Left(LobbyError.LobbyNotFound)
-      case Some(lobby) =>
+    updateLobby[Boolean](lobbyId) { lobby =>
         lobby.setPlayerOnlineStatus(playerId, isOnline).map(newLobby => (true, newLobby, None))
     }.flatMap {
       case Left(_) => Future.successful(false)

@@ -157,7 +157,7 @@ class BotManagerVerticle(
         lobbyStatePort
           .getLobby(task.lobbyId)
           .onComplete:
-            case Success(Some(lobby)) =>
+            case Success(Right(lobby)) =>
               lobby.players.find(_.id == inv.destinationId).flatMap(_.difficulty) match
                 case Some(diff) =>
                   log(

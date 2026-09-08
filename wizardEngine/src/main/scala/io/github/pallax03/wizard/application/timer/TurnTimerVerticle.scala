@@ -7,7 +7,7 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.redis.client.{Command, Redis, Request}
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId, LobbyPlayer}
+import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubSubPort}
@@ -39,7 +39,7 @@ class TurnTimerVerticle(
         lobbyStatePort
           .getLobby(lobbyId)
           .onComplete:
-            case Success(Some(lobby)) =>
+            case Success(Right(lobby)) =>
               val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
               redisClient
                 .send(Request.cmd(Command.GET).arg(strikesKey))
@@ -67,23 +67,21 @@ class TurnTimerVerticle(
         val playerId = PlayerId(playerIdStr.toInt)
         val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
         (for
-          lobbyOpt <- lobbyStatePort.getLobby(lobbyId)
-          lobby <- Future.successful(lobbyOpt.get)
+          eitherLobby <- lobbyStatePort.getLobby(lobbyId)
+          lobby <- Future.successful(eitherLobby.toOption.get)
           isOffline = !lobby.players.find(_.id == playerId).exists(_.isOnline)
           strikesResp <- redisClient.send(Request.cmd(Command.INCR).arg(strikesKey)).asScala
           strikes = strikesResp.toLong
           _ <- redisClient.send(Request.cmd(Command.EXPIRE).arg(strikesKey).arg("86400")).asScala
           _ <-
-            if lobby.status == io.github.pallax03.wizard.engine.lobby.LobbyStatus.PAUSED then Future.unit
+            if lobby.status == LobbyStatus.PAUSED then Future.unit
             else if isOffline || strikes >= lobby.configuration.maxStrikes then
-              lobbyStatePort.updateLobby[Unit](lobbyId) {
-                case Some(l) =>
+              lobbyStatePort.updateLobby[Unit](lobbyId) { l =>
                   val newPlayers = l.players.map(p =>
                     if p.id == playerId then p.replaceWithABot()
                     else p
                   )
                   Right(((), l.copy(players = newPlayers), Option(SystemEvent.timeout(playerId))))
-                case None => Left(LobbyError.LobbyNotFound)
               }.flatMap(_ => inboundPort.forceFallbackAction(lobbyId, playerId))
             else inboundPort.forceFallbackAction(lobbyId, playerId)
         yield ()).recover:

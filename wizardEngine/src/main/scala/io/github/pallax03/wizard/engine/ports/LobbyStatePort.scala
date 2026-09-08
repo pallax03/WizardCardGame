@@ -1,9 +1,9 @@
 package io.github.pallax03.wizard.engine.ports
 
 import scala.concurrent.Future
-
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.model.events.SystemEvent
 
 /**
  * Internal port to manage the persistent state of a Lobby before the game starts.
@@ -26,31 +26,42 @@ trait LobbyStatePort:
 
 
   /**
-   * Retrieves the current state of the lobby, if it exists.
+   * Retrieves the current state of the lobby.
    *
    * @param lobbyId the UUID of the lobby.
-   * @return a Future containing the Lobby object if found, or None if the lobby does not exist.
+   * @return a Future containing the Lobby object if found, or LobbyError.LobbyNotFound.
    */
-  def getLobby(lobbyId: LobbyId): Future[Option[Lobby]]
+  def getLobby(lobbyId: LobbyId): Future[Either[LobbyError, Lobby]]
 
   /**
-   * Retrieves the current state of the lobby, if it exists.
-   *
-   *   R* @return a Future containing a list of Lobbies, [[List.empty]] if no lobby found.
-   */
-  def getAllLobbies: Future[List[Lobby]]
-
-  /**
-   * Atomically updates the lobby state using CAS.
+   * Retrieves the lobby and authenticates the player using the provided secret.
    *
    * @param lobbyId the UUID of the lobby.
-   * @param f function to apply the update. It receives the current lobby (or None).
+   * @param secret the secret of the player.
+   * @return a Future containing the Player and Lobby if successful, or a LobbyError.
+   */
+  def getAuthLobby(lobbyId: LobbyId, secret: String): Future[Either[LobbyError, (Player, Lobby)]]
+
+  /**
+   * Atomically updates an existing lobby state using CAS.
+   *
+   * @param lobbyId the UUID of the lobby.
+   * @param f function to apply the update. It receives the current lobby.
    *          It must return an Either containing a LobbyError, or a tuple:
    *          (Return value of type A, The updated Lobby, An optional SystemEvent to publish).
    */
   def updateLobby[A](lobbyId: LobbyId)(
-      f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[io.github.pallax03.wizard.engine.model.events.SystemEvent])]
+      f: Lobby => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]]
+
+  /**
+   * Updates an existing lobby state atomically, after authenticating the player.
+   */
+  def updateAuthLobby[A](lobbyId: LobbyId, secret: String)(
+      f: (Player, Lobby) => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
+  ): Future[Either[LobbyError, A]] =
+    updateLobby(lobbyId): lobby =>
+      lobby.authenticate(secret).flatMap(player => f(player, lobby))
 
   /**
    * Atomically adds a player to the lobby, returning the assigned Player if successful.
@@ -68,14 +79,6 @@ trait LobbyStatePort:
       secret: Option[String] = None
   ): Future[Either[LobbyError, Player]]
 
-  /**
-   * Atomically removes a player from the lobby by ID.
-   *
-   * @param lobbyId the UUID of the lobby.
-   * @param playerId the ID of the player to remove.
-   * @return a Future containing true if the player was removed, false otherwise.
-   */
-  def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]
 
   /**
    * Updates the online status of a specific player in the lobby.
