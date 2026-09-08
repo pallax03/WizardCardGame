@@ -56,21 +56,24 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
             .arg(ChannelsKeys.lobby(lobbyId))
             .arg(expectedVersion.toString)
             .arg(newLobby.toJson)
-          redisClient.send(req).asScala.flatMap: resp =>
-            if resp.toBoolean then
-              eventOpt match
-                case Some(ev) =>
-                  redisClient
-                    .send(
-                      Request
-                        .cmd(Command.PUBLISH)
-                        .arg(ChannelsKeys.pubSubLobbyChannel(lobbyId))
-                        .arg(ev.toJson)
-                    )
-                    .asScala
-                    .map(_ => Right(res))
-                case None => Future.successful(Right(res))
-            else updateLobbyCAS(lobbyId)(f)
+          redisClient
+            .send(req)
+            .asScala
+            .flatMap: resp =>
+              if resp.toBoolean then
+                eventOpt match
+                  case Some(ev) =>
+                    redisClient
+                      .send(
+                        Request
+                          .cmd(Command.PUBLISH)
+                          .arg(ChannelsKeys.pubSubLobbyChannel(lobbyId))
+                          .arg(ev.toJson)
+                      )
+                      .asScala
+                      .map(_ => Right(res))
+                  case None => Future.successful(Right(res))
+              else updateLobbyCAS(lobbyId)(f)
 
   /** @inheritdoc */
   override def addPlayer(
@@ -80,16 +83,21 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       secret: Option[String] = None
   ): Future[Either[LobbyError, Player]] =
     updateLobbyCAS(lobbyId): optLobby =>
-      val lobby = optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
-      lobby.addPlayer(name, difficulty, secret).map:
-        case (p, l) => (p, l, Some(SystemEvent.joined(p.id)))
+      val lobby =
+        optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
+      lobby
+        .addPlayer(name, difficulty, secret)
+        .map:
+          case (p, l) => (p, l, Some(SystemEvent.joined(p.id)))
 
   /** @inheritdoc */
   override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
     updateLobbyCAS[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)
       case Some(lobby) =>
-        lobby.removePlayer(playerId).map(newLobby => (true, newLobby, Some(SystemEvent.left(playerId))))
+        lobby
+          .removePlayer(playerId)
+          .map(newLobby => (true, newLobby, Some(SystemEvent.left(playerId))))
     }.map(_.getOrElse(false))
 
   /** @inheritdoc */
@@ -148,7 +156,10 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       case None => Left(LobbyError.LobbyNotFound)
       case Some(lobby) =>
         lobby.setPlayerOnlineStatus(playerId, false).map { newLobby =>
-          val pausedLobby = if newLobby.status == LobbyStatus.IN_GAME then newLobby.copy(status = LobbyStatus.PAUSED) else newLobby
+          val pausedLobby =
+            if newLobby.status == LobbyStatus.IN_GAME then
+              newLobby.copy(status = LobbyStatus.PAUSED)
+            else newLobby
           (true, pausedLobby, Some(SystemEvent.offline(playerId)))
         }
     }.flatMap {

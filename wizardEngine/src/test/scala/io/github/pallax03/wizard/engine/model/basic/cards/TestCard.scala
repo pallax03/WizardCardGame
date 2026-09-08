@@ -5,7 +5,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestCard extends AnyWordSpec with Matchers:
   import io.github.pallax03.wizard.engine.model.basic.BasicTestDSL._
-  
+
   "A card" should:
     "Create a Standard" in:
       Thirteen of Red shouldBe a[Standard]
@@ -18,7 +18,8 @@ class TestCard extends AnyWordSpec with Matchers:
 
   "Some Cards" should:
     "create a chain of Cards" in:
-      val myCards = (Five of Red) - (Four of Yellow) - wizard - (Ten of Green) - jester - (Thirteen of Blue)
+      val myCards =
+        (Five of Red) - (Four of Yellow) - wizard - (Ten of Green) - jester - (Thirteen of Blue)
       myCards should have size 6
       myCards.head shouldBe (Five of Red)
       myCards(1) shouldBe (Four of Yellow)

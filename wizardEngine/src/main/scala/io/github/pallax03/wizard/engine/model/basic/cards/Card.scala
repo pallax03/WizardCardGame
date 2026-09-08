@@ -67,9 +67,9 @@ object Card:
   extension (c: Card)
     def isWizard: Boolean = c match
       case _: Wizard => true
-      case _ => false
+      case _         => false
     def isJester: Boolean = c match
       case _: Jester => true
-      case _ => false
-      
+      case _         => false
+
 export Card.{wizard, jester}

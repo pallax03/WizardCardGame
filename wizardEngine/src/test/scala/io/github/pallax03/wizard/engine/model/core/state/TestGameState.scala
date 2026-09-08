@@ -12,7 +12,6 @@ class TestGameState extends AnyWordSpec with Matchers:
   import cards.Card
   import gameplay.Table
 
-
   "GameState pendingInvitation" when:
     val p1 = PlayerId(1)
     val p2 = PlayerId(2)
@@ -39,7 +38,9 @@ class TestGameState extends AnyWordSpec with Matchers:
         val hands = handsOf(
           p1 holds cards
         )
-        GameState.Playing(core.copy(hands = hands), Bids.empty, Table.empty, p1, Tricks.empty).pendingInvitation(p1) match
+        GameState
+          .Playing(core.copy(hands = hands), Bids.empty, Table.empty, p1, Tricks.empty)
+          .pendingInvitation(p1) match
           case Some(InvitationEvent.WaitingForCard(p, hand)) =>
             p shouldBe p1
             hand shouldBe cards
@@ -54,13 +55,15 @@ class TestGameState extends AnyWordSpec with Matchers:
     val p1 = PlayerId(1)
     val p2 = PlayerId(2)
     val players = List(p1, p2)
-    val core = ServerCoreState.initialize(players, 1)
-      .copy(hands = handsOf(
-        p1 holds jester,
-        p2 holds wizard
+    val core = ServerCoreState
+      .initialize(players, 1)
+      .copy(hands =
+        handsOf(
+          p1 holds jester,
+          p2 holds wizard
+        )
       )
-    )
-    
+
     "converting ServerGameState" should:
       "in ChoosingTrump" in:
         val serverState = GameState.ChoosingTrump(core)
@@ -68,16 +71,16 @@ class TestGameState extends AnyWordSpec with Matchers:
           PlayerGameState.from(serverState, pId) match
             case GameState.ChoosingTrump(pCore) =>
               pCore.hand.toList shouldBe core.hands.getHand(pId).toList
-            case _ => fail("Not valid Hand for "+pId)
-            
+            case _ => fail("Not valid Hand for " + pId)
+
       "in Bidding" in:
         val serverState = GameState.Bidding(core, Bids.empty, p1)
         players.foreach: pId =>
           PlayerGameState.from(serverState, pId) match
             case GameState.Bidding(pCore, _, _) =>
               pCore.hand.toList shouldBe core.hands.getHand(pId).toList
-            case _ => fail("Not valid Hand for " + pId) 
-      
+            case _ => fail("Not valid Hand for " + pId)
+
       "in Playing" in:
         val serverState = GameState.Playing(core, Bids.empty, Table.empty, p1, Tricks.empty)
         players.foreach: pId =>
@@ -85,9 +88,9 @@ class TestGameState extends AnyWordSpec with Matchers:
             case GameState.Playing(pCore, _, _, _, _) =>
               pCore.hand.toList shouldBe core.hands.getHand(pId).toList
             case _ => fail("Not valid Hand for " + pId)
-      
+
       "in Ended" in:
         val serverState = GameState.Ended(players, Scoreboard.empty)
         PlayerGameState.from(serverState, p1) match
           case GameState.Ended(pIds, _) => pIds shouldBe players
-          case _ => fail()
+          case _                        => fail()

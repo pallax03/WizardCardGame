@@ -12,7 +12,7 @@ class TestTrump extends AnyWordSpec with Matchers:
 
   import cards.Card
   import gameplay.Trump
-  
+
   "A Trump" when:
     "Absent" should:
       val trump = Trump.Absent

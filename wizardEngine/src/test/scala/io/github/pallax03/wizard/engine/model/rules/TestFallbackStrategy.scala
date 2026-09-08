@@ -1,7 +1,6 @@
 package io.github.pallax03.wizard.engine.model.rules
 
 import io.github.pallax03.wizard.engine.model.basic.*
-
 import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 
@@ -10,7 +9,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestFallbackStrategy extends AnyWordSpec with Matchers:
   import cards.Card
-  
+
   "FallbackStrategy" when:
     val p1 = PlayerId(1)
 
