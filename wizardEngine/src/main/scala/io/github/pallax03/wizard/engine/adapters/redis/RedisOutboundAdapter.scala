@@ -5,34 +5,33 @@ import scala.concurrent.Future
 
 import cats.syntax.all.*
 
-import io.vertx.redis.client.Redis
+import io.vertx.redis.client.{Command, Redis, Request}
 
+import io.github.pallax03.wizard.codecs.engine.lobby.BotTaskCodecs.given
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer}
+import io.github.pallax03.wizard.engine.lobby.{BotTask, LobbyId, LobbyPlayer}
 import io.github.pallax03.wizard.engine.model.events.{
   DestinationScoped,
   InvitationEvent,
-  LifecycleEvent,
   WizardEvent
 }
-import io.github.pallax03.wizard.engine.ports.{OutboundPort, PubSubPort}
+import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, OutboundPort, PubSubPort}
 import io.github.pallax03.wizard.util.ChannelsKeys
+import io.github.pallax03.wizard.util.FutureSyntax.*
 
 /**
  * Redis implementation of [[OutboundPort]].
  *
- * In addition to publishing events on the appropriate PubSub channels, this adapter
- * intercepts [[InvitationEvent]] (WaitingForCard / WaitingForBid / WaitingForTrump) to
- * schedule a turn timer on Redis. The timer key (`timer:{lobbyId}:{playerId}`) expires
- * after `config.timer + gracePeriodSeconds` seconds. A separate [[TurnTimerVerticle]]
- * listens to Redis keyspace-expired notifications and calls [[InboundPort.handleTimeout]]
- * when the key disappears without the player having played.
+ * For [[InvitationEvent]]s targeting a bot, pushes a [[BotTask]] (serialized as JSON)
+ * into a single `data` field on the Redis Stream `bot:tasks`.
+ * The consumer reads one string, decodes it with circe — no RESP2/RESP3 field-index gymnastics.
  */
 class RedisOutboundAdapter(
     val pubSubPort: PubSubPort,
-    val redisClient: Redis
+    val redisClient: Redis,
+    val lobbyStatePort: LobbyStatePort
 ) extends OutboundPort:
 
   /** @inheritdoc */
@@ -48,11 +47,33 @@ class RedisOutboundAdapter(
               ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, scoped.destinationId),
               jsonMsg
             )
-          case _: LifecycleEvent.GameStarted | _: LifecycleEvent.GameResumed =>
-            pubSubPort.publish(ChannelsKeys.SPAWN_BOT_CHANNEL, lobbyId.toString)
-            pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)
           case _ =>
             pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)
+
+        // Push to the bot stream only when the destination is a bot player.
+        // getLobby is a cheap Redis GET — acceptable overhead for the correctness gain.
+        val botTaskFut = ev match
+          case inv: InvitationEvent =>
+            lobbyStatePort
+              .getLobby(lobbyId)
+              .flatMap:
+                case Some(lobby)
+                    if lobby.players
+                      .exists(p => p.id == inv.destinationId && p.difficulty.isDefined) =>
+                  val taskJson = BotTask(lobbyId, inv).toJson
+                  redisClient
+                    .send(
+                      Request
+                        .cmd(Command.XADD)
+                        .arg(ChannelsKeys.BOT_TASKS_STREAM)
+                        .arg("*")
+                        .arg("data")
+                        .arg(taskJson)
+                    )
+                    .asScala
+                    .void
+                case _ => Future.unit // human player or lobby not found: skip
+          case _ => Future.unit
 
         val turnEventFut = ev match
           case inv: InvitationEvent =>
@@ -62,6 +83,6 @@ class RedisOutboundAdapter(
             )
           case _ => Future.unit
 
-        publishFut.zip(turnEventFut).void
+        publishFut.zip(botTaskFut).zip(turnEventFut).void
       )
       .void

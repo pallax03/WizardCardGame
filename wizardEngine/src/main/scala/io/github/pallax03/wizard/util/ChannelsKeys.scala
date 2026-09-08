@@ -4,11 +4,11 @@ import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 object ChannelsKeys:
-  /** Key for trigger bots spawn [[io.github.pallax03.wizard.application.bot.BotManagerVerticle]]. */
-  val SPAWN_BOT_CHANNEL: String = "bots:spawn"
+  /** Redis Stream where the engine publishes bot tasks (one entry per InvitationEvent for a bot). */
+  val BOT_TASKS_STREAM: String = "bot:tasks"
 
-  /** Key to guarantee lock for [[io.github.pallax03.wizard.application.bot.BotManagerVerticle]] (avoiding race-conditions). */
-  def botLock(id: LobbyId): String = s"lock:bot:${id.toString}"
+  /** Consumer group name used by all BotManagerVerticle instances to compete for tasks. */
+  val BOT_CONSUMER_GROUP: String = "bot_workers"
 
   /** Key that stores lobbies. */
   val LOBBY_CHANNEL: String = "lobby:*"
