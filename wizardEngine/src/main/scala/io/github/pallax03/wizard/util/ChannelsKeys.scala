@@ -18,7 +18,7 @@ object ChannelsKeys:
 
   /** Key that stores game checkpoints relative to a game. */
   def gameCheckpoint(id: LobbyId): String = s"${game(id)}:checkpoint"
-  
+
   /** Routing Key for lobby and private player's lobby channel. */
   def pubSubLobbyChannel(id: LobbyId): String = s"channel:${id.toString}"
   def pubSubLobbyPlayerChannel(id: LobbyId, playerId: PlayerId): String =

@@ -48,7 +48,7 @@ class VertxWebSocketsAdapter(
       this.close(lobbyId, playerId)
     ws.exceptionHandler: _ =>
       this.close(lobbyId, playerId)
-    
+
     ws.textMessageHandler: text =>
       Try:
         val json = new JsonObject(text)

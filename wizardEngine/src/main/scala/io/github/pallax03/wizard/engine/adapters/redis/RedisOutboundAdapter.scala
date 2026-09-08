@@ -51,27 +51,36 @@ class RedisOutboundAdapter(
   private def publishToClients(lobbyId: LobbyId, ev: WizardEvent, jsonMsg: String): Future[Unit] =
     ev match
       case scoped: DestinationScoped =>
-        pubSubPort.publish(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, scoped.destinationId), jsonMsg)
+        pubSubPort.publish(
+          ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, scoped.destinationId),
+          jsonMsg
+        )
       case _ =>
         pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)
 
   private def maybeDispatchBotTask(lobbyId: LobbyId, ev: WizardEvent): Future[Unit] =
     ev match
       case inv: InvitationEvent =>
-        lobbyStatePort.getLobby(lobbyId).flatMap:
-          case Right(lobby) if lobby.players.exists(p => p.id == inv.destinationId && p.isBot) =>
-            val taskJson = BotTask(lobbyId, inv).toJson
-            val req = Request.cmd(Command.XADD)
-              .arg(ChannelsKeys.BOT_TASKS_STREAM)
-              .arg("*")
-              .arg("data")
-              .arg(taskJson)
-            redisClient.send(req).asScala.void
-          case _ => Future.unit
+        lobbyStatePort
+          .getLobby(lobbyId)
+          .flatMap:
+            case Right(lobby) if lobby.players.exists(p => p.id == inv.destinationId && p.isBot) =>
+              val taskJson = BotTask(lobbyId, inv).toJson
+              val req = Request
+                .cmd(Command.XADD)
+                .arg(ChannelsKeys.BOT_TASKS_STREAM)
+                .arg("*")
+                .arg("data")
+                .arg(taskJson)
+              redisClient.send(req).asScala.void
+            case _ => Future.unit
       case _ => Future.unit
 
   private def maybeStartTurnTimer(lobbyId: LobbyId, ev: WizardEvent): Future[Unit] =
     ev match
       case inv: InvitationEvent =>
-        pubSubPort.publish(ChannelsKeys.TURN_EVENTS_CHANNEL, LobbyPlayer(lobbyId, inv.destinationId).toJson)
+        pubSubPort.publish(
+          ChannelsKeys.TURN_EVENTS_CHANNEL,
+          LobbyPlayer(lobbyId, inv.destinationId).toJson
+        )
       case _ => Future.unit
