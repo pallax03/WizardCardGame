@@ -4,7 +4,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.application.web.http.endpoints.*
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
@@ -116,13 +115,16 @@ class LobbyRoutes(
         val (lobbyId, config) = input
         EitherT(lobbyStatePort.updateAuthLobby[GameConfiguration](lobbyId, secret) {
           (player, lobby) =>
-            Right(
-              (
-                config,
-                lobby.copy(configuration = config),
-                Some(SystemEvent.configUpdated(player.id))
-              )
-            )
+            config.validate match
+              case Left(err) => Left(LobbyError.ConfigurationInvalid(err))
+              case Right(_) =>
+                Right(
+                  (
+                    config,
+                    lobby.copy(configuration = config),
+                    Some(SystemEvent.configUpdated(player.id))
+                  )
+                )
         }).value
       }
 

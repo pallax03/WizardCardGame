@@ -2,15 +2,11 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import cats.syntax.all.*
-
 import io.vertx.redis.client.{Command, Redis, Request}
-
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.configuration.*
-import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.*
 import io.github.pallax03.wizard.engine.model.core.InconsistentState.*

@@ -6,7 +6,6 @@ import io.circe.*
 import io.circe.generic.semiauto.*
 
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.*
 
 import sttp.tapir.Schema
@@ -50,6 +49,12 @@ object LobbyCodecs:
 
   given Encoder[LobbyError] = Encoder.instance:
     case LobbyError.GameActionRejected(code) => Json.obj("code" -> Json.fromString(code))
+    case LobbyError.ConfigurationInvalid(err) =>
+      Json.obj(
+        "code" -> Json.fromString(err.productPrefix),
+        "min" -> Json.fromInt(err.min),
+        "max" -> Json.fromInt(err.max)
+      )
     case err => Json.obj("code" -> Json.fromString(err.productPrefix))
   given Decoder[LobbyError] = Decoder.instance: _ =>
     Right(null.asInstanceOf[LobbyError])

@@ -9,7 +9,7 @@ import io.vertx.redis.client.{Command, Redis, Request}
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
-import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId, LobbyPlayer, LobbyStatus}
+import io.github.pallax03.wizard.engine.lobby.{GameConfiguration, LobbyError, LobbyId, LobbyPlayer, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubSubPort}
@@ -49,7 +49,7 @@ class TurnTimerVerticle(
                 .onComplete:
                   case Success(strikesResp) =>
                     val strikes = Option(strikesResp).map(_.toString.toInt).getOrElse(0)
-                    val baseTtl = lobby.configuration.timer + lobby.configuration.gracePeriodSeconds
+                    val baseTtl = lobby.configuration.timer + GameConfiguration.gracePeriodSeconds
                     val ttl = Math.max(1, baseTtl / Math.pow(2, strikes).toInt)
                     val req = Request
                       .cmd(Command.SET)

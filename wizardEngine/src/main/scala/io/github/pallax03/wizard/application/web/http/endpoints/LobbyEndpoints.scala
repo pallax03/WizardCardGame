@@ -6,8 +6,7 @@ import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
-import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
+import io.github.pallax03.wizard.engine.lobby.{GameConfiguration, LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
 

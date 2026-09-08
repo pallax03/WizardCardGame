@@ -1,8 +1,6 @@
 package io.github.pallax03.wizard.engine.lobby
 
 import java.util.UUID
-
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 /** Represents the status of a Lobby. */
@@ -20,6 +18,7 @@ enum LobbyError:
     LobbyNotFound,
     NotAuthenticated, GameNotFound
   case GameActionRejected(code: String)
+  case ConfigurationInvalid(err: ConfigurationErrors)
 
 case class Lobby(
     uuid: LobbyId,
@@ -34,7 +33,7 @@ case class Lobby(
 
   def validateStartOrResume: Either[LobbyError, Unit] = status match
     case LobbyStatus.WAITING | LobbyStatus.PAUSED =>
-      if players.size < WizardRules.MinPlayers then Left(LobbyError.NotEnoughPlayers)
+      if players.size < GameConfiguration.MIN_PLAYERS then Left(LobbyError.NotEnoughPlayers)
       else if !players.filter(_.isHumanPlaying).forall(_.isOnline) then
         Left(LobbyError.PlayersOffline)
       else Right(())
@@ -46,7 +45,7 @@ case class Lobby(
       secret: Option[String]
   ): Either[LobbyError, (Player, Lobby)] =
     if status != LobbyStatus.WAITING then Left(LobbyError.GameInProgress)
-    else if players.size >= WizardRules.MaxPlayers then Left(LobbyError.Full)
+    else if players.size >= GameConfiguration.MAX_PLAYERS then Left(LobbyError.Full)
     else
       val existing = secret.flatMap(s => players.find(_.secret.contains(s)))
       if existing.isDefined then Right(existing.get -> this)
