@@ -2,24 +2,19 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import cats.syntax.all.*
 
-import io.circe.syntax.*
+import io.vertx.redis.client.Redis
 
-import io.vertx.redis.client.Request
+import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer}
+import io.github.pallax03.wizard.engine.model.events.{DestinationScoped, InvitationEvent, LifecycleEvent, WizardEvent}
+import io.github.pallax03.wizard.engine.ports.{OutboundPort, PubSubPort}
+import io.github.pallax03.wizard.util.ChannelsKeys
+
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 
 import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
-import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.events.{
-  DestinationScoped,
-  InvitationEvent,
-  LifecycleEvent,
-  WizardEvent
-}
-import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, OutboundPort, PubSubPort}
-import io.github.pallax03.wizard.util.ChannelsKeys
-import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given 
 
 /**
  * Redis implementation of [[OutboundPort]].
@@ -33,15 +28,14 @@ import io.github.pallax03.wizard.util.FutureSyntax.*
  */
 class RedisOutboundAdapter(
     val pubSubPort: PubSubPort,
-    val redisClient: io.vertx.redis.client.Redis,
-    val lobbyStatePort: LobbyStatePort
+    val redisClient: Redis
 ) extends OutboundPort:
 
   /** @inheritdoc */
   override def publish(lobbyId: LobbyId, events: WizardEvent*): Future[Unit] =
     Future
       .sequence(events.map: ev =>
-        val jsonMsg = ev.asJson.noSpaces
+        val jsonMsg = ev.toJson
         pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"INFO:[Lobby $lobbyId] $jsonMsg")
 
         val publishFut = ev match
@@ -56,26 +50,11 @@ class RedisOutboundAdapter(
           case _ =>
             pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)
 
-        val timerFut = ev match
-          case inv: InvitationEvent => scheduleTurnTimer(lobbyId, inv)
-          case _                    => Future.unit
+        val turnEventFut = ev match
+          case inv: InvitationEvent =>
+            pubSubPort.publish(ChannelsKeys.TURN_EVENTS_CHANNEL, LobbyPlayer(lobbyId, inv.destinationId).toJson)
+          case _ => Future.unit
 
-        publishFut.zip(timerFut).void
+        publishFut.zip(turnEventFut).void
       )
       .void
-
-  /** Reads the lobby's [[GameConfiguration]] and sets a `timer:{lobbyId}:{playerId}` key. */
-  private def scheduleTurnTimer(lobbyId: LobbyId, inv: InvitationEvent): Future[Unit] =
-    lobbyStatePort
-      .getLobby(lobbyId)
-      .flatMap:
-        case None => Future.unit
-        case Some(lobby) =>
-          val ttl = lobby.configuration.timer + lobby.configuration.gracePeriodSeconds
-          val req = Request
-            .cmd(io.vertx.redis.client.Command.SET)
-            .arg(ChannelsKeys.turnTimer(lobbyId, inv.destinationId))
-            .arg("1")
-            .arg("EX")
-            .arg(ttl.toString)
-          asScala(redisClient.send(req)).void

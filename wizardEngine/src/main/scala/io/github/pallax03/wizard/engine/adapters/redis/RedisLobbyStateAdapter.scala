@@ -144,3 +144,24 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       .arg("EX")
       .arg(ttlSeconds.toString)
     redisClient.send(req).asScala.map(_ != null)
+
+  override def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
+    updateLobbyCAS[Boolean](lobbyId):
+      case None => Left(LobbyError.LobbyNotFound)
+      case Some(lobby) =>
+        lobby.setPlayerOnlineStatus(playerId, false).map: newLobby =>
+          val pausedLobby = if newLobby.status == LobbyStatus.IN_GAME then newLobby.copy(status = LobbyStatus.PAUSED) else newLobby
+          (true, pausedLobby, Some(SystemEvent.offline(playerId)))
+    .flatMap:
+      case Left(_) => Future.successful(false)
+      case Right(res) =>
+        getLobby(lobbyId).flatMap:
+          case None => Future.successful(res)
+          case Some(lobby) =>
+            val keysToDelete = lobby.players.flatMap: p =>
+              List(ChannelsKeys.turnTimer(lobbyId, p.id), ChannelsKeys.afkStrikes(lobbyId, p.id))
+            if keysToDelete.nonEmpty then
+              val delReq = Request.cmd(Command.DEL)
+              keysToDelete.foreach(delReq.arg)
+              redisClient.send(delReq).asScala.map(_ => res)
+            else Future.successful(res)

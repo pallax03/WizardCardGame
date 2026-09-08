@@ -33,11 +33,11 @@ object Main:
 
     val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
-    val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort, redisClient, lobbyStatePort)
+    val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort, redisClient)
     val recoveryPort: GameRecoveryPort =
       RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort, pubSubPort)
     val inPort: InboundPort =
-      RedisInboundAdapter(redisClient, outPort, recoveryPort, lobbyStatePort)
+      RedisInboundAdapter(redisClient, outPort, recoveryPort)
     val prologPort = WizardPrologAdapter(inPort)
 
     deploy(
@@ -56,7 +56,7 @@ object Main:
 
     deploy(
       vertx,
-      TurnTimerVerticle(pubSubPort, redisClient, inPort),
+      TurnTimerVerticle(pubSubPort, redisClient, inPort, lobbyStatePort),
       "turn timer verticle",
       0
     )

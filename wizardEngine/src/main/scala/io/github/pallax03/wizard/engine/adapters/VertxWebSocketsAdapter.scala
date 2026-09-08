@@ -86,9 +86,7 @@ class VertxWebSocketsAdapter(
       case Some(session) =>
         Try(session.ws.close())
         vertx.cancelTimer(session.pingTimerId)
-        lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, false)
-        val msg = SystemEvent.offline(playerId).toJson
-        pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
+        lobbyStatePort.disconnectAndPauseLobby(lobbyId, playerId)
         session.sub.cancel()
       case None =>
         Future.unit

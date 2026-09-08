@@ -94,3 +94,9 @@ trait LobbyStatePort:
       playerId: PlayerId,
       isOnline: Boolean
   ): Future[Boolean]
+
+  /**
+   * Disconnects a player, sets the lobby status to PAUSED, and clears all timers/strikes.
+   * Used when a player goes offline via WebSocket or reaches max AFK strikes.
+   */
+  def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]

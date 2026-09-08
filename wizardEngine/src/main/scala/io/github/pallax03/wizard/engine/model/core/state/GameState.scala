@@ -46,8 +46,6 @@ object GameState:
               bids.notValidBid(core.round, core.playersIds.size)
             )
           )
-        case GameState.Playing(core: PlayerCoreState, _, _, turn, _) if turn == playerId =>
-          Some(InvitationEvent.WaitingForCard(playerId, core.hand.toList))
         case GameState.Playing(core: ServerCoreState, _, table, turn, _) if turn == playerId =>
           Some(
             InvitationEvent.WaitingForCard(playerId, core.hands.getHand(playerId).legalCards(table))
