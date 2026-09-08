@@ -13,7 +13,6 @@ class TestTableRules extends AnyWordSpec with Matchers:
 
   import BasicTestDSL._
   import cards.Card
-  import cards.Card._
   import gameplay.{Table, Trump}
   "TableRules Validation" when:
     val p1 = PlayerId(1)
@@ -57,14 +56,14 @@ class TestTableRules extends AnyWordSpec with Matchers:
     "award the trick to the first Wizard played" in:
       val winningTrick = p2 plays wizard
       val table = Table.empty + (p1 plays (Ten of Red)) + winningTrick + (p3 plays wizard)
-      val winner = table.evaluateTrick(Trump.Absent).flatMap(c => table.playerOf(c).map((_, c)))
+      val winner = table.evaluateTrick(Trump.Absent).map(c => (table.playerOf(c), c))
       winner shouldBe Some(winningTrick)
 
     "award the trick to the highest trump (no Wizard)" in:
       val winningTrick = p3 plays (Five of Red)
       val table = Table.empty + (p1 plays (Ten of Blue)) + (p2 plays (Two of Red)) + winningTrick
       val winner =
-        table.evaluateTrick(Trump(One of Red)).flatMap(c => table.playerOf(c).map((_, c)))
+        table.evaluateTrick(Trump(One of Red)).map(c => (table.playerOf(c), c))
       winner shouldBe Some(winningTrick)
 
     "award the trick to the highest following card (no Trump and no Wizard)" in:
@@ -72,11 +71,11 @@ class TestTableRules extends AnyWordSpec with Matchers:
       val table =
         Table.empty + (p1 plays (Five of Blue)) + (p2 plays (Ten of Blue)) + (p3 plays (Two of Yellow))
       val trump = Trump(One of Green)
-      val winner = table.evaluateTrick(trump).flatMap(c => table.playerOf(c).map((_, c)))
+      val winner = table.evaluateTrick(trump).map(c => (table.playerOf(c), c))
       winner shouldBe Some(winningTrick)
 
     "award the trick to the first played Jester if ONLY Jesters are on table" in:
       val winningTrick = p1 plays jester
       val table = Table.empty + winningTrick + (p2 plays jester) + (p3 plays jester)
-      val winner = table.evaluateTrick(Trump.Absent).flatMap(c => table.playerOf(c).map((_, c)))
+      val winner = table.evaluateTrick(Trump.Absent).map(c => (table.playerOf(c), c))
       winner shouldBe Some(winningTrick)

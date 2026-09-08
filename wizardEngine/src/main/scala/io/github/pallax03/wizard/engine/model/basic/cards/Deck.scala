@@ -58,11 +58,10 @@ object Deck:
 
   private object DeckFactory:
     import scala.util.Random
-    import Card.*
     def create(): Deck =
       val standards = for
-        color <- Color.values.toList
-        rank <- Rank.values.toList
+        color <- Card.Color.values.toList
+        rank <- Card.Rank.values.toList
       yield rank of color
 
       val wizards = List.fill(TOTAL_WIZARD)(wizard)

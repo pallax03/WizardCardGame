@@ -11,8 +11,8 @@ import org.scalatest.wordspec.AnyWordSpec
 class TestTrump extends AnyWordSpec with Matchers:
 
   import cards.Card
-  import cards.Card.*
   import gameplay.Trump
+
   "A Trump" when:
     "Absent" should:
       val trump = Trump.Absent
@@ -20,7 +20,7 @@ class TestTrump extends AnyWordSpec with Matchers:
         trump.card shouldBe None
         trump.effectiveColor shouldBe None
         trump resolveWizard Blue match
-          case Left(error) => error shouldBe GameError.InvalidAction
+          case Left(error) => error shouldBe GameError.InvalidAction(None)
           case _           =>
 
     "created from a Standard card" should:

@@ -10,9 +10,6 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestHand extends AnyWordSpec with Matchers:
   import BasicTestDSL._
-  import cards._
-  import cards.Card.*
-  import cards.Hand.*
 
   "A Hand" when:
     "created empty" should:

@@ -9,3 +9,4 @@ object SystemEvent:
   def offline(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "offline")
   def joined(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "joined")
   def left(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "left")
+  def timeout(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "timeout")

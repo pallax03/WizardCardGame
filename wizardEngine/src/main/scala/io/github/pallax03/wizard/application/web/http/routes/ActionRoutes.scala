@@ -2,10 +2,8 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
-import io.github.pallax03.wizard.application.web.http.ActionSuccessResponse
 import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
-import io.github.pallax03.wizard.engine.errors.AppError
-import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.core.GameAction.PlayCard
@@ -21,27 +19,21 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
       secret: String,
       lobbyId: LobbyId,
       actionBuilder: PlayerId => GameAction
-  ): Future[Either[AppError, ActionSuccessResponse]] =
+  ): Future[Either[LobbyError, Unit]] =
     lobbyStatePort
       .getLobby(lobbyId)
       .flatMap:
         case Some(lobby) =>
-          lobby.players.find(_.secret.contains(secret)) match
-            case Some(player) =>
+          lobby.authenticate(secret) match
+            case Right(player) =>
               gameEnginePort
                 .submitAction(lobbyId, actionBuilder(player.id))
                 .map:
-                  case Left(gameError) => Left(AppError.GameError(gameError.toString))
-                  case Right(_) =>
-                    Right(
-                      ActionSuccessResponse(
-                        s"Action submitted successfully from player ${player.id} in lobby ${lobby.uuid}"
-                      )
-                    )
-            case None =>
-              Future.successful(Left(AppError.NotAuthenticated))
+                  case Left(gameError) => Left(LobbyError.GameActionRejected(gameError.toString))
+                  case Right(_)        => Right(())
+            case Left(err) => Future.successful(Left(err))
         case None =>
-          Future.successful(Left(AppError.LobbyNotFound(lobbyId)))
+          Future.successful(Left(LobbyError.LobbyNotFound))
 
   private val chooseEndpoint: ServerEndpoint[Any, Future] =
     ActionEndpoints.chooseAction

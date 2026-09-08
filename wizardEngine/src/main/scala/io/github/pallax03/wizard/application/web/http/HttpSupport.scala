@@ -1,18 +1,12 @@
 package io.github.pallax03.wizard.application.web.http
 
-import io.github.pallax03.wizard.codecs.http.AppErrorCodecs.given
-import io.github.pallax03.wizard.engine.errors.AppError
-import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
-
-case class ActionSuccessResponse(message: String)
-
-case class AuthLobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
-case class LobbyPlayer(lobbyId: LobbyId, playerId: PlayerId)
 
 /**
  * Shared HTTP protocol definitions for all Tapir endpoints.
@@ -35,19 +29,16 @@ object HttpSupport:
   val playerIdPath: EndpointInput[PlayerId] =
     path[String]("playerId").map(s => PlayerId(s.toInt))(_.toInt.toString)
 
-  /** Shared error output: maps [[AppError]] to 400 / 401 / 404 / 500 for Swagger. */
-  val errorOutput: EndpointOutput[AppError] =
-    oneOf[AppError](
-      oneOfVariantValueMatcher(StatusCode.NotFound, jsonBody[AppError]) {
-        case _: AppError.NotFoundError => true
+  /** Shared error output: maps [[LobbyError]] to 400 / 401 / 404 for Swagger. */
+  val errorOutput: EndpointOutput[LobbyError] =
+    oneOf[LobbyError](
+      oneOfVariantValueMatcher(StatusCode.NotFound, jsonBody[LobbyError]) {
+        case LobbyError.PlayerNotFound | LobbyError.LobbyNotFound => true
       },
-      oneOfVariantValueMatcher(StatusCode.Unauthorized, jsonBody[AppError]) {
-        case _: AppError.UnauthorizedError => true
+      oneOfVariantValueMatcher(StatusCode.Unauthorized, jsonBody[LobbyError]) {
+        case LobbyError.NotAuthenticated => true
       },
-      oneOfVariantValueMatcher(StatusCode.BadRequest, jsonBody[AppError]) {
-        case _: AppError.BadRequestError => true
-      },
-      oneOfVariantValueMatcher(StatusCode.InternalServerError, jsonBody[AppError]) {
-        case _: AppError.InternalError => true
+      oneOfVariantValueMatcher(StatusCode.BadRequest, jsonBody[LobbyError]) { case _ =>
+        true
       }
     )

@@ -7,7 +7,6 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import sttp.tapir.Schema
 
 object PlayerIdCodecs:
-  // --- Circe ---
 
   given Encoder[PlayerId] = Encoder.encodeInt.contramap(_.toInt)
   given Decoder[PlayerId] = Decoder.decodeInt.map(PlayerId(_))
@@ -16,7 +15,5 @@ object PlayerIdCodecs:
 
   given KeyEncoder[PlayerId] = KeyEncoder.instance(_.toString)
   given KeyDecoder[PlayerId] = KeyDecoder.instance(_.toIntOption.map(_.asInstanceOf[PlayerId]))
-
-  // --- Tapir Schemas ---
 
   given Schema[PlayerId] = Schema.schemaForInt.map(v => Some(PlayerId(v)))(_.toInt)

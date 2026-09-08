@@ -34,11 +34,24 @@ trait InboundPort:
   def startGame(lobbyId: LobbyId, players: List[PlayerId], config: GameConfiguration): Future[Unit]
 
   /**
+   * Resumes a paused game for the specified lobby.
+   *
+   * @param lobbyId the identifier of the lobby
+   * @return a Future indicating the completion of the game resume process
+   */
+  def resumeGame(lobbyId: LobbyId): Future[Unit]
+
+  /**
    * Submits a game action for processing.
    *
    * @param lobbyId the identifier of the lobby
    * @param action the game action to submit
    * @return a Future indicating the completion of the action submission, or the domain GameError if invalid
-   * @throws GameException if processing the action encounters a critical system error (corrupted state).
    */
   def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]]
+
+  /**
+   * Forces the game engine to play a fallback move on behalf of the player.
+   * Used when a player's turn timer expires, but they haven't reached the strike limit.
+   */
+  def forceFallbackAction(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]
