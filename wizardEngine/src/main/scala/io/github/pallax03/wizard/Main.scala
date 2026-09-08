@@ -2,8 +2,10 @@ package io.github.pallax03.wizard
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
+
 import io.vertx.core.{AbstractVerticle, Vertx}
 import io.vertx.redis.client.{ProtocolVersion, Redis, RedisOptions}
+
 import io.github.pallax03.wizard.application.bot.BotManagerVerticle
 import io.github.pallax03.wizard.application.logging.PubSubLoggerVerticle
 import io.github.pallax03.wizard.application.timer.TurnTimerVerticle
@@ -14,6 +16,7 @@ import io.github.pallax03.wizard.engine.adapters.VertxWebSocketsAdapter
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologAdapter
 import io.github.pallax03.wizard.engine.adapters.redis.*
 import io.github.pallax03.wizard.engine.ports.*
+
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 /**
@@ -29,13 +32,13 @@ import sttp.tapir.swagger.bundle.SwaggerInterpreter
  * Both roles share the same JAR; Docker simply passes a different `ROLE` env var.
  */
 object Main:
-  private val httpPort: Int     = sys.env.getOrElse("HTTP_PORT", "5001").toInt
-  private val wsPort: Int       = sys.env.getOrElse("WS_PORT", "5002").toInt
+  private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "5001").toInt
+  private val wsPort: Int = sys.env.getOrElse("WS_PORT", "5002").toInt
   private val redisHost: String = sys.env.getOrElse("REDIS_HOST", "localhost")
-  private val redisPort: Int    = sys.env.getOrElse("REDIS_PORT", "6379").toInt
+  private val redisPort: Int = sys.env.getOrElse("REDIS_PORT", "6379").toInt
   private val redisPoolSize: Int = sys.env.getOrElse("REDIS_POOL_SIZE", "6").toInt
-  private val botDelayMs: Long  = sys.env.getOrElse("BOT_DELAY_MS", "3000").toLong
-  private val role: String      = sys.env.getOrElse("ROLE", "engine").toLowerCase
+  private val botDelayMs: Long = sys.env.getOrElse("BOT_DELAY_MS", "3000").toLong
+  private val role: String = sys.env.getOrElse("ROLE", "engine").toLowerCase
 
   def main(args: Array[String]): Unit =
     val vertx = Vertx.vertx()
@@ -46,27 +49,38 @@ object Main:
       .setPreferredProtocolVersion(ProtocolVersion.RESP2)
     val redisClient = Redis.createClient(vertx, redisOptions)
 
-    val pubSubPort: PubSubPort       = RedisPubSubAdapter(redisClient)
+    val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
-    val outPort: OutboundPort        = RedisOutboundAdapter(pubSubPort, redisClient, lobbyStatePort)
+    val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort, redisClient, lobbyStatePort)
     val recoveryPort: GameRecoveryPort =
       RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort, pubSubPort)
     val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort)
-    val prologPort          = WizardPrologAdapter(inPort)
+    val prologPort = WizardPrologAdapter(inPort)
 
     role match
       case "bot_worker" =>
-        println(s"[Main] Starting as BOT WORKER (delay=${botDelayMs}ms, redis=$redisHost:$redisPort)")
+        println(
+          s"[Main] Starting as BOT WORKER (delay=${botDelayMs}ms, redis=$redisHost:$redisPort)"
+        )
         deploy(
           vertx,
-          BotManagerVerticle(pubSubPort, prologPort, lobbyStatePort, inPort, redisClient, botDelayMs),
+          BotManagerVerticle(
+            pubSubPort,
+            prologPort,
+            lobbyStatePort,
+            inPort,
+            redisClient,
+            botDelayMs
+          ),
           "bot worker",
           0
         )
         deploy(vertx, PubSubLoggerVerticle(pubSubPort), "pubsub logger", 0)
 
       case _ =>
-        println(s"[Main] Starting as ENGINE (http=$httpPort, ws=$wsPort, redis=$redisHost:$redisPort)")
+        println(
+          s"[Main] Starting as ENGINE (http=$httpPort, ws=$wsPort, redis=$redisHost:$redisPort)"
+        )
         deploy(vertx, PubSubLoggerVerticle(pubSubPort), "pubsub logger", 0)
         deploy(
           vertx,
@@ -77,7 +91,6 @@ object Main:
         runHTTPServer(vertx, inPort, lobbyStatePort, prologPort)
         runWSServer(vertx, lobbyStatePort, pubSubPort)
 
-
   private def isProduction: Boolean =
     sys.env.getOrElse("APP_ENV", "development").toLowerCase == "production"
 
@@ -87,9 +100,9 @@ object Main:
       lobbyStatePort: LobbyStatePort,
       prologPort: AIPort
   )(using ec: ExecutionContext): Unit =
-    val lobbyRoutes  = LobbyRoutes(lobbyStatePort, gameEngineInPort)
+    val lobbyRoutes = LobbyRoutes(lobbyStatePort, gameEngineInPort)
     val actionRoutes = ActionRoutes(lobbyStatePort, gameEngineInPort)
-    val aiRoutes     = AIRoutes(lobbyStatePort, prologPort)
+    val aiRoutes = AIRoutes(lobbyStatePort, prologPort)
     val domainEndpoints = lobbyRoutes.all ++ actionRoutes.all ++ aiRoutes.all
 
     val swaggerEndpoints =

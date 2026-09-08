@@ -71,8 +71,6 @@ trait LobbyStatePort:
    */
   def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]
 
-
-
   /**
    * Updates the online status of a specific player in the lobby.
    *

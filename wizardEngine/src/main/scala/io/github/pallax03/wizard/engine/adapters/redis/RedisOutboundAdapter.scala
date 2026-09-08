@@ -54,19 +54,25 @@ class RedisOutboundAdapter(
         // getLobby is a cheap Redis GET — acceptable overhead for the correctness gain.
         val botTaskFut = ev match
           case inv: InvitationEvent =>
-            lobbyStatePort.getLobby(lobbyId).flatMap:
-              case Some(lobby) if lobby.players.exists(p => p.id == inv.destinationId && p.difficulty.isDefined) =>
-                val taskJson = BotTask(lobbyId, inv).toJson
-                redisClient
-                  .send(
-                    Request.cmd(Command.XADD)
-                      .arg(ChannelsKeys.BOT_TASKS_STREAM)
-                      .arg("*")
-                      .arg("data")
-                      .arg(taskJson)
-                  )
-                  .asScala.void
-              case _ => Future.unit // human player or lobby not found: skip
+            lobbyStatePort
+              .getLobby(lobbyId)
+              .flatMap:
+                case Some(lobby)
+                    if lobby.players
+                      .exists(p => p.id == inv.destinationId && p.difficulty.isDefined) =>
+                  val taskJson = BotTask(lobbyId, inv).toJson
+                  redisClient
+                    .send(
+                      Request
+                        .cmd(Command.XADD)
+                        .arg(ChannelsKeys.BOT_TASKS_STREAM)
+                        .arg("*")
+                        .arg("data")
+                        .arg(taskJson)
+                    )
+                    .asScala
+                    .void
+                case _ => Future.unit // human player or lobby not found: skip
           case _ => Future.unit
 
         val turnEventFut = ev match

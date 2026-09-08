@@ -136,9 +136,6 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         lobby.setPlayerOnlineStatus(playerId, isOnline).map(newLobby => (true, newLobby, None))
     }.map(_.getOrElse(false))
 
-
-
-
   override def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
     updateLobbyCAS[Boolean](lobbyId) {
       case None => Left(LobbyError.LobbyNotFound)

@@ -9,4 +9,3 @@ import io.github.pallax03.wizard.engine.model.events.WizardEvent
  * @param invitation the typed [[WizardEvent]] (always an [[io.github.pallax03.wizard.engine.model.events.InvitationEvent]]).
  */
 case class BotTask(lobbyId: LobbyId, invitation: WizardEvent)
-

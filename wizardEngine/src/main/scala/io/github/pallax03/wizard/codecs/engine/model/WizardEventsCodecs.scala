@@ -33,7 +33,8 @@ object WizardEventsCodecs:
       .getOrElse("WizardEvent")
     val eventAction = encodedEvent.keys.head
     val rawFields = encodedEvent(eventAction).get.asObject.get
-    val fields = Json.fromJsonObject(rawFields.filterKeys(k => k != "playerId" && k != "destinationId"))
+    val fields =
+      Json.fromJsonObject(rawFields.filterKeys(k => k != "playerId" && k != "destinationId"))
 
     val scopedFields = e match
       case p: PlayerScoped      => List("playerId" -> p.playerId.asJson)

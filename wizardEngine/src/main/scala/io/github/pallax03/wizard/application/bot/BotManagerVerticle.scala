@@ -1,9 +1,11 @@
 package io.github.pallax03.wizard.application.bot
 
-
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Success}
+
+import cats.syntax.all.*
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.redis.client.{Command, Redis, Request, Response}
@@ -18,9 +20,6 @@ import io.github.pallax03.wizard.engine.model.events.{FailureEvent, InvitationEv
 import io.github.pallax03.wizard.engine.ports.*
 import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
-
-import scala.concurrent.Future
-
 
 /**
  * Stateless bot worker — consumes [[BotTask]]s from the Redis Stream `bot:tasks`.
@@ -59,11 +58,16 @@ class BotManagerVerticle(
   private def ensureConsumerGroup(): Future[Unit] =
     redisClient
       .send(
-        Request.cmd(Command.XGROUP)
-          .arg("CREATE").arg(ChannelsKeys.BOT_TASKS_STREAM)
-          .arg(ChannelsKeys.BOT_CONSUMER_GROUP).arg("$").arg("MKSTREAM")
+        Request
+          .cmd(Command.XGROUP)
+          .arg("CREATE")
+          .arg(ChannelsKeys.BOT_TASKS_STREAM)
+          .arg(ChannelsKeys.BOT_CONSUMER_GROUP)
+          .arg("$")
+          .arg("MKSTREAM")
       )
-      .asScala.map(_ => ())
+      .asScala
+      .void
       .recover { case e if e.getMessage.contains("BUSYGROUP") => () }
 
   // ---------------------------------------------------------------------------
@@ -73,10 +77,16 @@ class BotManagerVerticle(
   private def poll(): Unit =
     redisClient
       .send(
-        Request.cmd(Command.XREADGROUP)
-          .arg("GROUP").arg(ChannelsKeys.BOT_CONSUMER_GROUP).arg(consumerId)
-          .arg("COUNT").arg(BATCH_SIZE.toString)
-          .arg("STREAMS").arg(ChannelsKeys.BOT_TASKS_STREAM).arg(">")
+        Request
+          .cmd(Command.XREADGROUP)
+          .arg("GROUP")
+          .arg(ChannelsKeys.BOT_CONSUMER_GROUP)
+          .arg(consumerId)
+          .arg("COUNT")
+          .arg(BATCH_SIZE.toString)
+          .arg("STREAMS")
+          .arg(ChannelsKeys.BOT_TASKS_STREAM)
+          .arg(">")
       )
       .asScala
       .onComplete:
@@ -86,10 +96,15 @@ class BotManagerVerticle(
   private def reclaim(): Unit =
     redisClient
       .send(
-        Request.cmd(Command.XAUTOCLAIM)
-          .arg(ChannelsKeys.BOT_TASKS_STREAM).arg(ChannelsKeys.BOT_CONSUMER_GROUP)
-          .arg(consumerId).arg(CLAIM_IDLE_MS.toString).arg("0-0")
-          .arg("COUNT").arg(BATCH_SIZE.toString)
+        Request
+          .cmd(Command.XAUTOCLAIM)
+          .arg(ChannelsKeys.BOT_TASKS_STREAM)
+          .arg(ChannelsKeys.BOT_CONSUMER_GROUP)
+          .arg(consumerId)
+          .arg(CLAIM_IDLE_MS.toString)
+          .arg("0-0")
+          .arg("COUNT")
+          .arg(BATCH_SIZE.toString)
       )
       .asScala
       .onComplete:
@@ -112,27 +127,28 @@ class BotManagerVerticle(
   private def dispatch(resp: Response): Unit =
     val entries =
       try resp.get(ChannelsKeys.BOT_TASKS_STREAM) // RESP3 Map
-      catch case _: Exception =>
-        val block = resp.get(0) // RESP2 Array: [[streamName, entries]]
-        if block != null then block.get(1) else null
+      catch
+        case _: Exception =>
+          val block = resp.get(0) // RESP2 Array: [[streamName, entries]]
+          if block != null then block.get(1) else null
     if entries != null then entries.asScala.foreach(processEntry)
 
   private def processEntry(entry: Response): Unit =
     try
-      val entryId  = entry.get(0).toString
-      val fields   = entry.get(1)
+      val entryId = entry.get(0).toString
+      val fields = entry.get(1)
       // single field "data" at index 1 (RESP2) or by key "data" (RESP3)
       val dataJson =
-        try fields.get(1).toString          // RESP2: flat array [key, value]
+        try fields.get(1).toString // RESP2: flat array [key, value]
         catch case _: Exception => fields.get("data").toString // RESP3: map
       dataJson.decodeAs[BotTask] match
         case Right(task) => processTask(entryId, task)
         case Left(err) =>
           log(s"WARN:[BotManager] Decode failed for entry $entryId: $err. JSON: $dataJson")
           ackEntry(entryId) // malformed: drop
-    catch case e: Exception =>
-      log(s"ERROR:[BotManager] entry parse failed: ${e.getMessage}")
-
+    catch
+      case e: Exception =>
+        log(s"ERROR:[BotManager] entry parse failed: ${e.getMessage}")
 
   // ---------------------------------------------------------------------------
   // Task execution
@@ -141,28 +157,38 @@ class BotManagerVerticle(
   private def processTask(entryId: String, task: BotTask): Unit =
     task.invitation match
       case inv: InvitationEvent =>
-        lobbyStatePort.getLobby(task.lobbyId).onComplete:
-          case Success(Some(lobby)) =>
-            lobby.players.find(_.id == inv.destinationId).flatMap(_.difficulty) match
-              case Some(diff) =>
-                log(s"INFO:[BotManager] Executing task $entryId for bot ${inv.destinationId} in lobby ${task.lobbyId} (delay: ${botDelayMs}ms)")
-                val strat = BotStrategy(diff, prologPort)
-                strat.resolveInvitationEvents(task.lobbyId, inv).onComplete:
-                  case Failure(e) =>
-                    log(s"ERROR:[BotManager] strategy failed: ${e.getMessage}")
-                    ackEntry(entryId)
-                  case Success(action) =>
-                    vertx.setTimer(botDelayMs, _ => submitAndAck(task.lobbyId, inv.destinationId, strat, action, entryId))
-              case None =>
-                log(s"WARN:[BotManager] Task $entryId skipped: player ${inv.destinationId} not found or not a bot")
-                ackEntry(entryId)
-          case _ =>
-            log(s"WARN:[BotManager] Task $entryId skipped: lobby ${task.lobbyId} not found")
-            ackEntry(entryId)
+        lobbyStatePort
+          .getLobby(task.lobbyId)
+          .onComplete:
+            case Success(Some(lobby)) =>
+              lobby.players.find(_.id == inv.destinationId).flatMap(_.difficulty) match
+                case Some(diff) =>
+                  log(
+                    s"INFO:[BotManager] Executing task $entryId for bot ${inv.destinationId} in lobby ${task.lobbyId} (delay: ${botDelayMs}ms)"
+                  )
+                  val strat = BotStrategy(diff, prologPort)
+                  strat
+                    .resolveInvitationEvents(task.lobbyId, inv)
+                    .onComplete:
+                      case Failure(e) =>
+                        log(s"ERROR:[BotManager] strategy failed: ${e.getMessage}")
+                        ackEntry(entryId)
+                      case Success(action) =>
+                        vertx.setTimer(
+                          botDelayMs,
+                          _ => submitAndAck(task.lobbyId, inv.destinationId, strat, action, entryId)
+                        )
+                case None =>
+                  log(
+                    s"WARN:[BotManager] Task $entryId skipped: player ${inv.destinationId} not found or not a bot"
+                  )
+                  ackEntry(entryId)
+            case _ =>
+              log(s"WARN:[BotManager] Task $entryId skipped: lobby ${task.lobbyId} not found")
+              ackEntry(entryId)
       case _ =>
         log(s"WARN:[BotManager] Task $entryId skipped: not an InvitationEvent")
         ackEntry(entryId)
-
 
   private def submitAndAck(
       lobbyId: io.github.pallax03.wizard.engine.lobby.LobbyId,
@@ -174,29 +200,33 @@ class BotManagerVerticle(
     gameInboundPort
       .submitAction(lobbyId, action)
       .flatMap:
-        case Right(_)  =>
+        case Right(_) =>
           log(s"INFO:[BotManager] Action submitted for bot $playerId in lobby $lobbyId")
           Future.unit
         case Left(err) =>
           log(s"WARN:[BotManager] Action failed for bot $playerId ($err). Trying fallback...")
-          strategy.resolveFailedEvents(lobbyId, FailureEvent.ActionFailed(playerId, err))
-            .flatMap(fallback => gameInboundPort.submitAction(lobbyId, fallback).map(_ => ()))
+          strategy
+            .resolveFailedEvents(lobbyId, FailureEvent.ActionFailed(playerId, err))
+            .flatMap(fallback => gameInboundPort.submitAction(lobbyId, fallback).void)
       .onComplete(_ => ackEntry(entryId))
 
   private def ackEntry(entryId: String): Unit =
-    redisClient.send(
-      Request.cmd(Command.XACK)
-        .arg(ChannelsKeys.BOT_TASKS_STREAM)
-        .arg(ChannelsKeys.BOT_CONSUMER_GROUP)
-        .arg(entryId)
-    ).onComplete(_ => ())
+    redisClient
+      .send(
+        Request
+          .cmd(Command.XACK)
+          .arg(ChannelsKeys.BOT_TASKS_STREAM)
+          .arg(ChannelsKeys.BOT_CONSUMER_GROUP)
+          .arg(entryId)
+      )
+      .onComplete(_ => ())
 
   private def log(msg: String): Unit =
     pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, msg)
 
 object BotManagerVerticle:
-  val DEFAULT_BOT_DELAY_MS: Long    = 3_000L
-  private val POLL_INTERVAL_MS: Long     = 500L
+  val DEFAULT_BOT_DELAY_MS: Long = 3_000L
+  private val POLL_INTERVAL_MS: Long = 500L
   private val CLAIM_CHECK_INTERVAL_MS: Long = 10_000L
-  private val CLAIM_IDLE_MS: Long        = 15_000L
-  private val BATCH_SIZE: Int            = 10
+  private val CLAIM_IDLE_MS: Long = 15_000L
+  private val BATCH_SIZE: Int = 10
