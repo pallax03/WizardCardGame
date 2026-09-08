@@ -4,17 +4,24 @@ import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Try
+
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.ServerWebSocket
 import io.vertx.core.json.JsonObject
-import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
+
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
+import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
-import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, PubSubPort, Subscription, WebSocketsPort}
+import io.github.pallax03.wizard.engine.ports.{
+  LobbyStatePort,
+  PubSubPort,
+  Subscription,
+  WebSocketsPort
+}
 import io.github.pallax03.wizard.util.ChannelsKeys
 
 case class ClientSession(ws: ServerWebSocket, sub: Subscription, pingTimerId: Long)

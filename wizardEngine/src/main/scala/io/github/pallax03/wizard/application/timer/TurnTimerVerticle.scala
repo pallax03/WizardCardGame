@@ -3,8 +3,10 @@ package io.github.pallax03.wizard.application.timer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.Success
+
 import io.vertx.core.AbstractVerticle
 import io.vertx.redis.client.{Command, Redis, Request}
+
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer, LobbyStatus}
@@ -76,13 +78,15 @@ class TurnTimerVerticle(
           _ <-
             if lobby.status == LobbyStatus.PAUSED then Future.unit
             else if isOffline || strikes >= lobby.configuration.maxStrikes then
-              lobbyStatePort.updateLobby[Unit](lobbyId) { l =>
+              lobbyStatePort
+                .updateLobby[Unit](lobbyId) { l =>
                   val newPlayers = l.players.map(p =>
                     if p.id == playerId then p.replaceWithABot()
                     else p
                   )
                   Right(((), l.copy(players = newPlayers), Option(SystemEvent.timeout(playerId))))
-              }.flatMap(_ => inboundPort.forceFallbackAction(lobbyId, playerId))
+                }
+                .flatMap(_ => inboundPort.forceFallbackAction(lobbyId, playerId))
             else inboundPort.forceFallbackAction(lobbyId, playerId)
         yield ()).recover:
           case ex =>

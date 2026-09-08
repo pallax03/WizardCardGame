@@ -1,12 +1,14 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
+
 import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
+
 import sttp.tapir.server.ServerEndpoint
 
 /** HTTP routes for the Lobby domain. */
@@ -62,10 +64,13 @@ class LobbyRoutes(
             (),
             LobbyError.GameNotFound
           )
-          state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recoverWith { case _ =>
-            lobbyStatePort.updateLobby[Unit](lobbyId) { l =>
-              Right(((), l.copy(status = LobbyStatus.WAITING), None))
-            }.map(_ => Left(LobbyError.GameNotFound))
+          state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recoverWith {
+            case _ =>
+              lobbyStatePort
+                .updateLobby[Unit](lobbyId) { l =>
+                  Right(((), l.copy(status = LobbyStatus.WAITING), None))
+                }
+                .map(_ => Left(LobbyError.GameNotFound))
           })
         yield state).value
       }
@@ -75,9 +80,13 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => lobbyId =>
         EitherT(lobbyStatePort.updateAuthLobby[Lobby](lobbyId, secret) { (player, lobby) =>
-          for
-            _ <- lobby.validateStartOrResume
-          yield (lobby, lobby.copy(status = LobbyStatus.IN_GAME), if lobby.status == LobbyStatus.PAUSED then Option(SystemEvent.resumed(player.id)) else Option.empty)
+          for _ <- lobby.validateStartOrResume
+          yield (
+            lobby,
+            lobby.copy(status = LobbyStatus.IN_GAME),
+            if lobby.status == LobbyStatus.PAUSED then Option(SystemEvent.resumed(player.id))
+            else Option.empty
+          )
         }).flatMap { oldLobby =>
           EitherT.right[LobbyError](
             if oldLobby.status == LobbyStatus.WAITING then
@@ -93,7 +102,9 @@ class LobbyRoutes(
       .serverLogic { secret => lobbyId =>
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (player, lobby) =>
           if lobby.status == LobbyStatus.IN_GAME then
-            Right(((), lobby.copy(status = LobbyStatus.PAUSED), Some(SystemEvent.paused(player.id))))
+            Right(
+              ((), lobby.copy(status = LobbyStatus.PAUSED), Some(SystemEvent.paused(player.id)))
+            )
           else Left(LobbyError.GameNotFound)
         }).value
       }
@@ -103,8 +114,15 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => input =>
         val (lobbyId, config) = input
-        EitherT(lobbyStatePort.updateAuthLobby[GameConfiguration](lobbyId, secret) { (player, lobby) =>
-          Right((config, lobby.copy(configuration = config), Some(SystemEvent.configUpdated(player.id))))
+        EitherT(lobbyStatePort.updateAuthLobby[GameConfiguration](lobbyId, secret) {
+          (player, lobby) =>
+            Right(
+              (
+                config,
+                lobby.copy(configuration = config),
+                Some(SystemEvent.configUpdated(player.id))
+              )
+            )
         }).value
       }
 
@@ -113,8 +131,7 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => (lobbyId, playerId) =>
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
-          for
-            newLobby <- lobby.removePlayer(playerId)
+          for newLobby <- lobby.removePlayer(playerId)
           yield ((), newLobby, Some(SystemEvent.left(playerId)))
         }).value
       }

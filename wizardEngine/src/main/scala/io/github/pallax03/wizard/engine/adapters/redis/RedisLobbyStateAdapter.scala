@@ -3,8 +3,6 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-
-
 import io.vertx.redis.client.{Command, Redis, Request}
 
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
@@ -31,7 +29,10 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         case response => response.toString.decodeAs[Lobby].left.map(_ => LobbyError.LobbyNotFound)
 
   /** @inheritdoc */
-  override def getAuthLobby(lobbyId: LobbyId, secret: String): Future[Either[LobbyError, (Player, Lobby)]] =
+  override def getAuthLobby(
+      lobbyId: LobbyId,
+      secret: String
+  ): Future[Either[LobbyError, (Player, Lobby)]] =
     getLobby(lobbyId).map:
       case Right(lobby) => lobby.authenticate(secret).map(player => (player, lobby))
       case Left(err)    => Left(err)
@@ -101,10 +102,14 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       isOnline: Boolean
   ): Future[Boolean] =
     updateLobby[Boolean](lobbyId) { lobby =>
-        lobby.setPlayerOnlineStatus(playerId, isOnline).map(newLobby => (true, newLobby, None))
+      lobby.setPlayerOnlineStatus(playerId, isOnline).map(newLobby => (true, newLobby, None))
     }.flatMap {
       case Left(_) => Future.successful(false)
       case Right(res) =>
-        if isOnline then redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId))).asScala.map(_ => res)
+        if isOnline then
+          redisClient
+            .send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId)))
+            .asScala
+            .map(_ => res)
         else Future.successful(res)
     }

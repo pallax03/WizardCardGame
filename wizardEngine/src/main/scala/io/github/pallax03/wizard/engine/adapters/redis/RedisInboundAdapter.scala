@@ -92,7 +92,8 @@ class RedisInboundAdapter(
   override def resumeGame(lobbyId: LobbyId): Future[Unit] =
     fetchGameState(lobbyId).flatMap:
       case Some(state) =>
-        val invitations = state.playersIds.flatMap(id => PlayerGameState.from(state, id).pendingInvitation(id))
+        val invitations =
+          state.playersIds.flatMap(id => PlayerGameState.from(state, id).pendingInvitation(id))
         outboundPort.publish(lobbyId, LifecycleEvent.GameResumed(state.playersIds) +: invitations*)
         Future.unit
       case None =>

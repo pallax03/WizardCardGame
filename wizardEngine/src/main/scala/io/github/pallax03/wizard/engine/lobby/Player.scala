@@ -17,18 +17,16 @@ case class Player(
    */
   def isHumanPlaying: Boolean = isHuman && !isBot
 
-  /**
-   * @return True if is a human, can be replaced with a bot so check [[isHumanPlaying]]
-   */
+  /** @return True if is a human, can be replaced with a bot so check [[isHumanPlaying]] */
   def isHuman: Boolean = secret.isDefined
 
-  /**
-   * @return True if is controlled by the [[BotManagerVerticle]]
-   */
+  /** @return True if is controlled by the [[BotManagerVerticle]] */
   def isBot: Boolean = difficulty.isDefined
 
-  def replaceWithABot(botDifficulty: BotsDifficulty = Prolog): Player = this.copy(isOnline = false, difficulty = Option(botDifficulty))
-  def returnHuman: Player = if isHuman then this.copy(isOnline = true, difficulty = Option.empty) else throw IllegalCallerException("Player is not a human")
+  def replaceWithABot(botDifficulty: BotsDifficulty = Prolog): Player =
+    this.copy(isOnline = false, difficulty = Option(botDifficulty))
+  def returnHuman: Player = if isHuman then this.copy(isOnline = true, difficulty = Option.empty)
+  else throw IllegalCallerException("Player is not a human")
 
 object Player:
   def human(id: PlayerId, name: String, secret: Option[String]): Player =

@@ -49,7 +49,7 @@ class RedisOutboundAdapter(
             )
           case _ =>
             pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), jsonMsg)
-        
+
         val botTaskFut = ev match
           case inv: InvitationEvent =>
             lobbyStatePort

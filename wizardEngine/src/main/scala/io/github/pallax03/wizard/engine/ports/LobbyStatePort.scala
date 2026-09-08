@@ -1,6 +1,7 @@
 package io.github.pallax03.wizard.engine.ports
 
 import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
@@ -22,8 +23,6 @@ import io.github.pallax03.wizard.engine.model.events.SystemEvent
  * 4. If valid, the connection is accepted; otherwise, it is rejected.
  */
 trait LobbyStatePort:
-
-
 
   /**
    * Retrieves the current state of the lobby.
@@ -54,9 +53,7 @@ trait LobbyStatePort:
       f: Lobby => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]]
 
-  /**
-   * Updates an existing lobby state atomically, after authenticating the player.
-   */
+  /** Updates an existing lobby state atomically, after authenticating the player. */
   def updateAuthLobby[A](lobbyId: LobbyId, secret: String)(
       f: (Player, Lobby) => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]] =
@@ -78,7 +75,6 @@ trait LobbyStatePort:
       difficulty: Option[BotsDifficulty] = None,
       secret: Option[String] = None
   ): Future[Either[LobbyError, Player]]
-
 
   /**
    * Updates the online status of a specific player in the lobby.
