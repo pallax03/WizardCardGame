@@ -9,11 +9,12 @@ import {
   useMemo,
   useReducer,
   useRef,
+  useState,
 } from "react";
 import { useParams, useRouter } from "next/navigation";
 
 import type { ChatMessage } from "@/features/chat/types";
-import { getGameState, getLobbyState } from "./api";
+import { getGameState, getLobbyState, getLobbyWsSecret } from "./api";
 import { connectLobbySocket, type LobbySocket } from "./lobbySocket";
 import type {
   LobbySessionAction,
@@ -126,6 +127,8 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
   const lobbyRefreshQueuedRef = useRef(false);
   const gameRefreshQueuedRef = useRef(false);
   const gameWasLoadedRef = useRef(false);
+  const [wsAuth, setWsAuth] = useState<{ lobbyId: string; secret: string } | null>(null);
+  const wsSecret = wsAuth !== null && wsAuth.lobbyId === lobbyId ? wsAuth.secret : null;
 
   useEffect(() => {
     if (state.lobbyId === lobbyId) return;
@@ -156,6 +159,24 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
 
     queueMicrotask(() => dispatch({ type: "identity/resolved", playerId }));
   }, [lobbyId, router]);
+
+  useEffect(() => {
+    let cancelled = false;
+    void getLobbyWsSecret(lobbyId).then((secret) => {
+      if (cancelled) return;
+      if (!secret) {
+        dispatch({
+          type: "sync/failed",
+          error: new Error("Missing lobby secret: rejoin the lobby from the home page."),
+        });
+        return;
+      }
+      setWsAuth({ lobbyId, secret });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [lobbyId]);
 
   const refreshLobby = useCallback(() => {
     if (lobbyRequestRef.current) {
@@ -245,7 +266,7 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
   }, [state.lobby?.status, state.lobbyId, router]);
 
   useEffect(() => {
-    if (state.playerId === null) return;
+    if (state.playerId === null || wsSecret === null) return;
 
     let disposed = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
@@ -261,7 +282,7 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
 
       socketRef.current = connectLobbySocket({
         lobbyId,
-        playerId: state.playerId!,
+        secret: wsSecret,
         onEvent: handleServerEvent,
         onConnectionChange(connectionState) {
           dispatch({ type: "connection/changed", connectionState });
@@ -291,7 +312,7 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [handleServerEvent, lobbyId, refreshGame, refreshLobby, state.playerId]);
+  }, [handleServerEvent, lobbyId, refreshGame, refreshLobby, state.playerId, wsSecret]);
 
   const sendMessage = useCallback((text: string, destinationId?: number) => {
     if (state.playerId === null) return false;

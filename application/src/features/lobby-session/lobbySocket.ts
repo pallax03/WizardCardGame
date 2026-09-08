@@ -3,10 +3,11 @@ import type { ConnectionState, ServerEvent } from "./types";
 
 type LobbySocketOptions = {
   lobbyId: string;
-  playerId: number;
+  /** Player secret richiesto dall'engine come `?secret=...` (cfr. `WebSocketsVerticle`). */
+  secret: string;
   onEvent: (event: ServerEvent) => void;
   onConnectionChange: (state: ConnectionState) => void;
-  onClose: () => void;
+  onClose: (event: CloseEvent) => void;
 };
 
 export type LobbySocket = {
@@ -68,13 +69,15 @@ function parseServerEvent(rawData: string): ServerEvent | null {
 
 export function connectLobbySocket({
   lobbyId,
-  playerId,
+  secret,
   onEvent,
   onConnectionChange,
   onClose,
 }: LobbySocketOptions): LobbySocket {
   const baseUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:5002";
-  const socket = new WebSocket(`${baseUrl}/lobby/${lobbyId}/player/${playerId}`);
+  const socket = new WebSocket(
+    `${baseUrl}/lobby/${encodeURIComponent(lobbyId)}?secret=${encodeURIComponent(secret)}`
+  );
 
   socket.onopen = () => onConnectionChange("open");
   socket.onmessage = ({ data }) => {
@@ -83,7 +86,7 @@ export function connectLobbySocket({
     if (event) onEvent(event);
   };
   socket.onerror = () => onConnectionChange("closed");
-  socket.onclose = onClose;
+  socket.onclose = (event) => onClose(event);
 
   return {
     send(message) {
