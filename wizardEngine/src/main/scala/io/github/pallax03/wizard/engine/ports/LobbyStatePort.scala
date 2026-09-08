@@ -72,16 +72,6 @@ trait LobbyStatePort:
   def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]
 
   /**
-   * Attempts to acquire the distributed lock for managing bots in this lobby.
-   *
-   * @param lobbyId the UUID of the lobby.
-   * @param podId unique identifier for the current pod/container.
-   * @param ttlSeconds lock expiration time to prevent deadlocks if the pod crashes.
-   * @return a Future containing true if the lock was acquired, false otherwise.
-   */
-  def tryAcquireBotLock(lobbyId: LobbyId, podId: String, ttlSeconds: Long = 30): Future[Boolean]
-
-  /**
    * Updates the online status of a specific player in the lobby.
    *
    * @param lobbyId the UUID of the lobby.
