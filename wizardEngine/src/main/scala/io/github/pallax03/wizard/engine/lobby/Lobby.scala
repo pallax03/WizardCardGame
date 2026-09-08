@@ -1,6 +1,7 @@
 package io.github.pallax03.wizard.engine.lobby
 
 import java.util.UUID
+
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 /** Represents the status of a Lobby. */

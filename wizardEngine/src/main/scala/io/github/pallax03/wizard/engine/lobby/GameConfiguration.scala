@@ -21,6 +21,14 @@ case class GameConfiguration(
 ):
   def validate: Either[ConfigurationErrors, Unit] =
     for
-      _ <- Either.cond(timer >= ConfigurationErrors.TimerNotValid.min && timer <= ConfigurationErrors.TimerNotValid.max, (), ConfigurationErrors.TimerNotValid)
-      _ <- Either.cond(maxStrikes >= ConfigurationErrors.MaxStrikesNotValid.min && maxStrikes <= ConfigurationErrors.MaxStrikesNotValid.max, (), ConfigurationErrors.MaxStrikesNotValid)
+      _ <- Either.cond(
+        timer >= ConfigurationErrors.TimerNotValid.min && timer <= ConfigurationErrors.TimerNotValid.max,
+        (),
+        ConfigurationErrors.TimerNotValid
+      )
+      _ <- Either.cond(
+        maxStrikes >= ConfigurationErrors.MaxStrikesNotValid.min && maxStrikes <= ConfigurationErrors.MaxStrikesNotValid.max,
+        (),
+        ConfigurationErrors.MaxStrikesNotValid
+      )
     yield ()

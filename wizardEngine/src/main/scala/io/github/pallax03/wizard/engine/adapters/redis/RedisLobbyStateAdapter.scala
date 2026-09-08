@@ -101,21 +101,32 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       isOnline: Boolean
   ): Future[LobbyStatus] =
     updateLobby[Lobby](lobbyId) { lobby =>
-        lobby.handleOnlineStatusChange(playerId, isOnline).map(newLobby => (newLobby, newLobby, None))
+      lobby.handleOnlineStatusChange(playerId, isOnline).map(newLobby => (newLobby, newLobby, None))
     }.flatMap {
       case Left(_) => Future.failed(new Exception("Player or Lobby not found"))
       case Right(newLobby) =>
         if isOnline then
-          redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId))).asScala.flatMap { _ =>
-            val humans = newLobby.players.filter(_.isHumanPlaying)
-            if humans.isEmpty || humans.forall(_.isOnline) then
-              redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId))).asScala.map(_ => newLobby.status)
-            else Future.successful(newLobby.status)
-          }
+          redisClient
+            .send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId)))
+            .asScala
+            .flatMap { _ =>
+              val humans = newLobby.players.filter(_.isHumanPlaying)
+              if humans.isEmpty || humans.forall(_.isOnline) then
+                redisClient
+                  .send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId)))
+                  .asScala
+                  .map(_ => newLobby.status)
+              else Future.successful(newLobby.status)
+            }
         else
           val humans = newLobby.players.filter(_.isHumanPlaying)
           if humans.nonEmpty && !humans.forall(_.isOnline) then
-             val req = Request.cmd(Command.SET).arg(ChannelsKeys.disconnectTimer(lobbyId)).arg("1").arg("EX").arg(newLobby.configuration.timer.toString)
-             redisClient.send(req).asScala.map(_ => newLobby.status)
+            val req = Request
+              .cmd(Command.SET)
+              .arg(ChannelsKeys.disconnectTimer(lobbyId))
+              .arg("1")
+              .arg("EX")
+              .arg(newLobby.configuration.timer.toString)
+            redisClient.send(req).asScala.map(_ => newLobby.status)
           else Future.successful(newLobby.status)
     }

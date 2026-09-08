@@ -1,6 +1,7 @@
 package io.github.pallax03.wizard.engine.ports
 
 import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.lobby.{GameConfiguration, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
