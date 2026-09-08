@@ -11,7 +11,6 @@ object ChannelsKeys:
   val BOT_CONSUMER_GROUP: String = "bot_workers"
 
   /** Key that stores lobbies. */
-  val LOBBY_CHANNEL: String = "lobby:*"
   def lobby(id: LobbyId): String = s"lobby:${id.toString}"
 
   /** Key that stores game relative to a lobby (1:1). */
@@ -19,7 +18,7 @@ object ChannelsKeys:
 
   /** Key that stores game checkpoints relative to a game. */
   def gameCheckpoint(id: LobbyId): String = s"${game(id)}:checkpoint"
-
+  
   /** Routing Key for lobby and private player's lobby channel. */
   def pubSubLobbyChannel(id: LobbyId): String = s"channel:${id.toString}"
   def pubSubLobbyPlayerChannel(id: LobbyId, playerId: PlayerId): String =
