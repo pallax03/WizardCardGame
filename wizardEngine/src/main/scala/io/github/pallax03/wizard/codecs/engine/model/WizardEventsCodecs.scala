@@ -32,7 +32,9 @@ object WizardEventsCodecs:
       .find(_.endsWith("Event"))
       .getOrElse("WizardEvent")
     val eventAction = encodedEvent.keys.head
-    val fields = encodedEvent(eventAction).get
+    val rawFields = encodedEvent(eventAction).get.asObject.get
+    val fields = Json.fromJsonObject(rawFields.filterKeys(k => k != "playerId" && k != "destinationId"))
+
     val scopedFields = e match
       case p: PlayerScoped      => List("playerId" -> p.playerId.asJson)
       case d: DestinationScoped => List("destinationId" -> d.destinationId.asJson)
@@ -58,21 +60,21 @@ object WizardEventsCodecs:
         case "GameResumed" =>
           fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameResumed.apply)
         case "WaitingForTrump" =>
-          ev.get[PlayerId]("playerId").map(InvitationEvent.WaitingForTrump.apply)
+          ev.get[PlayerId]("destinationId").map(InvitationEvent.WaitingForTrump.apply)
         case "WaitingForBid" =>
           for {
-            p <- ev.get[PlayerId]("playerId")
+            p <- ev.get[PlayerId]("destinationId")
             r <- fields.get[Round]("round")
             i <- fields.get[Option[Bid]]("invalidBid")
           } yield InvitationEvent.WaitingForBid(p, r, i)
         case "WaitingForCard" =>
           for {
-            p <- ev.get[PlayerId]("playerId")
+            p <- ev.get[PlayerId]("destinationId")
             cards <- fields.get[List[Card]]("legalCards")
           } yield InvitationEvent.WaitingForCard(p, cards)
         case "ActionFailed" =>
           for {
-            p <- fields.get[PlayerId]("playerId")
+            p <- ev.get[PlayerId]("playerId")
             err <- fields.get[GameError]("reason")
           } yield FailureEvent.ActionFailed(p, err)
         case "StateRecovered" =>

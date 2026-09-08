@@ -136,20 +136,8 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         lobby.setPlayerOnlineStatus(playerId, isOnline).map(newLobby => (true, newLobby, None))
     }.map(_.getOrElse(false))
 
-  /** @inheritdoc */
-  override def tryAcquireBotLock(
-      lobbyId: LobbyId,
-      podId: String,
-      ttlSeconds: Long = 30
-  ): Future[Boolean] =
-    val req = Request
-      .cmd(Command.SET)
-      .arg(ChannelsKeys.botLock(lobbyId))
-      .arg(podId)
-      .arg("NX")
-      .arg("EX")
-      .arg(ttlSeconds.toString)
-    redisClient.send(req).asScala.map(_ != null)
+
+
 
   override def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
     updateLobbyCAS[Boolean](lobbyId) {
