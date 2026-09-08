@@ -89,3 +89,12 @@ trait LobbyStatePort:
       playerId: PlayerId,
       isOnline: Boolean
   ): Future[LobbyStatus]
+
+  /**
+   * Clears the AFK strikes for a specific player.
+   *
+   * @param lobbyId the UUID of the lobby.
+   * @param playerId the ID of the player.
+   * @return a Future indicating success.
+   */
+  def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]

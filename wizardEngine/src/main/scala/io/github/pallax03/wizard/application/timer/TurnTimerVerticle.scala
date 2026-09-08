@@ -14,7 +14,6 @@ import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.{
   GameConfiguration,
-  LobbyError,
   LobbyId,
   LobbyPlayer,
   LobbyStatus
@@ -102,27 +101,18 @@ class TurnTimerVerticle(
       case Array("disconnect", lobbyIdStr) =>
         val lobbyId = LobbyId(lobbyIdStr)
         lobbyStatePort
-          .updateLobby[List[PlayerId]](lobbyId) { lobby =>
+          .updateLobby[(List[PlayerId], LobbyStatus)](lobbyId) { lobby =>
             if lobby.status == LobbyStatus.PAUSED then
-              val humans = lobby.players.filter(_.isHumanPlaying)
-              if humans.nonEmpty && !humans.forall(_.isOnline) then
-                val offlinePlayerIds =
-                  lobby.players.filter(p => p.isHumanPlaying && !p.isOnline).map(_.id)
-                val newPlayers = lobby.players.map(p =>
-                  if offlinePlayerIds.contains(p.id) then p.replaceWithABot() else p
-                )
-                Right(
-                  (
-                    offlinePlayerIds,
-                    lobby.copy(players = newPlayers, status = LobbyStatus.IN_GAME),
-                    None
-                  )
-                )
-              else Left(LobbyError.GameInProgress)
-            else Left(LobbyError.GameInProgress)
+              val (offlineIds, newLobby) = lobby.replaceOfflinePlayersWithBots()
+              if offlineIds.nonEmpty then
+                Right(((offlineIds, newLobby.status), newLobby, None))
+              else
+                Right(((Nil, lobby.status), lobby, None))
+            else
+              Right(((Nil, lobby.status), lobby, None))
           }
           .flatMap {
-            case Right(offlinePlayerIds) =>
+            case Right((offlinePlayerIds, newStatus)) =>
               Future
                 .sequence(offlinePlayerIds.map { pid =>
                   pubSubPort.publish(
@@ -130,7 +120,11 @@ class TurnTimerVerticle(
                     SystemEvent.timeout(pid).toJson
                   )
                 })
-                .flatMap(_ => inboundPort.resumeGame(lobbyId))
+                .flatMap(_ =>
+                  if newStatus == LobbyStatus.IN_GAME && offlinePlayerIds.nonEmpty then
+                    inboundPort.resumeGame(lobbyId)
+                  else Future.unit
+                )
             case Left(_) => Future.unit
           }
           .recover { case ex =>

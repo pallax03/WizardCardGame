@@ -16,8 +16,7 @@ object LobbyId:
 
 enum LobbyError:
   case Full, GameInProgress, GamePaused, NotEnoughPlayers, PlayersOffline, PlayerNotFound,
-    LobbyNotFound,
-    NotAuthenticated, GameNotFound
+    LobbyNotFound, NotAuthenticated, GameNotFound
   case GameActionRejected(code: String)
   case ConfigurationInvalid(err: ConfigurationErrors)
 
@@ -62,6 +61,14 @@ case class Lobby(
     if newPlayers.size == players.size then Left(LobbyError.PlayerNotFound)
     else Right(copy(players = newPlayers, version = version + 1))
 
+  private def evaluateStatus(currentPlayers: List[Player]): LobbyStatus =
+    if status == LobbyStatus.WAITING || status == LobbyStatus.FINISHED then status
+    else
+      val humans = currentPlayers.filter(_.isHumanPlaying)
+      if humans.isEmpty then LobbyStatus.PAUSED
+      else if humans.forall(_.isOnline) then LobbyStatus.IN_GAME
+      else LobbyStatus.PAUSED
+
   def handleOnlineStatusChange(playerId: PlayerId, isOnline: Boolean): Either[LobbyError, Lobby] =
     players.indexWhere(_.id == playerId) match
       case -1 => Left(LobbyError.PlayerNotFound)
@@ -71,12 +78,12 @@ case class Lobby(
           if isOnline && player.isBot && player.isHuman then player.returnHuman
           else player.copy(isOnline = isOnline)
         val newPlayers = players.updated(idx, updatedPlayer)
+        Right(copy(players = newPlayers, status = evaluateStatus(newPlayers), version = version + 1))
 
-        val humans = newPlayers.filter(_.isHumanPlaying)
-        val newStatus =
-          if status == LobbyStatus.WAITING || status == LobbyStatus.FINISHED then status
-          else if humans.isEmpty then LobbyStatus.PAUSED
-          else if humans.forall(_.isOnline) then LobbyStatus.IN_GAME
-          else LobbyStatus.PAUSED
-
-        Right(copy(players = newPlayers, status = newStatus, version = version + 1))
+  /** Replaces all offline human players with bots and updates the lobby status. */
+  def replaceOfflinePlayersWithBots(): (List[PlayerId], Lobby) =
+    val offlineIds = players.filter(p => p.isHumanPlaying && !p.isOnline).map(_.id)
+    if offlineIds.isEmpty then (Nil, this)
+    else
+      val newPlayers = players.map(p => if offlineIds.contains(p.id) then p.replaceWithABot() else p)
+      (offlineIds, copy(players = newPlayers, status = evaluateStatus(newPlayers), version = version + 1))

@@ -27,8 +27,7 @@ case class Player(
 
   def replaceWithABot(botDifficulty: BotsDifficulty = Prolog): Player =
     this.copy(isOnline = false, difficulty = Option(botDifficulty))
-  def returnHuman: Player = if isHuman then this.copy(isOnline = true, difficulty = Option.empty)
-  else throw IllegalCallerException("Player is not a human")
+  def returnHuman: Player = if isHuman then this.copy(isOnline = true, difficulty = Option.empty) else this
 
 object Player:
   def human(id: PlayerId, name: String, secret: Option[String]): Player =

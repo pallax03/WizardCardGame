@@ -7,7 +7,7 @@ object GameConfiguration:
 
 enum ConfigurationErrors(val min: Int, val max: Int):
   case TimerNotValid extends ConfigurationErrors(30, 120)
-  case MaxStrikesNotValid extends ConfigurationErrors(0, 3)
+  case MaxStrikesNotValid extends ConfigurationErrors(1, 3)
 
 /**
  * Represents the configuration of a game.

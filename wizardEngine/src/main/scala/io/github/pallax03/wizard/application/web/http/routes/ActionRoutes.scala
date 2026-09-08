@@ -28,9 +28,9 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
           else
             gameEnginePort
               .submitAction(lobbyId, actionBuilder(player.id))
-              .map:
-                case Left(gameError) => Left(LobbyError.GameActionRejected(gameError.toString))
-                case Right(_)        => Right(())
+              .flatMap:
+                case Left(gameError) => Future.successful(Left(LobbyError.GameActionRejected(gameError.toString)))
+                case Right(_)        => lobbyStatePort.clearPlayerStrikes(lobbyId, player.id).map(_ => Right(()))
         case Left(err) =>
           Future.successful(Left(err))
 

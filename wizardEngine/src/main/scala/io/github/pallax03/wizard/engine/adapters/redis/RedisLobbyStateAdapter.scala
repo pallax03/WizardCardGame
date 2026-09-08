@@ -3,6 +3,8 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import cats.syntax.all._
+
 import io.vertx.redis.client.{Command, Redis, Request}
 
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
@@ -106,12 +108,17 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       case Left(_) => Future.failed(new Exception("Player or Lobby not found"))
       case Right(newLobby) =>
         if isOnline then
+          val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
           redisClient
-            .send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId)))
+            .send(Request.cmd(Command.DECR).arg(strikesKey))
             .asScala
+            .flatMap { resp =>
+              if resp != null && resp.toLong < 0 then
+                redisClient.send(Request.cmd(Command.SET).arg(strikesKey).arg("0")).asScala.void
+              else Future.successful(())
+            }
             .flatMap { _ =>
-              val humans = newLobby.players.filter(_.isHumanPlaying)
-              if humans.isEmpty || humans.forall(_.isOnline) then
+              if newLobby.status != LobbyStatus.PAUSED then
                 redisClient
                   .send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId)))
                   .asScala
@@ -119,8 +126,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
               else Future.successful(newLobby.status)
             }
         else
-          val humans = newLobby.players.filter(_.isHumanPlaying)
-          if humans.nonEmpty && !humans.forall(_.isOnline) then
+          if newLobby.status == LobbyStatus.PAUSED then
             val req = Request
               .cmd(Command.SET)
               .arg(ChannelsKeys.disconnectTimer(lobbyId))
@@ -130,3 +136,6 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
             redisClient.send(req).asScala.map(_ => newLobby.status)
           else Future.successful(newLobby.status)
     }
+
+  override def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId))).asScala.void

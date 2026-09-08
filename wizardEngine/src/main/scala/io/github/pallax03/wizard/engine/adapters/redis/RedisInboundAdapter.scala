@@ -111,12 +111,9 @@ class RedisInboundAdapter(
               val clearTimer = redisClient
                 .send(Request.cmd(Command.DEL).arg(ChannelsKeys.turnTimer(lobbyId, playerId)))
                 .asScala
-              val clearStrikes = redisClient
-                .send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId)))
-                .asScala
 
               saveState(lobbyId, newState)
-                .zip(clearTimer.zip(clearStrikes))
+                .zip(clearTimer)
                 .map: _ =>
                   outboundPort.publish(lobbyId, newState.events*)
                   Right(())
