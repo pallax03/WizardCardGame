@@ -1,6 +1,11 @@
 package io.github.pallax03.wizard.application.web.http
 
-import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, GameConfiguration, LobbyId, LobbyStatus}
+import io.github.pallax03.wizard.engine.lobby.{
+  BotsDifficulty,
+  GameConfiguration,
+  LobbyId,
+  LobbyStatus
+}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 case class JoinLobbyRequest(

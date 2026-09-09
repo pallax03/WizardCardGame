@@ -2,8 +2,11 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import cats.syntax.all.*
+
 import io.vertx.redis.client.{Command, Redis, Request}
+
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
@@ -107,14 +110,20 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         if !newLobby.status.isGame then Future.successful(newLobby.status)
         else if isOnline then
           val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
-          val decrStrikes = redisClient.send(Request.cmd(Command.DECR).arg(strikesKey)).asScala.flatMap: resp =>
-            if resp != null && resp.toLong < 0 then
-              redisClient.send(Request.cmd(Command.SET).arg(strikesKey).arg("0")).asScala.void
-            else Future.unit
+          val decrStrikes = redisClient
+            .send(Request.cmd(Command.DECR).arg(strikesKey))
+            .asScala
+            .flatMap: resp =>
+              if resp != null && resp.toLong < 0 then
+                redisClient.send(Request.cmd(Command.SET).arg(strikesKey).arg("0")).asScala.void
+              else Future.unit
 
           val delTimer =
             if newLobby.status != LobbyStatus.DISCONNECTING then
-              redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId))).asScala.void
+              redisClient
+                .send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId)))
+                .asScala
+                .void
             else Future.unit
 
           decrStrikes.zip(delTimer).map(_ => newLobby.status)
@@ -130,4 +139,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
     }
 
   override def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
-    redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId))).asScala.void
+    redisClient
+      .send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId)))
+      .asScala
+      .void

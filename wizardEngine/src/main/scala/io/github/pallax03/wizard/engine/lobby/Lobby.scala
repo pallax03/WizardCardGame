@@ -66,7 +66,8 @@ case class Lobby(
     else Right(copy(players = newPlayers, version = version + 1))
 
   private def evaluateStatus(currentPlayers: List[Player]): LobbyStatus =
-    if status == LobbyStatus.WAITING || status == LobbyStatus.FINISHED || status == LobbyStatus.PAUSED then status
+    if status == LobbyStatus.WAITING || status == LobbyStatus.FINISHED || status == LobbyStatus.PAUSED
+    then status
     else
       val humans = currentPlayers.filter(_.isHumanPlaying)
       if humans.isEmpty then LobbyStatus.PAUSED
@@ -82,12 +83,18 @@ case class Lobby(
           if isOnline && player.isBot && player.isHuman then player.returnHuman
           else player.copy(isOnline = isOnline)
         val newPlayers = players.updated(idx, updatedPlayer)
-        Right(copy(players = newPlayers, status = evaluateStatus(newPlayers), version = version + 1))
+        Right(
+          copy(players = newPlayers, status = evaluateStatus(newPlayers), version = version + 1)
+        )
 
   /** Replaces all offline human players with bots and updates the lobby status. */
   def replaceOfflinePlayersWithBots(): (List[PlayerId], Lobby) =
     val offlineIds = players.filter(p => p.isHumanPlaying && !p.isOnline).map(_.id)
     if offlineIds.isEmpty then (Nil, this)
     else
-      val newPlayers = players.map(p => if offlineIds.contains(p.id) then p.replaceWithABot() else p)
-      (offlineIds, copy(players = newPlayers, status = evaluateStatus(newPlayers), version = version + 1))
+      val newPlayers =
+        players.map(p => if offlineIds.contains(p.id) then p.replaceWithABot() else p)
+      (
+        offlineIds,
+        copy(players = newPlayers, status = evaluateStatus(newPlayers), version = version + 1)
+      )

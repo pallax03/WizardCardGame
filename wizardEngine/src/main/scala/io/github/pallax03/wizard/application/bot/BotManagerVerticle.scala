@@ -4,9 +4,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Random, Success}
+
 import cats.syntax.all.*
+
 import io.vertx.core.AbstractVerticle
 import io.vertx.redis.client.{Command, Redis, Request, Response}
+
 import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
 import io.github.pallax03.wizard.codecs.engine.lobby.BotTaskCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
@@ -222,7 +225,7 @@ class BotManagerVerticle(
     pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, msg)
 
 object BotManagerVerticle:
-  private val DEFAULT_BOT_DELAY_MS: Int = Random().between(5, 10)*1000
+  private val DEFAULT_BOT_DELAY_MS: Int = Random().between(5, 10) * 1000
   private val POLL_INTERVAL_MS: Long = 500L
   private val CLAIM_CHECK_INTERVAL_MS: Long = 10_000L
   private val CLAIM_IDLE_MS: Long = 15_000L
