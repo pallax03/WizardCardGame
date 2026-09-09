@@ -37,12 +37,14 @@ export function ChatSheet() {
       ),
     [lobby?.players],
   );
-  // I bot non devono apparire in chat come giocatori che si connettono:
-  // si nascondono i loro messaggi di sistema (joined/online/left/offline).
+  // La chat mostra solo messaggi chat + system: gli eventi di gioco del backend
+  // (type === "event") restano in `messages` per la game board ma non vanno nel feed chat.
   const feedMessages = useMemo(
     () =>
       messages.filter(
-        (message) => message.type !== "system" || !botIds.has(message.playerId),
+        (message) =>
+          message.type !== "event" &&
+          (message.type !== "system" || !botIds.has(message.playerId)),
       ),
     [messages, botIds],
   );

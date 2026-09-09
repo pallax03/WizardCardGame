@@ -8,7 +8,7 @@ const chatI18n = t("chat");
 import { Badge } from "@/ui/components/badge";
 import { Bubble, BubbleContent, BubbleGroup } from "@/ui/components/bubble";
 import { ScrollArea } from "@/ui/components/scroll-area";
-import { AnyMessage } from "../types";
+import { AnyMessage, ChatMessage, SystemMessage } from "../types";
 import { PlayerAvatar } from "@/ui/components/player-avatar";
 
 interface ChatMessageListProps {
@@ -34,13 +34,17 @@ export function ChatMessageList({
 
   // "L'idea e' quello di togliere i messaggi di Entrato e abbandonato in lobby per i giocatore corrente."
   // I bot non devono mai apparire come giocatori che si connettono (joined/online/left/offline).
-  const filteredMessages = messages.filter((message) => {
-    if (message.type === "system") {
-      if (message.playerId === playerId) return false;
-      if (botIds?.has(message.playerId)) return false;
-    }
-    return true;
-  });
+  // Gli eventi backend (type === "event") non vanno mai mostrati in chat.
+  const filteredMessages = messages.filter(
+    (message): message is ChatMessage | SystemMessage => {
+      if (message.type === "event") return false;
+      if (message.type === "system") {
+        if (message.playerId === playerId) return false;
+        if (botIds?.has(message.playerId)) return false;
+      }
+      return true;
+    },
+  );
 
   return (
     <ScrollArea className="min-h-0 flex-1 bg-[radial-gradient(circle_at_top,rgba(99,102,241,0.07),transparent_38%)]">
@@ -61,15 +65,6 @@ export function ChatMessageList({
                 <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} key={`${message.timestamp}-${index}`} className="flex justify-center py-1">
                   <Badge variant="secondary" className="bg-white/5 text-[10px] font-normal text-zinc-500">
                     {name} {message.action === "joined" || message.action === "online" ? chatI18n.joined : chatI18n.left}
-                  </Badge>
-                </motion.div>
-              );
-            }
-            if (message.type === "event") {
-              return (
-                <motion.div layout initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} key={`${message.timestamp}-${index}`} className="flex justify-center py-1">
-                  <Badge variant="outline" className="border-indigo-400/10 bg-indigo-400/5 text-[10px] font-normal text-indigo-300/70">
-                    {message.event.action}{message.event.playerId !== undefined ? ` · P${message.event.playerId}` : ""}
                   </Badge>
                 </motion.div>
               );
