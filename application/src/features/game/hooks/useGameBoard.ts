@@ -30,6 +30,9 @@ export function useGameBoard(customPlayerId?: number) {
   const [selectedColor, setSelectedColor] = useState<CardColor>("Red");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
+  // Ack ottimistico: dopo una bid andata a buon fine nascondiamo subito i
+  // controlli, senza aspettare l'echo WS (BidPlaced/TurnOf).
+  const [bidAckRound, setBidAckRound] = useState<number | null>(null);
 
   // Snapshot ripristinato dal backend (GET /api/lobby/{lobbyId}/game).
   // Serve da base quando la cronologia WS e' andata persa (reload/chiusura
@@ -121,6 +124,7 @@ export function useGameBoard(customPlayerId?: number) {
       setSnapshotBaseline(0);
       setSnapshotError(null);
       setIsRestoring(false);
+      setBidAckRound(null);
       hasConnectedRef.current = false;
       trickWonCountRef.current = 0;
       completedTableRef.current = null;
@@ -254,10 +258,26 @@ export function useGameBoard(customPlayerId?: number) {
   );
 
   // Derived helpers
+  // NB: i WaitingFor* sono privati (solo al destinatario), quindi isMyTurn si
+  // basa anche sui TurnOf broadcast (cfr. gameReducer). In più richiediamo
+  // fase coerente e, per le bid, che non si sia già puntato in questo round.
   const isMyTurn = gameState.currentTurn.isMyTurn;
-  const canChooseTrump = isMyTurn && gameState.currentTurn.actionType === "CHOOSE_TRUMP";
-  const canBid = isMyTurn && gameState.currentTurn.actionType === "BID";
-  const canPlay = isMyTurn && gameState.currentTurn.actionType === "PLAY_CARD";
+  const hasAlreadyBid = gameState.bids[playerId] !== undefined;
+  const bidAckedThisRound = bidAckRound === gameState.round;
+  const canChooseTrump =
+    isMyTurn &&
+    gameState.currentTurn.actionType === "CHOOSE_TRUMP" &&
+    gameState.status === "CHOOSING_TRUMP";
+  const canBid =
+    isMyTurn &&
+    gameState.currentTurn.actionType === "BID" &&
+    gameState.status === "BIDDING" &&
+    !hasAlreadyBid &&
+    !bidAckedThisRound;
+  const canPlay =
+    isMyTurn &&
+    gameState.currentTurn.actionType === "PLAY_CARD" &&
+    gameState.status === "PLAYING";
 
   // Map of player id to name and metadata from lobby
   const playersMap = useMemo(() => {
@@ -341,10 +361,22 @@ export function useGameBoard(customPlayerId?: number) {
   const handlePlaceBid = useCallback(
     async (bid?: number) => {
       const bidToPlace = bid !== undefined ? bid : bidInput;
+      // Doppia protezione lato client: una sola bid per round, solo in fase
+      // di bidding e solo se è il mio turno.
+      if (gameState.status !== "BIDDING" || !isMyTurn) {
+        setActionStatus("Non è il tuo turno per puntare.");
+        return;
+      }
+      if (gameState.bids[playerId] !== undefined || bidAckRound === gameState.round) {
+        setActionStatus(`Hai già puntato per il Round ${gameState.round}.`);
+        return;
+      }
       try {
         setIsSubmitting(true);
         setActionStatus(`Placing bid ${bidToPlace}...`);
         await placeBid(lobbyId, bidToPlace);
+        // Nascondi subito i controlli, senza aspettare l'echo WS.
+        setBidAckRound(gameState.round);
         setActionStatus(`Bid placed successfully: ${bidToPlace}`);
       } catch (error) {
         const msg = error instanceof Error ? error.message : String(error);
@@ -353,7 +385,7 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(false);
       }
     },
-    [bidInput, lobbyId]
+    [bidAckRound, bidInput, gameState.bids, gameState.round, gameState.status, isMyTurn, lobbyId, playerId]
   );
 
   // Action: Play Card

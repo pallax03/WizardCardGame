@@ -175,9 +175,17 @@ export function gameReducer(
 
     case "TrumpColorResolved": {
       const chosenColor = fields.color as CardColor;
+      const actorId = Number(eventPlayerId);
+      const isTurnHolder =
+        !Number.isNaN(actorId) && state.currentTurn.playerId === actorId;
       return {
         ...state,
         effectiveTrumpColor: chosenColor,
+        // Il turno del dichiarante e' finito: lo azzeriamo in attesa del
+        // TurnOf broadcast per il prossimo bidder.
+        currentTurn: isTurnHolder
+          ? { actionType: "NONE", playerId: null, isMyTurn: false }
+          : state.currentTurn,
         eventsHistory: updatedHistory,
       };
     }
@@ -192,6 +200,41 @@ export function gameReducer(
       return {
         ...state,
         status: newStatus,
+        eventsHistory: updatedHistory,
+      };
+    }
+
+    case "TurnOf": {
+      // Evento broadcast (lo ricevono tutti): e' l'unico segnale affidabile
+      // per sapere di chi e' il turno quando tocca a un altro giocatore/bot.
+      // Gli inviti WaitingFor* sono privati (solo al destinatario).
+      const activeId =
+        typeof eventPlayerId === "number" && !Number.isNaN(Number(eventPlayerId))
+          ? Number(eventPlayerId)
+          : null;
+      if (activeId === null) return { ...state, eventsHistory: updatedHistory };
+      const requested = String(fields.actionRequested ?? "");
+      let actionType: GameBoardState["currentTurn"]["actionType"] = "NONE";
+      let status = state.status;
+      if (requested === "PlaceBid") {
+        actionType = "BID";
+        status = "BIDDING";
+      } else if (requested === "PlayCard") {
+        actionType = "PLAY_CARD";
+        status = "PLAYING";
+      } else if (requested === "ResolveTrumpColor") {
+        actionType = "CHOOSE_TRUMP";
+        status = "CHOOSING_TRUMP";
+      }
+      if (actionType === "NONE") return { ...state, eventsHistory: updatedHistory };
+      return {
+        ...state,
+        status,
+        currentTurn: {
+          actionType,
+          playerId: activeId,
+          isMyTurn: activeId === myPlayerId,
+        },
         eventsHistory: updatedHistory,
       };
     }
@@ -214,12 +257,20 @@ export function gameReducer(
     case "BidPlaced": {
       const bidderId = Number(eventPlayerId);
       const bidAmount = Number(fields.bid ?? 0);
+      // Chi ha puntato ha finito: azzeriamo il turno in attesa del TurnOf
+      // broadcast per il prossimo bidder (i WaitingForBid sono privati e gli
+      // altri client non li ricevono). Così la bid scompare subito e non si
+      // può piazzarne un'altra.
+      const isTurnHolder = state.currentTurn.playerId === bidderId;
       return {
         ...state,
         bids: {
           ...state.bids,
           [bidderId]: bidAmount,
         },
+        currentTurn: isTurnHolder
+          ? { actionType: "NONE", playerId: null, isMyTurn: false }
+          : state.currentTurn,
         lastError: null,
         eventsHistory: updatedHistory,
       };
@@ -267,6 +318,10 @@ export function gameReducer(
         newLegal = [];
       }
 
+      // Chi ha giocato ha finito: azzeriamo il turno in attesa del TurnOf
+      // broadcast (i WaitingForCard sono privati).
+      const isTurnHolder = state.currentTurn.playerId === cardPlayerId;
+
       return {
         ...state,
         table: newTable,
@@ -274,6 +329,9 @@ export function gameReducer(
         followingColor,
         hand: newHand,
         legalCards: newLegal,
+        currentTurn: isTurnHolder
+          ? { actionType: "NONE", playerId: null, isMyTurn: false }
+          : state.currentTurn,
         lastError: null,
         eventsHistory: updatedHistory,
       };
