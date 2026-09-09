@@ -2,11 +2,8 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
-import cats.syntax.all._
-
+import cats.syntax.all.*
 import io.vertx.redis.client.{Command, Redis, Request}
-
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
@@ -107,34 +104,29 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
     }.flatMap {
       case Left(_) => Future.failed(new Exception("Player or Lobby not found"))
       case Right(newLobby) =>
-        if isOnline then
+        if !newLobby.status.isGame then Future.successful(newLobby.status)
+        else if isOnline then
           val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
-          redisClient
-            .send(Request.cmd(Command.DECR).arg(strikesKey))
-            .asScala
-            .flatMap { resp =>
-              if resp != null && resp.toLong < 0 then
-                redisClient.send(Request.cmd(Command.SET).arg(strikesKey).arg("0")).asScala.void
-              else Future.successful(())
-            }
-            .flatMap { _ =>
-              if newLobby.status != LobbyStatus.PAUSED then
-                redisClient
-                  .send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId)))
-                  .asScala
-                  .map(_ => newLobby.status)
-              else Future.successful(newLobby.status)
-            }
-        else
-          if newLobby.status == LobbyStatus.PAUSED then
-            val req = Request
-              .cmd(Command.SET)
-              .arg(ChannelsKeys.disconnectTimer(lobbyId))
-              .arg("1")
-              .arg("EX")
-              .arg(newLobby.configuration.timer.toString)
-            redisClient.send(req).asScala.map(_ => newLobby.status)
-          else Future.successful(newLobby.status)
+          val decrStrikes = redisClient.send(Request.cmd(Command.DECR).arg(strikesKey)).asScala.flatMap: resp =>
+            if resp != null && resp.toLong < 0 then
+              redisClient.send(Request.cmd(Command.SET).arg(strikesKey).arg("0")).asScala.void
+            else Future.unit
+
+          val delTimer =
+            if newLobby.status != LobbyStatus.DISCONNECTING then
+              redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId))).asScala.void
+            else Future.unit
+
+          decrStrikes.zip(delTimer).map(_ => newLobby.status)
+        else if newLobby.status == LobbyStatus.DISCONNECTING then
+          val req = Request
+            .cmd(Command.SET)
+            .arg(ChannelsKeys.disconnectTimer(lobbyId))
+            .arg("1")
+            .arg("EX")
+            .arg(newLobby.configuration.timer.toString)
+          redisClient.send(req).asScala.map(_ => newLobby.status)
+        else Future.successful(newLobby.status)
     }
 
   override def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =

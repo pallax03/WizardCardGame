@@ -6,7 +6,11 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 /** Represents the status of a Lobby. */
 enum LobbyStatus:
-  case WAITING, IN_GAME, PAUSED, FINISHED
+  case WAITING, IN_GAME, DISCONNECTING, PAUSED, FINISHED
+
+  def isGame: Boolean = this match
+    case IN_GAME | DISCONNECTING | PAUSED => true
+    case WAITING | FINISHED               => false
 
 opaque type LobbyId = String
 
@@ -62,12 +66,12 @@ case class Lobby(
     else Right(copy(players = newPlayers, version = version + 1))
 
   private def evaluateStatus(currentPlayers: List[Player]): LobbyStatus =
-    if status == LobbyStatus.WAITING || status == LobbyStatus.FINISHED then status
+    if status == LobbyStatus.WAITING || status == LobbyStatus.FINISHED || status == LobbyStatus.PAUSED then status
     else
       val humans = currentPlayers.filter(_.isHumanPlaying)
       if humans.isEmpty then LobbyStatus.PAUSED
       else if humans.forall(_.isOnline) then LobbyStatus.IN_GAME
-      else LobbyStatus.PAUSED
+      else LobbyStatus.DISCONNECTING
 
   def handleOnlineStatusChange(playerId: PlayerId, isOnline: Boolean): Either[LobbyError, Lobby] =
     players.indexWhere(_.id == playerId) match

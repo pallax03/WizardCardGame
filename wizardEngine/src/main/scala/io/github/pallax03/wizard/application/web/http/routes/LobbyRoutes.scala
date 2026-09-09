@@ -101,7 +101,7 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => lobbyId =>
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (player, lobby) =>
-          if lobby.status == LobbyStatus.IN_GAME then
+          if lobby.status == LobbyStatus.IN_GAME || lobby.status == LobbyStatus.DISCONNECTING then
             Right(
               ((), lobby.copy(status = LobbyStatus.PAUSED), Some(SystemEvent.paused(player.id)))
             )
