@@ -69,7 +69,7 @@ export function ChatMessageList({
                 </motion.div>
               );
             }
-            
+
             const isMe = message.playerId === playerId;
             const name = playersMap[message.playerId] ?? `${chatI18n.fallbackPlayer} ${message.playerId}`;
             

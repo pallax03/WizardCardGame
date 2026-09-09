@@ -2,12 +2,13 @@
 
 import { useRouter } from "next/navigation";
 import { useGameBoard } from "../hooks/useGameBoard";
+import { cardEquals } from "../state/gameReducer";
 import { GameActionControls } from "./GameActionControls";
+import { GameCardView } from "./GameCardView";
 import { GameHeader } from "./GameHeader";
 import { GameScoreboard } from "./GameScoreboard";
 import { GameTurnBanner } from "./GameTurnBanner";
 import { PlayerHand } from "./PlayerHand";
-import { TrickTable } from "./TrickTable";
 import { TrumpArea } from "./TrumpArea";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
@@ -51,21 +52,70 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
   const players = lobby?.players ?? [];
 
-  // Mappatura posizioni radiale al tavolo stile Texas Hold'em
+  // Il player corrente sta sempre in basso (indice 0), gli altri seguono in senso orario.
   const myIndex = players.findIndex((p) => p.id === playerId);
   const orderedPlayers =
     myIndex !== -1
       ? [...players.slice(myIndex), ...players.slice(0, myIndex)]
       : players;
 
-  const positionStyles = [
-    "bottom-[-20px] left-1/2 -translate-x-1/2 z-20", // Sud (You)
-    "top-1/2 left-[-15px] -translate-y-1/2 z-10",     // Ovest
-    "top-[-20px] left-1/2 -translate-x-1/2 z-10",    // Nord
-    "top-1/2 right-[-15px] -translate-y-1/2 z-10",    // Est
-    "top-8 left-8 z-10",                             // Nord-Ovest
-    "top-8 right-8 z-10",                            // Nord-Est
-  ];
+  // Seggiolini a cavallo del bordo (stile poker): il badge sta sul rail,
+  // la carta giocata sta sempre tra badge e centro (davanti al player).
+  // dir = direzione flex del seggiolino, cardFirst = carta verso il centro.
+  type SeatLayout = {
+    pos: string;
+    dir: "flex-col" | "flex-row";
+    cardFirst: boolean;
+  };
+
+  const SEAT_BOTTOM: SeatLayout = {
+    pos: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4",
+    dir: "flex-col",
+    cardFirst: true,
+  };
+  const SEAT_TOP: SeatLayout = {
+    pos: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/4",
+    dir: "flex-col",
+    cardFirst: false,
+  };
+
+  const SEAT_PRESETS: Record<number, SeatLayout[]> = {
+    2: [
+      SEAT_BOTTOM,
+      SEAT_TOP,
+    ],
+    3: [
+      SEAT_BOTTOM,
+      { pos: "left-0 top-[38%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+      { pos: "right-0 top-[38%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+    ],
+    4: [
+      SEAT_BOTTOM,
+      { pos: "left-0 top-1/2 -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+      SEAT_TOP,
+      { pos: "right-0 top-1/2 translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+    ],
+    5: [
+      SEAT_BOTTOM,
+      { pos: "left-0 top-[55%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+      { pos: "left-[24%] top-0 -translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
+      { pos: "left-[76%] top-0 translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
+      { pos: "right-0 top-[55%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+    ],
+    6: [
+      SEAT_BOTTOM,
+      { pos: "left-0 top-[55%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+      { pos: "left-[20%] top-0 -translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
+      SEAT_TOP,
+      { pos: "left-[80%] top-0 translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
+      { pos: "right-0 top-[55%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+    ],
+  };
+
+  const seatLayout = (idx: number, total: number): SeatLayout => {
+    const preset = SEAT_PRESETS[Math.min(Math.max(total, 2), 6)] ?? SEAT_PRESETS[6];
+    return preset[idx % preset.length];
+  };
 
   const handleReturnToLobby = () => {
     // Naviga alla vista della lobby o alla pagina principale/selezione stanze
@@ -211,9 +261,19 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         </div>
       )}
 
+      {/* 2b. Stato turno sopra il tavolo (il centro resta libero per la briscola) */}
+      <div className="mx-auto w-full max-w-md">
+        <GameTurnBanner
+          isMyTurn={isMyTurn}
+          turnPrompt={turnPrompt}
+          lastError={gameState.lastError}
+          actionStatus={actionStatus}
+        />
+      </div>
+
       {/* 2. TAVOLO DA GIOCO TEXAS HOLD'EM (Poker Table Felt) */}
-      <div className="relative w-full my-8 py-10 px-4 min-h-[580px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)] flex flex-col items-center justify-between overflow-hidden">
-        
+      <div className="relative w-full my-10 py-10 px-4 min-h-[560px] sm:min-h-[600px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)]">
+
         {/* Linea interna decorativa del feltro */}
         <div className="absolute inset-4 rounded-[100px] sm:rounded-[160px] border-2 border-emerald-600/30 pointer-events-none flex items-center justify-center">
           <span className="text-emerald-900/20 text-6xl sm:text-8xl font-black uppercase tracking-widest select-none">
@@ -221,90 +281,110 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           </span>
         </div>
 
-        {/* --- GIOCATORI SEDUTI INTORNO AL TAVOLO --- */}
+        {/* --- CENTRO TAVOLO: BRISCOLA --- */}
+        <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2">
+          <TrumpArea
+            trump={gameState.trump}
+            effectiveTrumpColor={gameState.effectiveTrumpColor}
+          />
+          {gameState.followingColor && (
+            <span className="rounded-full border border-emerald-600/40 bg-emerald-950/70 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
+              Seme di mano: {gameState.followingColor}
+            </span>
+          )}
+          {gameState.table.length > 0 ? (
+            <span className="rounded-full border border-white/10 bg-zinc-950/70 px-2.5 py-0.5 font-mono text-[10px] text-zinc-300">
+              {gameState.table.length}/{orderedPlayers.length} carte giocate
+            </span>
+          ) : gameState.lastTrick ? (
+            <span className="rounded-full border border-white/10 bg-zinc-950/70 px-2.5 py-0.5 text-[10px] text-zinc-400">
+              Ultima presa:{" "}
+              <strong className="text-amber-400">
+                {playersMap.get(gameState.lastTrick.winnerId)?.name ??
+                  `Giocatore ${gameState.lastTrick.winnerId}`}
+              </strong>
+            </span>
+          ) : null}
+        </div>
+
+        {/* --- GIOCATORI SUL RAIL, CARTA GIOCATA DAVANTI AL PLAYER --- */}
         {orderedPlayers.map((player, idx) => {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
           const isMe = player.id === playerId;
           const playerBid = gameState.bids[player.id];
           const playerTricks = gameState.tricksWon[player.id] ?? 0;
           const isBot = Boolean(player.difficulty);
-          const posClass = positionStyles[idx % positionStyles.length];
+          const seat = seatLayout(idx, orderedPlayers.length);
+          const played = gameState.table.find((entry) => entry.playerId === player.id);
+          const isWinning = Boolean(
+            played && gameState.winningCard && cardEquals(played.card, gameState.winningCard),
+          );
+          // Lo slot vuoto si vede solo a trick in corso (segnale "deve ancora giocare").
+          const showSlot = played !== undefined || gameState.table.length > 0;
 
-          return (
-            <div key={player.id} className={`absolute ${posClass}`}>
-              <UiCard
-                className={`w-36 sm:w-44 transition-all duration-300 shadow-xl backdrop-blur-md ${
-                  isCurrentTurn
-                    ? "bg-amber-500/20 border-amber-400 ring-4 ring-amber-400/50 scale-105"
-                    : "bg-zinc-900/90 border-zinc-700/80"
+          const badge = (
+            <div
+              className={`flex items-center gap-2 rounded-2xl border px-2 py-1.5 shadow-xl backdrop-blur-md transition-all duration-300 sm:px-2.5 sm:py-2 ${
+                isCurrentTurn
+                  ? "border-amber-400 bg-amber-500/20 ring-2 ring-amber-400/60"
+                  : "border-zinc-700/80 bg-zinc-900/90"
+              }`}
+            >
+              <span
+                className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-black ${
+                  isMe ? "bg-amber-400 text-zinc-950" : "bg-zinc-700 text-zinc-100"
                 }`}
               >
-                <CardContent className="p-2 sm:p-3 text-center">
-                  <div className="flex items-center justify-center gap-1 mb-1">
-                    <span className="font-bold text-xs sm:text-sm text-white truncate max-w-[90px]">
-                      {player.name}
-                    </span>
-                    {isMe && <Badge variant="secondary" className="text-[9px] px-1 py-0">TU</Badge>}
-                    {isBot && <Badge variant="outline" className="text-[9px] px-1 py-0 text-zinc-400">BOT</Badge>}
-                  </div>
+                {player.name.charAt(0).toUpperCase()}
+              </span>
+              <span className="min-w-0">
+                <span className="flex items-center gap-1">
+                  <span className="max-w-[84px] truncate text-xs font-bold text-white sm:max-w-[110px]">
+                    {player.name}
+                  </span>
+                  {isMe && <Badge variant="secondary" className="px-1 py-0 text-[9px]">TU</Badge>}
+                  {isBot && <Badge variant="outline" className="px-1 py-0 text-[9px] text-zinc-400">BOT</Badge>}
+                </span>
+                <span className="mt-0.5 flex items-center gap-2 font-mono text-[10px] text-zinc-400">
+                  <span>Bid <strong className="text-amber-400">{playerBid !== undefined ? playerBid : "-"}</strong></span>
+                  <span>Trick <strong className="text-emerald-400">{playerTricks}</strong></span>
+                </span>
+                {isCurrentTurn && (
+                  <span className="mt-0.5 block animate-pulse text-[9px] font-extrabold tracking-wider text-amber-300 uppercase">
+                    {isMe ? "▶ tocca a te" : "▶ turno"}
+                  </span>
+                )}
+              </span>
+            </div>
+          );
 
-                  <div className="flex justify-around items-center text-[11px] font-mono mt-1 pt-1 border-t border-zinc-800 text-zinc-300">
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-zinc-500 uppercase">Bid</span>
-                      <span className="font-bold text-amber-400">{playerBid !== undefined ? playerBid : "-"}</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <span className="text-[9px] text-zinc-500 uppercase">Tricks</span>
-                      <span className="font-bold text-emerald-400">{playerTricks}</span>
-                    </div>
-                  </div>
+          const slot = showSlot ? (
+            played ? (
+              <div className="flex origin-center scale-[0.8] flex-col items-center gap-1 sm:scale-100">
+                <div className={isWinning ? "rounded-xl ring-2 ring-amber-400 ring-offset-2 ring-offset-emerald-900" : ""}>
+                  <GameCardView card={played.card} size="md" isClickable={false} />
+                </div>
+                {isWinning && (
+                  <span className="animate-pulse rounded border border-amber-400/60 bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-black tracking-wider text-amber-300 uppercase">
+                    ★ in testa
+                  </span>
+                )}
+              </div>
+            ) : (
+              <div className="grid h-28 w-20 origin-center scale-[0.8] place-items-center rounded-xl border-2 border-dashed border-white/15 bg-black/25 sm:scale-100">
+                <span className="animate-pulse text-lg text-white/25">…</span>
+              </div>
+            )
+          ) : null;
 
-                  {isCurrentTurn && (
-                    <div className="mt-1 text-[9px] font-extrabold text-amber-300 animate-pulse tracking-wider uppercase">
-                      Turno Attivo
-                    </div>
-                  )}
-                </CardContent>
-              </UiCard>
+          return (
+            <div key={player.id} className={`absolute z-20 ${seat.pos}`}>
+              <div className={`flex items-center gap-2 sm:gap-3 ${seat.dir}`}>
+                {seat.cardFirst ? (<>{slot}{badge}</>) : (<>{badge}{slot}</>)}
+              </div>
             </div>
           );
         })}
-
-        {/* --- CENTRO TAVOLO (Carte Giocate, Trump & Stato Turno) --- */}
-        <div className="relative z-10 my-auto w-full max-w-3xl flex flex-col items-center gap-4">
-          
-          {/* Banner con lo stato del Turno */}
-          <div className="w-full max-w-md">
-            <GameTurnBanner
-              isMyTurn={isMyTurn}
-              turnPrompt={turnPrompt}
-              lastError={gameState.lastError}
-              actionStatus={actionStatus}
-            />
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-center gap-4 w-full">
-            {/* Area Briscola / Trump */}
-            <div className="w-full md:w-auto min-w-[140px]">
-              <TrumpArea
-                trump={gameState.trump}
-                effectiveTrumpColor={gameState.effectiveTrumpColor}
-              />
-            </div>
-
-            {/* Tavolo delle Carte giocate nel Trick */}
-            <div className="flex-1 w-full">
-              <TrickTable
-                table={gameState.table}
-                playersMap={playersMap}
-                myPlayerId={playerId}
-                winningCard={gameState.winningCard}
-                followingColor={gameState.followingColor}
-                lastTrick={gameState.lastTrick}
-              />
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* 3. MANO DEL GIOCATORE & CONTROLLI D'AZIONE (Schermo In Basso) */}

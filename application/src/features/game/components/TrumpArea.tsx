@@ -1,6 +1,5 @@
 ﻿"use client";
 
-import { Card as UiCard, CardContent, CardHeader, CardTitle } from "@/ui/components/card";
 import { GameCardView } from "./GameCardView";
 import type { CardColor, Trump } from "../types";
 
@@ -18,35 +17,27 @@ const colorBadgeStyles: Record<CardColor, string> = {
 
 export function TrumpArea({ trump, effectiveTrumpColor }: TrumpAreaProps) {
   return (
-    <UiCard className="bg-zinc-950/80 border-amber-500/40 backdrop-blur-md shadow-2xl">
-      <CardHeader className="p-3 pb-1 text-center border-b border-zinc-800/60">
-        <CardTitle className="text-xs font-black uppercase tracking-widest text-amber-400">
-          👑 Briscola
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-3 flex flex-col items-center justify-center gap-2">
-        {trump ? (
-          <div className="flex flex-col items-center gap-2">
-            {"card" in trump && trump.card && (
-              <GameCardView card={trump.card} size="sm" isClickable={false} />
-            )}
-            <div className="text-xs text-center text-zinc-200 font-medium">
-              <p className="font-bold text-[11px] uppercase tracking-wide text-zinc-400">
-                Tipo: {trump.type}
-              </p>
-              {effectiveTrumpColor && (
-                <span
-                  className={`inline-block mt-1 px-3 py-0.5 rounded-full font-black text-[11px] border shadow-md uppercase tracking-wider ${colorBadgeStyles[effectiveTrumpColor]}`}
-                >
-                  Colore: {effectiveTrumpColor}
-                </span>
-              )}
-            </div>
-          </div>
-        ) : (
-          <p className="text-zinc-500 text-xs italic py-4">In attesa della briscola...</p>
-        )}
-      </CardContent>
-    </UiCard>
+    <div className="flex min-w-[128px] flex-col items-center gap-1.5 rounded-2xl border border-amber-500/40 bg-zinc-950/85 px-3 py-2.5 shadow-2xl backdrop-blur-md">
+      <span className="text-[10px] font-black tracking-[0.2em] text-amber-400 uppercase">
+        👑 Briscola
+      </span>
+      {trump && "card" in trump && trump.card ? (
+        <GameCardView card={trump.card} size="sm" isClickable={false} />
+      ) : (
+        <span className="py-3 text-xs text-zinc-500 italic">In attesa…</span>
+      )}
+      {trump && (
+        <span className="text-[9px] font-semibold tracking-wider text-zinc-500 uppercase">
+          {trump.type}
+        </span>
+      )}
+      {effectiveTrumpColor && (
+        <span
+          className={`inline-block rounded-full border px-3 py-0.5 text-[11px] font-black tracking-wider shadow-md uppercase ${colorBadgeStyles[effectiveTrumpColor]}`}
+        >
+          {effectiveTrumpColor}
+        </span>
+      )}
+    </div>
   );
 }
