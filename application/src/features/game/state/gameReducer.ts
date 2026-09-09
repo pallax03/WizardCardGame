@@ -100,6 +100,7 @@ export function gameReducer(
   const action = event.action;
   const fields = (event.fields ?? {}) as Record<string, unknown>;
   const eventPlayerId = (event.playerId ?? fields.playerId) as number | undefined;
+  const destinationPlayerId = (event.destinationId ?? fields.destinationId) as number | undefined;
 
   // Add event to history
   const updatedHistory = [...state.eventsHistory, eventMessage];
@@ -158,7 +159,8 @@ export function gameReducer(
     }
 
     case "WaitingForTrump": {
-      const dealerId = Number(eventPlayerId);
+      const dealerId = destinationPlayerId;
+      if (dealerId === undefined) return { ...state, eventsHistory: updatedHistory };
       return {
         ...state,
         status: "CHOOSING_TRUMP",
@@ -195,7 +197,8 @@ export function gameReducer(
     }
 
     case "WaitingForBid": {
-      const bidderId = Number(eventPlayerId);
+      const bidderId = destinationPlayerId;
+      if (bidderId === undefined) return { ...state, eventsHistory: updatedHistory };
       return {
         ...state,
         status: "BIDDING",
@@ -223,7 +226,8 @@ export function gameReducer(
     }
 
     case "WaitingForCard": {
-      const activePlayerId = Number(eventPlayerId);
+      const activePlayerId = destinationPlayerId;
+      if (activePlayerId === undefined) return { ...state, eventsHistory: updatedHistory };
       const isMyTurn = activePlayerId === myPlayerId;
       const legalCards = isMyTurn ? ((fields.legalCards as Card[]) ?? []) : state.legalCards;
 
