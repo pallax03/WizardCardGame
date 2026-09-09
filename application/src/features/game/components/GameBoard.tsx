@@ -3,11 +3,9 @@
 import { useRouter } from "next/navigation";
 import { useGameBoard } from "../hooks/useGameBoard";
 import { GameActionControls } from "./GameActionControls";
-import { GameEventLog } from "./GameEventLog";
 import { GameHeader } from "./GameHeader";
 import { GameScoreboard } from "./GameScoreboard";
 import { GameTurnBanner } from "./GameTurnBanner";
-import { ManualApiTester } from "./ManualApiTester";
 import { PlayerHand } from "./PlayerHand";
 import { TrickTable } from "./TrickTable";
 import { TrumpArea } from "./TrumpArea";
@@ -29,7 +27,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     lobby,
     playersMap,
     gameState,
-    gameEvents,
     isMyTurn,
     canChooseTrump,
     canBid,
@@ -352,18 +349,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           myPlayerId={playerId}
         />
 
-        <ManualApiTester
-          selectedCard={selectedCard}
-          onPlayCard={handlePlayCard}
-          bidInput={bidInput}
-          onSetBidInput={setBidInput}
-          onPlaceBid={handlePlaceBid}
-          selectedColor={selectedColor}
-          onSetSelectedColor={setSelectedColor}
-          onChooseTrump={handleChooseTrump}
-          isSubmitting={isSubmitting}
-        />
-
         <div className="flex gap-2 items-center p-4 bg-zinc-900 border border-dashed border-amber-500/50 rounded-xl">
           <span className="text-xs font-mono text-amber-400">DEV TOOL:</span>
           <Button
@@ -375,8 +360,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             {forceGameEnded ? "Disattiva Modal fine partita" : "⚡ Simula Modal GAME_ENDED"}
           </Button>
         </div>
-
-        <GameEventLog gameEvents={gameEvents} />
       </div>
     </div>
   );
