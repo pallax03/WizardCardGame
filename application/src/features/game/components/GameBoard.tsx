@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useGameBoard } from "../hooks/useGameBoard";
 import { cardEquals } from "../state/gameReducer";
+import type { Card } from "../types";
 import { GameActionControls } from "./GameActionControls";
 import { GameCardView } from "./GameCardView";
 import { GameHeader } from "./GameHeader";
@@ -13,7 +14,7 @@ import { TrumpArea } from "./TrumpArea";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
 import { Card as UiCard, CardContent, CardHeader, CardTitle, CardDescription } from "@/ui/components/card";
-import { useState } from "react";
+import { useRef, useState } from "react";
 
 interface GameBoardProps {
   customPlayerId?: number;
@@ -128,6 +129,17 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
     // 1. Aggiungi uno stato locale per il testing
   const [forceGameEnded, setForceGameEnded] = useState(false);
+
+  // Drop-zone per il drag & drop delle carte: il tavolo da gioco.
+  // (La carta trascinata vive in un portal su document.body, quindi e'
+  // sempre sopra al tavolo senza bisogno di z-index nella pagina.)
+  const tableRef = useRef<HTMLDivElement | null>(null);
+  const [isCardDragging, setIsCardDragging] = useState(false);
+
+  const handleDropCard = (card: Card) => {
+    setSelectedCard(null);
+    void handlePlayCard(card);
+  };
 
   // 2. Aggiorna il controllo dello stato Ended
   const isGameEnded = gameState.status === "GAME_ENDED" || forceGameEnded;
@@ -271,8 +283,18 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         />
       </div>
 
-      {/* 2. TAVOLO DA GIOCO TEXAS HOLD'EM (Poker Table Felt) */}
-      <div className="relative w-full my-10 py-10 px-4 min-h-[560px] sm:min-h-[600px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)]">
+      {/* 2. TAVOLO DA GIOCO TEXAS HOLD'EM (Poker Table Felt) + DROP-ZONE CARTE */}
+      <div
+        ref={tableRef}
+        className={`relative w-full my-10 py-10 px-4 min-h-[560px] sm:min-h-[600px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)] transition-shadow duration-200 ${isCardDragging ? "ring-4 ring-emerald-300/80" : ""}`}
+      >
+
+        {/* Hint mentre trascini una carta */}
+        {isCardDragging && (
+          <div className="pointer-events-none absolute top-5 left-1/2 z-30 -translate-x-1/2 animate-pulse rounded-full border border-emerald-300/60 bg-emerald-500/20 px-4 py-1.5 text-[11px] font-black tracking-widest whitespace-nowrap text-emerald-100 uppercase">
+            Rilascia qui per giocare
+          </div>
+        )}
 
         {/* Linea interna decorativa del feltro */}
         <div className="absolute inset-4 rounded-[100px] sm:rounded-[160px] border-2 border-emerald-600/30 pointer-events-none flex items-center justify-center">
@@ -395,8 +417,12 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             hand={gameState.hand}
             selectedCard={selectedCard}
             canPlay={canPlay}
+            isSubmitting={isSubmitting}
             isCardPlayable={isCardPlayable}
             onSelectCard={setSelectedCard}
+            dropZoneRef={tableRef}
+            onDropCard={handleDropCard}
+            onDragStateChange={setIsCardDragging}
           />
         </div>
 
@@ -414,8 +440,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             bidInput={bidInput}
             onSelectBid={setBidInput}
             onPlaceBid={handlePlaceBid}
-            selectedCard={selectedCard}
-            onPlayCard={handlePlayCard}
             isSubmitting={isSubmitting}
           />
         </div>

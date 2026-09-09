@@ -2,8 +2,7 @@
 
 import { Button } from "@/ui/components/button";
 import { Card as UiCard, CardContent, CardHeader, CardTitle } from "@/ui/components/card";
-import { cardToString } from "../state/gameReducer";
-import type { Card, CardColor } from "../types";
+import type { CardColor } from "../types";
 
 const TRUMP_COLORS: CardColor[] = ["Red", "Yellow", "Green", "Blue"];
 
@@ -19,8 +18,6 @@ interface GameActionControlsProps {
   bidInput: number;
   onSelectBid: (b: number) => void;
   onPlaceBid: (b?: number) => void;
-  selectedCard: Card | null;
-  onPlayCard: (c?: Card) => void;
   isSubmitting: boolean;
 }
 
@@ -36,8 +33,6 @@ export function GameActionControls({
   bidInput,
   onSelectBid,
   onPlaceBid,
-  selectedCard,
-  onPlayCard,
   isSubmitting,
 }: GameActionControlsProps) {
   return (
@@ -104,24 +99,13 @@ export function GameActionControls({
           </div>
         )}
 
-        {/* Gioca Carta */}
+        {/* Gioca Carta: drag & drop sul tavolo (doppio click come fallback) */}
         {canPlay && (
-          <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-2">
-            <p className="text-xs font-bold text-white">Carta Selezionata:</p>
-            <p className="text-[11px] text-amber-200/80 font-mono truncate">
-              {selectedCard ? cardToString(selectedCard) : "Seleziona una carta dalla mano"}
-            </p>
-            <Button
-              size="lg"
-              variant="primary"
-              disabled={!selectedCard || isSubmitting}
-              onClick={() => {
-                if (selectedCard) onPlayCard(selectedCard);
-              }}
-              className="w-full font-black bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-zinc-950 shadow-xl"
-            >
-              GIOCA CARTA
-            </Button>
+          <div className="p-4 text-center text-xs font-semibold text-amber-200/90 bg-amber-950/30 rounded-xl border border-amber-500/40">
+            🃏 Trascina una carta sul tavolo per giocarla
+            <span className="mt-1 block text-[11px] font-normal text-amber-200/60">
+              (oppure fai doppio click sulla carta)
+            </span>
           </div>
         )}
 
