@@ -34,7 +34,6 @@ trait WebSocketsPort:
    *
    * @param lobbyId       the unique identifier of the lobby.
    * @param playerId      the unique identifier of the player.
-   * @param ws            the WebSocket connection being closed.
    * @return a Future completing when the socket is successfully closed.
    */
-  def close(lobbyId: LobbyId, playerId: PlayerId, ws: ServerWebSocket): Future[Unit]
+  def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]

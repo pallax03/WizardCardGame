@@ -48,9 +48,9 @@ class VertxWebSocketsAdapter(
       ws: ServerWebSocket
   ): Future[Unit] =
     ws.closeHandler: _ =>
-      this.close(lobbyId, playerId, ws)
+      this.close(lobbyId, playerId)
     ws.exceptionHandler: _ =>
-      this.close(lobbyId, playerId, ws)
+      this.close(lobbyId, playerId)
 
     ws.textMessageHandler: text =>
       Try:
@@ -89,11 +89,9 @@ class VertxWebSocketsAdapter(
     )
 
   /** @inheritdoc */
-  override def close(lobbyId: LobbyId, playerId: PlayerId, ws: ServerWebSocket): Future[Unit] =
-    sessions.get((lobbyId, playerId)) match
-      // A stale close must not drop a newer session nor mark its player offline.
-      case Some(session) if session.ws eq ws =>
-        sessions.remove((lobbyId, playerId))
+  override def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    sessions.remove((lobbyId, playerId)) match
+      case Some(session) =>
         Try(session.ws.close())
         vertx.cancelTimer(session.pingTimerId)
         session.sub.cancel()
