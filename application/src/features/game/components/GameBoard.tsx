@@ -1,7 +1,7 @@
 ﻿"use client";
 
 import { useRouter } from "next/navigation";
-import { useGameBoard } from "../hooks/useGameBoard";
+import { useGameBoard, TRICK_REVEAL_SECONDS } from "../hooks/useGameBoard";
 import { cardEquals } from "../state/gameReducer";
 import type { Card } from "../types";
 import { GameActionControls } from "./GameActionControls";
@@ -29,6 +29,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     lobby,
     playersMap,
     gameState,
+    revealedTrick,
+    revealSecondsLeft,
     isMyTurn,
     canChooseTrump,
     canBid,
@@ -314,20 +316,43 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               Seme di mano: {gameState.followingColor}
             </span>
           )}
-          {gameState.table.length > 0 ? (
-            <span className="rounded-full border border-white/10 bg-zinc-950/70 px-2.5 py-0.5 font-mono text-[10px] text-zinc-300">
-              {gameState.table.length}/{orderedPlayers.length} carte giocate
-            </span>
-          ) : gameState.lastTrick ? (
-            <span className="rounded-full border border-white/10 bg-zinc-950/70 px-2.5 py-0.5 text-[10px] text-zinc-400">
-              Ultima presa:{" "}
-              <strong className="text-amber-400">
-                {playersMap.get(gameState.lastTrick.winnerId)?.name ??
-                  `Giocatore ${gameState.lastTrick.winnerId}`}
-              </strong>
-            </span>
-          ) : null}
         </div>
+
+        {/* --- REVEAL DI FINE PRESA: tavolo congelato + conto alla rovescia --- */}
+        {revealedTrick && (
+          <div className="pointer-events-none absolute top-1/2 left-1/2 z-30 flex w-max max-w-[92%] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 rounded-3xl border border-amber-400/60 bg-zinc-950/95 p-3 shadow-2xl backdrop-blur-md sm:p-4">
+            <span className="rounded-full border border-amber-400/50 bg-amber-500/15 px-3 py-0.5 text-[11px] font-black tracking-wider text-amber-300 uppercase">
+              ★ Presa di {playersMap.get(revealedTrick.winnerId)?.name ?? `Giocatore ${revealedTrick.winnerId}`}
+            </span>
+            <div className="flex max-w-full flex-wrap items-start justify-center gap-2">
+              {revealedTrick.entries.map((entry, index) => {
+                const entryName = playersMap.get(entry.playerId)?.name ?? `Giocatore ${entry.playerId}`;
+                const entryWinning = Boolean(
+                  revealedTrick.winningCard && cardEquals(entry.card, revealedTrick.winningCard),
+                );
+                return (
+                  <div key={`${entry.playerId}-${index}`} className="flex flex-col items-center gap-1">
+                    <div className={entryWinning ? "rounded-xl ring-2 ring-amber-400 ring-offset-2 ring-offset-zinc-950" : ""}>
+                      <GameCardView card={entry.card} size="sm" isClickable={false} />
+                    </div>
+                    <span className={`max-w-16 truncate text-[9px] font-bold ${entryWinning ? "text-amber-300" : "text-zinc-400"}`}>
+                      {entryName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <span className="animate-pulse font-mono text-[11px] font-bold text-zinc-300">
+              Si continua tra {revealSecondsLeft}s…
+            </span>
+            <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
+              <div
+                className="h-full rounded-full bg-amber-400 transition-[width] duration-1000 ease-linear"
+                style={{ width: `${Math.max(0, Math.min(100, (revealSecondsLeft / TRICK_REVEAL_SECONDS) * 100))}%` }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* --- GIOCATORI SUL RAIL, CARTA GIOCATA DAVANTI AL PLAYER --- */}
         {orderedPlayers.map((player, idx) => {

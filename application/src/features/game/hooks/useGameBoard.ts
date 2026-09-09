@@ -6,7 +6,10 @@ import type { EventMessage } from "@/features/chat/types";
 import { chooseTrumpColor, getPlayerGameSnapshot, placeBid, playCard } from "../api";
 import { gameReducer, initialGameBoardState, isCardInList } from "../state/gameReducer";
 import { mapSnapshotToBoardState } from "../state/snapshotMapper";
-import type { Card, CardColor, GameBoardState } from "../types";
+import type { Card, CardColor, GameBoardState, PlayedCardEntry } from "../types";
+
+/** Secondi di pausa a fine presa: il tavolo resta visibile prima di pulirsi. */
+export const TRICK_REVEAL_SECONDS = 4;
 
 export function useGameBoard(customPlayerId?: number) {
   const {
@@ -36,10 +39,32 @@ export function useGameBoard(customPlayerId?: number) {
   const [isRestoring, setIsRestoring] = useState(false);
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
+  // Reveal di fine presa: quando arriva TrickWon il tavolo live si svuota
+  // subito, ma qui congeliamo le carte giocate e le mostriamo ancora per
+  // qualche secondo con conto alla rovescia.
+  const [revealedTrick, setRevealedTrick] = useState<{
+    entries: PlayedCardEntry[];
+    winningCard: Card | null;
+    winnerId: number;
+  } | null>(null);
+  const [revealSecondsLeft, setRevealSecondsLeft] = useState(0);
+  const completedTableRef = useRef<{
+    entries: PlayedCardEntry[];
+    winningCard: Card | null;
+  } | null>(null);
+  const trickWonCountRef = useRef(0);
+  const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const revealIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
   // Filter all EventMessage received from WebSocket
   const gameEvents = useMemo(
     () => messages.filter((m): m is EventMessage => m.type === "event"),
     [messages]
+  );
+
+  const trickWonCount = useMemo(
+    () => gameEvents.filter((e) => e.event.action === "TrickWon").length,
+    [gameEvents]
   );
 
   const gameEventsLengthRef = useRef(0);
@@ -97,6 +122,14 @@ export function useGameBoard(customPlayerId?: number) {
       setSnapshotError(null);
       setIsRestoring(false);
       hasConnectedRef.current = false;
+      trickWonCountRef.current = 0;
+      completedTableRef.current = null;
+      if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
+      if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
+      revealTimeoutRef.current = null;
+      revealIntervalRef.current = null;
+      setRevealedTrick(null);
+      setRevealSecondsLeft(0);
     });
   }, [lobbyId, resolvedPlayerId]);
 
@@ -156,6 +189,69 @@ export function useGameBoard(customPlayerId?: number) {
       : gameEvents;
     return tail.reduce((state, event) => gameReducer(state, event, playerId), snapshotState);
   }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, playerId]);
+
+  // Congela l'ultimo tavolo completo: finche' ci sono carte sul tavolo live,
+  // questa e' la foto che mostreremo quando arrivera' il TrickWon.
+  useEffect(() => {
+    if (gameState.table.length > 0) {
+      completedTableRef.current = {
+        entries: gameState.table,
+        winningCard: gameState.winningCard,
+      };
+    }
+  }, [gameState.table, gameState.winningCard]);
+
+  const clearRevealTimers = () => {
+    if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
+    if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
+    revealTimeoutRef.current = null;
+    revealIntervalRef.current = null;
+  };
+
+  // Nuova presa vinta -> mostra il tavolo congelato con conto alla rovescia.
+  // Si reagisce solo al conteggio dei TrickWon: lo stato live sotto continua
+  // ad avanzare normalmente (prossima mano) mentre l'overlay e' visibile.
+  useEffect(() => {
+    if (trickWonCount <= trickWonCountRef.current) {
+      if (trickWonCount < trickWonCountRef.current) {
+        trickWonCountRef.current = trickWonCount;
+        clearRevealTimers();
+        setRevealedTrick(null);
+        setRevealSecondsLeft(0);
+      }
+      return;
+    }
+    trickWonCountRef.current = trickWonCount;
+    const snapshot = completedTableRef.current;
+    const winnerId = gameState.lastTrick?.winnerId;
+    if (!snapshot || snapshot.entries.length === 0 || winnerId === undefined) return;
+    clearRevealTimers();
+    setRevealedTrick({
+      entries: snapshot.entries,
+      winningCard: snapshot.winningCard,
+      winnerId,
+    });
+    const deadline = Date.now() + TRICK_REVEAL_SECONDS * 1000;
+    setRevealSecondsLeft(TRICK_REVEAL_SECONDS);
+    revealIntervalRef.current = setInterval(() => {
+      setRevealSecondsLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    }, 200);
+    revealTimeoutRef.current = setTimeout(() => {
+      clearRevealTimers();
+      setRevealedTrick(null);
+      setRevealSecondsLeft(0);
+    }, TRICK_REVEAL_SECONDS * 1000);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trickWonCount]);
+
+  // Cleanup timer allo smontaggio.
+  useEffect(
+    () => () => {
+      if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
+      if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
+    },
+    [],
+  );
 
   // Derived helpers
   const isMyTurn = gameState.currentTurn.isMyTurn;
@@ -304,6 +400,9 @@ export function useGameBoard(customPlayerId?: number) {
     playersMap,
     gameState,
     gameEvents,
+    // Reveal di fine presa (tavolo congelato + conto alla rovescia)
+    revealedTrick,
+    revealSecondsLeft,
     // Snapshot restore state
     isRestoring,
     snapshotError,
