@@ -9,8 +9,7 @@ import io.vertx.redis.client.{Command, Redis, Request}
 
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.configuration.*
-import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.*
 import io.github.pallax03.wizard.engine.model.core.InconsistentState.*
@@ -106,7 +105,9 @@ class RedisInboundAdapter(
   override def resumeGame(lobbyId: LobbyId): Future[Unit] =
     fetchGameState(lobbyId).flatMap:
       case Some(state) =>
-        outboundPort.publish(lobbyId, LifecycleEvent.GameResumed(state.playersIds))
+        val invitations =
+          state.playersIds.flatMap(id => PlayerGameState.from(state, id).pendingInvitation(id))
+        outboundPort.publish(lobbyId, LifecycleEvent.GameResumed(state.playersIds) +: invitations*)
         Future.unit
       case None =>
         Future.failed(GameException(GameNotFound))
@@ -124,12 +125,9 @@ class RedisInboundAdapter(
               val clearTimer = redisClient
                 .send(Request.cmd(Command.DEL).arg(ChannelsKeys.turnTimer(lobbyId, playerId)))
                 .asScala
-              val clearStrikes = redisClient
-                .send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId)))
-                .asScala
 
               saveState(lobbyId, newState)
-                .zip(clearTimer.zip(clearStrikes))
+                .zip(clearTimer)
                 .map: _ =>
                   outboundPort.publish(lobbyId, newState.events*)
                   Right(())

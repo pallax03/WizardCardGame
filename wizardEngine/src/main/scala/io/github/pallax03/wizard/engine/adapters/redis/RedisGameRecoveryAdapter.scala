@@ -3,6 +3,8 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import cats.syntax.all.*
+
 import io.vertx.redis.client.{Command, Redis, Request}
 
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
@@ -123,10 +125,9 @@ class RedisGameRecoveryAdapter(
       .asScala
       .flatMap: _ =>
         lobbyStatePort
-          .getLobby(lobbyId)
-          .flatMap:
-            case Some(lobby) => lobbyStatePort.saveLobby(lobby.copy(status = LobbyStatus.WAITING))
-            case None        => Future.unit
+          .updateLobby[Unit](lobbyId): lobby =>
+            Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
+          .void
       .map: _ =>
         outboundPort.publish(lobbyId, LifecycleEvent.GameAborted(exception.getMessage))
         false

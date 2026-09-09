@@ -46,7 +46,6 @@ services:
       - ROLE=bot_worker
       - REDIS_HOST=redis
       - REDIS_PORT=${REDIS_PORT:-6379}
-      - BOT_DELAY_MS=${BOT_DELAY_MS:-3000}
     depends_on:
       - redis
       - wizard-engine

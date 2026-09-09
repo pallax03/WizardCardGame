@@ -11,7 +11,6 @@ object ChannelsKeys:
   val BOT_CONSUMER_GROUP: String = "bot_workers"
 
   /** Key that stores lobbies. */
-  val LOBBY_CHANNEL: String = "lobby:*"
   def lobby(id: LobbyId): String = s"lobby:${id.toString}"
 
   /** Key that stores game relative to a lobby (1:1). */
@@ -31,6 +30,9 @@ object ChannelsKeys:
   /** Key that stores a pending turn timer for a player. Expires after config.timer + grace seconds. */
   def turnTimer(lobbyId: LobbyId, playerId: PlayerId): String =
     s"timer:${lobbyId.toString}:${playerId.toInt}"
+
+  def disconnectTimer(lobbyId: LobbyId): String =
+    s"disconnect:${lobbyId.toString}"
 
   /** Key that stores the consecutive AFK strikes for a player. */
   def afkStrikes(lobbyId: LobbyId, playerId: PlayerId): String =
