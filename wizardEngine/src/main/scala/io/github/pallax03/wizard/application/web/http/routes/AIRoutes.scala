@@ -17,16 +17,12 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
       action: PlayerId => Future[A]
   ): Future[Either[LobbyError, A]] =
     lobbyStatePort
-      .getLobby(lobbyId)
+      .getAuthLobby(lobbyId, secret)
       .flatMap:
-        case Some(lobby) =>
-          lobby.authenticate(secret) match
-            case Right(player) =>
-              action(player.id).map(Right(_))
-            case Left(err) =>
-              Future.successful(Left(err))
-        case None =>
-          Future.successful(Left(LobbyError.LobbyNotFound))
+        case Right((player, _)) =>
+          action(player.id).map(Right(_))
+        case Left(err) =>
+          Future.successful(Left(err))
       .recover:
         case ex: Throwable =>
           Left(LobbyError.GameActionRejected(ex.getMessage))

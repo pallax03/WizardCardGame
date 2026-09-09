@@ -10,7 +10,6 @@ import io.vertx.redis.client.{Command, Redis, Request}
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
@@ -21,30 +20,29 @@ import io.github.pallax03.wizard.util.FutureSyntax.*
 class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
-  override def saveLobby(lobby: Lobby): Future[Unit] =
-    val req = Request
-      .cmd(Command.SET)
-      .arg(ChannelsKeys.lobby(lobby.uuid))
-      .arg(lobby.toJson)
-      .arg("EX")
-      .arg("86400")
-    redisClient.send(req).asScala.void
-
-  /** @inheritdoc */
-  override def getLobby(lobbyId: LobbyId): Future[Option[Lobby]] =
+  override def getLobby(lobbyId: LobbyId): Future[Either[LobbyError, Lobby]] =
     val req = Request.cmd(Command.GET).arg(ChannelsKeys.lobby(lobbyId))
     redisClient
       .send(req)
       .asScala
       .map:
-        case null     => None
-        case response => response.toString.decodeAs[Lobby].toOption
+        case null     => Left(LobbyError.LobbyNotFound)
+        case response => response.toString.decodeAs[Lobby].left.map(_ => LobbyError.LobbyNotFound)
 
   /** @inheritdoc */
-  private def updateLobbyCAS[A](lobbyId: LobbyId)(
+  override def getAuthLobby(
+      lobbyId: LobbyId,
+      secret: String
+  ): Future[Either[LobbyError, (Player, Lobby)]] =
+    getLobby(lobbyId).map:
+      case Right(lobby) => lobby.authenticate(secret).map(player => (player, lobby))
+      case Left(err)    => Left(err)
+
+  private def upsertLobby[A](lobbyId: LobbyId)(
       f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]] =
-    getLobby(lobbyId).flatMap: optLobby =>
+    getLobby(lobbyId).flatMap: eitherLobby =>
+      val optLobby = eitherLobby.toOption
       val expectedVersion = optLobby.map(_.version).getOrElse(0)
       f(optLobby) match
         case Left(err) => Future.successful(Left(err))
@@ -73,7 +71,15 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
                       .asScala
                       .map(_ => Right(res))
                   case None => Future.successful(Right(res))
-              else updateLobbyCAS(lobbyId)(f)
+              else upsertLobby(lobbyId)(f)
+
+  /** @inheritdoc */
+  override def updateLobby[A](lobbyId: LobbyId)(
+      f: Lobby => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
+  ): Future[Either[LobbyError, A]] =
+    upsertLobby(lobbyId):
+      case Some(lobby) => f(lobby)
+      case None        => Left(LobbyError.LobbyNotFound)
 
   /** @inheritdoc */
   override def addPlayer(
@@ -82,7 +88,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       difficulty: Option[BotsDifficulty],
       secret: Option[String] = None
   ): Future[Either[LobbyError, Player]] =
-    updateLobbyCAS(lobbyId): optLobby =>
+    upsertLobby(lobbyId): optLobby =>
       val lobby =
         optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
       lobby
@@ -91,75 +97,49 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
           case (p, l) => (p, l, Some(SystemEvent.joined(p.id)))
 
   /** @inheritdoc */
-  override def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId) {
-      case None => Left(LobbyError.LobbyNotFound)
-      case Some(lobby) =>
-        lobby
-          .removePlayer(playerId)
-          .map(newLobby => (true, newLobby, Some(SystemEvent.left(playerId))))
-    }.map(_.getOrElse(false))
-
-  /** @inheritdoc */
-  override def getAllLobbies: Future[List[Lobby]] =
-    redisClient
-      .send(Request.cmd(Command.KEYS).arg(ChannelsKeys.LOBBY_CHANNEL))
-      .asScala
-      .flatMap:
-        case null => Future.successful(List.empty)
-        case keysResp =>
-          import scala.jdk.CollectionConverters.*
-          val keys = keysResp.asScala.map(_.toString).toList
-          if keys.isEmpty then Future.successful(List.empty)
-          else
-            val getReq = Request.cmd(Command.MGET)
-            keys.foreach(getReq.arg)
-            redisClient
-              .send(getReq)
-              .asScala
-              .map:
-                case null => List.empty
-                case valsResp =>
-                  valsResp.asScala
-                    .flatMap(v => if v != null then v.toString.decodeAs[Lobby].toOption else None)
-                    .toList
-
-  /** @inheritdoc */
   override def setPlayerOnlineStatus(
       lobbyId: LobbyId,
       playerId: PlayerId,
       isOnline: Boolean
-  ): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId) {
-      case None => Left(LobbyError.LobbyNotFound)
-      case Some(lobby) =>
-        lobby.setPlayerOnlineStatus(playerId, isOnline).map(newLobby => (true, newLobby, None))
-    }.map(_.getOrElse(false))
-
-  override def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean] =
-    updateLobbyCAS[Boolean](lobbyId) {
-      case None => Left(LobbyError.LobbyNotFound)
-      case Some(lobby) =>
-        lobby.setPlayerOnlineStatus(playerId, false).map { newLobby =>
-          val pausedLobby =
-            if newLobby.status == LobbyStatus.IN_GAME then
-              newLobby.copy(status = LobbyStatus.PAUSED)
-            else newLobby
-          (true, pausedLobby, Some(SystemEvent.offline(playerId)))
-        }
+  ): Future[LobbyStatus] =
+    updateLobby[Lobby](lobbyId) { lobby =>
+      lobby.handleOnlineStatusChange(playerId, isOnline).map(newLobby => (newLobby, newLobby, None))
     }.flatMap {
-      case Left(_) => Future.successful(false)
-      case Right(res) =>
-        getLobby(lobbyId).flatMap {
-          case None => Future.successful(res)
-          case Some(lobby) =>
-            val keysToDelete = lobby.players.flatMap { p =>
-              List(ChannelsKeys.turnTimer(lobbyId, p.id), ChannelsKeys.afkStrikes(lobbyId, p.id))
-            }
-            if keysToDelete.nonEmpty then
-              val delReq = Request.cmd(Command.DEL)
-              keysToDelete.foreach(delReq.arg)
-              redisClient.send(delReq).asScala.map(_ => res)
-            else Future.successful(res)
-        }
+      case Left(_) => Future.failed(new Exception("Player or Lobby not found"))
+      case Right(newLobby) =>
+        if !newLobby.status.isGame then Future.successful(newLobby.status)
+        else if isOnline then
+          val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
+          val decrStrikes = redisClient
+            .send(Request.cmd(Command.DECR).arg(strikesKey))
+            .asScala
+            .flatMap: resp =>
+              if resp != null && resp.toLong < 0 then
+                redisClient.send(Request.cmd(Command.SET).arg(strikesKey).arg("0")).asScala.void
+              else Future.unit
+
+          val delTimer =
+            if newLobby.status != LobbyStatus.DISCONNECTING then
+              redisClient
+                .send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId)))
+                .asScala
+                .void
+            else Future.unit
+
+          decrStrikes.zip(delTimer).map(_ => newLobby.status)
+        else if newLobby.status == LobbyStatus.DISCONNECTING then
+          val req = Request
+            .cmd(Command.SET)
+            .arg(ChannelsKeys.disconnectTimer(lobbyId))
+            .arg("1")
+            .arg("EX")
+            .arg(newLobby.configuration.timer.toString)
+          redisClient.send(req).asScala.map(_ => newLobby.status)
+        else Future.successful(newLobby.status)
     }
+
+  override def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    redisClient
+      .send(Request.cmd(Command.DEL).arg(ChannelsKeys.afkStrikes(lobbyId, playerId)))
+      .asScala
+      .void

@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.application.web.http.routes
 import scala.concurrent.{ExecutionContext, Future}
 
 import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
-import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.core.GameAction.PlayCard
@@ -21,19 +21,20 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
       actionBuilder: PlayerId => GameAction
   ): Future[Either[LobbyError, Unit]] =
     lobbyStatePort
-      .getLobby(lobbyId)
+      .getAuthLobby(lobbyId, secret)
       .flatMap:
-        case Some(lobby) =>
-          lobby.authenticate(secret) match
-            case Right(player) =>
-              gameEnginePort
-                .submitAction(lobbyId, actionBuilder(player.id))
-                .map:
-                  case Left(gameError) => Left(LobbyError.GameActionRejected(gameError.toString))
-                  case Right(_)        => Right(())
-            case Left(err) => Future.successful(Left(err))
-        case None =>
-          Future.successful(Left(LobbyError.LobbyNotFound))
+        case Right((player, lobby)) =>
+          if lobby.status != LobbyStatus.IN_GAME then Future.successful(Left(LobbyError.GamePaused))
+          else
+            gameEnginePort
+              .submitAction(lobbyId, actionBuilder(player.id))
+              .flatMap:
+                case Left(gameError) =>
+                  Future.successful(Left(LobbyError.GameActionRejected(gameError.toString)))
+                case Right(_) =>
+                  lobbyStatePort.clearPlayerStrikes(lobbyId, player.id).map(_ => Right(()))
+        case Left(err) =>
+          Future.successful(Left(err))
 
   private val chooseEndpoint: ServerEndpoint[Any, Future] =
     ActionEndpoints.chooseAction

@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.application.bot
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
-import scala.util.{Failure, Success}
+import scala.util.{Failure, Random, Success}
 
 import cats.syntax.all.*
 
@@ -13,7 +13,7 @@ import io.vertx.redis.client.{Command, Redis, Request, Response}
 import io.github.pallax03.wizard.application.bot.strategy.BotStrategy
 import io.github.pallax03.wizard.codecs.engine.lobby.BotTaskCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.BotTask
+import io.github.pallax03.wizard.engine.lobby.{BotTask, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.events.{FailureEvent, InvitationEvent}
@@ -35,8 +35,7 @@ class BotManagerVerticle(
     prologPort: AIPort,
     lobbyStatePort: LobbyStatePort,
     gameInboundPort: InboundPort,
-    redisClient: Redis,
-    botDelayMs: Long = BotManagerVerticle.DEFAULT_BOT_DELAY_MS
+    redisClient: Redis
 ) extends AbstractVerticle:
 
   import BotManagerVerticle.*
@@ -160,11 +159,12 @@ class BotManagerVerticle(
         lobbyStatePort
           .getLobby(task.lobbyId)
           .onComplete:
-            case Success(Some(lobby)) =>
+            case Success(Right(lobby)) =>
               lobby.players.find(_.id == inv.destinationId).flatMap(_.difficulty) match
                 case Some(diff) =>
+                  val delay = BotManagerVerticle.DEFAULT_BOT_DELAY_MS
                   log(
-                    s"INFO:[BotManager] Executing task $entryId for bot ${inv.destinationId} in lobby ${task.lobbyId} (delay: ${botDelayMs}ms)"
+                    s"INFO:[BotManager] Executing task $entryId for bot ${inv.destinationId} in lobby ${task.lobbyId} (delay: ${delay}ms)"
                   )
                   val strat = BotStrategy(diff, prologPort)
                   strat
@@ -175,7 +175,7 @@ class BotManagerVerticle(
                         ackEntry(entryId)
                       case Success(action) =>
                         vertx.setTimer(
-                          botDelayMs,
+                          delay,
                           _ => submitAndAck(task.lobbyId, inv.destinationId, strat, action, entryId)
                         )
                 case None =>
@@ -191,7 +191,7 @@ class BotManagerVerticle(
         ackEntry(entryId)
 
   private def submitAndAck(
-      lobbyId: io.github.pallax03.wizard.engine.lobby.LobbyId,
+      lobbyId: LobbyId,
       playerId: PlayerId,
       strategy: BotStrategy,
       action: GameAction,
@@ -225,7 +225,7 @@ class BotManagerVerticle(
     pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, msg)
 
 object BotManagerVerticle:
-  val DEFAULT_BOT_DELAY_MS: Long = 3_000L
+  private val DEFAULT_BOT_DELAY_MS: Int = Random().between(5, 10) * 1000
   private val POLL_INTERVAL_MS: Long = 500L
   private val CLAIM_CHECK_INTERVAL_MS: Long = 10_000L
   private val CLAIM_IDLE_MS: Long = 15_000L

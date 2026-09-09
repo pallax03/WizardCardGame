@@ -6,8 +6,7 @@ import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.http.HttpCodecs.given
 import io.github.pallax03.wizard.codecs.http.LobbyRequestCodecs.given
-import io.github.pallax03.wizard.engine.configuration.GameConfiguration
-import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
+import io.github.pallax03.wizard.engine.lobby.{GameConfiguration, LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
 
@@ -71,6 +70,13 @@ object LobbyEndpoints:
         "Transitions a WAITING or PAUSED lobby to IN_GAME and triggers engine initialization."
       )
       .in(HttpSupport.lobbyIdPath / "start")
+
+  /** POST /api/lobby/{lobbyId}/pause — pause an active game. */
+  val pauseGame: Endpoint[String, LobbyId, LobbyError, Unit, Any] =
+    secureBase.post
+      .summary("Pause game")
+      .description("Transitions an IN_GAME lobby to PAUSED.")
+      .in(HttpSupport.lobbyIdPath / "pause")
 
   /** POST /api/lobby/{lobbyId}/configuration — update the game configuration. */
   val updateConfiguration

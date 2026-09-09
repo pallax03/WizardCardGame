@@ -3,7 +3,9 @@ package io.github.pallax03.wizard.engine.adapters
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.Try
+import scala.util.{Success, Try}
+
+import cats.syntax.all.*
 
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
@@ -12,10 +14,11 @@ import io.vertx.core.json.JsonObject
 
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.LobbyId
+import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{
+  InboundPort,
   LobbyStatePort,
   PubSubPort,
   Subscription,
@@ -32,7 +35,8 @@ object VertxWebSocketsAdapter:
 class VertxWebSocketsAdapter(
     val vertx: Vertx,
     val pubSubPort: PubSubPort,
-    val lobbyStatePort: LobbyStatePort
+    val lobbyStatePort: LobbyStatePort,
+    val gameEngineInPort: InboundPort
 ) extends WebSocketsPort:
 
   private val sessions: TrieMap[(LobbyId, PlayerId), ClientSession] = TrieMap.empty
@@ -48,7 +52,6 @@ class VertxWebSocketsAdapter(
     ws.exceptionHandler: _ =>
       this.close(lobbyId, playerId)
 
-    // Forwarding Messages
     ws.textMessageHandler: text =>
       Try:
         val json = new JsonObject(text)
@@ -60,12 +63,17 @@ class VertxWebSocketsAdapter(
     pubSubPort
       .subscribePlayer(lobbyId, playerId, rawJson => ws.writeTextMessage(rawJson))
       .map: sub =>
-        lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, true)
-        val msg = SystemEvent.online(playerId).toJson
-        pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), msg)
-
-        val pingTimerId = setupHeartbeat(ws)
-        sessions.put((lobbyId, playerId), ClientSession(ws, sub, pingTimerId))
+        lobbyStatePort
+          .setPlayerOnlineStatus(lobbyId, playerId, true)
+          .onComplete:
+            case Success(LobbyStatus.IN_GAME) =>
+              gameEngineInPort.resumeGame(lobbyId)
+            case _ => ()
+        pubSubPort.publish(
+          ChannelsKeys.pubSubLobbyChannel(lobbyId),
+          SystemEvent.online(playerId).toJson
+        )
+        sessions.put((lobbyId, playerId), ClientSession(ws, sub, setupHeartbeat(ws)))
 
   private def setupHeartbeat(ws: ServerWebSocket): Long =
     var lastPong = System.currentTimeMillis()
@@ -86,7 +94,11 @@ class VertxWebSocketsAdapter(
       case Some(session) =>
         Try(session.ws.close())
         vertx.cancelTimer(session.pingTimerId)
-        lobbyStatePort.disconnectAndPauseLobby(lobbyId, playerId)
         session.sub.cancel()
+        lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, false).flatMap { _ =>
+          pubSubPort
+            .publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), SystemEvent.offline(playerId).toJson)
+            .void
+        }
       case None =>
         Future.unit

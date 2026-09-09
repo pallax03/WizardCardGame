@@ -4,6 +4,7 @@ import scala.concurrent.Future
 
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.model.events.SystemEvent
 
 /**
  * Internal port to manage the persistent state of a Lobby before the game starts.
@@ -24,27 +25,40 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 trait LobbyStatePort:
 
   /**
-   * Saves or updates the current state of the lobby.
-   *
-   * @param lobby the strongly-typed Lobby object to be saved.
-   * @return a Future completing when the operation is successfully stored.
-   */
-  def saveLobby(lobby: Lobby): Future[Unit]
-
-  /**
-   * Retrieves the current state of the lobby, if it exists.
+   * Retrieves the current state of the lobby.
    *
    * @param lobbyId the UUID of the lobby.
-   * @return a Future containing the Lobby object if found, or None if the lobby does not exist.
+   * @return a Future containing the Lobby object if found, or LobbyError.LobbyNotFound.
    */
-  def getLobby(lobbyId: LobbyId): Future[Option[Lobby]]
+  def getLobby(lobbyId: LobbyId): Future[Either[LobbyError, Lobby]]
 
   /**
-   * Retrieves the current state of the lobby, if it exists.
+   * Retrieves the lobby and authenticates the player using the provided secret.
    *
-   *   R* @return a Future containing a list of Lobbies, [[List.empty]] if no lobby found.
+   * @param lobbyId the UUID of the lobby.
+   * @param secret the secret of the player.
+   * @return a Future containing the Player and Lobby if successful, or a LobbyError.
    */
-  def getAllLobbies: Future[List[Lobby]]
+  def getAuthLobby(lobbyId: LobbyId, secret: String): Future[Either[LobbyError, (Player, Lobby)]]
+
+  /**
+   * Atomically updates an existing lobby state using CAS.
+   *
+   * @param lobbyId the UUID of the lobby.
+   * @param f function to apply the update. It receives the current lobby.
+   *          It must return an Either containing a LobbyError, or a tuple:
+   *          (Return value of type A, The updated Lobby, An optional SystemEvent to publish).
+   */
+  def updateLobby[A](lobbyId: LobbyId)(
+      f: Lobby => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
+  ): Future[Either[LobbyError, A]]
+
+  /** Updates an existing lobby state atomically, after authenticating the player. */
+  def updateAuthLobby[A](lobbyId: LobbyId, secret: String)(
+      f: (Player, Lobby) => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
+  ): Future[Either[LobbyError, A]] =
+    updateLobby(lobbyId): lobby =>
+      lobby.authenticate(secret).flatMap(player => f(player, lobby))
 
   /**
    * Atomically adds a player to the lobby, returning the assigned Player if successful.
@@ -63,30 +77,24 @@ trait LobbyStatePort:
   ): Future[Either[LobbyError, Player]]
 
   /**
-   * Atomically removes a player from the lobby by ID.
-   *
-   * @param lobbyId the UUID of the lobby.
-   * @param playerId the ID of the player to remove.
-   * @return a Future containing true if the player was removed, false otherwise.
-   */
-  def removePlayer(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]
-
-  /**
    * Updates the online status of a specific player in the lobby.
    *
    * @param lobbyId the UUID of the lobby.
    * @param playerId the ID of the player.
    * @param isOnline the new online status.
-   * @return a Future containing true if the player was found and updated, false otherwise.
+   * @return a Future containing the new LobbyStatus if updated, or a failed Future.
    */
   def setPlayerOnlineStatus(
       lobbyId: LobbyId,
       playerId: PlayerId,
       isOnline: Boolean
-  ): Future[Boolean]
+  ): Future[LobbyStatus]
 
   /**
-   * Disconnects a player, sets the lobby status to PAUSED, and clears all timers/strikes.
-   * Used when a player goes offline via WebSocket or reaches max AFK strikes.
+   * Clears the AFK strikes for a specific player.
+   *
+   * @param lobbyId the UUID of the lobby.
+   * @param playerId the ID of the player.
+   * @return a Future indicating success.
    */
-  def disconnectAndPauseLobby(lobbyId: LobbyId, playerId: PlayerId): Future[Boolean]
+  def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]
