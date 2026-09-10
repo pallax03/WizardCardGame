@@ -2,8 +2,14 @@ package io.github.pallax03.wizard.util
 
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.vertx.redis.client.{Command, Request}
 
 object ChannelsKeys:
+  val DEFAULT_TTL: String = "86400"
+
+  def setWithDefaultTTL(key: String, value: String): Request =
+    Request.cmd(Command.SET).arg(key).arg(value).arg("EX").arg(DEFAULT_TTL)
+
   /** Redis Stream where the engine publishes bot tasks (one entry per InvitationEvent for a bot). */
   val BOT_TASKS_STREAM: String = "bot:tasks"
 

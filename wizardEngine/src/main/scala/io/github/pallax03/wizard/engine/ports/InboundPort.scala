@@ -41,6 +41,11 @@ trait InboundPort:
   def resumeGame(lobbyId: LobbyId): Future[Unit]
 
   /**
+   * Deletes the game for the specified lobby.
+   */
+  def deleteGame(lobbyId: LobbyId): Future[Unit]
+
+  /**
    * Submits a game action for processing.
    *
    * @param lobbyId the identifier of the lobby

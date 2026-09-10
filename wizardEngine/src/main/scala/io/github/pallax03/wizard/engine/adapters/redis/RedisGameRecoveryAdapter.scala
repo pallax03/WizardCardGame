@@ -3,13 +3,11 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import cats.syntax.all.*
-
 import io.vertx.redis.client.{Command, Redis, Request}
 
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyStatus}
+import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.core.state.{
   GameState,
   ServerCoreState,
@@ -19,7 +17,6 @@ import io.github.pallax03.wizard.engine.model.core.{GameEngine, GameException}
 import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
 import io.github.pallax03.wizard.engine.ports.{
   GameRecoveryPort,
-  LobbyStatePort,
   OutboundPort,
   PubSubPort
 }
@@ -28,7 +25,6 @@ import io.github.pallax03.wizard.util.FutureSyntax.*
 
 class RedisGameRecoveryAdapter(
     private val redisClient: Redis,
-    private val lobbyStatePort: LobbyStatePort,
     private val outboundPort: OutboundPort,
     private val pubSubPort: PubSubPort
 ) extends GameRecoveryPort:
@@ -101,14 +97,11 @@ class RedisGameRecoveryAdapter(
         val engine = GameEngine.recoverRound(core)
         redisClient
           .send(
-            Request
-              .cmd(Command.SET)
-              .arg(ChannelsKeys.game(lobbyId))
-              .arg(engine.state.toJson)
+            ChannelsKeys.setWithDefaultTTL(ChannelsKeys.game(lobbyId), engine.state.toJson)
           )
           .asScala
           .map: _ =>
-            outboundPort.publish(lobbyId, LifecycleEvent.StateRecovered() +: engine.events*)
+            outboundPort.publish(lobbyId, LifecycleEvent.StateRecovered +: engine.events*)
             true
 
   private def abortGame(
@@ -123,11 +116,6 @@ class RedisGameRecoveryAdapter(
           .arg(ChannelsKeys.gameCheckpoint(lobbyId))
       )
       .asScala
-      .flatMap: _ =>
-        lobbyStatePort
-          .updateLobby[Unit](lobbyId): lobby =>
-            Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
-          .void
       .map: _ =>
-        outboundPort.publish(lobbyId, LifecycleEvent.GameAborted(exception.getMessage))
+        outboundPort.publish(lobbyId, LifecycleEvent.GameCancelled(Option(exception.getMessage)))
         false

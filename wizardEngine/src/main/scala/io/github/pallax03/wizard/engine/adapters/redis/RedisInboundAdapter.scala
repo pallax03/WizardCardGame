@@ -48,19 +48,14 @@ class RedisInboundAdapter(
             )
 
   private def saveState(lobbyId: LobbyId, newState: GameEngine): Future[Unit] =
-    val key = ChannelsKeys.game(lobbyId)
     val checkpointKey = ChannelsKeys.gameCheckpoint(lobbyId)
-
-    val reqs = newState.state match
-      case _: GameState.Ended =>
-        List(Request.cmd(Command.DEL).arg(key), Request.cmd(Command.DEL).arg(checkpointKey))
-      case _ =>
-        val mainSave = Request.cmd(Command.SET).arg(key).arg(newState.state.toJson)
-        if newState.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]) then
-          List(mainSave, Request.cmd(Command.SET).arg(checkpointKey).arg(newState.state.toJson))
-        else List(mainSave)
-
-    Future.sequence(reqs.map(r => redisClient.send(r).asScala)).void
+    val mainSave = ChannelsKeys.setWithDefaultTTL(ChannelsKeys.game(lobbyId), newState.state.toJson)
+    val checkpointSave = newState.state match
+      case _: GameState.Ended => List(Request.cmd(Command.DEL).arg(checkpointKey))
+      case _ if newState.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]) =>
+          List(ChannelsKeys.setWithDefaultTTL(checkpointKey, newState.state.toJson))
+      case _ => List.empty
+    Future.sequence((mainSave +: checkpointSave).map(r => redisClient.send(r).asScala)).void
 
   /** @inheritdoc */
   override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState] =
@@ -75,17 +70,14 @@ class RedisInboundAdapter(
       players: List[PlayerId],
       config: GameConfiguration
   ): Future[Unit] =
-    fetchGameState(lobbyId).flatMap:
-      case Some(_) => Future.unit
-      case None =>
-        val initialState = GameEngine.initializeGame(players)
-        redisClient
-          .send(
-            Request.cmd(Command.SET).arg(ChannelsKeys.game(lobbyId)).arg(initialState.state.toJson)
-          )
-          .asScala
-          .map: _ =>
-            outboundPort.publish(lobbyId, initialState.events*)
+    val initialState = GameEngine.initializeGame(players)
+    redisClient
+      .send(
+        ChannelsKeys.setWithDefaultTTL(ChannelsKeys.game(lobbyId), initialState.state.toJson)
+      )
+      .asScala
+      .map: _ =>
+        outboundPort.publish(lobbyId, initialState.events*)
 
   /** @inheritdoc */
   override def resumeGame(lobbyId: LobbyId): Future[Unit] =
@@ -97,6 +89,13 @@ class RedisInboundAdapter(
         Future.unit
       case None =>
         Future.failed(GameException(GameNotFound))
+
+  /** @inheritdoc */
+  override def deleteGame(lobbyId: LobbyId): Future[Unit] =
+    val key = ChannelsKeys.game(lobbyId)
+    val checkpointKey = ChannelsKeys.gameCheckpoint(lobbyId)
+    Future.sequence(List(key, checkpointKey).map(k => redisClient.send(Request.cmd(Command.DEL).arg(k)).asScala))
+      .flatMap(_ => outboundPort.publish(lobbyId, LifecycleEvent.GameCancelled(None)))
 
   /** @inheritdoc */
   override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]] =

@@ -79,8 +79,8 @@ object WizardEventsCodecs:
             err <- fields.get[GameError]("reason")
           } yield FailureEvent.ActionFailed(p, err)
         case "StateRecovered" =>
-          Right(LifecycleEvent.StateRecovered())
-        case "GameAborted" =>
-          fields.get[String]("reason").map(LifecycleEvent.GameAborted.apply)
+          Right(LifecycleEvent.StateRecovered)
+        case "GameCancelled" =>
+          fields.get[Option[String]]("reason").map(LifecycleEvent.GameCancelled.apply)
         case other =>
           Left(DecodingFailure(s"No decoding for $other.", c.history))

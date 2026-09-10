@@ -80,7 +80,7 @@ class TurnTimerVerticle(
               for
                 strikesResp <- redisClient.send(Request.cmd(Command.INCR).arg(strikesKey)).asScala
                 _ <- redisClient
-                  .send(Request.cmd(Command.EXPIRE).arg(strikesKey).arg("86400"))
+                  .send(Request.cmd(Command.EXPIRE).arg(strikesKey).arg(ChannelsKeys.DEFAULT_TTL))
                   .asScala
                 _ <-
                   if strikesResp.toLong >= lobby.configuration.maxStrikes then

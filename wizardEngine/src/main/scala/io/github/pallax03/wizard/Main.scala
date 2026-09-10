@@ -51,8 +51,7 @@ object Main:
     val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
     val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort, redisClient, lobbyStatePort)
-    val recoveryPort: GameRecoveryPort =
-      RedisGameRecoveryAdapter(redisClient, lobbyStatePort, outPort, pubSubPort)
+    val recoveryPort: GameRecoveryPort = RedisGameRecoveryAdapter(redisClient, outPort, pubSubPort)
     val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort)
     val prologPort = WizardPrologAdapter(inPort)
 
