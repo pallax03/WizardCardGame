@@ -105,6 +105,83 @@ function parseInvalidBidField(value: unknown): number | null {
 }
 
 /**
+ * Traduce un errore HTTP del backend (`ApiError.code`, es. `GamePaused` o
+ * `GameActionRejected(InvalidBid(2,1))`) in un messaggio italiano da mostrare
+ * nel GameTurnBanner. Il backend codifica `LobbyError` come solo `{"code": ...}`
+ * senza `message`, quindi il codice è l'unica informazione affidabile.
+ */
+export function formatGameActionError(
+  code: string,
+  round: number,
+  bidHint?: number
+): string {
+  // GameActionRejected avvolge il GameError: estrai il contenuto interno.
+  const rejectedMatch = /GameActionRejected\((.*)\)\s*$/.exec(code);
+  const inner = rejectedMatch ? rejectedMatch[1] : code;
+
+  if (inner.includes("GamePaused")) {
+    return (
+      "Partita in pausa: un giocatore è offline o la partita è stata messa in pausa. " +
+      "Attendi la riconnessione oppure torna alla lobby e premi Avvia per riprenderla."
+    );
+  }
+  if (inner.includes("InvalidBid")) {
+    const match = /InvalidBid\(\s*(\d+)\s*,\s*(-?\d+)\s*\)/.exec(inner);
+    const parsedRound = match ? Number(match[1]) : round;
+    const parsedBid = match ? Number(match[2]) : bidHint;
+    if (parsedBid !== undefined && !Number.isNaN(parsedBid)) {
+      return formatInvalidBidError(parsedRound, parsedBid);
+    }
+    return (
+      `Puntata non valida al Round ${parsedRound} — ` +
+      `la somma delle puntate non può essere uguale al numero di carte (${parsedRound}).`
+    );
+  }
+  if (inner.includes("CardNotAllowed") || inner.includes("MustFollowColor")) {
+    return "Carta non consentita: devi seguire il seme di mano se hai una carta di quel seme.";
+  }
+  if (inner.includes("CardNotInHand")) {
+    return "Carta non consentita: la carta non è più nella tua mano (stato già aggiornato?).";
+  }
+  if (inner.includes("NotYourTurn")) {
+    return "Non è il tuo turno: attendi che tocchi a te.";
+  }
+  if (inner.includes("InvalidAction")) {
+    return "Azione non valida in questa fase della partita.";
+  }
+  if (inner.includes("PlayersOffline")) {
+    return "Impossibile avviare: alcuni giocatori sono offline.";
+  }
+  if (inner.includes("NotAuthenticated")) {
+    return "Sessione non riconosciuta: rientra nella lobby dalla home.";
+  }
+  if (code && code !== "SERVER_ERROR") {
+    return `Azione rifiutata dal server (${code}). Riprova tra poco.`;
+  }
+  return "Azione rifiutata dal server. Riprova tra poco.";
+}
+
+/** Estrae `ApiError.code` (es. `GamePaused`) da un errore di fetch. */
+export function extractApiErrorCode(error: unknown): string {
+  if (typeof error === "object" && error !== null && "code" in error) {
+    const code = (error as { code?: unknown }).code;
+    if (typeof code === "string") return code;
+  }
+  return "";
+}
+
+/** Motivo breve per `actionStatus` (il testo esteso va nell'errore del banner). */
+export function shortGameActionReason(code: string): string {
+  if (code.includes("GamePaused")) return "partita in pausa";
+  if (code.includes("CardNotAllowed") || code.includes("MustFollowColor")) {
+    return "carta non consentita";
+  }
+  if (code.includes("NotYourTurn")) return "non è il tuo turno";
+  if (code.includes("InvalidAction")) return "azione non valida in questa fase";
+  return code || "errore del server";
+}
+
+/**
  * Pure reducer function that advances GameBoardState based on an incoming EventMessage.
  *
  * Designed to be lean, predictable, and fully testable:

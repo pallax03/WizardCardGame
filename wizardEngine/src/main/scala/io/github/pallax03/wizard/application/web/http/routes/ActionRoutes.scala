@@ -24,7 +24,12 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
       .getAuthLobby(lobbyId, secret)
       .flatMap:
         case Right((player, lobby)) =>
-          if lobby.status != LobbyStatus.IN_GAME then Future.successful(Left(LobbyError.GamePaused))
+          // Durante DISCONNECTING (un umano temporaneamente offline, in attesa del
+          // grace period / sostituzione con bot) il giocatore online deve poter
+          // continuare a giocare il proprio turno: blocca solo PAUSED esplicito,
+          // WAITING e FINISHED.
+          if lobby.status != LobbyStatus.IN_GAME && lobby.status != LobbyStatus.DISCONNECTING
+          then Future.successful(Left(LobbyError.GamePaused))
           else
             gameEnginePort
               .submitAction(lobbyId, actionBuilder(player.id))

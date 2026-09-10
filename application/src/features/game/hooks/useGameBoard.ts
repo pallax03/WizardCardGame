@@ -5,10 +5,13 @@ import { useLobbySession } from "@/features/lobby-session";
 import type { EventMessage } from "@/features/chat/types";
 import { chooseTrumpColor, getPlayerGameSnapshot, placeBid, playCard } from "../api";
 import {
+  extractApiErrorCode,
+  formatGameActionError,
   formatInvalidBidError,
   gameReducer,
   initialGameBoardState,
   isCardInList,
+  shortGameActionReason,
 } from "../state/gameReducer";
 import { mapSnapshotToBoardState } from "../state/snapshotMapper";
 import type { Card, CardColor, GameBoardState, PlayedCardEntry } from "../types";
@@ -41,6 +44,10 @@ export function useGameBoard(customPlayerId?: number) {
   // Memorizziamo anche il round: l'errore è valido solo per quel round e
   // finché il player non ha puntato (niente useEffect di reset).
   const [bidErrorRaw, setBidErrorRaw] = useState<{ round: number; message: string } | null>(null);
+  // Errore generico di azione (gioca carta, briscola, ...): mostrato in rosso
+  // nel GameTurnBanner. Il backend restituisce solo `{"code": ...}` senza
+  // messaggio, quindi mappiamo il codice in italiano (cfr. formatGameActionError).
+  const [actionError, setActionError] = useState<string | null>(null);
   // Ack ottimistico: dopo una bid andata a buon fine nascondiamo subito i
   // controlli, senza aspettare l'echo WS (BidPlaced/TurnOf).
   const [bidAckRound, setBidAckRound] = useState<number | null>(null);
@@ -137,6 +144,7 @@ export function useGameBoard(customPlayerId?: number) {
       setIsRestoring(false);
       setBidAckRound(null);
       setBidErrorRaw(null);
+      setActionError(null);
       hasConnectedRef.current = false;
       trickWonCountRef.current = 0;
       completedTableRef.current = null;
@@ -346,6 +354,19 @@ export function useGameBoard(customPlayerId?: number) {
     [gameState.round]
   );
 
+  // Avviso sullo stato della lobby mostrato nel GameTurnBanner: con un
+  // giocatore offline (DISCONNECTING) o pausa esplicita (PAUSED) le azioni
+  // possono essere rifiutate con `GamePaused`.
+  const lobbyWarning = useMemo<string | null>(() => {
+    if (lobby?.status === "PAUSED") {
+      return "Partita in pausa: torna alla lobby e premi Avvia per riprenderla.";
+    }
+    if (lobby?.status === "DISCONNECTING") {
+      return "Un giocatore si è disconnesso: se è il tuo turno puoi comunque giocare, altrimenti attendi la riconnessione.";
+    }
+    return null;
+  }, [lobby?.status]);
+
   // Map of player id to name and metadata from lobby
   const playersMap = useMemo(() => {
     const map = new Map<
@@ -413,15 +434,22 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(true);
         setActionStatus(`Choosing trump color ${colorToChoose}...`);
         await chooseTrumpColor(lobbyId, colorToChoose);
+        setActionError(null);
         setActionStatus(`Trump color chosen: ${colorToChoose}`);
       } catch (error) {
+        const code = extractApiErrorCode(error);
         const msg = error instanceof Error ? error.message : String(error);
-        setActionStatus(`Error choosing trump: ${msg}`);
+        if (code) {
+          setActionError(formatGameActionError(code, gameState.round));
+          setActionStatus(`Briscola rifiutata: ${shortGameActionReason(code)}.`);
+        } else {
+          setActionStatus(`Error choosing trump: ${msg}`);
+        }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [lobbyId, selectedColor]
+    [lobbyId, selectedColor, gameState.round]
   );
 
   // Action: Place Bid
@@ -453,12 +481,10 @@ export function useGameBoard(customPlayerId?: number) {
         // Nascondi subito i controlli, senza aspettare l'echo WS.
         setBidAckRound(gameState.round);
         setBidError(null);
+        setActionError(null);
         setActionStatus(`Bid placed successfully: ${bidToPlace}`);
       } catch (error) {
-        const code =
-          typeof (error as { code?: unknown })?.code === "string"
-            ? ((error as { code: string }).code)
-            : "";
+        const code = extractApiErrorCode(error);
         const msg = error instanceof Error ? error.message : String(error);
         const isInvalidBid =
           code.includes("InvalidBid") || msg.includes("InvalidBid");
@@ -470,6 +496,10 @@ export function useGameBoard(customPlayerId?: number) {
           const friendly = formatInvalidBidError(round, invalid);
           setBidError(friendly);
           setActionStatus(`Puntata ${invalid} rifiutata: non valida per il Round ${round}.`);
+        } else if (code) {
+          const friendly = formatGameActionError(code, gameState.round, bidToPlace);
+          setBidError(friendly);
+          setActionStatus(`Puntata ${bidToPlace} rifiutata: ${shortGameActionReason(code)}.`);
         } else {
           setActionStatus(`Error placing bid: ${msg}`);
         }
@@ -494,16 +524,26 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(true);
         setActionStatus("Playing card...");
         await playCard(lobbyId, cardToPlay);
+        setActionError(null);
         setActionStatus("Card played successfully");
         setSelectedCard(null);
       } catch (error) {
+        const code = extractApiErrorCode(error);
         const msg = error instanceof Error ? error.message : String(error);
-        setActionStatus(`Error playing card: ${msg}`);
+        if (code) {
+          // Il backend restituisce solo `{"code": ...}` (es. `GamePaused` quando
+          // la lobby non è IN_GAME): il messaggio generico "Request failed with
+          // status 400" non aiuta, quindi mostriamo il testo italiano nel banner.
+          setActionError(formatGameActionError(code, gameState.round));
+          setActionStatus(`Carta rifiutata: ${shortGameActionReason(code)}.`);
+        } else {
+          setActionStatus(`Error playing card: ${msg}`);
+        }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [gameState.hand, gameState.legalCards, lobbyId, selectedCard]
+    [gameState.hand, gameState.legalCards, gameState.round, lobbyId, selectedCard]
   );
 
   // Helper to check if a specific card in hand is playable
@@ -545,6 +585,10 @@ export function useGameBoard(customPlayerId?: number) {
     bidWarning,
     bidError,
     setBidError,
+    // Errori di azione (es. carta rifiutata con GamePaused) e stato lobby
+    actionError,
+    setActionError,
+    lobbyWarning,
     // Interactive states
     selectedCard,
     setSelectedCard,

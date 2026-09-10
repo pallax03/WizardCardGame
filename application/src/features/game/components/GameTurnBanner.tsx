@@ -7,6 +7,8 @@ interface GameTurnBannerProps {
   actionStatus: string | null;
   /** Avviso preventivo: puntata vietata (somma puntate != round). */
   bidWarning?: string | null;
+  /** Avviso sullo stato della lobby (pausa / giocatore offline). */
+  statusWarning?: string | null;
 }
 
 export function GameTurnBanner({
@@ -15,6 +17,7 @@ export function GameTurnBanner({
   lastError,
   actionStatus,
   bidWarning,
+  statusWarning,
 }: GameTurnBannerProps) {
   return (
     <div
@@ -30,6 +33,11 @@ export function GameTurnBanner({
       <p className="text-sm sm:text-base font-black text-white tracking-tight drop-shadow">
         {turnPrompt}
       </p>
+      {statusWarning && (
+        <p className="mt-2 text-xs text-sky-200 font-semibold bg-sky-950/80 py-1 px-3 rounded-lg inline-block border border-sky-500/60 shadow">
+          ⏸️ {statusWarning}
+        </p>
+      )}
       {bidWarning && (
         <p className="mt-2 text-xs text-amber-200 font-semibold bg-amber-950/80 py-1 px-3 rounded-lg inline-block border border-amber-500/60 shadow">
           🚫 {bidWarning}

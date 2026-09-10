@@ -12,7 +12,7 @@ export type LobbyPlayer = {
 export type LobbyState = {
   lobbyId: string;
   players: LobbyPlayer[];
-  status?: "WAITING" | "IN_GAME" | "FINISHED";
+  status?: "WAITING" | "IN_GAME" | "DISCONNECTING" | "PAUSED" | "FINISHED";
   configuration?: unknown; //todo: add in getLobbyState endpoint GameConfiguration type
 };
 

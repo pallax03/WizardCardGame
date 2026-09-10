@@ -94,6 +94,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     bidsTotal,
     bidWarning,
     bidError,
+    actionError,
+    lobbyWarning,
     selectedCard,
     setSelectedCard,
     bidInput,
@@ -200,9 +202,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         <GameTurnBanner
           isMyTurn={isMyTurn}
           turnPrompt={turnPrompt}
-          lastError={gameState.lastError ?? bidError}
+          lastError={gameState.lastError ?? bidError ?? actionError}
           actionStatus={actionStatus}
           bidWarning={bidWarning}
+          statusWarning={lobbyWarning}
         />
       </div>
 
