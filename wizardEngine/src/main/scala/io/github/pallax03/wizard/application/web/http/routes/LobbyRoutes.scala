@@ -12,19 +12,19 @@ import sttp.tapir.server.ServerEndpoint
 
 /** HTTP routes for the Lobby domain. */
 class LobbyRoutes(
-    lobbyStatePort: LobbyStatePort,
-    gameEngine: InboundPort
-)(using
-    ec: ExecutionContext
-):
+                   lobbyStatePort: LobbyStatePort,
+                   gameEngine: InboundPort
+                 )(using
+                   ec: ExecutionContext
+                 ):
 
   import cats.data.EitherT
   import cats.implicits.*
 
   private def addPlayerToLobby(
-      lobbyId: LobbyId,
-      req: JoinLobbyRequest
-  ): Future[Either[LobbyError, AuthLobbyPlayer]] =
+                                lobbyId: LobbyId,
+                                req: JoinLobbyRequest
+                              ): Future[Either[LobbyError, AuthLobbyPlayer]] =
     val actualSecret = req.difficulty match
       case Some(_) => None
       case None    => Some(req.secret.getOrElse(java.util.UUID.randomUUID().toString))
@@ -47,7 +47,9 @@ class LobbyRoutes(
         LobbyStateResponse(
           lobbyId,
           lobby.status,
-          lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline)),
+          lobby.players.map(p =>
+            PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline, p.strikes)
+          ),
           lobby.configuration
         )
       }.value
@@ -81,12 +83,12 @@ class LobbyRoutes(
       .serverLogic { secret => lobbyId =>
         EitherT(lobbyStatePort.updateAuthLobby[Lobby](lobbyId, secret) { (player, lobby) =>
           for _ <- lobby.validateStartOrResume
-          yield (
-            lobby,
-            lobby.copy(status = LobbyStatus.IN_GAME),
-            if lobby.status == LobbyStatus.PAUSED then Option(SystemEvent.resumed(player.id))
-            else Option.empty
-          )
+            yield (
+              lobby,
+              lobby.copy(status = LobbyStatus.IN_GAME),
+              if lobby.status == LobbyStatus.PAUSED then Option(SystemEvent.resumed(player.id))
+              else Option.empty
+            )
         }).flatMap { oldLobby =>
           EitherT.right[LobbyError](
             if oldLobby.status == LobbyStatus.WAITING then
@@ -134,9 +136,24 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => (lobbyId, playerId) =>
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
-          for newLobby <- lobby.removePlayer(playerId)
-          yield ((), newLobby, Some(SystemEvent.left(playerId)))
+          if lobby.status == LobbyStatus.WAITING then
+            for newLobby <- lobby.removePlayer(playerId)
+              yield ((), newLobby, Some(SystemEvent.left(playerId)))
+          else Left(LobbyError.GameInProgress)
         }).value
+      }
+
+  private val returnLobbyEndpoint: ServerEndpoint[Any, Future] =
+    LobbyEndpoints.returnLobby
+      .serverSecurityLogicSuccess(Future.successful)
+      .serverLogic { secret => lobbyId =>
+        EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
+          if lobby.status == LobbyStatus.FINISHED || lobby.status == LobbyStatus.PAUSED then
+            Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
+          else Left(LobbyError.GameInProgress)
+        }).flatMap { _ =>
+          EitherT.right[LobbyError](gameEngine.deleteGame(lobbyId))
+        }.value
       }
 
   val all: List[ServerEndpoint[Any, Future]] = List(
@@ -145,6 +162,7 @@ class LobbyRoutes(
     getLobbyInfoEndpoint,
     startGameEndpoint,
     pauseGameEndpoint,
+    returnLobbyEndpoint,
     updateConfigurationEndpoint,
     removePlayerEndpoint,
     getPlayerGameEndpoint

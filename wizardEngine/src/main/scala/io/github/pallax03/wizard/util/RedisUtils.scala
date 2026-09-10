@@ -1,7 +1,15 @@
 package io.github.pallax03.wizard.util
 
+import io.vertx.redis.client.{Command, Request}
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
+
+object RedisUtil:
+  val DEFAULT_TTL: String = "86400"
+
+  def setWithDefaultTTL(key: String, value: String, ttl: String = DEFAULT_TTL): Request =
+    Request.cmd(Command.SET).arg(key).arg(value).arg("EX").arg(ttl)
 
 object ChannelsKeys:
   /** Redis Stream where the engine publishes bot tasks (one entry per InvitationEvent for a bot). */
@@ -35,8 +43,6 @@ object ChannelsKeys:
     s"disconnect:${lobbyId.toString}"
 
   /** Key that stores the consecutive AFK strikes for a player. */
-  def afkStrikes(lobbyId: LobbyId, playerId: PlayerId): String =
-    s"strikes:${lobbyId.toString}:${playerId.toInt}"
 
   /** Redis Pub/Sub channel for expired-key notifications (keyspace events). */
   val TURN_TIMER_KEYSPACE: String = "__keyevent@0__:expired"

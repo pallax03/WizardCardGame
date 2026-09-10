@@ -11,10 +11,11 @@ import io.github.pallax03.wizard.codecs.engine.lobby.BotTaskCodecs.given
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.WizardEventsCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.{BotTask, LobbyId, LobbyPlayer}
+import io.github.pallax03.wizard.engine.lobby.{BotTask, LobbyId, LobbyPlayer, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.events.{
   DestinationScoped,
   InvitationEvent,
+  LifecycleEvent,
   WizardEvent
 }
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, OutboundPort, PubSubPort}
@@ -45,6 +46,7 @@ class RedisOutboundAdapter(
           _ <- publishToClients(lobbyId, ev, jsonMsg)
           _ <- maybeDispatchBotTask(lobbyId, ev)
           _ <- maybeStartTurnTimer(lobbyId, ev)
+          _ <- maybeUpdateLobbyStatus(lobbyId, ev)
         yield ()
       .void
 
@@ -83,4 +85,19 @@ class RedisOutboundAdapter(
           ChannelsKeys.TURN_EVENTS_CHANNEL,
           LobbyPlayer(lobbyId, inv.destinationId).toJson
         )
+      case _ => Future.unit
+
+  private def maybeUpdateLobbyStatus(lobbyId: LobbyId, ev: WizardEvent): Future[Unit] =
+    ev match
+      case _: LifecycleEvent.GameEnded =>
+        lobbyStatePort
+          .updateLobby[Unit](lobbyId) { lobby =>
+            Right(((), lobby.copy(status = LobbyStatus.FINISHED), None))
+          }
+          .void
+      case _: LifecycleEvent.GameCancelled =>
+        lobbyStatePort
+          .updateLobby[Unit](lobbyId): lobby =>
+            Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
+          .void
       case _ => Future.unit

@@ -61,7 +61,10 @@ object WizardEventsCodecs:
         case "GameResumed" =>
           fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameResumed.apply)
         case "WaitingForTrump" =>
-          ev.get[PlayerId]("destinationId").map(InvitationEvent.WaitingForTrump.apply)
+          for {
+            p <- ev.get[PlayerId]("destinationId")
+            c <- ev.get[List[Card.Color]]("colorOptions")
+          } yield InvitationEvent.WaitingForTrump(p, c)
         case "WaitingForBid" =>
           for {
             p <- ev.get[PlayerId]("destinationId")
@@ -79,8 +82,8 @@ object WizardEventsCodecs:
             err <- fields.get[GameError]("reason")
           } yield FailureEvent.ActionFailed(p, err)
         case "StateRecovered" =>
-          Right(LifecycleEvent.StateRecovered())
-        case "GameAborted" =>
-          fields.get[String]("reason").map(LifecycleEvent.GameAborted.apply)
+          Right(LifecycleEvent.StateRecovered)
+        case "GameCancelled" =>
+          fields.get[Option[String]]("reason").map(LifecycleEvent.GameCancelled.apply)
         case other =>
           Left(DecodingFailure(s"No decoding for $other.", c.history))

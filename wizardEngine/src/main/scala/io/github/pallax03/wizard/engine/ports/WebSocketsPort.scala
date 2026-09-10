@@ -20,17 +20,13 @@ trait WebSocketsPort:
    * @return a Future completing when the subscription is successfully established.
    */
   def subscribeToLobbyEvents(
-      lobbyId: LobbyId,
-      playerId: PlayerId,
-      ws: ServerWebSocket
-  ): Future[Unit]
+                              lobbyId: LobbyId,
+                              playerId: PlayerId,
+                              ws: ServerWebSocket
+                            ): Future[Unit]
 
   /**
    * Close socket.
-   *
-   * The close only takes effect when `ws` is still the current session for
-   * the player: a stale close (e.g. a previous socket processed after a
-   * reconnect) must not drop a newer session nor mark the player offline.
    *
    * @param lobbyId       the unique identifier of the lobby.
    * @param playerId      the unique identifier of the player.

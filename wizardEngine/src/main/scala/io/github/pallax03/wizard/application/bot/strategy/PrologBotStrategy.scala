@@ -35,7 +35,7 @@ class PrologBotStrategy(port: AIPort) extends BotStrategy:
           .map(bid => GameAction.PlaceBid(playerId, bid))
           .recover { _ => FallbackStrategy.fallbackMove(invitation) }
 
-      case InvitationEvent.WaitingForTrump(playerId) =>
+      case InvitationEvent.WaitingForTrump(playerId, _) =>
         port
           .resolvedTrumpColor(lobbyId, playerId)
           .map(color => GameAction.ResolveTrumpColor(playerId, color))
