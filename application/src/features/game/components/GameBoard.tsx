@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useGameBoard, TRICK_REVEAL_SECONDS } from "../hooks/useGameBoard";
 import { cardEquals } from "../state/gameReducer";
@@ -11,10 +12,62 @@ import { GameScoreboard } from "./GameScoreboard";
 import { GameTurnBanner } from "./GameTurnBanner";
 import { PlayerHand } from "./PlayerHand";
 import { TrumpArea } from "./TrumpArea";
+import { GameEndOverlay } from "./GameEndOverlay";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { Card as UiCard, CardContent, CardHeader, CardTitle, CardDescription } from "@/ui/components/card";
-import { useRef, useState } from "react";
+
+// --- LAYOUT SECCIOLINI TAVOLO (Estratti all'esterno per evitare riallocazioni) ---
+type SeatLayout = {
+  pos: string;
+  dir: "flex-col" | "flex-row";
+  cardFirst: boolean;
+};
+
+const SEAT_BOTTOM: SeatLayout = {
+  pos: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4",
+  dir: "flex-col",
+  cardFirst: true,
+};
+const SEAT_TOP: SeatLayout = {
+  pos: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/4",
+  dir: "flex-col",
+  cardFirst: false,
+};
+
+const SEAT_PRESETS: Record<number, SeatLayout[]> = {
+  2: [SEAT_BOTTOM, SEAT_TOP],
+  3: [
+    SEAT_BOTTOM,
+    { pos: "left-0 top-[38%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+    { pos: "right-0 top-[38%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+  ],
+  4: [
+    SEAT_BOTTOM,
+    { pos: "left-0 top-1/2 -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+    SEAT_TOP,
+    { pos: "right-0 top-1/2 translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+  ],
+  5: [
+    SEAT_BOTTOM,
+    { pos: "left-0 top-[55%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+    { pos: "left-[24%] top-0 -translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
+    { pos: "left-[76%] top-0 translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
+    { pos: "right-0 top-[55%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+  ],
+  6: [
+    SEAT_BOTTOM,
+    { pos: "left-0 top-[55%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+    { pos: "left-[20%] top-0 -translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
+    SEAT_TOP,
+    { pos: "left-[80%] top-0 translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
+    { pos: "right-0 top-[55%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+  ],
+};
+
+function getSeatLayout(idx: number, total: number): SeatLayout {
+  const preset = SEAT_PRESETS[Math.min(Math.max(total, 2), 6)] ?? SEAT_PRESETS[6];
+  return preset[idx % preset.length];
+}
 
 interface GameBoardProps {
   customPlayerId?: number;
@@ -57,201 +110,66 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     handlePlayCard,
   } = useGameBoard(customPlayerId);
 
+  const [forceGameEnded, setForceGameEnded] = useState(false);
+  const [isCardDragging, setIsCardDragging] = useState(false);
+  const tableRef = useRef<HTMLDivElement | null>(null);
+
   const players = lobby?.players ?? [];
-
-  // Il player corrente sta sempre in basso (indice 0), gli altri seguono in senso orario.
   const myIndex = players.findIndex((p) => p.id === playerId);
-  const orderedPlayers =
-    myIndex !== -1
-      ? [...players.slice(myIndex), ...players.slice(0, myIndex)]
-      : players;
+  const orderedPlayers = useMemo(
+    () => (myIndex !== -1 ? [...players.slice(myIndex), ...players.slice(0, myIndex)] : players),
+    [players, myIndex]
+  );
 
-  // Seggiolini a cavallo del bordo (stile poker): il badge sta sul rail,
-  // la carta giocata sta sempre tra badge e centro (davanti al player).
-  // dir = direzione flex del seggiolino, cardFirst = carta verso il centro.
-  type SeatLayout = {
-    pos: string;
-    dir: "flex-col" | "flex-row";
-    cardFirst: boolean;
-  };
+  const isGameEnded = gameState.status === "GAME_ENDED" || forceGameEnded;
 
-  const SEAT_BOTTOM: SeatLayout = {
-    pos: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4",
-    dir: "flex-col",
-    cardFirst: true,
-  };
-  const SEAT_TOP: SeatLayout = {
-    pos: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/4",
-    dir: "flex-col",
-    cardFirst: false,
-  };
+  const sortedScoreboard = useMemo(() => {
+    if (!gameState.scoreboard) return [];
+    return Object.entries(gameState.scoreboard)
+      .map(([pIdStr, entries]) => {
+        const pId = Number(pIdStr);
+        const playerObj = playersMap.get(pId);
+        const playerName =
+          typeof playerObj === "object" && playerObj !== null
+            ? playerObj.name
+            : playerObj ?? `Giocatore ${pId}`;
 
-  const SEAT_PRESETS: Record<number, SeatLayout[]> = {
-    2: [
-      SEAT_BOTTOM,
-      SEAT_TOP,
-    ],
-    3: [
-      SEAT_BOTTOM,
-      { pos: "left-0 top-[38%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-      { pos: "right-0 top-[38%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
-    ],
-    4: [
-      SEAT_BOTTOM,
-      { pos: "left-0 top-1/2 -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-      SEAT_TOP,
-      { pos: "right-0 top-1/2 translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
-    ],
-    5: [
-      SEAT_BOTTOM,
-      { pos: "left-0 top-[55%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-      { pos: "left-[24%] top-0 -translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
-      { pos: "left-[76%] top-0 translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
-      { pos: "right-0 top-[55%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
-    ],
-    6: [
-      SEAT_BOTTOM,
-      { pos: "left-0 top-[55%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-      { pos: "left-[20%] top-0 -translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
-      SEAT_TOP,
-      { pos: "left-[80%] top-0 translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
-      { pos: "right-0 top-[55%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
-    ],
-  };
+        let finalScore = 0;
+        if (Array.isArray(entries) && entries.length > 0) {
+          finalScore = Number(entries[entries.length - 1]?.score ?? 0);
+        } else if (typeof entries === "number") {
+          finalScore = entries;
+        } else if (entries && typeof entries === "object" && "score" in entries) {
+          finalScore = Number((entries as { score: unknown }).score ?? 0);
+        }
 
-  const seatLayout = (idx: number, total: number): SeatLayout => {
-    const preset = SEAT_PRESETS[Math.min(Math.max(total, 2), 6)] ?? SEAT_PRESETS[6];
-    return preset[idx % preset.length];
-  };
+        return {
+          id: pId,
+          name: playerName,
+          score: Number.isNaN(finalScore) ? 0 : finalScore,
+        };
+      })
+      .sort((a, b) => b.score - a.score);
+  }, [gameState.scoreboard, playersMap]);
 
   const handleReturnToLobby = () => {
-    // Naviga alla vista della lobby o alla pagina principale/selezione stanze
-    if (lobbyId) {
-      router.push(`/lobby/${lobbyId}`);
-    } else {
-      router.push("/");
-    }
+    router.push(lobbyId ? `/lobby/${lobbyId}` : "/");
   };
-
-    // 1. Aggiungi uno stato locale per il testing
-  const [forceGameEnded, setForceGameEnded] = useState(false);
-
-  // Drop-zone per il drag & drop delle carte: il tavolo da gioco.
-  // (La carta trascinata vive in un portal su document.body, quindi e'
-  // sempre sopra al tavolo senza bisogno di z-index nella pagina.)
-  const tableRef = useRef<HTMLDivElement | null>(null);
-  const [isCardDragging, setIsCardDragging] = useState(false);
 
   const handleDropCard = (card: Card) => {
     setSelectedCard(null);
     void handlePlayCard(card);
   };
 
-  // 2. Aggiorna il controllo dello stato Ended
-  const isGameEnded = gameState.status === "GAME_ENDED" || forceGameEnded;
-
-  const sortedScoreboard = gameState.scoreboard
-    ? Object.entries(gameState.scoreboard)
-        .map(([pIdStr, entries]) => {
-          const pId = Number(pIdStr);
-          const playerObj = playersMap.get(pId);
-          const playerName =
-            typeof playerObj === "object" && playerObj !== null
-              ? playerObj.name
-              : playerObj ?? `Giocatore ${pId}`;
-
-          // Se entries è un array (storico del tabellone), prendiamo il punteggio dell'ultimo round
-          let finalScore = 0;
-          if (Array.isArray(entries) && entries.length > 0) {
-            const lastEntry = entries[entries.length - 1];
-            finalScore = Number(lastEntry?.score ?? 0);
-          } else if (typeof entries === "number") {
-            finalScore = entries;
-          } else if (entries && typeof entries === "object" && "score" in entries) {
-            finalScore = Number((entries as { score: unknown }).score ?? 0);
-          }
-
-          return {
-            id: pId,
-            name: playerName,
-            score: Number.isNaN(finalScore) ? 0 : finalScore,
-          };
-        })
-        .sort((a, b) => b.score - a.score)
-    : [];
-
   return (
     <div className="relative w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
-      {isGameEnded && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-          <UiCard className="w-full max-w-lg bg-zinc-900/95 border-2 border-amber-500/80 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-center overflow-hidden">
-            <CardHeader className="bg-gradient-to-b from-amber-500/10 to-transparent pb-4 border-b border-zinc-800">
-              <Badge variant="outline" className="w-fit mx-auto mb-2 border-amber-500/50 text-amber-400 bg-amber-500/10 px-3 py-0.5 text-xs font-semibold uppercase tracking-wider">
-                Partita Conclusa
-              </Badge>
-              <CardTitle className="text-3xl font-black text-amber-400 tracking-wider uppercase">
-                🏆 Risultati Finali
-              </CardTitle>
-              <CardDescription className="text-zinc-400 text-sm mt-1">
-                Ecco la classifica finale della partita
-              </CardDescription>
-            </CardHeader>
+      <GameEndOverlay
+        isGameEnded={isGameEnded}
+        sortedScoreboard={sortedScoreboard}
+        playerId={playerId}
+        onReturnToLobby={handleReturnToLobby}
+      />
 
-            <CardContent className="p-6 space-y-6">
-              {/* Tabella Classifica Finale */}
-              {sortedScoreboard.length > 0 && (
-                <div className="space-y-2 bg-zinc-950/60 rounded-xl p-3 border border-zinc-800/80">
-                  {sortedScoreboard.map((item, index) => {
-                    const isWinner = index === 0;
-                    const isMe = item.id === playerId;
-
-                    return (
-                      <div
-                        key={item.id}
-                        className={`flex items-center justify-between px-4 py-2.5 rounded-lg transition-all ${
-                          isWinner
-                            ? "bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold"
-                            : isMe
-                            ? "bg-zinc-800/80 text-white border border-zinc-700"
-                            : "bg-zinc-900/50 text-zinc-300"
-                        }`}
-                      >
-                        <div className="flex items-center gap-3">
-                          <span
-                            className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-black ${
-                              isWinner
-                                ? "bg-amber-400 text-zinc-950"
-                                : "bg-zinc-800 text-zinc-400"
-                            }`}
-                          >
-                            {index + 1}
-                          </span>
-                          <span className="text-sm font-semibold truncate max-w-[180px]">
-                            {item.name} {isMe && "(Tu)"}
-                          </span>
-                        </div>
-                        <span className="font-mono font-extrabold text-base">
-                          {item.score} <span className="text-xs font-normal text-zinc-500">pt</span>
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
-              {/* Bottone per tornare alla lobby */}
-              <Button
-                onClick={handleReturnToLobby}
-                className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-6 text-base tracking-wide uppercase transition-all shadow-lg hover:shadow-amber-500/25"
-              >
-                Torna Alla Lobby
-              </Button>
-            </CardContent>
-          </UiCard>
-        </div>
-      )}
-
-      {/* 1. Header & Stato Connessione */}
       <GameHeader
         lobbyId={lobbyId}
         playerId={playerId}
@@ -260,7 +178,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         status={gameState.status}
       />
 
-      {/* 1b. Ripristino snapshot dal backend (reload/riconnessione) */}
       {isRestoring && (
         <div className="p-3 rounded-2xl border border-amber-400/50 bg-amber-950/60 text-amber-200 text-sm font-semibold text-center animate-pulse">
           🔄 Ripristino stato partita dal server...
@@ -279,7 +196,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         </div>
       )}
 
-      {/* 2b. Stato turno sopra il tavolo (il centro resta libero per la briscola) */}
       <div className="mx-auto w-full max-w-md">
         <GameTurnBanner
           isMyTurn={isMyTurn}
@@ -290,32 +206,26 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         />
       </div>
 
-      {/* 2. TAVOLO DA GIOCO TEXAS HOLD'EM (Poker Table Felt) + DROP-ZONE CARTE */}
       <div
         ref={tableRef}
-        className={`relative w-full my-10 py-10 px-4 min-h-[560px] sm:min-h-[600px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)] transition-shadow duration-200 ${isCardDragging ? "ring-4 ring-emerald-300/80" : ""}`}
+        className={`relative w-full my-10 py-10 px-4 min-h-[560px] sm:min-h-[600px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)] transition-shadow duration-200 ${
+          isCardDragging ? "ring-4 ring-emerald-300/80" : ""
+        }`}
       >
-
-        {/* Hint mentre trascini una carta */}
         {isCardDragging && (
           <div className="pointer-events-none absolute top-5 left-1/2 z-30 -translate-x-1/2 animate-pulse rounded-full border border-emerald-300/60 bg-emerald-500/20 px-4 py-1.5 text-[11px] font-black tracking-widest whitespace-nowrap text-emerald-100 uppercase">
             Rilascia qui per giocare
           </div>
         )}
 
-        {/* Linea interna decorativa del feltro */}
         <div className="absolute inset-4 rounded-[100px] sm:rounded-[160px] border-2 border-emerald-600/30 pointer-events-none flex items-center justify-center">
           <span className="text-emerald-900/20 text-6xl sm:text-8xl font-black uppercase tracking-widest select-none">
             WIZARD
           </span>
         </div>
 
-        {/* --- CENTRO TAVOLO: BRISCOLA --- */}
         <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2">
-          <TrumpArea
-            trump={gameState.trump}
-            effectiveTrumpColor={gameState.effectiveTrumpColor}
-          />
+          <TrumpArea trump={gameState.trump} effectiveTrumpColor={gameState.effectiveTrumpColor} />
           {gameState.followingColor && (
             <span className="rounded-full border border-emerald-600/40 bg-emerald-950/70 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
               Seme di mano: {gameState.followingColor}
@@ -323,7 +233,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           )}
         </div>
 
-        {/* --- REVEAL DI FINE PRESA: tavolo congelato + conto alla rovescia --- */}
         {revealedTrick && (
           <div className="pointer-events-none absolute top-1/2 left-1/2 z-30 flex w-max max-w-[92%] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 rounded-3xl border border-amber-400/60 bg-zinc-950/95 p-3 shadow-2xl backdrop-blur-md sm:p-4">
             <span className="rounded-full border border-amber-400/50 bg-amber-500/15 px-3 py-0.5 text-[11px] font-black tracking-wider text-amber-300 uppercase">
@@ -333,7 +242,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               {revealedTrick.entries.map((entry, index) => {
                 const entryName = playersMap.get(entry.playerId)?.name ?? `Giocatore ${entry.playerId}`;
                 const entryWinning = Boolean(
-                  revealedTrick.winningCard && cardEquals(entry.card, revealedTrick.winningCard),
+                  revealedTrick.winningCard && cardEquals(entry.card, revealedTrick.winningCard)
                 );
                 return (
                   <div key={`${entry.playerId}-${index}`} className="flex flex-col items-center gap-1">
@@ -358,20 +267,17 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             </div>
           </div>
         )}
-
-        {/* --- GIOCATORI SUL RAIL, CARTA GIOCATA DAVANTI AL PLAYER --- */}
         {orderedPlayers.map((player, idx) => {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
           const isMe = player.id === playerId;
           const playerBid = gameState.bids[player.id];
           const playerTricks = gameState.tricksWon[player.id] ?? 0;
           const isBot = Boolean(player.difficulty);
-          const seat = seatLayout(idx, orderedPlayers.length);
+          const seat = getSeatLayout(idx, orderedPlayers.length);
           const played = gameState.table.find((entry) => entry.playerId === player.id);
           const isWinning = Boolean(
-            played && gameState.winningCard && cardEquals(played.card, gameState.winningCard),
+            played && gameState.winningCard && cardEquals(played.card, gameState.winningCard)
           );
-          // Lo slot vuoto si vede solo a trick in corso (segnale "deve ancora giocare").
           const showSlot = played !== undefined || gameState.table.length > 0;
 
           const badge = (
@@ -439,9 +345,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         })}
       </div>
 
-      {/* 3. MANO DEL GIOCATORE & CONTROLLI D'AZIONE (Schermo In Basso) */}
+      {/* 3. Mano del Giocatore & Controlli d'Azione */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        {/* Mano del Giocatore (2 Colonne) */}
         <div className="lg:col-span-2">
           <PlayerHand
             hand={gameState.hand}
@@ -456,7 +361,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           />
         </div>
 
-        {/* Controlli Azione Diretti (1 Colonna) */}
         <div>
           <GameActionControls
             isMyTurn={isMyTurn}
@@ -477,7 +381,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         </div>
       </div>
 
-      {/* 4. PANNELLI SECONDARI E TOOL UTILI */}
+      {/* 4. Pannelli Secondari & Dev Tool */}
       <div className="space-y-6 pt-4 border-t border-zinc-800">
         <GameScoreboard
           scoreboard={gameState.scoreboard}
