@@ -122,7 +122,7 @@ export function formatGameActionError(
   if (inner.includes("GamePaused")) {
     return (
       "Partita in pausa: un giocatore è offline o la partita è stata messa in pausa. " +
-      "Attendi la riconnessione oppure torna alla lobby e premi Avvia per riprenderla."
+      "Attendi la riconnessione oppure torna alla lobby e premi Riprendi Partita."
     );
   }
   if (inner.includes("InvalidBid")) {

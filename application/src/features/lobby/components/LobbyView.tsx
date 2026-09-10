@@ -53,12 +53,19 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   }
 
   const players = lobby?.players || [];
+  const isPaused = lobby?.status === "PAUSED";
 
   return (
     <div className="w-full max-w-4xl space-y-6">
       {connectionState === "reconnecting" && (
         <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-md text-xs text-center animate-pulse">
           {lobbyI18n.reconnecting}
+        </div>
+      )}
+
+      {isPaused && (
+        <div className="bg-sky-500/10 border border-sky-500/30 text-sky-300 px-4 py-2 rounded-md text-sm text-center font-semibold">
+          ⏸️ {lobbyI18n.pausedNotice}
         </div>
       )}
 
@@ -87,6 +94,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         isLeaving={isLeaving}
         onLeave={handleLeaveLobby}
         onStart={handleStartGame}
+        isResuming={isPaused}
       />
     </div>
   );

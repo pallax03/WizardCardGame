@@ -359,7 +359,7 @@ export function useGameBoard(customPlayerId?: number) {
   // possono essere rifiutate con `GamePaused`.
   const lobbyWarning = useMemo<string | null>(() => {
     if (lobby?.status === "PAUSED") {
-      return "Partita in pausa: torna alla lobby e premi Avvia per riprenderla.";
+      return "Partita in pausa: stai tornando alla lobby, premi Riprendi Partita per continuare.";
     }
     if (lobby?.status === "DISCONNECTING") {
       return "Un giocatore si è disconnesso: se è il tuo turno puoi comunque giocare, altrimenti attendi la riconnessione.";

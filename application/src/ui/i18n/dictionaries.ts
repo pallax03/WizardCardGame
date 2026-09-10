@@ -46,7 +46,9 @@ export const it = {
     actions: {
       leave: "Abbandona",
       startGame: "Avvia Partita",
+      resumeGame: "Riprendi Partita",
     },
+    pausedNotice: "Partita in pausa — premi Riprendi Partita per continuare.",
   },
   chat: {
     open: "Apri la chat",
@@ -147,7 +149,9 @@ export const en = {
     actions: {
       leave: "Leave",
       startGame: "Start Game",
+      resumeGame: "Resume Game",
     },
+    pausedNotice: "Game paused — press Resume Game to continue.",
   },
   chat: {
     open: "Open chat",

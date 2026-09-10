@@ -235,9 +235,10 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     dispatch({ type: "event/received", event });
     console.log("Received server event:", event);
     if (event.type === "system") {
-      if (event.action === "joined" || event.action === "left") {
-        void refreshLobby();
-      }
+      // Lo stato della lobby (status, isOnline dei giocatori) cambia anche su
+      // online/offline/paused/resumed/afk_replaced: ricarica sempre, così la UI
+      // rileva la pausa (e torna alla lobby) e la successiva ripresa.
+      void refreshLobby();
       return;
     }
 
@@ -258,6 +259,18 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (state.lobby?.status === "IN_GAME") {
       const targetPath = `/lobby/${state.lobbyId}/game`;
+
+      if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
+        router.push(targetPath);
+      }
+    }
+  }, [state.lobby?.status, state.lobbyId, router]);
+
+  // Partita in pausa (es. per inattività/AFK): dalla pagina di gioco si torna
+  // alla lobby, dove appare il bottone per riprenderla.
+  useEffect(() => {
+    if (state.lobby?.status === "PAUSED") {
+      const targetPath = `/lobby/${state.lobbyId}`;
 
       if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
         router.push(targetPath);

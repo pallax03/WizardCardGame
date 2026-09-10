@@ -42,4 +42,6 @@ export interface LobbyActionsProps {
   isLeaving: boolean;
   onLeave: () => void;
   onStart: () => void;
+  /** La lobby è in pausa: il bottone avvia diventa "Riprendi Partita". */
+  isResuming?: boolean;
 }
