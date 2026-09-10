@@ -10,6 +10,7 @@ case class Player(
     name: String,
     difficulty: Option[BotsDifficulty] = None,
     isOnline: Boolean = false,
+    strikes: Int = 0,
     secret: Option[String] = None
 ):
 
@@ -32,7 +33,7 @@ case class Player(
 
 object Player:
   def human(id: PlayerId, name: String, secret: Option[String]): Player =
-    Player(id, name, None, false, secret)
+    Player(id, name, None, false, 0, secret)
 
   def bot(id: PlayerId, difficulty: BotsDifficulty): Player =
-    Player(id, s"Bot-${id.toInt}", Some(difficulty), false, None)
+    Player(id, s"Bot-${id.toInt}", Some(difficulty), false, 0, None)

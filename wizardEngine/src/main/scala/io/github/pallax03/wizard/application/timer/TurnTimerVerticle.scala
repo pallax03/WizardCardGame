@@ -11,12 +11,12 @@ import io.vertx.redis.client.{Command, Redis, Request}
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.{GameConfiguration, LobbyId, LobbyPlayer, LobbyStatus}
+import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubSubPort}
-import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 
 class TurnTimerVerticle(
     pubSubPort: PubSubPort,
@@ -40,26 +40,14 @@ class TurnTimerVerticle(
       payload <- Future.fromTry(jsonStr.decodeAs[LobbyPlayer].toTry)
       case Right(lobby) <- lobbyStatePort.getLobby(payload.lobbyId)
       if lobby.status == LobbyStatus.IN_GAME
-      strikesResp <- redisClient
-        .send(
-          Request.cmd(Command.GET).arg(ChannelsKeys.afkStrikes(payload.lobbyId, payload.playerId))
-        )
-        .asScala
-      strikes = Option(strikesResp).map(_.toString.toInt).getOrElse(0)
-      ttl = Math.max(
-        1,
-        (lobby.configuration.timer + GameConfiguration.gracePeriodSeconds) / Math
-          .pow(2, strikes)
-          .toInt
-      )
+      strikes = lobby.players.find(_.id == payload.playerId).map(_.strikes).getOrElse(0)
       _ <- redisClient
         .send(
-          Request
-            .cmd(Command.SET)
-            .arg(ChannelsKeys.turnTimer(payload.lobbyId, payload.playerId))
-            .arg("1")
-            .arg("EX")
-            .arg(ttl.toString)
+          RedisUtil.setWithDefaultTTL(
+            ChannelsKeys.turnTimer(payload.lobbyId, payload.playerId),
+            "1",
+            lobby.configuration.calculateTTL(strikes).toString
+          )
         )
         .asScala
     yield ()).recover(_ => ())
@@ -76,14 +64,10 @@ class TurnTimerVerticle(
           _ <-
             if player.isBot then inboundPort.forceFallbackAction(lobbyId, playerId)
             else
-              val strikesKey = ChannelsKeys.afkStrikes(lobbyId, playerId)
               for
-                strikesResp <- redisClient.send(Request.cmd(Command.INCR).arg(strikesKey)).asScala
-                _ <- redisClient
-                  .send(Request.cmd(Command.EXPIRE).arg(strikesKey).arg("86400"))
-                  .asScala
+                strikes <- lobbyStatePort.incrementPlayerStrikes(lobbyId, playerId)
                 _ <-
-                  if strikesResp.toLong >= lobby.configuration.maxStrikes then
+                  if strikes >= lobby.configuration.maxStrikes then
                     lobbyStatePort
                       .setPlayerOnlineStatus(lobbyId, playerId, false)
                       .flatMap: _ =>

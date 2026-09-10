@@ -47,7 +47,9 @@ class LobbyRoutes(
         LobbyStateResponse(
           lobbyId,
           lobby.status,
-          lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline)),
+          lobby.players.map(p =>
+            PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline, p.strikes)
+          ),
           lobby.configuration
         )
       }.value
@@ -134,9 +136,24 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => (lobbyId, playerId) =>
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
-          for newLobby <- lobby.removePlayer(playerId)
-          yield ((), newLobby, Some(SystemEvent.left(playerId)))
+          if lobby.status == LobbyStatus.WAITING then
+            for newLobby <- lobby.removePlayer(playerId)
+            yield ((), newLobby, Some(SystemEvent.left(playerId)))
+          else Left(LobbyError.GameInProgress)
         }).value
+      }
+
+  private val returnLobbyEndpoint: ServerEndpoint[Any, Future] =
+    LobbyEndpoints.returnLobby
+      .serverSecurityLogicSuccess(Future.successful)
+      .serverLogic { secret => lobbyId =>
+        EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
+          if lobby.status == LobbyStatus.FINISHED || lobby.status == LobbyStatus.PAUSED then
+            Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
+          else Left(LobbyError.GameInProgress)
+        }).flatMap { _ =>
+          EitherT.right[LobbyError](gameEngine.deleteGame(lobbyId))
+        }.value
       }
 
   val all: List[ServerEndpoint[Any, Future]] = List(
@@ -145,6 +162,7 @@ class LobbyRoutes(
     getLobbyInfoEndpoint,
     startGameEndpoint,
     pauseGameEndpoint,
+    returnLobbyEndpoint,
     updateConfigurationEndpoint,
     removePlayerEndpoint,
     getPlayerGameEndpoint
