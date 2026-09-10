@@ -7,9 +7,9 @@ case class SystemEvent(playerId: PlayerId, action: String) extends PlayerScoped
 object SystemEvent:
   def online(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "online")
   def offline(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "offline")
-  def joined(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "joined")
+  def joined(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "joined") // getLobby
   def left(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "left")
-  def paused(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "paused")
-  def resumed(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "resumed")
-  def configUpdated(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "config_updated")
+  def configUpdated(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "config_updated") // getLobby
+  def paused(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "paused") // getLobby ?
+  def resumed(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "resumed") // getGame
   def afkReplaced(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "afk_replaced")

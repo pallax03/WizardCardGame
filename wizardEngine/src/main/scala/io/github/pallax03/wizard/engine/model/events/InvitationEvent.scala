@@ -12,4 +12,4 @@ object InvitationEvent:
   case class WaitingForBid(destinationId: PlayerId, round: Round, invalidBid: Option[Bid] = None)
       extends InvitationEvent
   case class WaitingForCard(destinationId: PlayerId, legalCards: List[Card]) extends InvitationEvent
-  case class WaitingForTrump(destinationId: PlayerId) extends InvitationEvent
+  case class WaitingForTrump(destinationId: PlayerId, colorOptions: List[Card.Color] = Card.Color.values.toList) extends InvitationEvent

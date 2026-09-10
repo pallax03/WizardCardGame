@@ -24,11 +24,11 @@ object LobbyCodecs:
   given Decoder[BotsDifficulty] =
     Decoder.decodeString.emapTry(s => Try(BotsDifficulty.valueOf(s)))
 
-  given Encoder[Player] = Encoder.forProduct5("id", "name", "difficulty", "isOnline", "secret")(p =>
-    (p.id, p.name, p.difficulty, p.isOnline, p.secret)
+  given Encoder[Player] = Encoder.forProduct6("id", "name", "difficulty", "isOnline", "strikes", "secret")(p =>
+    (p.id, p.name, p.difficulty, p.isOnline, p.strikes, p.secret)
   )
   given Decoder[Player] =
-    Decoder.forProduct5("id", "name", "difficulty", "isOnline", "secret")(Player.apply)
+    Decoder.forProduct6("id", "name", "difficulty", "isOnline", "strikes", "secret")(Player.apply)
 
   given Encoder[GameConfiguration] = deriveEncoder
   given Decoder[GameConfiguration] = deriveDecoder

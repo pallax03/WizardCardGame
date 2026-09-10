@@ -61,7 +61,10 @@ object WizardEventsCodecs:
         case "GameResumed" =>
           fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameResumed.apply)
         case "WaitingForTrump" =>
-          ev.get[PlayerId]("destinationId").map(InvitationEvent.WaitingForTrump.apply)
+          for {
+            p <- ev.get[PlayerId]("destinationId")
+            c <- ev.get[List[Card.Color]]("colorOptions")
+          } yield InvitationEvent.WaitingForTrump(p, c)
         case "WaitingForBid" =>
           for {
             p <- ev.get[PlayerId]("destinationId")
