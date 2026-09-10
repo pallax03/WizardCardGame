@@ -1,5 +1,7 @@
 package io.github.pallax03.wizard.engine.adapters.redis
 
+import io.github.pallax03.wizard.util.RedisUtil
+
 private[redis] object RedisLobbyScripts:
 
   val casLobbyScript: String =
@@ -11,6 +13,6 @@ private[redis] object RedisLobbyScripts:
       |  local currentObj = cjson.decode(currentStr)
       |  if currentObj.version ~= tonumber(ARGV[1]) then return 0 end
       |end
-      |redis.call('SET', KEYS[1], ARGV[2], 'EX', ${io.github.pallax03.wizard.util.ChannelsKeys.DEFAULT_TTL})
+      |redis.call('SET', KEYS[1], ARGV[2], 'EX', ${RedisUtil.DEFAULT_TTL})
       |return 1
       |""".stripMargin

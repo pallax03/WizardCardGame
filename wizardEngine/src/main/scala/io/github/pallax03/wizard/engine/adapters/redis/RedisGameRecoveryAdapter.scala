@@ -2,25 +2,15 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import io.vertx.redis.client.{Command, Redis, Request}
-
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.LobbyId
-import io.github.pallax03.wizard.engine.model.core.state.{
-  GameState,
-  ServerCoreState,
-  ServerGameState
-}
+import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState, ServerGameState}
 import io.github.pallax03.wizard.engine.model.core.{GameEngine, GameException}
 import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.ports.{
-  GameRecoveryPort,
-  OutboundPort,
-  PubSubPort
-}
-import io.github.pallax03.wizard.util.ChannelsKeys
+import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, OutboundPort, PubSubPort}
+import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
 class RedisGameRecoveryAdapter(
@@ -97,7 +87,7 @@ class RedisGameRecoveryAdapter(
         val engine = GameEngine.recoverRound(core)
         redisClient
           .send(
-            ChannelsKeys.setWithDefaultTTL(ChannelsKeys.game(lobbyId), engine.state.toJson)
+            RedisUtil.setWithDefaultTTL(ChannelsKeys.game(lobbyId), engine.state.toJson)
           )
           .asScala
           .map: _ =>

@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.engine.lobby
 object GameConfiguration:
   val MIN_PLAYERS: Int = 3
   val MAX_PLAYERS: Int = 6
-  val gracePeriodSeconds: Int = 3
+  private val gracePeriodSeconds: Int = 3
 
 enum ConfigurationErrors(val min: Int, val max: Int):
   case TimerNotValid extends ConfigurationErrors(30, 120)
@@ -32,3 +32,5 @@ case class GameConfiguration(
         ConfigurationErrors.MaxStrikesNotValid
       )
     yield ()
+    
+  def calculateTTL(strikes: Int): Int = Math.max(1, (timer + GameConfiguration.gracePeriodSeconds) / Math.pow(2, strikes).toInt) 

@@ -2,11 +2,8 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import cats.syntax.all.*
-
 import io.vertx.redis.client.{Command, Redis, Request}
-
 import io.github.pallax03.wizard.codecs.engine.model.core.state.GameStateCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.*
@@ -17,7 +14,7 @@ import io.github.pallax03.wizard.engine.model.core.state.*
 import io.github.pallax03.wizard.engine.model.events.*
 import io.github.pallax03.wizard.engine.model.rules.FallbackStrategy
 import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, InboundPort, OutboundPort}
-import io.github.pallax03.wizard.util.ChannelsKeys
+import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
 class RedisInboundAdapter(
@@ -49,11 +46,11 @@ class RedisInboundAdapter(
 
   private def saveState(lobbyId: LobbyId, newState: GameEngine): Future[Unit] =
     val checkpointKey = ChannelsKeys.gameCheckpoint(lobbyId)
-    val mainSave = ChannelsKeys.setWithDefaultTTL(ChannelsKeys.game(lobbyId), newState.state.toJson)
+    val mainSave = RedisUtil.setWithDefaultTTL(ChannelsKeys.game(lobbyId), newState.state.toJson)
     val checkpointSave = newState.state match
       case _: GameState.Ended => List(Request.cmd(Command.DEL).arg(checkpointKey))
       case _ if newState.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]) =>
-          List(ChannelsKeys.setWithDefaultTTL(checkpointKey, newState.state.toJson))
+          List(RedisUtil.setWithDefaultTTL(checkpointKey, newState.state.toJson))
       case _ => List.empty
     Future.sequence((mainSave +: checkpointSave).map(r => redisClient.send(r).asScala)).void
 
@@ -73,7 +70,7 @@ class RedisInboundAdapter(
     val initialState = GameEngine.initializeGame(players)
     redisClient
       .send(
-        ChannelsKeys.setWithDefaultTTL(ChannelsKeys.game(lobbyId), initialState.state.toJson)
+        RedisUtil.setWithDefaultTTL(ChannelsKeys.game(lobbyId), initialState.state.toJson)
       )
       .asScala
       .map: _ =>
