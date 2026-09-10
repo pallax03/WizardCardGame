@@ -20,10 +20,10 @@ trait WebSocketsPort:
    * @return a Future completing when the subscription is successfully established.
    */
   def subscribeToLobbyEvents(
-                              lobbyId: LobbyId,
-                              playerId: PlayerId,
-                              ws: ServerWebSocket
-                            ): Future[Unit]
+      lobbyId: LobbyId,
+      playerId: PlayerId,
+      ws: ServerWebSocket
+  ): Future[Unit]
 
   /**
    * Close socket.

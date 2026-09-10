@@ -12,19 +12,19 @@ import sttp.tapir.server.ServerEndpoint
 
 /** HTTP routes for the Lobby domain. */
 class LobbyRoutes(
-                   lobbyStatePort: LobbyStatePort,
-                   gameEngine: InboundPort
-                 )(using
-                   ec: ExecutionContext
-                 ):
+    lobbyStatePort: LobbyStatePort,
+    gameEngine: InboundPort
+)(using
+    ec: ExecutionContext
+):
 
   import cats.data.EitherT
   import cats.implicits.*
 
   private def addPlayerToLobby(
-                                lobbyId: LobbyId,
-                                req: JoinLobbyRequest
-                              ): Future[Either[LobbyError, AuthLobbyPlayer]] =
+      lobbyId: LobbyId,
+      req: JoinLobbyRequest
+  ): Future[Either[LobbyError, AuthLobbyPlayer]] =
     val actualSecret = req.difficulty match
       case Some(_) => None
       case None    => Some(req.secret.getOrElse(java.util.UUID.randomUUID().toString))
@@ -83,12 +83,12 @@ class LobbyRoutes(
       .serverLogic { secret => lobbyId =>
         EitherT(lobbyStatePort.updateAuthLobby[Lobby](lobbyId, secret) { (player, lobby) =>
           for _ <- lobby.validateStartOrResume
-            yield (
-              lobby,
-              lobby.copy(status = LobbyStatus.IN_GAME),
-              if lobby.status == LobbyStatus.PAUSED then Option(SystemEvent.resumed(player.id))
-              else Option.empty
-            )
+          yield (
+            lobby,
+            lobby.copy(status = LobbyStatus.IN_GAME),
+            if lobby.status == LobbyStatus.PAUSED then Option(SystemEvent.resumed(player.id))
+            else Option.empty
+          )
         }).flatMap { oldLobby =>
           EitherT.right[LobbyError](
             if oldLobby.status == LobbyStatus.WAITING then
@@ -138,7 +138,7 @@ class LobbyRoutes(
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
           if lobby.status == LobbyStatus.WAITING then
             for newLobby <- lobby.removePlayer(playerId)
-              yield ((), newLobby, Some(SystemEvent.left(playerId)))
+            yield ((), newLobby, Some(SystemEvent.left(playerId)))
           else Left(LobbyError.GameInProgress)
         }).value
       }

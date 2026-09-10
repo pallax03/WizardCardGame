@@ -21,10 +21,10 @@ import io.github.pallax03.wizard.util.FutureSyntax.*
 import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 
 class RedisInboundAdapter(
-                           private val redisClient: Redis,
-                           private val outboundPort: OutboundPort,
-                           private val recoveryPort: GameRecoveryPort
-                         ) extends InboundPort:
+    private val redisClient: Redis,
+    private val outboundPort: OutboundPort,
+    private val recoveryPort: GameRecoveryPort
+) extends InboundPort:
 
   private def decodeGameState(rawGameState: String): ServerGameState =
     rawGameState.decodeAs[ServerGameState] match
@@ -66,10 +66,10 @@ class RedisInboundAdapter(
 
   /** @inheritdoc */
   override def startGame(
-                          lobbyId: LobbyId,
-                          players: List[PlayerId],
-                          config: GameConfiguration
-                        ): Future[Unit] =
+      lobbyId: LobbyId,
+      players: List[PlayerId],
+      config: GameConfiguration
+  ): Future[Unit] =
     val initialState = GameEngine.initializeGame(players)
     redisClient
       .send(
