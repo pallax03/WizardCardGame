@@ -32,5 +32,6 @@ case class GameConfiguration(
         ConfigurationErrors.MaxStrikesNotValid
       )
     yield ()
-    
-  def calculateTTL(strikes: Int): Int = Math.max(1, (timer + GameConfiguration.gracePeriodSeconds) / Math.pow(2, strikes).toInt) 
+
+  def calculateTTL(strikes: Int): Int =
+    Math.max(1, (timer + GameConfiguration.gracePeriodSeconds) / Math.pow(2, strikes).toInt)

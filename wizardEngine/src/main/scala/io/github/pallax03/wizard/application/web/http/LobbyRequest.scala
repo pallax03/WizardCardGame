@@ -18,7 +18,8 @@ case class PublicPlayerInfo(
     id: PlayerId,
     name: String,
     difficulty: Option[BotsDifficulty] = None,
-    isOnline: Boolean = false
+    isOnline: Boolean = false,
+    strikes: Int = 0
 )
 
 case class LobbyStateResponse(

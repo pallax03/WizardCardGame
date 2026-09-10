@@ -82,7 +82,9 @@ object LobbyEndpoints:
   val returnLobby: Endpoint[String, LobbyId, LobbyError, Unit, Any] =
     secureBase.post
       .summary("Return to lobby")
-      .description("Transitions FINISHED or PAUSED lobby back to WAITING and deletes the game in Redis.")
+      .description(
+        "Transitions FINISHED or PAUSED lobby back to WAITING and deletes the game in Redis."
+      )
       .in(HttpSupport.lobbyIdPath / "return")
 
   /** POST /api/lobby/{lobbyId}/configuration — update the game configuration. */

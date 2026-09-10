@@ -2,9 +2,12 @@ package io.github.pallax03.wizard.application.timer
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import cats.syntax.all.*
+
 import io.vertx.core.AbstractVerticle
 import io.vertx.redis.client.{Command, Redis, Request}
+
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
@@ -12,8 +15,8 @@ import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer, LobbyStatus
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubSubPort}
-import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 
 class TurnTimerVerticle(
     pubSubPort: PubSubPort,
@@ -40,7 +43,11 @@ class TurnTimerVerticle(
       strikes = lobby.players.find(_.id == payload.playerId).map(_.strikes).getOrElse(0)
       _ <- redisClient
         .send(
-          RedisUtil.setWithDefaultTTL(ChannelsKeys.turnTimer(payload.lobbyId, payload.playerId), "1", lobby.configuration.calculateTTL(strikes).toString)
+          RedisUtil.setWithDefaultTTL(
+            ChannelsKeys.turnTimer(payload.lobbyId, payload.playerId),
+            "1",
+            lobby.configuration.calculateTTL(strikes).toString
+          )
         )
         .asScala
     yield ()).recover(_ => ())

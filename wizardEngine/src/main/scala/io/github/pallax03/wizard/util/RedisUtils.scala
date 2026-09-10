@@ -1,12 +1,13 @@
 package io.github.pallax03.wizard.util
 
+import io.vertx.redis.client.{Command, Request}
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.vertx.redis.client.{Command, Request}
 
 object RedisUtil:
   val DEFAULT_TTL: String = "86400"
-  
+
   def setWithDefaultTTL(key: String, value: String, ttl: String = DEFAULT_TTL): Request =
     Request.cmd(Command.SET).arg(key).arg(value).arg("EX").arg(ttl)
 

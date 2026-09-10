@@ -2,8 +2,11 @@ package io.github.pallax03.wizard.engine.adapters.redis
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import cats.syntax.all.*
+
 import io.vertx.redis.client.{Command, Redis, Request}
+
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
@@ -11,8 +14,8 @@ import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.LobbyStatePort
-import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 
 class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
@@ -100,12 +103,17 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       isOnline: Boolean
   ): Future[LobbyStatus] =
     updateLobby[Lobby](lobbyId) { lobby =>
-      lobby.handleOnlineStatusChange(playerId, isOnline).map(newLobby =>
-        val eventOpt = if isOnline then
-          newLobby.players.find(_.id == playerId).map(p => SystemEvent.strikesUpdated(playerId, p.strikes))
-        else None
-        (newLobby, newLobby, eventOpt)
-      )
+      lobby
+        .handleOnlineStatusChange(playerId, isOnline)
+        .map(newLobby =>
+          val eventOpt =
+            if isOnline then
+              newLobby.players
+                .find(_.id == playerId)
+                .map(p => SystemEvent.strikesUpdated(playerId, p.strikes))
+            else None
+          (newLobby, newLobby, eventOpt)
+        )
     }.flatMap {
       case Left(_) => Future.failed(new Exception("Player or Lobby not found"))
       case Right(newLobby) =>
@@ -120,15 +128,24 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
             else Future.unit
           delTimer.map(_ => newLobby.status)
         else if newLobby.status == LobbyStatus.DISCONNECTING then
-          redisClient.send(RedisUtil.setWithDefaultTTL(ChannelsKeys.disconnectTimer(lobbyId), "1", newLobby.configuration.timer.toString)).asScala.map(_ => newLobby.status)
+          redisClient
+            .send(
+              RedisUtil.setWithDefaultTTL(
+                ChannelsKeys.disconnectTimer(lobbyId),
+                "1",
+                newLobby.configuration.timer.toString
+              )
+            )
+            .asScala
+            .map(_ => newLobby.status)
         else Future.successful(newLobby.status)
     }
 
   override def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
     updateLobby[Unit](lobbyId) { lobby =>
-      lobby.resetStrikes(playerId).map(newLobby =>
-        ((), newLobby, Some(SystemEvent.strikesUpdated(playerId, 0)))
-      )
+      lobby
+        .resetStrikes(playerId)
+        .map(newLobby => ((), newLobby, Some(SystemEvent.strikesUpdated(playerId, 0))))
     }.void
 
   override def incrementPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Int] =
@@ -137,6 +154,6 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         (newStrikes, newLobby, Some(SystemEvent.strikesUpdated(playerId, newStrikes)))
       }
     }.flatMap {
-      case Left(err) => Future.failed(new Exception(err.toString))
+      case Left(err)      => Future.failed(new Exception(err.toString))
       case Right(strikes) => Future.successful(strikes)
     }

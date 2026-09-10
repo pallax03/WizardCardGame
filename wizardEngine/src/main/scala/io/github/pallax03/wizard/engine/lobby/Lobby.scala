@@ -80,8 +80,10 @@ case class Lobby(
       case idx =>
         val player = players(idx)
         val updatedPlayer =
-          if isOnline && player.isBot && player.isHuman then player.returnHuman.copy(strikes = math.max(0, player.strikes - 1))
-          else if isOnline then player.copy(isOnline = isOnline, strikes = math.max(0, player.strikes - 1))
+          if isOnline && player.isBot && player.isHuman then
+            player.returnHuman.copy(strikes = math.max(0, player.strikes - 1))
+          else if isOnline then
+            player.copy(isOnline = isOnline, strikes = math.max(0, player.strikes - 1))
           else player.copy(isOnline = isOnline)
         val newPlayers = players.updated(idx, updatedPlayer)
         Right(

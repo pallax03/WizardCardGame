@@ -1,11 +1,13 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
+
 import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
+
 import sttp.tapir.server.ServerEndpoint
 
 /** HTTP routes for the Lobby domain. */
@@ -45,7 +47,7 @@ class LobbyRoutes(
         LobbyStateResponse(
           lobbyId,
           lobby.status,
-          lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline)),
+          lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline, p.strikes)),
           lobby.configuration
         )
       }.value
@@ -133,11 +135,9 @@ class LobbyRoutes(
       .serverLogic { secret => (lobbyId, playerId) =>
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
           if lobby.status == LobbyStatus.WAITING then
-            for
-              newLobby <- lobby.removePlayer(playerId)
+            for newLobby <- lobby.removePlayer(playerId)
             yield ((), newLobby, Some(SystemEvent.left(playerId)))
-          else
-            Left(LobbyError.GameInProgress)
+          else Left(LobbyError.GameInProgress)
         }).value
       }
 
@@ -153,7 +153,7 @@ class LobbyRoutes(
           EitherT.right[LobbyError](gameEngine.deleteGame(lobbyId))
         }.value
       }
-  
+
   val all: List[ServerEndpoint[Any, Future]] = List(
     createLobbyEndpoint,
     joinLobbyEndpoint,
