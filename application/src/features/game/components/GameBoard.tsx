@@ -15,6 +15,8 @@ import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
 import { Card as UiCard, CardContent, CardHeader, CardTitle, CardDescription } from "@/ui/components/card";
 import { useRef, useState } from "react";
+import Confetti from "react-confetti";
+import { useWindowSize } from "react-use";
 
 interface GameBoardProps {
   customPlayerId?: number;
@@ -143,6 +145,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     void handlePlayCard(card);
   };
 
+  const { width, height } = useWindowSize();
+
   // 2. Aggiorna il controllo dello stato Ended
   const isGameEnded = gameState.status === "GAME_ENDED" || forceGameEnded;
 
@@ -180,6 +184,13 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     <div className="relative w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
       {isGameEnded && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <Confetti
+            width={width}
+            height={height}
+            numberOfPieces={400}
+            recycle={false} // Ferma la generazione dopo la prima caduta
+            style={{ zIndex: 60, position: "fixed" }}
+          />
           <UiCard className="w-full max-w-lg bg-zinc-900/95 border-2 border-amber-500/80 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-center overflow-hidden">
             <CardHeader className="bg-gradient-to-b from-amber-500/10 to-transparent pb-4 border-b border-zinc-800">
               <Badge variant="outline" className="w-fit mx-auto mb-2 border-amber-500/50 text-amber-400 bg-amber-500/10 px-3 py-0.5 text-xs font-semibold uppercase tracking-wider">
