@@ -101,45 +101,35 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       lobbyId: LobbyId,
       playerId: PlayerId,
       isOnline: Boolean
-  ): Future[LobbyStatus] =
+  ): Future[Option[LobbyStatus]] =
     updateLobby[Lobby](lobbyId) { lobby =>
-      lobby
-        .handleOnlineStatusChange(playerId, isOnline)
-        .map(newLobby =>
-          val eventOpt =
-            if isOnline then
-              newLobby.players
-                .find(_.id == playerId)
-                .map(p => SystemEvent.strikesUpdated(playerId, p.strikes))
-            else None
-          (newLobby, newLobby, eventOpt)
-        )
+      lobby.handleOnlineStatusChange(playerId, isOnline).map { newLobby =>
+        (newLobby, newLobby, None)
+      }
     }.flatMap {
-      case Left(_) => Future.failed(new Exception("Player or Lobby not found"))
-      case Right(newLobby) =>
-        if !newLobby.status.isGame then Future.successful(newLobby.status)
-        else if isOnline then
-          val delTimer =
-            if newLobby.status != LobbyStatus.DISCONNECTING then
-              redisClient
-                .send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId)))
-                .asScala
-                .void
-            else Future.unit
-          delTimer.map(_ => newLobby.status)
-        else if newLobby.status == LobbyStatus.DISCONNECTING then
-          redisClient
-            .send(
-              RedisUtil.setWithDefaultTTL(
-                ChannelsKeys.disconnectTimer(lobbyId),
-                "1",
-                newLobby.configuration.timer.toString
-              )
-            )
-            .asScala
-            .map(_ => newLobby.status)
-        else Future.successful(newLobby.status)
+      case Left(_) => Future.successful(None)
+      case Right(newLobby) => manageDisconnectTimer(lobbyId, newLobby, isOnline).map(Some(_))
     }
+
+  private def manageDisconnectTimer(lobbyId: LobbyId, lobby: Lobby, isOnline: Boolean): Future[LobbyStatus] =
+    if !lobby.status.isGame then Future.successful(lobby.status)
+    else if isOnline && lobby.status != LobbyStatus.DISCONNECTING then
+      redisClient
+        .send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId)))
+        .asScala
+        .map(_ => lobby.status)
+    else if !isOnline && lobby.status == LobbyStatus.DISCONNECTING then
+      redisClient
+        .send(
+          RedisUtil.setWithDefaultTTL(
+            ChannelsKeys.disconnectTimer(lobbyId),
+            "1",
+            lobby.configuration.timer.toString
+          )
+        )
+        .asScala
+        .map(_ => lobby.status)
+    else Future.successful(lobby.status)
 
   override def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
     updateLobby[Unit](lobbyId) { lobby =>

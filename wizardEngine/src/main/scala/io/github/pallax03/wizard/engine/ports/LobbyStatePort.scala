@@ -88,7 +88,7 @@ trait LobbyStatePort:
       lobbyId: LobbyId,
       playerId: PlayerId,
       isOnline: Boolean
-  ): Future[LobbyStatus]
+  ): Future[Option[LobbyStatus]]
 
   /**
    * Clears the AFK strikes for a specific player.
