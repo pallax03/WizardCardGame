@@ -19,6 +19,10 @@ interface GameActionControlsProps {
   onSelectBid: (b: number) => void;
   onPlaceBid: (b?: number) => void;
   isSubmitting: boolean;
+  /** Puntata vietata dalla regola somma != round (ultimo bidder). */
+  forbiddenBid?: number | null;
+  /** Somma delle bid già piazzate nel round, per spiegare il divieto. */
+  bidsTotal?: number;
 }
 
 export function GameActionControls({
@@ -34,6 +38,8 @@ export function GameActionControls({
   onSelectBid,
   onPlaceBid,
   isSubmitting,
+  forbiddenBid,
+  bidsTotal,
 }: GameActionControlsProps) {
   return (
     <UiCard className="bg-zinc-950/80 border-amber-500/40 backdrop-blur-md shadow-2xl h-full">
@@ -74,25 +80,42 @@ export function GameActionControls({
               Puntata Round {round}:
             </p>
             <div className="flex flex-wrap gap-1.5 justify-center mb-2">
-              {Array.from({ length: round + 1 }, (_, i) => (
-                <Button
-                  key={i}
-                  size="sm"
-                  variant={bidInput === i ? "confirming" : "outline"}
-                  disabled={isSubmitting}
-                  onClick={() => onSelectBid(i)}
-                  className="w-8 h-8 p-0 text-xs font-mono font-bold"
-                >
-                  {i}
-                </Button>
-              ))}
+              {Array.from({ length: round + 1 }, (_, i) => {
+                const isForbidden = forbiddenBid !== null && forbiddenBid !== undefined && i === forbiddenBid;
+                return (
+                  <Button
+                    key={i}
+                    size="sm"
+                    variant={bidInput === i ? "confirming" : "outline"}
+                    disabled={isSubmitting || isForbidden}
+                    onClick={() => onSelectBid(i)}
+                    title={
+                      isForbidden
+                        ? `Puntata non valida: con ${bidsTotal ?? 0} già puntati, ${bidsTotal ?? 0} + ${i} pareggerebbe le carte del Round ${round}`
+                        : `Punta ${i}`
+                    }
+                    className={`w-8 h-8 p-0 text-xs font-mono font-bold ${isForbidden ? "opacity-40 line-through" : ""}`}
+                  >
+                    {i}
+                  </Button>
+                );
+              })}
             </div>
+            {forbiddenBid !== null && forbiddenBid !== undefined && (
+              <p className="text-[11px] font-semibold text-amber-200/90 bg-amber-950/60 border border-amber-500/40 rounded-lg px-2 py-1 text-center">
+                🚫 La puntata {forbiddenBid} non è valida: la somma delle puntate non può essere
+                uguale al numero di carte ({round}).
+              </p>
+            )}
             <Button
               size="default"
               variant="primary"
-              disabled={isSubmitting}
+              disabled={
+                isSubmitting ||
+                (forbiddenBid !== null && forbiddenBid !== undefined && bidInput === forbiddenBid)
+              }
               onClick={() => onPlaceBid(bidInput)}
-              className="w-full font-bold bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-lg"
+              className="w-full font-bold bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-lg disabled:opacity-40"
             >
               Conferma Puntata ({bidInput})
             </Button>

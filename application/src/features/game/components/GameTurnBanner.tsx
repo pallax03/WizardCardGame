@@ -5,6 +5,8 @@ interface GameTurnBannerProps {
   turnPrompt: string;
   lastError: string | null;
   actionStatus: string | null;
+  /** Avviso preventivo: puntata vietata (somma puntate != round). */
+  bidWarning?: string | null;
 }
 
 export function GameTurnBanner({
@@ -12,6 +14,7 @@ export function GameTurnBanner({
   turnPrompt,
   lastError,
   actionStatus,
+  bidWarning,
 }: GameTurnBannerProps) {
   return (
     <div
@@ -27,6 +30,11 @@ export function GameTurnBanner({
       <p className="text-sm sm:text-base font-black text-white tracking-tight drop-shadow">
         {turnPrompt}
       </p>
+      {bidWarning && (
+        <p className="mt-2 text-xs text-amber-200 font-semibold bg-amber-950/80 py-1 px-3 rounded-lg inline-block border border-amber-500/60 shadow">
+          🚫 {bidWarning}
+        </p>
+      )}
       {lastError && (
         <p className="mt-2 text-xs text-rose-300 font-semibold bg-rose-950/80 py-1 px-3 rounded-lg inline-block border border-rose-700/60 shadow">
           ⚠️ {lastError}

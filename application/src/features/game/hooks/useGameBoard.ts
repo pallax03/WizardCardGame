@@ -4,7 +4,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLobbySession } from "@/features/lobby-session";
 import type { EventMessage } from "@/features/chat/types";
 import { chooseTrumpColor, getPlayerGameSnapshot, placeBid, playCard } from "../api";
-import { gameReducer, initialGameBoardState, isCardInList } from "../state/gameReducer";
+import {
+  formatInvalidBidError,
+  gameReducer,
+  initialGameBoardState,
+  isCardInList,
+} from "../state/gameReducer";
 import { mapSnapshotToBoardState } from "../state/snapshotMapper";
 import type { Card, CardColor, GameBoardState, PlayedCardEntry } from "../types";
 
@@ -30,6 +35,12 @@ export function useGameBoard(customPlayerId?: number) {
   const [selectedColor, setSelectedColor] = useState<CardColor>("Red");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
+  // Errore locale di bid non valida: finisce nel GameTurnBanner come lastError.
+  // Serve perché il backend risponde 400 via HTTP (senza evento WS) quando
+  // la somma delle puntate pareggerebbe il numero di carte del round.
+  // Memorizziamo anche il round: l'errore è valido solo per quel round e
+  // finché il player non ha puntato (niente useEffect di reset).
+  const [bidErrorRaw, setBidErrorRaw] = useState<{ round: number; message: string } | null>(null);
   // Ack ottimistico: dopo una bid andata a buon fine nascondiamo subito i
   // controlli, senza aspettare l'echo WS (BidPlaced/TurnOf).
   const [bidAckRound, setBidAckRound] = useState<number | null>(null);
@@ -125,6 +136,7 @@ export function useGameBoard(customPlayerId?: number) {
       setSnapshotError(null);
       setIsRestoring(false);
       setBidAckRound(null);
+      setBidErrorRaw(null);
       hasConnectedRef.current = false;
       trickWonCountRef.current = 0;
       completedTableRef.current = null;
@@ -279,6 +291,61 @@ export function useGameBoard(customPlayerId?: number) {
     gameState.currentTurn.actionType === "PLAY_CARD" &&
     gameState.status === "PLAYING";
 
+  // Somma delle bid piazzate finora nel round corrente.
+  const bidsTotal = useMemo(
+    () => Object.values(gameState.bids).reduce((sum, bid) => sum + Number(bid ?? 0), 0),
+    [gameState.bids]
+  );
+
+  // Puntata vietata per il bidder corrente (regola Wizard: somma != round).
+  // Fonte primaria: `WaitingForBid.invalidBid` del backend; fallback locale
+  // quando sono l'ultimo bidder (round - somma delle altre bid).
+  const forbiddenBid = useMemo<number | null>(() => {
+    if (gameState.invalidBid !== null && gameState.invalidBid !== undefined) {
+      return gameState.invalidBid;
+    }
+    const totalPlayers = lobby?.players.length ?? 0;
+    if (totalPlayers <= 0) return null;
+    if (gameState.status !== "BIDDING") return null;
+    if (gameState.bids[playerId] !== undefined) return null;
+    if (Object.keys(gameState.bids).length !== totalPlayers - 1) return null;
+    const forbidden = gameState.round - bidsTotal;
+    if (!Number.isInteger(forbidden) || forbidden < 0 || forbidden > gameState.round) {
+      return null;
+    }
+    return forbidden;
+  }, [gameState.invalidBid, gameState.status, gameState.bids, gameState.round, lobby?.players.length, bidsTotal, playerId]);
+
+  // Avviso preventivo mostrato nel GameTurnBanner quando tocca a me puntare
+  // e una puntata è vietata (es. somma pareggerebbe le carte del round).
+  const bidWarning = useMemo<string | null>(() => {
+    if (!canBid || forbiddenBid === null || forbiddenBid === undefined) return null;
+    return (
+      `La puntata ${forbiddenBid} non è valida: con ${bidsTotal} già puntati, ` +
+      `la somma (${bidsTotal} + ${forbiddenBid}) sarebbe uguale al numero di carte del Round ${gameState.round}.`
+    );
+  }, [canBid, forbiddenBid, bidsTotal, gameState.round]);
+
+  // Errore visibile solo se riferito al round corrente e se non ho ancora puntato.
+  // Così non servono useEffect di reset (evita cascading renders).
+  const bidError = useMemo<string | null>(() => {
+    if (!bidErrorRaw) return null;
+    if (bidErrorRaw.round !== gameState.round) return null;
+    if (gameState.bids[playerId] !== undefined) return null;
+    return bidErrorRaw.message;
+  }, [bidErrorRaw, gameState.round, gameState.bids, playerId]);
+
+  const setBidError = useCallback(
+    (message: string | null) => {
+      if (message === null) {
+        setBidErrorRaw(null);
+      } else {
+        setBidErrorRaw({ round: gameState.round, message });
+      }
+    },
+    [gameState.round]
+  );
+
   // Map of player id to name and metadata from lobby
   const playersMap = useMemo(() => {
     const map = new Map<
@@ -371,21 +438,46 @@ export function useGameBoard(customPlayerId?: number) {
         setActionStatus(`Hai già puntato per il Round ${gameState.round}.`);
         return;
       }
+      // Validazione client della regola Wizard: l'ultimo bidder non può far
+      // pareggiare somma e round. L'errore finisce nel GameTurnBanner.
+      if (forbiddenBid !== null && forbiddenBid !== undefined && bidToPlace === forbiddenBid) {
+        const friendly = formatInvalidBidError(gameState.round, bidToPlace);
+        setBidError(friendly);
+        setActionStatus(`Puntata ${bidToPlace} rifiutata: non valida per il Round ${gameState.round}.`);
+        return;
+      }
       try {
         setIsSubmitting(true);
         setActionStatus(`Placing bid ${bidToPlace}...`);
         await placeBid(lobbyId, bidToPlace);
         // Nascondi subito i controlli, senza aspettare l'echo WS.
         setBidAckRound(gameState.round);
+        setBidError(null);
         setActionStatus(`Bid placed successfully: ${bidToPlace}`);
       } catch (error) {
+        const code =
+          typeof (error as { code?: unknown })?.code === "string"
+            ? ((error as { code: string }).code)
+            : "";
         const msg = error instanceof Error ? error.message : String(error);
-        setActionStatus(`Error placing bid: ${msg}`);
+        const isInvalidBid =
+          code.includes("InvalidBid") || msg.includes("InvalidBid");
+        if (isInvalidBid) {
+          // Il backend codifica GameError.InvalidBid come "InvalidBid(round,bid)".
+          const match = /InvalidBid\(\s*(\d+)\s*,\s*(-?\d+)\s*\)/.exec(`${code} ${msg}`);
+          const round = match ? Number(match[1]) : gameState.round;
+          const invalid = match ? Number(match[2]) : bidToPlace;
+          const friendly = formatInvalidBidError(round, invalid);
+          setBidError(friendly);
+          setActionStatus(`Puntata ${invalid} rifiutata: non valida per il Round ${round}.`);
+        } else {
+          setActionStatus(`Error placing bid: ${msg}`);
+        }
       } finally {
         setIsSubmitting(false);
       }
     },
-    [bidAckRound, bidInput, gameState.bids, gameState.round, gameState.status, isMyTurn, lobbyId, playerId]
+    [bidAckRound, bidInput, forbiddenBid, gameState.bids, gameState.round, gameState.status, isMyTurn, lobbyId, playerId, setBidError]
   );
 
   // Action: Play Card
@@ -447,6 +539,12 @@ export function useGameBoard(customPlayerId?: number) {
     canPlay,
     turnPrompt,
     isCardPlayable,
+    // Bidding: puntata vietata (somma != round) e messaggi per il banner
+    forbiddenBid,
+    bidsTotal,
+    bidWarning,
+    bidError,
+    setBidError,
     // Interactive states
     selectedCard,
     setSelectedCard,

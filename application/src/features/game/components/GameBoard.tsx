@@ -37,6 +37,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     canPlay,
     turnPrompt,
     isCardPlayable,
+    forbiddenBid,
+    bidsTotal,
+    bidWarning,
+    bidError,
     selectedCard,
     setSelectedCard,
     bidInput,
@@ -280,8 +284,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         <GameTurnBanner
           isMyTurn={isMyTurn}
           turnPrompt={turnPrompt}
-          lastError={gameState.lastError}
+          lastError={gameState.lastError ?? bidError}
           actionStatus={actionStatus}
+          bidWarning={bidWarning}
         />
       </div>
 
@@ -466,6 +471,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             onSelectBid={setBidInput}
             onPlaceBid={handlePlaceBid}
             isSubmitting={isSubmitting}
+            forbiddenBid={forbiddenBid}
+            bidsTotal={bidsTotal}
           />
         </div>
       </div>

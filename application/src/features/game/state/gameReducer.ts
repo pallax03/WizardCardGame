@@ -82,8 +82,27 @@ export const initialGameBoardState: GameBoardState = {
   },
   lastTrick: null,
   lastError: null,
+  invalidBid: null,
   eventsHistory: [],
 };
+
+/**
+ * Messaggio mostrato nel GameTurnBanner quando una bid non è valida.
+ * Esempio tipico: ultimo bidder non può far pareggiare somma e round.
+ */
+export function formatInvalidBidError(round: number, bid: number): string {
+  return (
+    `Puntata non valida: ${bid} non ammessa al Round ${round} — ` +
+    `la somma delle puntate non può essere uguale al numero di carte (${round}).`
+  );
+}
+
+function parseInvalidBidField(value: unknown): number | null {
+  const amount = Number(value);
+  if (value === null || value === undefined) return null;
+  if (!Number.isInteger(amount)) return null;
+  return amount;
+}
 
 /**
  * Pure reducer function that advances GameBoardState based on an incoming EventMessage.
@@ -126,6 +145,7 @@ export function gameReducer(
         tricksWon: {},
         lastTrick: null,
         lastError: null,
+        invalidBid: null,
         currentTurn: { actionType: "NONE", playerId: null, isMyTurn: false },
         eventsHistory: updatedHistory,
       };
@@ -154,6 +174,7 @@ export function gameReducer(
         bids: {},
         tricksWon: {},
         lastError: null,
+        invalidBid: null,
         eventsHistory: updatedHistory,
       };
     }
@@ -242,6 +263,9 @@ export function gameReducer(
     case "WaitingForBid": {
       const bidderId = destinationPlayerId;
       if (bidderId === undefined) return { ...state, eventsHistory: updatedHistory };
+      // Il backend comunica la puntata vietata per l'ultimo bidder
+      // (somma puntate != round). Va mostrata nel GameTurnBanner.
+      const invalidBid = parseInvalidBidField(fields.invalidBid);
       return {
         ...state,
         status: "BIDDING",
@@ -250,6 +274,7 @@ export function gameReducer(
           playerId: bidderId,
           isMyTurn: bidderId === myPlayerId,
         },
+        invalidBid,
         eventsHistory: updatedHistory,
       };
     }
@@ -272,6 +297,7 @@ export function gameReducer(
           ? { actionType: "NONE", playerId: null, isMyTurn: false }
           : state.currentTurn,
         lastError: null,
+        invalidBid: null,
         eventsHistory: updatedHistory,
       };
     }
@@ -371,6 +397,7 @@ export function gameReducer(
           playerId: null,
           isMyTurn: false,
         },
+        invalidBid: null,
         eventsHistory: updatedHistory,
       };
     }
@@ -386,19 +413,42 @@ export function gameReducer(
           playerId: null,
           isMyTurn: false,
         },
+        invalidBid: null,
         eventsHistory: updatedHistory,
       };
     }
 
     case "ActionFailed": {
-      const targetDest = event.destinationId ?? fields.playerId;
+      const targetDest =
+        (event.destinationId ??
+          event.playerId ??
+          fields.destinationId ??
+          fields.playerId) as number | undefined;
       const isForMe = targetDest === myPlayerId;
-      const reasonObj = fields.reason as { error?: string } | undefined;
-      const errorMsg = reasonObj?.error ?? "Invalid action attempted";
+      if (!isForMe) return { ...state, eventsHistory: updatedHistory };
+
+      const reasonObj = fields.reason as
+        | { error?: unknown; round?: unknown; bid?: unknown }
+        | undefined;
+      const errorTag = typeof reasonObj?.error === "string" ? reasonObj.error : "";
+      let errorMsg: string;
+      if (errorTag === "InvalidBid") {
+        const round = Number(reasonObj?.round ?? state.round);
+        const bid = Number(reasonObj?.bid ?? NaN);
+        errorMsg = Number.isNaN(bid)
+          ? `Puntata non valida al Round ${round} — la somma delle puntate non può essere uguale al numero di carte (${round}).`
+          : formatInvalidBidError(round, bid);
+      } else if (errorTag.includes("InvalidBid")) {
+        errorMsg = `Puntata non valida al Round ${state.round} — la somma delle puntate non può essere uguale al numero di carte (${state.round}).`;
+      } else if (errorTag) {
+        errorMsg = `Azione non valida: ${errorTag}`;
+      } else {
+        errorMsg = "Azione non valida.";
+      }
 
       return {
         ...state,
-        lastError: isForMe ? `Action Failed: ${errorMsg}` : state.lastError,
+        lastError: errorMsg,
         eventsHistory: updatedHistory,
       };
     }

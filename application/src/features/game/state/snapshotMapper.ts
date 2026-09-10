@@ -98,7 +98,14 @@ export function computeLegalCards(hand: Card[], followingColor: CardColor | null
 
 function baseStateFromCore(core: SnapshotCore): Omit<
   GameBoardState,
-  "status" | "currentTurn" | "bids" | "tricksWon" | "table" | "winningCard" | "followingColor"
+  | "status"
+  | "currentTurn"
+  | "bids"
+  | "tricksWon"
+  | "table"
+  | "winningCard"
+  | "followingColor"
+  | "invalidBid"
 > {
   const trump = (core.trump ?? null) as Trump | null;
   return {
@@ -134,6 +141,7 @@ export function mapSnapshotToBoardState(
       table: [],
       winningCard: null,
       followingColor: null,
+      invalidBid: null,
       currentTurn: {
         actionType: "CHOOSE_TRUMP",
         playerId: Number(core.dealerId),
@@ -153,6 +161,7 @@ export function mapSnapshotToBoardState(
       table: [],
       winningCard: null,
       followingColor: null,
+      invalidBid: null,
       currentTurn: {
         actionType: "BID",
         playerId: turn,
@@ -180,6 +189,7 @@ export function mapSnapshotToBoardState(
       table: tableEntries,
       winningCard,
       followingColor,
+      invalidBid: null,
       legalCards: turn === myPlayerId ? computeLegalCards(hand, followingColor) : [],
       currentTurn: {
         actionType: "PLAY_CARD",
@@ -217,6 +227,7 @@ export function mapSnapshotToBoardState(
     currentTurn: { actionType: "NONE", playerId: null, isMyTurn: false },
     lastTrick: null,
     lastError: null,
+    invalidBid: null,
     eventsHistory: [],
   };
 }

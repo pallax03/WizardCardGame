@@ -97,6 +97,7 @@ export interface RoundStartedPayload {
 export interface WaitingForBidPayload {
   playerId: number;
   round: number;
+  invalidBid?: number | null;
 }
 
 export interface BidPlacedPayload {
@@ -144,6 +145,8 @@ export interface ActionFailedPayload {
   playerId: number;
   reason: {
     error: string;
+    round?: number;
+    bid?: number;
   };
 }
 
@@ -171,5 +174,8 @@ export interface GameBoardState {
     tricksWon: number;
   } | null;
   lastError: string | null;
+  /** Puntata vietata per il bidder corrente (regola: somma puntate != round).
+   *  Arriva dal backend via `WaitingForBid.invalidBid`, null se nessuna. */
+  invalidBid: number | null;
   eventsHistory: EventMessage[];
 }
