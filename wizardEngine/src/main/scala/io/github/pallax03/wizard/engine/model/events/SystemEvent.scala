@@ -13,3 +13,4 @@ object SystemEvent:
   def paused(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "paused") // getLobby ?
   def resumed(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "resumed") // getGame
   def afkReplaced(playerId: PlayerId): SystemEvent = SystemEvent(playerId, "afk_replaced")
+  def strikesUpdated(playerId: PlayerId, strikes: Int): SystemEvent = SystemEvent(playerId, s"strikes_$strikes") // getLobby ?

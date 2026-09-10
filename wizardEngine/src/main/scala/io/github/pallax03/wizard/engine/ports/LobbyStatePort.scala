@@ -98,3 +98,12 @@ trait LobbyStatePort:
    * @return a Future indicating success.
    */
   def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]
+
+  /**
+   * Increments the AFK strikes for a specific player and returns the new strikes count.
+   *
+   * @param lobbyId the UUID of the lobby.
+   * @param playerId the ID of the player.
+   * @return a Future containing the new strikes count.
+   */
+  def incrementPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Int]

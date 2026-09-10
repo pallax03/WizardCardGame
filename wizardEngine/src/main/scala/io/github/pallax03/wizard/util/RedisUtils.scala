@@ -42,8 +42,6 @@ object ChannelsKeys:
     s"disconnect:${lobbyId.toString}"
 
   /** Key that stores the consecutive AFK strikes for a player. */
-  def afkStrikes(lobbyId: LobbyId, playerId: PlayerId): String =
-    s"strikes:${lobbyId.toString}:${playerId.toInt}"
 
   /** Redis Pub/Sub channel for expired-key notifications (keyspace events). */
   val TURN_TIMER_KEYSPACE: String = "__keyevent@0__:expired"
