@@ -107,11 +107,15 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
         (newLobby, newLobby, None)
       }
     }.flatMap {
-      case Left(_) => Future.successful(None)
+      case Left(_)         => Future.successful(None)
       case Right(newLobby) => manageDisconnectTimer(lobbyId, newLobby, isOnline).map(Some(_))
     }
 
-  private def manageDisconnectTimer(lobbyId: LobbyId, lobby: Lobby, isOnline: Boolean): Future[LobbyStatus] =
+  private def manageDisconnectTimer(
+      lobbyId: LobbyId,
+      lobby: Lobby,
+      isOnline: Boolean
+  ): Future[LobbyStatus] =
     if !lobby.status.isGame then Future.successful(lobby.status)
     else if isOnline && lobby.status != LobbyStatus.DISCONNECTING then
       redisClient

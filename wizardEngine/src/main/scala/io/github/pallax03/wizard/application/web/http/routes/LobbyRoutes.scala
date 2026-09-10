@@ -47,7 +47,9 @@ class LobbyRoutes(
         LobbyStateResponse(
           lobbyId,
           lobby.status,
-          lobby.players.map(p => PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline, p.strikes)),
+          lobby.players.map(p =>
+            PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline, p.strikes)
+          ),
           lobby.configuration
         )
       }.value
