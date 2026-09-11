@@ -14,13 +14,12 @@ import {
 import { useParams, useRouter } from "next/navigation";
 
 import type { ChatMessage } from "@/features/chat/types";
-import { getGameState, getLobbyState, getLobbyWsSecret } from "./api";
+import { getLobbyState, getLobbyWsSecret } from "./api";
 import { connectLobbySocket, type LobbySocket } from "./lobbySocket";
 import type {
   LobbySessionAction,
   LobbySessionState,
   LobbyState,
-  GameState,
   ServerEvent,
 } from "./types";
 
@@ -30,9 +29,7 @@ const initialState = (lobbyId: string): LobbySessionState => ({
   connectionState: "connecting",
   lobby: null,
   connectedPlayerIds: [],
-  game: null,
   messages: [],
-  lastGameEvent: null,
   error: null,
 });
 
@@ -69,8 +66,6 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
         error: null,
       };
     }
-    case "game/loaded":
-      return { ...state, game: action.game, error: null };
     case "event/received": {
       let connectedPlayerIds = state.connectedPlayerIds;
       if (action.event.type === "system") {
@@ -98,7 +93,6 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
         lobby: updatedLobby,
         messages: [...state.messages, action.event],
         connectedPlayerIds,
-        lastGameEvent: action.event.type === "event" ? action.event.event : state.lastGameEvent,
       };
     }
     case "chat/privateSent":
@@ -111,7 +105,6 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
 type LobbySessionContextValue = LobbySessionState & {
   sendMessage: (text: string, destinationId?: number) => boolean;
   refreshLobby: () => Promise<void>;
-  refreshGame: () => Promise<void>;
 };
 
 const LobbySessionContext = createContext<LobbySessionContextValue | null>(null);
@@ -123,10 +116,7 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
   const [state, dispatch] = useReducer(sessionReducer, lobbyId, initialState);
   const socketRef = useRef<LobbySocket | null>(null);
   const lobbyRequestRef = useRef<Promise<void> | null>(null);
-  const gameRequestRef = useRef<Promise<void> | null>(null);
   const lobbyRefreshQueuedRef = useRef(false);
-  const gameRefreshQueuedRef = useRef(false);
-  const gameWasLoadedRef = useRef(false);
   const [wsAuth, setWsAuth] = useState<{ lobbyId: string; secret: string } | null>(null);
   const wsSecret = wsAuth !== null && wsAuth.lobbyId === lobbyId ? wsAuth.secret : null;
 
@@ -200,33 +190,6 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     return request;
   }, [lobbyId]);
 
-  const refreshGame = useCallback(() => {
-    if (state.playerId === null) return Promise.resolve();
-    if (gameRequestRef.current) {
-      gameRefreshQueuedRef.current = true;
-      return gameRequestRef.current;
-    }
-    const request = (async () => {
-      do {
-        gameRefreshQueuedRef.current = false;
-        try {
-          const game = await getGameState(lobbyId);
-          gameWasLoadedRef.current = true;
-           if (game) {
-            gameWasLoadedRef.current = true;
-            dispatch({ type: "game/loaded", game });
-          }
-        } catch (reason: unknown) {
-          const error = reason instanceof Error ? reason : new Error(String(reason));
-          dispatch({ type: "sync/failed", error });
-        }
-      } while (gameRefreshQueuedRef.current);
-      gameRequestRef.current = null;
-    })();
-    gameRequestRef.current = request;
-    return request;
-  }, [lobbyId, state.playerId]);
-
   useEffect(() => {
     void refreshLobby();
   }, [refreshLobby]);
@@ -243,18 +206,14 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     }
 
     if (event.type === "event") {
-      // Game reducers can progressively handle individual actions here. Until
-      // then, refresh only when a game snapshot has already been requested.
-      if (
-        gameWasLoadedRef.current ||
-        event.event.action === "GameStarted" ||
-        event.event.action === "CardsDealt"
-      ) {
-        void refreshGame();
-      }
+      // Lo stato di gioco avanza solo via reducer sugli eventi WS
+      // (cfr. `gameReducer` in `features/game/state`): nessun fetch dello
+      // snapshot qui, altrimenti ogni mossa (che produce N eventi)
+      // causerebbe N `GET /game` ridondanti. Il riallineamento via snapshot
+      // vive in `useGameBoard` (mount/reconnect/foreground).
       if (event.event.action === "GameStarted") void refreshLobby();
     }
-  }, [refreshGame, refreshLobby]);
+  }, [refreshLobby]);
 
   useEffect(() => {
     if (state.lobby?.status === "IN_GAME") {
@@ -303,7 +262,6 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
             reconnectAttempt = 0;
             if (hasConnected) {
               void refreshLobby();
-              if (gameWasLoadedRef.current) void refreshGame();
             }
             hasConnected = true;
           }
@@ -325,7 +283,7 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [handleServerEvent, lobbyId, refreshGame, refreshLobby, state.playerId, wsSecret]);
+  }, [handleServerEvent, lobbyId, refreshLobby, state.playerId, wsSecret]);
 
   const sendMessage = useCallback((text: string, destinationId?: number) => {
     if (state.playerId === null) return false;
@@ -347,8 +305,7 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     ...state,
     sendMessage,
     refreshLobby,
-    refreshGame,
-  }), [refreshGame, refreshLobby, sendMessage, state]);
+  }), [refreshLobby, sendMessage, state]);
 
   return <LobbySessionContext.Provider value={value}>{children}</LobbySessionContext.Provider>;
 }
@@ -361,10 +318,6 @@ export function useLobbySession() {
 
 export function useLobbyState(): LobbyState | null {
   return useLobbySession().lobby;
-}
-
-export function useGameState(): GameState | null {
-  return useLobbySession().game;
 }
 
 export function useLobbyPresence(): number[] {

@@ -16,14 +16,6 @@ export type LobbyState = {
   configuration?: unknown; //todo: add in getLobbyState endpoint GameConfiguration type
 };
 
-// todo: When endpoints for game getState are implemented, replace this with the actual type
-// todo: table in Playing need to wrap also winner.
-export type PlayerCoreState = unknown;
-export type GameState = {
-  status: "RESOLVING" | "BIDDING" | "PLAYING" | "ENDED";
-  core: PlayerCoreState;
-};
-
 export type ServerEvent = ChatMessage | SystemMessage | EventMessage;
 
 export type LobbySessionState = {
@@ -32,9 +24,7 @@ export type LobbySessionState = {
   connectionState: ConnectionState;
   lobby: LobbyState | null;
   connectedPlayerIds: number[];
-  game: GameState | null;
   messages: AnyMessage[];
-  lastGameEvent: EventMessage["event"] | null;
   error: Error | null;
 };
 
@@ -43,7 +33,6 @@ export type LobbySessionAction =
   | { type: "identity/resolved"; playerId: number }
   | { type: "connection/changed"; connectionState: ConnectionState }
   | { type: "lobby/loaded"; lobby: LobbyState }
-  | { type: "game/loaded"; game: GameState }
   | { type: "event/received"; event: ServerEvent }
   | { type: "chat/privateSent"; message: ChatMessage }
   | { type: "sync/failed"; error: Error };
