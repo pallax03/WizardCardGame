@@ -10,8 +10,9 @@ import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
 import scala.concurrent.ExecutionContext.Implicits.global
 
 enum AIError:
-  case InvalidPhase(actionName: String)
-  case PlayerNotFound(message: String)
+  case InvalidPhase(actualGameState: PlayerGameState)
+  case PlayerNotFound
+  case NoHintFound
 
 /**
  * Defines the interface for an AI component capable of making decisions within the Wizard game.
@@ -34,9 +35,9 @@ trait AIPort(inboundPort: InboundPort):
           .andThen(Right(_))
           .applyOrElse(
             state,
-            _ => Left(AIError.InvalidPhase(state.productPrefix))
+            _ => Left(AIError.InvalidPhase(state))
           )
-      .recover { case ex => Left(AIError.PlayerNotFound(ex.getMessage)) }
+      .recover { case _ => Left(AIError.PlayerNotFound) }
 
   protected def resolveTrumpColorLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Card.Color]]
   protected def placeBidLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Bid]]

@@ -18,11 +18,16 @@ object LobbyId:
   def apply(id: String): LobbyId = id
   def generate: LobbyId = UUID.randomUUID().toString
 
+import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.ports.AIError
+
 enum LobbyError:
   case Full, GameInProgress, GamePaused, NotEnoughPlayers, PlayersOffline, PlayerNotFound,
     LobbyNotFound, NotAuthenticated, GameNotFound
-  case GameActionRejected(code: String)
+  case GameActionRejected(err: GameError)
+  case IAHintError(err: AIError)
   case ConfigurationInvalid(err: ConfigurationErrors)
+  case InternalServerError(code: String)
 
 case class Lobby(
     uuid: LobbyId,

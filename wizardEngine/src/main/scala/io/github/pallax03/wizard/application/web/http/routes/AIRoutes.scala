@@ -22,10 +22,10 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
       playerPair <- EitherT(lobbyStatePort.getAuthLobby(lobbyId, secret))
       player = playerPair._1
       aiResultOpt <- EitherT(action(player.id)).leftMap {
-        case AIError.InvalidPhase(msg) => LobbyError.GameActionRejected(msg)
-        case AIError.PlayerNotFound(_) => LobbyError.PlayerNotFound
+        case AIError.PlayerNotFound => LobbyError.PlayerNotFound
+        case err                       => LobbyError.IAHintError(err)
       }
-      aiResult <- EitherT.fromOption[Future](aiResultOpt, LobbyError.GameActionRejected("No AI hint available"))
+      aiResult <- EitherT.fromOption[Future](aiResultOpt, LobbyError.IAHintError(AIError.NoHintFound))
     yield aiResult).value
 
   private val hintBestTrump: ServerEndpoint[Any, Future] =
