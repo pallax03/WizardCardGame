@@ -14,9 +14,7 @@ import { PlayerHand } from "./PlayerHand";
 import { TrumpArea } from "./TrumpArea";
 import { GameEndOverlay } from "./GameEndOverlay";
 import { Badge } from "@/ui/components/badge";
-import { Button } from "@/ui/components/button";
 
-// --- LAYOUT SECCIOLINI TAVOLO (Estratti all'esterno per evitare riallocazioni) ---
 type SeatLayout = {
   pos: string;
   dir: "flex-col" | "flex-row";
@@ -112,7 +110,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     handlePlayCard,
   } = useGameBoard(customPlayerId);
 
-  const [forceGameEnded, setForceGameEnded] = useState(false);
   const [isCardDragging, setIsCardDragging] = useState(false);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -123,7 +120,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     [players, myIndex]
   );
 
-  const isGameEnded = gameState.status === "GAME_ENDED" || forceGameEnded;
+  const isGameEnded = gameState.status === "GAME_ENDED";
 
   const sortedScoreboard = useMemo(() => {
     if (!gameState.scoreboard) return [];
@@ -391,18 +388,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           playersMap={playersMap}
           myPlayerId={playerId}
         />
-
-        <div className="flex gap-2 items-center p-4 bg-zinc-900 border border-dashed border-amber-500/50 rounded-xl">
-          <span className="text-xs font-mono text-amber-400">DEV TOOL:</span>
-          <Button
-            size="sm"
-            variant="outline"
-            className="border-amber-500 text-amber-400 hover:bg-amber-500/20"
-            onClick={() => setForceGameEnded((prev) => !prev)}
-          >
-            {forceGameEnded ? "Disattiva Modal fine partita" : "⚡ Simula Modal GAME_ENDED"}
-          </Button>
-        </div>
       </div>
     </div>
   );

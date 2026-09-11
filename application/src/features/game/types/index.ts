@@ -68,88 +68,6 @@ export interface PlayerTurnInfo {
   isMyTurn: boolean;
 }
 
-// --- Specific Game Event Payloads (mapped from backend WizardEvent codecs) ---
-
-export interface GameStartedPayload {
-  playersIds: number[];
-}
-
-export interface CardsDealtPayload {
-  playerId: number;
-  hand: Card[];
-  trump: Trump;
-  round: number;
-}
-
-export interface WaitingForTrumpPayload {
-  playerId: number;
-}
-
-export interface TrumpColorResolvedPayload {
-  playerId: number;
-  color: CardColor;
-}
-
-export interface RoundStartedPayload {
-  round: number;
-}
-
-export interface WaitingForBidPayload {
-  playerId: number;
-  round: number;
-  invalidBid?: number | null;
-}
-
-export interface BidPlacedPayload {
-  playerId: number;
-  bid: number;
-}
-
-export interface WaitingForCardPayload {
-  playerId: number;
-  legalCards: Card[];
-}
-
-export interface CardPlayedPayload {
-  playerId: number;
-  card: Card;
-  winningCard?: Card | null;
-  followingColor?: CardColor | null;
-}
-
-export interface TrickWonPayload {
-  winnerId: number;
-  tricksWon: number;
-  trickedCards: Card[];
-}
-
-export interface RoundScoredPayload {
-  playersIds: number[];
-  scoreboard: Scoreboard;
-}
-
-export interface PhaseChangedPayload {
-  phaseName: string;
-}
-
-export interface GameEndedPayload {
-  playersIds: number[];
-  finalScores: Scoreboard;
-}
-
-export interface GameAbortedPayload {
-  reason: string;
-}
-
-export interface ActionFailedPayload {
-  playerId: number;
-  reason: {
-    error: string;
-    round?: number;
-    bid?: number;
-  };
-}
-
 // Re-export EventMessage for convenience
 export type { EventMessage };
 
@@ -174,8 +92,6 @@ export interface GameBoardState {
     tricksWon: number;
   } | null;
   lastError: string | null;
-  /** Puntata vietata per il bidder corrente (regola: somma puntate != round).
-   *  Arriva dal backend via `WaitingForBid.invalidBid`, null se nessuna. */
   invalidBid: number | null;
   eventsHistory: EventMessage[];
 }
