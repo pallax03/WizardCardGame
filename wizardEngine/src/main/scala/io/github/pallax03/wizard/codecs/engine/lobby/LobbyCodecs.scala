@@ -49,7 +49,8 @@ object LobbyCodecs:
   given Schema[Lobby] = Schema.derived
 
   given Encoder[LobbyError] = Encoder.instance:
-    case LobbyError.GameActionRejected(err) => Json.obj("code" -> Json.fromString(err.productPrefix))
+    case LobbyError.GameActionRejected(err) =>
+      Json.obj("code" -> Json.fromString(err.productPrefix))
     case LobbyError.IAHintError(err) => Json.obj("code" -> Json.fromString(err.productPrefix))
     case LobbyError.InternalServerError(code) => Json.obj("code" -> Json.fromString(code))
     case LobbyError.ConfigurationInvalid(err) =>
@@ -61,6 +62,6 @@ object LobbyCodecs:
     case err => Json.obj("code" -> Json.fromString(err.productPrefix))
   given Decoder[LobbyError] = Decoder.instance: _ =>
     Right(null.asInstanceOf[LobbyError])
-  
+
   private case class LobbyErrorSchema(code: String)
   given Schema[LobbyError] = Schema.derived[LobbyErrorSchema].as[LobbyError]

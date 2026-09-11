@@ -9,6 +9,7 @@ import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
 import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.{AIError, AIPort, LobbyStatePort}
+
 import sttp.tapir.server.ServerEndpoint
 
 class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: ExecutionContext):
@@ -23,15 +24,20 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
       player = playerPair._1
       aiResultOpt <- EitherT(action(player.id)).leftMap {
         case AIError.PlayerNotFound => LobbyError.PlayerNotFound
-        case err                       => LobbyError.IAHintError(err)
+        case err                    => LobbyError.IAHintError(err)
       }
-      aiResult <- EitherT.fromOption[Future](aiResultOpt, LobbyError.IAHintError(AIError.NoHintFound))
+      aiResult <- EitherT.fromOption[Future](
+        aiResultOpt,
+        LobbyError.IAHintError(AIError.NoHintFound)
+      )
     yield aiResult).value
 
   private val hintBestTrump: ServerEndpoint[Any, Future] =
     AIEndpoints.bestTrump
       .serverSecurityLogicSuccess(Future.successful)
-      .serverLogic(secret => lobbyId => handleHint(secret, lobbyId, aiPort.resolvedTrumpColor(lobbyId, _)))
+      .serverLogic(secret =>
+        lobbyId => handleHint(secret, lobbyId, aiPort.resolvedTrumpColor(lobbyId, _))
+      )
 
   private val hintBestBid: ServerEndpoint[Any, Future] =
     AIEndpoints.bestBid

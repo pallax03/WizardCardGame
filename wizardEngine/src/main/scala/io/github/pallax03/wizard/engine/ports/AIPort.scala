@@ -1,13 +1,13 @@
 package io.github.pallax03.wizard.engine.ports
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 enum AIError:
   case InvalidPhase(actualGameState: PlayerGameState)
@@ -26,7 +26,7 @@ enum AIError:
 trait AIPort(inboundPort: InboundPort):
 
   private def onRunningPhase[T](lobbyId: LobbyId)(playerId: PlayerId)(
-    phaseLogic: PartialFunction[PlayerGameState, T]
+      phaseLogic: PartialFunction[PlayerGameState, T]
   ): Future[Either[AIError, T]] =
     inboundPort
       .getState(lobbyId, playerId)
@@ -39,7 +39,9 @@ trait AIPort(inboundPort: InboundPort):
           )
       .recover { case _ => Left(AIError.PlayerNotFound) }
 
-  protected def resolveTrumpColorLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Card.Color]]
+  protected def resolveTrumpColorLogic(
+      playerId: PlayerId
+  ): PartialFunction[PlayerGameState, Option[Card.Color]]
   protected def placeBidLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Bid]]
   protected def bestCardLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Card]]
 
@@ -50,7 +52,10 @@ trait AIPort(inboundPort: InboundPort):
    * @param playerId the ID of the dealer who needs to resolve the trump.
    * @return A [[Future]] containing the chosen [[Card.Color]].
    */
-  final def resolvedTrumpColor(lobbyId: LobbyId, playerId: PlayerId): Future[Either[AIError, Option[Card.Color]]] =
+  final def resolvedTrumpColor(
+      lobbyId: LobbyId,
+      playerId: PlayerId
+  ): Future[Either[AIError, Option[Card.Color]]] =
     onRunningPhase(lobbyId)(playerId)(resolveTrumpColorLogic(playerId))
 
   /**
@@ -62,7 +67,7 @@ trait AIPort(inboundPort: InboundPort):
    */
   final def placeBid(lobbyId: LobbyId, playerId: PlayerId): Future[Either[AIError, Option[Bid]]] =
     onRunningPhase(lobbyId)(playerId)(placeBidLogic(playerId))
-  
+
   /**
    * Selects the optimal card to play from the player's hand given the current table state.
    *
