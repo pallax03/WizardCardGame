@@ -16,10 +16,10 @@ import { useParams, useRouter } from "next/navigation";
 import type { ChatMessage } from "@/features/chat/types";
 import { getLobbyState, getLobbyWsSecret } from "./api";
 import { connectLobbySocket, type LobbySocket } from "./lobbySocket";
+import { clearStoredSession, readStoredSession, writeStoredSession } from "./storage";
 import type {
   LobbySessionAction,
   LobbySessionState,
-  LobbyState,
   ServerEvent,
 } from "./types";
 
@@ -51,8 +51,6 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
       return { ...state, connectionState: action.connectionState, connectedPlayerIds: newConnectedIds };
     }
     case "lobby/loaded": {
-      // Affidiamoci alla risposta HTTP (che viene rifetchata ad ogni evento system).
-      // L'unica eccezione è il current player: se il socket è open, siamo sicuri di essere online.
       const httpOnlineIds = new Set(
         action.lobby.players.filter((p) => p.isOnline).map((p) => p.id)
       );
@@ -80,7 +78,8 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
       let updatedLobby = state.lobby;
       if (
         action.event.type === "event" &&
-        action.event.event.action === "GameStarted" &&
+        (action.event.event.action === "GameStarted" ||
+          action.event.event.action === "GameResumed") &&
         state.lobby
       ) {
         updatedLobby = {
@@ -109,6 +108,8 @@ type LobbySessionContextValue = LobbySessionState & {
 
 const LobbySessionContext = createContext<LobbySessionContextValue | null>(null);
 
+const MAX_RECONNECT_ATTEMPTS = 10;
+
 export function LobbySessionProvider({ children }: PropsWithChildren) {
   const params = useParams();
   const router = useRouter();
@@ -127,21 +128,19 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const urlPlayerId = new URLSearchParams(window.location.search).get("playerId");
-    const storedPlayerId = localStorage.getItem("wizard_playerId");
-    const storedLobbyId = localStorage.getItem("wizard_lobbyId");
-    const candidate = urlPlayerId ?? (storedLobbyId === lobbyId ? storedPlayerId : null);
+    const stored = readStoredSession();
+    const candidate =
+      urlPlayerId ?? (stored.lobbyId === lobbyId && stored.playerId !== null ? String(stored.playerId) : null);
     const playerId = candidate === null ? Number.NaN : Number.parseInt(candidate, 10);
 
-    if (Number.isNaN(playerId)) {
-      localStorage.removeItem("wizard_lobbyId");
-      localStorage.removeItem("wizard_playerId");
+    if (!Number.isInteger(playerId) || playerId < 0) {
+      clearStoredSession();
       router.replace("/");
       return;
     }
 
     if (urlPlayerId) {
-      localStorage.setItem("wizard_playerId", urlPlayerId);
-      localStorage.setItem("wizard_lobbyId", lobbyId);
+      writeStoredSession(lobbyId, urlPlayerId);
       if (typeof window !== "undefined" && !window.location.pathname.endsWith("/game")) {
         router.replace(`/lobby/${lobbyId}`);
       }
@@ -196,23 +195,12 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
 
   const handleServerEvent = useCallback((event: ServerEvent) => {
     dispatch({ type: "event/received", event });
-    console.log("Received server event:", event);
     if (event.type === "system") {
-      // Lo stato della lobby (status, isOnline dei giocatori) cambia anche su
-      // online/offline/paused/resumed/afk_replaced: ricarica sempre, così la UI
-      // rileva la pausa (e torna alla lobby) e la successiva ripresa.
       void refreshLobby();
       return;
     }
 
     if (event.type === "event") {
-      // Lo stato di gioco avanza solo via reducer sugli eventi WS
-      // (cfr. `gameReducer` in `features/game/state`): nessun fetch dello
-      // snapshot qui, altrimenti ogni mossa (che produce N eventi)
-      // causerebbe N `GET /game` ridondanti. Il riallineamento via snapshot
-      // vive in `useGameBoard` (mount/reconnect/foreground).
-      // `GameResumed` va trattato come `GameStarted`: la lobby torna IN_GAME
-      // e l'effetto dedicato naviga tutti i client verso `/game`.
       if (event.event.action === "GameStarted" || event.event.action === "GameResumed") {
         void refreshLobby();
       }
@@ -224,19 +212,17 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       const targetPath = `/lobby/${state.lobbyId}/game`;
 
       if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
-        router.push(targetPath);
+        router.replace(targetPath);
       }
     }
   }, [state.lobby?.status, state.lobbyId, router]);
 
-  // Partita in pausa (es. per inattività/AFK): dalla pagina di gioco si torna
-  // alla lobby, dove appare il bottone per riprenderla.
   useEffect(() => {
     if (state.lobby?.status === "PAUSED") {
       const targetPath = `/lobby/${state.lobbyId}`;
 
       if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
-        router.push(targetPath);
+        router.replace(targetPath);
       }
     }
   }, [state.lobby?.status, state.lobbyId, router]);
@@ -272,9 +258,14 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
         },
         onClose() {
           if (disposed) return;
-          dispatch({ type: "connection/changed", connectionState: "reconnecting" });
           reconnectAttempt += 1;
-          const delay = Math.min(500 * 2 ** (reconnectAttempt - 1), 5000);
+          if (reconnectAttempt > MAX_RECONNECT_ATTEMPTS) {
+            dispatch({ type: "connection/changed", connectionState: "closed" });
+            return;
+          }
+          dispatch({ type: "connection/changed", connectionState: "reconnecting" });
+          const backoff = Math.min(500 * 2 ** (reconnectAttempt - 1), 5000);
+          const delay = backoff * (0.5 + Math.random() * 0.5);
           reconnectTimer = setTimeout(connect, delay);
         },
       });
@@ -318,12 +309,4 @@ export function useLobbySession() {
   const session = useContext(LobbySessionContext);
   if (!session) throw new Error("useLobbySession must be used inside LobbySessionProvider");
   return session;
-}
-
-export function useLobbyState(): LobbyState | null {
-  return useLobbySession().lobby;
-}
-
-export function useLobbyPresence(): number[] {
-  return useLobbySession().connectedPlayerIds;
 }

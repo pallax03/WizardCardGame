@@ -5,12 +5,6 @@ import { authHeadersForLobby } from "@/lib/auth/clientSecret";
 import type { PlayerGameSnapshot } from "../state/snapshotMapper";
 import type { Card, CardColor } from "../types";
 
-/**
- * Recupera lo snapshot corrente della partita per il giocatore autenticato
- * (`GET /api/lobby/{lobbyId}/game`).
- * Ritorna `null` quando la partita non esiste ancora (404), cosi' la board
- * puo' continuare a lavorare in modalita' solo-eventi senza mostrare errori.
- */
 export async function getPlayerGameSnapshot(
   lobbyId: string
 ): Promise<PlayerGameSnapshot | null> {
@@ -33,10 +27,7 @@ export async function chooseTrumpColor(lobbyId: string, color: CardColor): Promi
   });
 }
 
-export async function playCard(
-  lobbyId: string,
-  card: Card = { type: "Standard", color: "Blue", rank: 7 }
-): Promise<void> {
+export async function playCard(lobbyId: string, card: Card): Promise<void> {
   await apiFetch(`/api/lobby/${lobbyId}/play`, {
     method: "POST",
     headers: await authHeadersForLobby(lobbyId),
