@@ -1,19 +1,13 @@
 ﻿"use client";
 
 import { GameCardView } from "./GameCardView";
+import { CARD_COLOR_BADGE_STYLES } from "./cardStyles";
 import type { CardColor, Trump } from "../types";
 
 interface TrumpAreaProps {
   trump: Trump | null;
   effectiveTrumpColor: CardColor | null;
 }
-
-const colorBadgeStyles: Record<CardColor, string> = {
-  Red: "bg-rose-950/90 text-rose-200 border-rose-600 shadow-rose-950/50",
-  Blue: "bg-blue-950/90 text-blue-200 border-blue-600 shadow-blue-950/50",
-  Green: "bg-emerald-950/90 text-emerald-200 border-emerald-600 shadow-emerald-950/50",
-  Yellow: "bg-amber-950/90 text-amber-200 border-amber-500 shadow-amber-950/50",
-};
 
 export function TrumpArea({ trump, effectiveTrumpColor }: TrumpAreaProps) {
   return (
@@ -33,7 +27,7 @@ export function TrumpArea({ trump, effectiveTrumpColor }: TrumpAreaProps) {
       )}
       {effectiveTrumpColor && (
         <span
-          className={`inline-block rounded-full border px-3 py-0.5 text-[11px] font-black tracking-wider shadow-md uppercase ${colorBadgeStyles[effectiveTrumpColor]}`}
+          className={`inline-block rounded-full border px-3 py-0.5 text-[11px] font-black tracking-wider shadow-md uppercase ${CARD_COLOR_BADGE_STYLES[effectiveTrumpColor]}`}
         >
           {effectiveTrumpColor}
         </span>

@@ -7,6 +7,7 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useChat } from "../hooks/useChat";
 import { ChatMessage } from "../types";
 import { useLobbySession } from "@/features/lobby-session";
+import { isBotPlayer } from "@/features/lobby-session/presence";
 import { t } from "@/ui/i18n/core";
 const chatI18n = t("chat");
 import { Badge } from "@/ui/components/badge";
@@ -32,13 +33,11 @@ export function ChatSheet() {
     () =>
       new Set(
         (lobby?.players ?? [])
-          .filter((player) => player.difficulty !== undefined && player.difficulty !== null)
+          .filter((player) => isBotPlayer(player))
           .map((player) => player.id),
       ),
     [lobby?.players],
   );
-  // La chat mostra solo messaggi chat + system: gli eventi di gioco del backend
-  // (type === "event") restano in `messages` per la game board ma non vanno nel feed chat.
   const feedMessages = useMemo(
     () =>
       messages.filter(
@@ -99,18 +98,14 @@ export function ChatSheet() {
       const customEvent = e as CustomEvent<{ playerId: number }>;
       setIsOpen(true);
       setActivePrivateId(customEvent.detail.playerId);
-      // We don't call markPrivateSeen here because it might be stale, 
-      // but setActivePrivateId and setIsOpen are guaranteed to be stable.
     };
     window.addEventListener('open-private-chat', handler);
     return () => window.removeEventListener('open-private-chat', handler);
   }, []);
   useEffect(() => {
     if (isOpen && activePrivateId !== null) {
-      // ponytail: defer to avoid set-state-in-effect warning
       setTimeout(() => markPrivateSeen(activePrivateId), 0);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, activePrivateId, feedMessages.length]);
 
   if (playerId === null) {

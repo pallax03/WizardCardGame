@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/api";
+import { readStoredSession } from "@/features/lobby-session/storage";
 import { t } from "@/ui/i18n/core";
 const homeI18n = t("home");
 import { Button } from "@/ui/components/button";
@@ -24,8 +25,9 @@ export default function Home() {
     const searchParams = new URLSearchParams(window.location.search);
     const lobbyId = searchParams.get("lobbyId");
     
-    const storedLobbyId = localStorage.getItem("wizard_lobbyId");
-    const storedPlayerId = localStorage.getItem("wizard_playerId");
+    const stored = readStoredSession();
+    const storedLobbyId = stored.lobbyId;
+    const storedPlayerId = stored.playerId !== null ? String(stored.playerId) : null;
     
     if (storedLobbyId && storedPlayerId && !lobbyId) {
       router.push(`/lobby/${storedLobbyId}`);

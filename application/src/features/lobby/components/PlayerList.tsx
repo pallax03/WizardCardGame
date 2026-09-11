@@ -5,6 +5,7 @@ import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
 import { Users, UserPlus, Plus, X } from "lucide-react";
 import { PlayerCard } from "@/features/lobby/components/PlayerCard";
+import { isBotPlayer, isPlayerOnline } from "@/features/lobby-session/presence";
 import { EmptySlotProps, PlayerListProps } from "../types";
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
@@ -38,9 +39,9 @@ export function PlayerList({
       </CardHeader>
       <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         {players.map((player) => {
-          const isMe = currentUserId !== null && Number(player.id) === Number(currentUserId);
-          const isBot = player.difficulty !== undefined && player.difficulty !== null;
-          const isOnline = isBot || connectedPlayerIds.some((id) => Number(id) === Number(player.id));
+          const isMe = currentUserId !== null && player.id === currentUserId;
+          const isBot = isBotPlayer(player);
+          const isOnline = isPlayerOnline(player, connectedPlayerIds);
 
           return (
             <PlayerCard

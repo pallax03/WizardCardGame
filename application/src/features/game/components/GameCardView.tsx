@@ -1,8 +1,9 @@
 ﻿"use client";
 
 import { cn } from "@/lib/utils";
-import type { Card, CardColor } from "../types";
+import type { Card } from "../types";
 import { cardToString } from "../state/gameReducer";
+import { CARD_COLOR_STYLES } from "./cardStyles";
 
 interface GameCardViewProps {
   card: Card;
@@ -12,33 +13,6 @@ interface GameCardViewProps {
   onClick?: () => void;
   size?: "sm" | "md" | "lg";
 }
-
-const colorStyles: Record<CardColor, { bg: string; text: string; border: string; glow: string }> = {
-  Red: {
-    bg: "bg-gradient-to-b from-rose-950/90 to-rose-900/80",
-    text: "text-rose-300",
-    border: "border-rose-500/60",
-    glow: "shadow-rose-900/40",
-  },
-  Blue: {
-    bg: "bg-gradient-to-b from-blue-950/90 to-blue-900/80",
-    text: "text-blue-300",
-    border: "border-blue-500/60",
-    glow: "shadow-blue-900/40",
-  },
-  Green: {
-    bg: "bg-gradient-to-b from-emerald-950/90 to-emerald-900/80",
-    text: "text-emerald-300",
-    border: "border-emerald-500/60",
-    glow: "shadow-emerald-900/40",
-  },
-  Yellow: {
-    bg: "bg-gradient-to-b from-amber-950/90 to-amber-900/80",
-    text: "text-amber-300",
-    border: "border-amber-500/60",
-    glow: "shadow-amber-900/40",
-  },
-};
 
 export function GameCardView({
   card,
@@ -59,7 +33,7 @@ export function GameCardView({
   let subLabel = "";
 
   if (card.type === "Standard") {
-    const style = colorStyles[card.color];
+    const style = CARD_COLOR_STYLES[card.color];
     cardStyle = `${style.border} ${style.bg} ${style.text} ${style.glow}`;
     label = String(card.rank);
     subLabel = card.color;
