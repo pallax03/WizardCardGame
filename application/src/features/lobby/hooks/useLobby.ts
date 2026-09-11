@@ -50,8 +50,13 @@ export function useLobby() {
 
     if (result.error) {
       setActionError(getErrorMessage(result.error));
-      setIsStarting(false);
+    } else {
+      // Il resume/start riesce sul backend (lobby -> IN_GAME): ricarica subito
+      // lo stato locale cosi' l'effetto di routing naviga verso `/game`
+      // senza aspettare il round-trip dell'evento WS (`GameStarted`/`GameResumed`).
+      await refreshLobby();
     }
+    setIsStarting(false);
   };
 
   const handleAddBot = async (difficulty: string) => {

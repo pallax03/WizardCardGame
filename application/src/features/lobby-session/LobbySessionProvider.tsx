@@ -211,7 +211,11 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       // snapshot qui, altrimenti ogni mossa (che produce N eventi)
       // causerebbe N `GET /game` ridondanti. Il riallineamento via snapshot
       // vive in `useGameBoard` (mount/reconnect/foreground).
-      if (event.event.action === "GameStarted") void refreshLobby();
+      // `GameResumed` va trattato come `GameStarted`: la lobby torna IN_GAME
+      // e l'effetto dedicato naviga tutti i client verso `/game`.
+      if (event.event.action === "GameStarted" || event.event.action === "GameResumed") {
+        void refreshLobby();
+      }
     }
   }, [refreshLobby]);
 
