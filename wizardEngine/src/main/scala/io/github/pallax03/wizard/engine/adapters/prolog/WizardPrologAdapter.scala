@@ -1,13 +1,9 @@
 package io.github.pallax03.wizard.engine.adapters.prolog
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologEngine
-import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids}
-import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
+import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerGameState}
 import io.github.pallax03.wizard.engine.model.rules.BiddingRules.*
@@ -19,98 +15,41 @@ import io.github.pallax03.wizard.engine.ports.{AIPort, InboundPort}
  *
  * This Adapter work with [[GameEngineInboundAdapter]] as every api need to get actual state to respond with the correct data for the correct playerId request.
  *
- * @throws Future[Exception] Each api return a failed future if any problem occurs.
- *
  * This component acts as a safety layer:
  * 1. Validates that the AI requests are performed during the correct game phases.
  * 2. Manages interactions with the [[WizardPrologEngine]].
  * 3. Provides robust fallbacks: if Prolog fails to return a valid move, this adapter ensures the game continues by providing a valid default move.
  */
-class WizardPrologAdapter(private val inboundPort: InboundPort) extends AIPort:
+class WizardPrologAdapter(inboundPort: InboundPort) extends AIPort(inboundPort):
 
   private val engine = WizardPrologEngine()
 
-  private def onRunningPhase[T](lobbyId: LobbyId, actionName: String)(playerId: PlayerId)(
-      phaseLogic: PartialFunction[PlayerGameState, Future[T]]
-  ): Future[T] =
-    inboundPort
-      .getState(lobbyId, playerId)
-      .flatMap: state =>
-        phaseLogic.applyOrElse(
-          state,
-          _ => Future.failed(IllegalStateException(s"Cannot $actionName: invalid game phase"))
+  /** @inheritdoc */
+  override protected def resolveTrumpColorLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Card.Color]] =
+    case state @ GameState.ChoosingTrump(_) =>
+      engine.chooseTrumpColor(state.core.hand)
+
+  /** @inheritdoc  */
+  override protected def placeBidLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Bid]] =
+    case state @ GameState.Bidding(_, _, _) =>
+      val hand = state.core.hand
+      engine.placeBid(hand, state.core.trump).flatMap: bid =>
+        val (round, bids, players) = (state.core.round, state.bids, state.core.playersIds.size)
+        bid.validateBid(round, bids, players) match
+          case Left(_) => engine.adjustBid(hand, bid).filter(_.validateBid(round, bids, players).isRight)
+          case Right(_) => Option(bid)
+  
+  /** @inheritdoc */
+  override protected def bestCardLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Card]] =
+    case state @ GameState.Playing(_, _, _, _, _) =>
+      val hand = state.core.hand
+      engine
+        .bestPlayableCard(
+          hand = hand,
+          winningCard = state.table.evaluateTrick(state.core.trump),
+          followingColor = state.table.followingColor,
+          trump = state.core.trump,
+          playerBid = state.bids(playerId),
+          playerTrick = state.tricksWon(playerId)
         )
-
-  private def withHand[T](handOpt: Option[Hand])(prologLogic: Hand => T): Future[T] =
-    handOpt match
-      case Some(hand) => Future.successful(prologLogic(hand))
-      case None       => Future.failed(IllegalArgumentException("Player not found in game state"))
-
-  /**
-   * @inheritdoc
-   * @param playerId given a player, retrieve every playerId's data
-   * @return the best Color to resolve trump
-   * @note falls back to the simplest legal move via FallbackStrategy
-   */
-  override def resolvedTrumpColor(lobbyId: LobbyId, playerId: PlayerId): Future[Card.Color] =
-    onRunningPhase(lobbyId, "choose trump color")(playerId):
-      case state @ GameState.ChoosingTrump(_) =>
-        withHand(Some(state.core.hand)): hand =>
-          engine
-            .chooseTrumpColor(hand)
-            .getOrElse(throw IllegalStateException("AI failed to choose a color"))
-
-  /**
-   * @inheritdoc
-   * @param playerId the ID of the player requesting the bid.
-   * @return A suggested [[Bid]].
-   * @see [[adjustBid]] for adjest teh suggested bid to a valid bid, based on the suggested.
-   * @note falls back to [[firstValidBid]].
-   */
-  override def placeBid(lobbyId: LobbyId, playerId: PlayerId): Future[Bid] =
-    onRunningPhase(lobbyId, "place bid")(playerId):
-      case state @ GameState.Bidding(_, _, _) =>
-        withHand(Some(state.core.hand)): hand =>
-          engine
-            .placeBid(hand, state.core.trump)
-            .getOrElse(throw IllegalStateException("AI failed to place bid"))
-
-  /**
-   * @inheritdoc
-   * @param playerId the ID of the player requesting the adjustment.
-   * @return A valid [[Bid]] that satisfies game constraints.
-   * @note falls back to [[firstValidBid]].
-   */
-  override def adjustBid(lobbyId: LobbyId, playerId: PlayerId): Future[Bid] =
-    onRunningPhase(lobbyId, "adjust bid")(playerId):
-      case state @ GameState.Bidding(_, _, _) =>
-        withHand(Some(state.core.hand)): hand =>
-          val rejectedBid = state.core.round - state.bids.total
-          engine
-            .adjustBid(hand, rejectedBid)
-            .filter(_.validateBid(state.core.round, state.bids, state.core.playersIds.size).isRight)
-            .getOrElse(throw IllegalStateException("AI failed to adjust bid"))
-
-  /**
-   * @inheritdoc
-   * @param playerId the ID of the player.
-   * @return The best [[Card]] to play.
-   * @note If Prolog fails or suggests a card not in `legalCards`, it falls back to
-   *       playing the first legal card available.
-   */
-  override def bestCard(lobbyId: LobbyId, playerId: PlayerId): Future[Card] =
-    onRunningPhase(lobbyId, "play best card")(playerId):
-      case state @ GameState.Playing(_, _, _, _, _) =>
-        withHand(Some(state.core.hand)): hand =>
-          val legalCards = hand.legalCards(state.table)
-          engine
-            .bestPlayableCard(
-              hand = hand,
-              winningCard = state.table.evaluateTrick(state.core.trump),
-              followingColor = state.table.followingColor,
-              trump = state.core.trump,
-              playerBid = state.bids(playerId),
-              playerTrick = state.tricksWon(playerId)
-            )
-            .filter(legalCards.contains)
-            .getOrElse(throw IllegalStateException("AI failed to play a valid card"))
+        .filter(hand.legalCards(state.table).contains)
