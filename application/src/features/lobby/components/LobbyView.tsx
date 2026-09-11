@@ -1,7 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useLobby } from "../hooks/useLobby"; // O il percorso corretto al file
+import { useLobby } from "../hooks/useLobby";
+import { clearStoredSession } from "@/features/lobby-session/storage";
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
 
@@ -24,12 +26,18 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     removingBotId,
     activeBotSlot,
     isLeaving,
+    isStarting,
     setActiveBotSlot,
     handleLeaveLobby,
     handleStartGame,
     handleAddBot,
     handleRemoveBot,
   } = useLobby();
+
+  // Sessione invalida: pulizia fuori dal render (effetto, non side-effect in render).
+  useEffect(() => {
+    if (sessionError) clearStoredSession();
+  }, [sessionError]);
 
   if (!lobby && connectionState === "connecting") {
     return (
@@ -40,8 +48,6 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   }
 
   if (sessionError) {
-    localStorage.removeItem("wizard_lobbyId");
-    localStorage.removeItem("wizard_playerId");
     return (
       <div className="flex flex-col items-center justify-center min-h-100 gap-4">
         <p className="text-red-400 font-medium">{getErrorMessage(sessionError.message)}</p>
@@ -92,6 +98,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       
       <LobbyActions
         isLeaving={isLeaving}
+        isStarting={isStarting}
         onLeave={handleLeaveLobby}
         onStart={handleStartGame}
         isResuming={isPaused}

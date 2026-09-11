@@ -1,6 +1,6 @@
 "use server";
 
-import { LobbyApiResponse, LOBBY_ERRORS } from "@/features/lobby/types";
+import { LOBBY_ERRORS } from "@/features/lobby/types";
 import { safeApiFetch } from "@/lib/api/api";
 import {
   authHeadersForLobby,
@@ -33,7 +33,7 @@ export async function createLobbyAction(
   );
 
   if (error || !data) {
-    console.error("Error starting game:", error);
+    console.error("Error creating lobby:", error);
     return { error: error || LOBBY_ERRORS.CREATE_FAILED };
   }
 
@@ -67,7 +67,7 @@ export async function joinLobbyAction(
   );
 
   if (error || !data) {
-    console.error("Error starting game:", error);
+    console.error("Error joining lobby:", error);
     return { error: error || LOBBY_ERRORS.LOBBY_NOT_FOUND };
   }
 
@@ -76,19 +76,7 @@ export async function joinLobbyAction(
     await setClientSecretCookie(resolvedLobbyId, data.secret);
   }
 
-  const pId = data.playerId !== undefined ? `&playerId=${data.playerId}` : "";
-  const pName = `&playerName=${encodeURIComponent(trimmedName)}`;
-
-  redirect(`/lobby/${resolvedLobbyId}?${pId}${pName}`);
-}
-
-export async function getLobbyAction(
-  lobbyId: string
-): Promise<{ data?: LobbyApiResponse; error?: string }> {
-  return safeApiFetch<LobbyApiResponse>(`/api/lobby/${lobbyId}`, {
-    method: "GET",
-    cache: "no-store",
-  });
+  redirect(`/lobby/${resolvedLobbyId}?playerId=${data.playerId}`);
 }
 
 export async function addBotAction(
@@ -110,7 +98,8 @@ export async function addBotAction(
 
 export async function leaveLobbyAction(
   lobbyId: string,
-  playerId: number
+  playerId: number,
+  clearSecret = true
 ): Promise<{ success?: boolean; error?: string }> {
   const { error } = await safeApiFetch(`/api/lobby/${lobbyId}`, {
     method: "DELETE",
@@ -123,7 +112,9 @@ export async function leaveLobbyAction(
     return { error: LOBBY_ERRORS.LEAVE_FAILED };
   }
 
-  await clearClientSecretCookie(lobbyId);
+  if (clearSecret) {
+    await clearClientSecretCookie(lobbyId);
+  }
 
   return { success: true };
 }

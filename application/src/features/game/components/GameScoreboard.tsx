@@ -6,7 +6,7 @@ import type { Scoreboard } from "../types";
 interface GameScoreboardProps {
   scoreboard: Scoreboard | null;
   playersMap: Map<number, { name: string }>;
-  myPlayerId: number;
+  myPlayerId: number | null;
 }
 
 export function GameScoreboard({

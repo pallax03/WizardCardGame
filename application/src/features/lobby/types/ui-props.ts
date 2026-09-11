@@ -11,11 +11,11 @@ export interface LobbyHeaderProps {
 export interface PlayerListProps {
   players: LobbyPlayer[];
   maxPlayers: number;
-  currentUserId: number | string | null;
-  connectedPlayerIds: (number | string)[];
+  currentUserId: number | null;
+  connectedPlayerIds: number[];
   activeBotSlot: number | null;
   isAddingBot: boolean;
-  removingBotId: number | string | null;
+  removingBotId: number | null;
   onSelectBotSlot: (slotIndex: number | null) => void;
   onAddBot: (difficulty: string) => Promise<void>;
   onRemoveBot: (botId: number) => Promise<void>;
@@ -40,8 +40,8 @@ export interface EmptySlotProps {
 
 export interface LobbyActionsProps {
   isLeaving: boolean;
+  isStarting: boolean;
   onLeave: () => void;
   onStart: () => void;
-  /** La lobby è in pausa: il bottone avvia diventa "Riprendi Partita". */
   isResuming?: boolean;
 }

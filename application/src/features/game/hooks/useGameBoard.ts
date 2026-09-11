@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLobbySession } from "@/features/lobby-session";
+import { buildPlayersMap } from "@/features/lobby-session/presence";
 import type { EventMessage } from "@/features/chat/types";
 import { chooseTrumpColor, getPlayerGameSnapshot, placeBid, playCard } from "../api";
 import {
@@ -11,6 +12,7 @@ import {
   gameReducer,
   initialGameBoardState,
   isCardInList,
+  parseInvalidBid,
   shortGameActionReason,
 } from "../state/gameReducer";
 import { mapSnapshotToBoardState } from "../state/snapshotMapper";
@@ -30,39 +32,22 @@ export function useGameBoard(customPlayerId?: number) {
   } = useLobbySession();
 
   const resolvedPlayerId = customPlayerId ?? sessionPlayerId;
-  const playerId = resolvedPlayerId ?? 1;
+  const playerId: number | null = resolvedPlayerId ?? null;
+  const reducerPlayerId = playerId ?? -1;
 
-  // Local selection states for user interaction
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [bidInput, setBidInput] = useState<number>(0);
   const [selectedColor, setSelectedColor] = useState<CardColor>("Red");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
-  // Errore locale di bid non valida: finisce nel GameTurnBanner come lastError.
-  // Serve perché il backend risponde 400 via HTTP (senza evento WS) quando
-  // la somma delle puntate pareggerebbe il numero di carte del round.
-  // Memorizziamo anche il round: l'errore è valido solo per quel round e
-  // finché il player non ha puntato (niente useEffect di reset).
   const [bidErrorRaw, setBidErrorRaw] = useState<{ round: number; message: string } | null>(null);
-  // Errore generico di azione (gioca carta, briscola, ...): mostrato in rosso
-  // nel GameTurnBanner. Il backend restituisce solo `{"code": ...}` senza
-  // messaggio, quindi mappiamo il codice in italiano (cfr. formatGameActionError).
   const [actionError, setActionError] = useState<string | null>(null);
-  // Ack ottimistico: dopo una bid andata a buon fine nascondiamo subito i
-  // controlli, senza aspettare l'echo WS (BidPlaced/TurnOf).
   const [bidAckRound, setBidAckRound] = useState<number | null>(null);
-
-  // Snapshot ripristinato dal backend (GET /api/lobby/{lobbyId}/game).
-  // Serve da base quando la cronologia WS e' andata persa (reload/chiusura
-  // finestra). Gli eventi arrivati dopo il fetch vengono ridotti sopra.
   const [snapshotState, setSnapshotState] = useState<GameBoardState | null>(null);
   const [snapshotBaseline, setSnapshotBaseline] = useState(0);
   const [isRestoring, setIsRestoring] = useState(false);
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
 
-  // Reveal di fine presa: quando arriva TrickWon il tavolo live si svuota
-  // subito, ma qui congeliamo le carte giocate e le mostriamo ancora per
-  // qualche secondo con conto alla rovescia.
   const [revealedTrick, setRevealedTrick] = useState<{
     entries: PlayedCardEntry[];
     winningCard: Card | null;
@@ -77,7 +62,6 @@ export function useGameBoard(customPlayerId?: number) {
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const revealIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Filter all EventMessage received from WebSocket
   const gameEvents = useMemo(
     () => messages.filter((m): m is EventMessage => m.type === "event"),
     [messages]
@@ -103,11 +87,9 @@ export function useGameBoard(customPlayerId?: number) {
 
   const refreshSnapshot = useCallback(
     async (reason: string = "manual") => {
-      if (resolvedPlayerId === null || resolvedPlayerId === undefined) return;
+      if (playerId === null || playerId === undefined) return;
       if (!lobbyId) return;
       const requestId = (snapshotRequestIdRef.current += 1);
-      // Baseline catturata a inizio fetch: gli eventi gia' bufferati sono
-      // (quasi sempre) gia' inclusi nello snapshot del server e vanno saltati.
       const baselineAtStart = gameEventsLengthRef.current;
       setIsRestoring(true);
       setSnapshotError(null);
@@ -118,8 +100,6 @@ export function useGameBoard(customPlayerId?: number) {
           setSnapshotState(mapSnapshotToBoardState(snapshot, playerId));
           setSnapshotBaseline(baselineAtStart);
         } else {
-          // Nessuna partita sul backend (lobby in attesa): si resta in
-          // modalita' solo-eventi senza sporcare lo stato precedente.
           setSnapshotBaseline(baselineAtStart);
         }
       } catch (error) {
@@ -130,11 +110,9 @@ export function useGameBoard(customPlayerId?: number) {
         if (snapshotRequestIdRef.current === requestId) setIsRestoring(false);
       }
     },
-    [lobbyId, playerId, resolvedPlayerId]
+    [lobbyId, playerId]
   );
 
-  // Reset snapshot quando si cambia lobby/player: la baseline sugli eventi
-  // non sarebbe piu' valida.
   useEffect(() => {
     queueMicrotask(() => {
       snapshotRequestIdRef.current += 1;
@@ -155,20 +133,15 @@ export function useGameBoard(customPlayerId?: number) {
       setRevealedTrick(null);
       setRevealSecondsLeft(0);
     });
-  }, [lobbyId, resolvedPlayerId]);
+  }, [lobbyId, playerId]);
 
-  // Primo caricamento: tenta subito il ripristino, anche se il WS non ha
-  // ancora recapitato alcun evento (caso finestra richiusa e riaperta).
   useEffect(() => {
-    if (resolvedPlayerId === null || resolvedPlayerId === undefined) return;
+    if (playerId === null || playerId === undefined) return;
     queueMicrotask(() => {
       void refreshSnapshot("mount");
     });
-  }, [refreshSnapshot, resolvedPlayerId]);
+  }, [refreshSnapshot, playerId]);
 
-  // Riconnessione WS: quando la connessione torna "open" dopo un'interruzione,
-  // la cronologia locale potrebbe essere incompleta -> re-fetch. Alla prima
-  // apertura si rifetcha solo se il fetch iniziale non ha prodotto snapshot.
   useEffect(() => {
     if (connectionState !== "open") return;
     const isFirstOpen = !hasConnectedRef.current;
@@ -180,42 +153,42 @@ export function useGameBoard(customPlayerId?: number) {
     });
   }, [connectionState, refreshSnapshot]);
 
-  // Altri casi critici: ritorno in foreground, rete di nuovo online, focus.
   useEffect(() => {
-    const onForeground = () => {
-      if (document.visibilityState === "visible") void refreshSnapshot("foreground");
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const schedule = (reason: string) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => void refreshSnapshot(reason), 300);
     };
-    const onOnline = () => void refreshSnapshot("online");
+    const onForeground = () => {
+      if (document.visibilityState === "visible") schedule("foreground");
+    };
+    const onOnline = () => schedule("online");
     document.addEventListener("visibilitychange", onForeground);
     window.addEventListener("online", onOnline);
     window.addEventListener("focus", onOnline);
     return () => {
+      if (timer) clearTimeout(timer);
       document.removeEventListener("visibilitychange", onForeground);
       window.removeEventListener("online", onOnline);
       window.removeEventListener("focus", onOnline);
     };
   }, [refreshSnapshot]);
 
-  // Reduce all events sequentially to derive current GameBoardState.
-  // Se esiste uno snapshot, si applicano sopra solo gli eventi successivi
-  // al fetch (baseline); altrimenti si parte dallo stato iniziale.
   const eventBasedState = useMemo<GameBoardState>(() => {
     return gameEvents.reduce(
-      (state, event) => gameReducer(state, event, playerId),
+      (state, event) => gameReducer(state, event, reducerPlayerId),
       initialGameBoardState
     );
-  }, [gameEvents, playerId]);
+  }, [gameEvents, reducerPlayerId]);
 
   const gameState = useMemo<GameBoardState>(() => {
     if (!snapshotState) return eventBasedState;
     const tail = snapshotBaseline <= gameEvents.length
       ? gameEvents.slice(snapshotBaseline)
       : gameEvents;
-    return tail.reduce((state, event) => gameReducer(state, event, playerId), snapshotState);
-  }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, playerId]);
+    return tail.reduce((state, event) => gameReducer(state, event, reducerPlayerId), snapshotState);
+  }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, reducerPlayerId]);
 
-  // Congela l'ultimo tavolo completo: finche' ci sono carte sul tavolo live,
-  // questa e' la foto che mostreremo quando arrivera' il TrickWon.
   useEffect(() => {
     if (gameState.table.length > 0) {
       completedTableRef.current = {
@@ -232,9 +205,6 @@ export function useGameBoard(customPlayerId?: number) {
     revealIntervalRef.current = null;
   };
 
-  // Nuova presa vinta -> mostra il tavolo congelato con conto alla rovescia.
-  // Si reagisce solo al conteggio dei TrickWon: lo stato live sotto continua
-  // ad avanzare normalmente (prossima mano) mentre l'overlay e' visibile.
   useEffect(() => {
     if (trickWonCount <= trickWonCountRef.current) {
       if (trickWonCount < trickWonCountRef.current) {
@@ -265,10 +235,8 @@ export function useGameBoard(customPlayerId?: number) {
       setRevealedTrick(null);
       setRevealSecondsLeft(0);
     }, TRICK_REVEAL_SECONDS * 1000);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [trickWonCount]);
 
-  // Cleanup timer allo smontaggio.
   useEffect(
     () => () => {
       if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
@@ -277,12 +245,8 @@ export function useGameBoard(customPlayerId?: number) {
     [],
   );
 
-  // Derived helpers
-  // NB: i WaitingFor* sono privati (solo al destinatario), quindi isMyTurn si
-  // basa anche sui TurnOf broadcast (cfr. gameReducer). In più richiediamo
-  // fase coerente e, per le bid, che non si sia già puntato in questo round.
-  const isMyTurn = gameState.currentTurn.isMyTurn;
-  const hasAlreadyBid = gameState.bids[playerId] !== undefined;
+  const isMyTurn = gameState.currentTurn.isMyTurn && playerId !== null;
+  const hasAlreadyBid = playerId !== null && gameState.bids[playerId] !== undefined;
   const bidAckedThisRound = bidAckRound === gameState.round;
   const canChooseTrump =
     isMyTurn &&
@@ -299,16 +263,13 @@ export function useGameBoard(customPlayerId?: number) {
     gameState.currentTurn.actionType === "PLAY_CARD" &&
     gameState.status === "PLAYING";
 
-  // Somma delle bid piazzate finora nel round corrente.
   const bidsTotal = useMemo(
     () => Object.values(gameState.bids).reduce((sum, bid) => sum + Number(bid ?? 0), 0),
     [gameState.bids]
   );
 
-  // Puntata vietata per il bidder corrente (regola Wizard: somma != round).
-  // Fonte primaria: `WaitingForBid.invalidBid` del backend; fallback locale
-  // quando sono l'ultimo bidder (round - somma delle altre bid).
   const forbiddenBid = useMemo<number | null>(() => {
+    if (playerId === null) return null;
     if (gameState.invalidBid !== null && gameState.invalidBid !== undefined) {
       return gameState.invalidBid;
     }
@@ -324,8 +285,6 @@ export function useGameBoard(customPlayerId?: number) {
     return forbidden;
   }, [gameState.invalidBid, gameState.status, gameState.bids, gameState.round, lobby?.players.length, bidsTotal, playerId]);
 
-  // Avviso preventivo mostrato nel GameTurnBanner quando tocca a me puntare
-  // e una puntata è vietata (es. somma pareggerebbe le carte del round).
   const bidWarning = useMemo<string | null>(() => {
     if (!canBid || forbiddenBid === null || forbiddenBid === undefined) return null;
     return (
@@ -334,10 +293,9 @@ export function useGameBoard(customPlayerId?: number) {
     );
   }, [canBid, forbiddenBid, bidsTotal, gameState.round]);
 
-  // Errore visibile solo se riferito al round corrente e se non ho ancora puntato.
-  // Così non servono useEffect di reset (evita cascading renders).
   const bidError = useMemo<string | null>(() => {
     if (!bidErrorRaw) return null;
+    if (playerId === null) return null;
     if (bidErrorRaw.round !== gameState.round) return null;
     if (gameState.bids[playerId] !== undefined) return null;
     return bidErrorRaw.message;
@@ -354,9 +312,6 @@ export function useGameBoard(customPlayerId?: number) {
     [gameState.round]
   );
 
-  // Avviso sullo stato della lobby mostrato nel GameTurnBanner: con un
-  // giocatore offline (DISCONNECTING) o pausa esplicita (PAUSED) le azioni
-  // possono essere rifiutate con `GamePaused`.
   const lobbyWarning = useMemo<string | null>(() => {
     if (lobby?.status === "PAUSED") {
       return "Partita in pausa: stai tornando alla lobby, premi Riprendi Partita per continuare.";
@@ -367,24 +322,10 @@ export function useGameBoard(customPlayerId?: number) {
     return null;
   }, [lobby?.status]);
 
-  // Map of player id to name and metadata from lobby
   const playersMap = useMemo(() => {
-    const map = new Map<
-      number,
-      { id: number; name: string; isBot: boolean; isOnline: boolean }
-    >();
-    (lobby?.players ?? []).forEach((p) => {
-      map.set(p.id, {
-        id: p.id,
-        name: p.name,
-        isBot: Boolean(p.difficulty),
-        isOnline: connectedPlayerIds.includes(p.id),
-      });
-    });
-    return map;
+    return buildPlayersMap(lobby?.players ?? [], connectedPlayerIds);
   }, [lobby?.players, connectedPlayerIds]);
 
-  // Human-readable description of current turn
   const turnPrompt = useMemo(() => {
     const activeId = gameState.currentTurn.playerId;
     const activePlayerName =
@@ -426,7 +367,6 @@ export function useGameBoard(customPlayerId?: number) {
     return "Waiting for server...";
   }, [gameState.currentTurn, gameState.round, gameState.status, isMyTurn, playersMap]);
 
-  // Action: Choose Trump Color
   const handleChooseTrump = useCallback(
     async (color?: CardColor) => {
       const colorToChoose = color ?? selectedColor;
@@ -452,12 +392,10 @@ export function useGameBoard(customPlayerId?: number) {
     [lobbyId, selectedColor, gameState.round]
   );
 
-  // Action: Place Bid
   const handlePlaceBid = useCallback(
     async (bid?: number) => {
+      if (playerId === null) return;
       const bidToPlace = bid !== undefined ? bid : bidInput;
-      // Doppia protezione lato client: una sola bid per round, solo in fase
-      // di bidding e solo se è il mio turno.
       if (gameState.status !== "BIDDING" || !isMyTurn) {
         setActionStatus("Non è il tuo turno per puntare.");
         return;
@@ -466,8 +404,6 @@ export function useGameBoard(customPlayerId?: number) {
         setActionStatus(`Hai già puntato per il Round ${gameState.round}.`);
         return;
       }
-      // Validazione client della regola Wizard: l'ultimo bidder non può far
-      // pareggiare somma e round. L'errore finisce nel GameTurnBanner.
       if (forbiddenBid !== null && forbiddenBid !== undefined && bidToPlace === forbiddenBid) {
         const friendly = formatInvalidBidError(gameState.round, bidToPlace);
         setBidError(friendly);
@@ -478,7 +414,6 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(true);
         setActionStatus(`Placing bid ${bidToPlace}...`);
         await placeBid(lobbyId, bidToPlace);
-        // Nascondi subito i controlli, senza aspettare l'echo WS.
         setBidAckRound(gameState.round);
         setBidError(null);
         setActionError(null);
@@ -489,10 +424,9 @@ export function useGameBoard(customPlayerId?: number) {
         const isInvalidBid =
           code.includes("InvalidBid") || msg.includes("InvalidBid");
         if (isInvalidBid) {
-          // Il backend codifica GameError.InvalidBid come "InvalidBid(round,bid)".
-          const match = /InvalidBid\(\s*(\d+)\s*,\s*(-?\d+)\s*\)/.exec(`${code} ${msg}`);
-          const round = match ? Number(match[1]) : gameState.round;
-          const invalid = match ? Number(match[2]) : bidToPlace;
+          const parsed = parseInvalidBid(`${code} ${msg}`);
+          const round = parsed ? parsed.round : gameState.round;
+          const invalid = parsed ? parsed.bid : bidToPlace;
           const friendly = formatInvalidBidError(round, invalid);
           setBidError(friendly);
           setActionStatus(`Puntata ${invalid} rifiutata: non valida per il Round ${round}.`);
@@ -510,15 +444,13 @@ export function useGameBoard(customPlayerId?: number) {
     [bidAckRound, bidInput, forbiddenBid, gameState.bids, gameState.round, gameState.status, isMyTurn, lobbyId, playerId, setBidError]
   );
 
-  // Action: Play Card
   const handlePlayCard = useCallback(
     async (card?: Card) => {
-      // Default to selected card, or first legal card, or first hand card, or standard card
-      const cardToPlay =
-        card ??
-        selectedCard ??
-        gameState.legalCards[0] ??
-        gameState.hand[0] ?? { type: "Standard", color: "Blue", rank: 7 };
+      const cardToPlay = card ?? selectedCard;
+      if (!cardToPlay) {
+        setActionStatus("Seleziona una carta dalla mano prima di giocare.");
+        return;
+      }
 
       try {
         setIsSubmitting(true);
@@ -531,9 +463,6 @@ export function useGameBoard(customPlayerId?: number) {
         const code = extractApiErrorCode(error);
         const msg = error instanceof Error ? error.message : String(error);
         if (code) {
-          // Il backend restituisce solo `{"code": ...}` (es. `GamePaused` quando
-          // la lobby non è IN_GAME): il messaggio generico "Request failed with
-          // status 400" non aiuta, quindi mostriamo il testo italiano nel banner.
           setActionError(formatGameActionError(code, gameState.round));
           setActionStatus(`Carta rifiutata: ${shortGameActionReason(code)}.`);
         } else {
@@ -543,10 +472,9 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(false);
       }
     },
-    [gameState.hand, gameState.legalCards, gameState.round, lobbyId, selectedCard]
+    [gameState.round, lobbyId, selectedCard]
   );
 
-  // Helper to check if a specific card in hand is playable
   const isCardPlayable = useCallback(
     (card: Card) => {
       if (!canPlay) return false;

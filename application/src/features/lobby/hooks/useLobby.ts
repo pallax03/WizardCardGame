@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addBotAction, leaveLobbyAction, startGameAction } from "@/features/lobby/api";
 import { useLobbySession } from "@/features/lobby-session";
+import { clearStoredSession } from "@/features/lobby-session/storage";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
 export function useLobby() {
@@ -18,7 +19,7 @@ export function useLobby() {
   } = useLobbySession();
 
   const [isAddingBot, setIsAddingBot] = useState<boolean>(false);
-  const [removingBotId, setRemovingBotId] = useState<string | number | null>(null);
+  const [removingBotId, setRemovingBotId] = useState<number | null>(null);
   const [activeBotSlot, setActiveBotSlot] = useState<number | null>(null);
   const [isLeaving, setIsLeaving] = useState<boolean>(false);
   const [isStarting, setIsStarting] = useState<boolean>(false);
@@ -26,22 +27,20 @@ export function useLobby() {
 
   const handleLeaveLobby = async () => {
     setActionError(null);
-    if (lobby?.lobbyId && playerId !== null) {
-      setIsLeaving(true);
-      const result = await leaveLobbyAction(lobby.lobbyId, playerId);
-      if (result?.error) {
-        setActionError(getErrorMessage(result.error));
-        setIsLeaving(false);
-        return;
-      }
+    if (!lobby?.lobbyId || playerId === null || isLeaving) return;
+    setIsLeaving(true);
+    const result = await leaveLobbyAction(lobby.lobbyId, playerId);
+    if (result?.error) {
+      setActionError(getErrorMessage(result.error));
+      setIsLeaving(false);
+      return;
     }
-    localStorage.removeItem("wizard_lobbyId");
-    localStorage.removeItem("wizard_playerId");
+    clearStoredSession();
     router.push("/");
   };
 
   const handleStartGame = async () => {
-    if (!lobby?.lobbyId) return;
+    if (!lobby?.lobbyId || isStarting) return;
 
     setActionError(null);
     setIsStarting(true);
@@ -51,9 +50,6 @@ export function useLobby() {
     if (result.error) {
       setActionError(getErrorMessage(result.error));
     } else {
-      // Il resume/start riesce sul backend (lobby -> IN_GAME): ricarica subito
-      // lo stato locale cosi' l'effetto di routing naviga verso `/game`
-      // senza aspettare il round-trip dell'evento WS (`GameStarted`/`GameResumed`).
       await refreshLobby();
     }
     setIsStarting(false);
@@ -78,7 +74,7 @@ export function useLobby() {
     if (!lobby?.lobbyId) return;
     setActionError(null);
     setRemovingBotId(botId);
-    const result = await leaveLobbyAction(lobby.lobbyId, botId);
+    const result = await leaveLobbyAction(lobby.lobbyId, botId, false);
     
     if (result?.error) {
       setActionError(getErrorMessage(result.error));
@@ -90,8 +86,7 @@ export function useLobby() {
 
   useEffect(() => {
     if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
-      localStorage.removeItem("wizard_lobbyId");
-      localStorage.removeItem("wizard_playerId");
+      clearStoredSession();
       router.push("/");
       return;
     }

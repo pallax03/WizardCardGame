@@ -4,7 +4,7 @@ import { Badge } from "@/ui/components/badge";
 
 interface GameHeaderProps {
   lobbyId: string;
-  playerId: number;
+  playerId: number | null;
   connectionState: string;
   round: number;
   status: string;
@@ -27,7 +27,7 @@ export function GameHeader({
           Lobby: <span className="font-mono ml-1 text-amber-400">{lobbyId}</span>
         </Badge>
         <Badge variant="outline" className="text-[11px] bg-zinc-900 border-zinc-700 text-zinc-300">
-          Player: <span className="font-mono ml-1 text-emerald-400">#{playerId}</span>
+          Player: <span className="font-mono ml-1 text-emerald-400">#{playerId ?? "…"}</span>
         </Badge>
         <Badge
           variant={connectionState === "open" ? "default" : "destructive"}

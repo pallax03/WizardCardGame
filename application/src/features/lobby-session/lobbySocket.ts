@@ -3,7 +3,6 @@ import type { ConnectionState, ServerEvent } from "./types";
 
 type LobbySocketOptions = {
   lobbyId: string;
-  /** Player secret richiesto dall'engine come `?secret=...` (cfr. `WebSocketsVerticle`). */
   secret: string;
   onEvent: (event: ServerEvent) => void;
   onConnectionChange: (state: ConnectionState) => void;
@@ -43,7 +42,8 @@ function parseServerEvent(rawData: string): ServerEvent | null {
   if (
     raw.type === "system" &&
     typeof raw.playerId === "number" &&
-    (raw.action === "joined" || raw.action === "left" || raw.action === "online" || raw.action === "offline")
+    typeof raw.action === "string" &&
+    raw.action.length > 0
   ) {
     return {
       type: "system",
@@ -85,7 +85,7 @@ export function connectLobbySocket({
     const event = parseServerEvent(data);
     if (event) onEvent(event);
   };
-  socket.onerror = () => onConnectionChange("closed");
+  socket.onerror = () => undefined;
   socket.onclose = (event) => onClose(event);
 
   return {

@@ -15,7 +15,7 @@ export interface ScoreItem {
 interface GameEndOverlayProps {
   isGameEnded: boolean;
   sortedScoreboard: ScoreItem[];
-  playerId?: number;
+  playerId?: number | null;
   onReturnToLobby: () => void;
 }
 

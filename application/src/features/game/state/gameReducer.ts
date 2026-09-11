@@ -86,10 +86,6 @@ export const initialGameBoardState: GameBoardState = {
   eventsHistory: [],
 };
 
-/**
- * Messaggio mostrato nel GameTurnBanner quando una bid non è valida.
- * Esempio tipico: ultimo bidder non può far pareggiare somma e round.
- */
 export function formatInvalidBidError(round: number, bid: number): string {
   return (
     `Puntata non valida: ${bid} non ammessa al Round ${round} — ` +
@@ -104,12 +100,12 @@ function parseInvalidBidField(value: unknown): number | null {
   return amount;
 }
 
-/**
- * Traduce un errore HTTP del backend (`ApiError.code`, es. `GamePaused` o
- * `GameActionRejected(InvalidBid(2,1))`) in un messaggio italiano da mostrare
- * nel GameTurnBanner. Il backend codifica `LobbyError` come solo `{"code": ...}`
- * senza `message`, quindi il codice è l'unica informazione affidabile.
- */
+export function parseInvalidBid(code: string): { round: number; bid: number } | null {
+  const match = /InvalidBid\(\s*(\d+)\s*,\s*(-?\d+)\s*\)/.exec(code);
+  if (!match) return null;
+  return { round: Number(match[1]), bid: Number(match[2]) };
+}
+
 export function formatGameActionError(
   code: string,
   round: number,
@@ -126,9 +122,9 @@ export function formatGameActionError(
     );
   }
   if (inner.includes("InvalidBid")) {
-    const match = /InvalidBid\(\s*(\d+)\s*,\s*(-?\d+)\s*\)/.exec(inner);
-    const parsedRound = match ? Number(match[1]) : round;
-    const parsedBid = match ? Number(match[2]) : bidHint;
+    const parsed = parseInvalidBid(inner);
+    const parsedRound = parsed ? parsed.round : round;
+    const parsedBid = parsed ? parsed.bid : bidHint;
     if (parsedBid !== undefined && !Number.isNaN(parsedBid)) {
       return formatInvalidBidError(parsedRound, parsedBid);
     }
@@ -161,7 +157,6 @@ export function formatGameActionError(
   return "Azione rifiutata dal server. Riprova tra poco.";
 }
 
-/** Estrae `ApiError.code` (es. `GamePaused`) da un errore di fetch. */
 export function extractApiErrorCode(error: unknown): string {
   if (typeof error === "object" && error !== null && "code" in error) {
     const code = (error as { code?: unknown }).code;
@@ -170,7 +165,6 @@ export function extractApiErrorCode(error: unknown): string {
   return "";
 }
 
-/** Motivo breve per `actionStatus` (il testo esteso va nell'errore del banner). */
 export function shortGameActionReason(code: string): string {
   if (code.includes("GamePaused")) return "partita in pausa";
   if (code.includes("CardNotAllowed") || code.includes("MustFollowColor")) {
@@ -180,6 +174,17 @@ export function shortGameActionReason(code: string): string {
   if (code.includes("InvalidAction")) return "azione non valida in questa fase";
   return code || "errore del server";
 }
+
+export const MAX_EVENTS_HISTORY = 100;
+
+const PHASE_ORDER: Record<GameBoardState["status"], number> = {  WAITING: 0,
+  CHOOSING_TRUMP: 1,
+  BIDDING: 2,
+  PLAYING: 3,
+  ROUND_SCORED: 4,
+  GAME_ENDED: 5,
+  ABORTED: 5,
+};
 
 /**
  * Pure reducer function that advances GameBoardState based on an incoming EventMessage.
@@ -198,8 +203,7 @@ export function gameReducer(
   const eventPlayerId = (event.playerId ?? fields.playerId) as number | undefined;
   const destinationPlayerId = (event.destinationId ?? fields.destinationId) as number | undefined;
 
-  // Add event to history
-  const updatedHistory = [...state.eventsHistory, eventMessage];
+  const updatedHistory = [...state.eventsHistory, eventMessage].slice(-MAX_EVENTS_HISTORY);
 
   switch (action) {
     case "GameStarted": {
@@ -276,11 +280,14 @@ export function gameReducer(
       const actorId = Number(eventPlayerId);
       const isTurnHolder =
         !Number.isNaN(actorId) && state.currentTurn.playerId === actorId;
+      const resolvedTrump: Trump | null =
+        state.trump !== null && "card" in state.trump
+          ? { type: "WizardResolved", card: state.trump.card, color: chosenColor }
+          : state.trump;
       return {
         ...state,
-        effectiveTrumpColor: chosenColor,
-        // Il turno del dichiarante e' finito: lo azzeriamo in attesa del
-        // TurnOf broadcast per il prossimo bidder.
+        trump: resolvedTrump,
+        effectiveTrumpColor: getTrumpColor(resolvedTrump) ?? chosenColor,
         currentTurn: isTurnHolder
           ? { actionType: "NONE", playerId: null, isMyTurn: false }
           : state.currentTurn,
@@ -303,9 +310,6 @@ export function gameReducer(
     }
 
     case "TurnOf": {
-      // Evento broadcast (lo ricevono tutti): e' l'unico segnale affidabile
-      // per sapere di chi e' il turno quando tocca a un altro giocatore/bot.
-      // Gli inviti WaitingFor* sono privati (solo al destinatario).
       const activeId =
         typeof eventPlayerId === "number" && !Number.isNaN(Number(eventPlayerId))
           ? Number(eventPlayerId)
@@ -325,9 +329,10 @@ export function gameReducer(
         status = "CHOOSING_TRUMP";
       }
       if (actionType === "NONE") return { ...state, eventsHistory: updatedHistory };
+      const nextStatus = PHASE_ORDER[status] >= PHASE_ORDER[state.status] ? status : state.status;
       return {
         ...state,
-        status,
+        status: nextStatus,
         currentTurn: {
           actionType,
           playerId: activeId,
@@ -340,8 +345,6 @@ export function gameReducer(
     case "WaitingForBid": {
       const bidderId = destinationPlayerId;
       if (bidderId === undefined) return { ...state, eventsHistory: updatedHistory };
-      // Il backend comunica la puntata vietata per l'ultimo bidder
-      // (somma puntate != round). Va mostrata nel GameTurnBanner.
       const invalidBid = parseInvalidBidField(fields.invalidBid);
       return {
         ...state,
@@ -359,10 +362,6 @@ export function gameReducer(
     case "BidPlaced": {
       const bidderId = Number(eventPlayerId);
       const bidAmount = Number(fields.bid ?? 0);
-      // Chi ha puntato ha finito: azzeriamo il turno in attesa del TurnOf
-      // broadcast per il prossimo bidder (i WaitingForBid sono privati e gli
-      // altri client non li ricevono). Così la bid scompare subito e non si
-      // può piazzarne un'altra.
       const isTurnHolder = state.currentTurn.playerId === bidderId;
       return {
         ...state,
@@ -404,8 +403,6 @@ export function gameReducer(
       const winningCard = (fields.winningCard as Card | undefined) ?? null;
       const followingColor = (fields.followingColor as CardColor | undefined) ?? null;
 
-      // Idempotenza: dopo un restore da snapshot lo stesso evento potrebbe
-      // essere riapplicato (baseline approssimata). Evita doppioni sul tavolo.
       const alreadyOnTable = state.table.some(
         (entry) => entry.playerId === cardPlayerId && cardEquals(entry.card, playedCard)
       );
@@ -421,8 +418,6 @@ export function gameReducer(
         newLegal = [];
       }
 
-      // Chi ha giocato ha finito: azzeriamo il turno in attesa del TurnOf
-      // broadcast (i WaitingForCard sono privati).
       const isTurnHolder = state.currentTurn.playerId === cardPlayerId;
 
       return {
