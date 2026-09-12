@@ -68,7 +68,8 @@ case class Lobby(
 
   def removePlayer(playerId: PlayerId): Either[LobbyError, Lobby] =
     val newPlayers = players.filterNot(_.id == playerId)
-    if newPlayers.size == players.size then Left(LobbyError.NotFound(GameException.PlayerNotFound(playerId)))
+    if newPlayers.size == players.size then
+      Left(LobbyError.NotFound(GameException.PlayerNotFound(playerId)))
     else Right(copy(players = newPlayers, version = version + 1))
 
   private def evaluateStatus(currentPlayers: List[Player]): LobbyStatus =
@@ -80,7 +81,9 @@ case class Lobby(
       else if humans.forall(_.isOnline) then LobbyStatus.IN_GAME
       else LobbyStatus.DISCONNECTING
 
-  private def modifyPlayer(playerId: PlayerId, updateStatus: Boolean = false)(f: Player => Player): Either[LobbyError, Lobby] =
+  private def modifyPlayer(playerId: PlayerId, updateStatus: Boolean = false)(
+      f: Player => Player
+  ): Either[LobbyError, Lobby] =
     players.indexWhere(_.id == playerId) match
       case -1 => Left(LobbyError.NotFound(GameException.PlayerNotFound(playerId)))
       case idx =>
@@ -97,9 +100,9 @@ case class Lobby(
       else player.copy(isOnline = isOnline)
 
   def updateStrikes(playerId: PlayerId, diff: Int): Either[LobbyError, (Int, Lobby)] =
-    modifyPlayer(playerId): p =>
+    modifyPlayer(playerId) { p =>
       p.copy(strikes = math.max(0, p.strikes + diff))
-    .map(l => l.players.find(_.id == playerId).get.strikes -> l)
+    }.map(l => l.players.find(_.id == playerId).get.strikes -> l)
 
   def resetStrikes(playerId: PlayerId): Either[LobbyError, Lobby] =
     modifyPlayer(playerId)(_.copy(strikes = 0))

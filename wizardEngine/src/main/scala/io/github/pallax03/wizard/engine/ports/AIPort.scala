@@ -2,12 +2,18 @@ package io.github.pallax03.wizard.engine.ports
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
-import io.github.pallax03.wizard.engine.model.core.{EntityNotFound, GameException, AbortedGameException, RecoveredGameException}
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
+import io.github.pallax03.wizard.engine.model.core.{
+  AbortedGameException,
+  EntityNotFound,
+  GameException,
+  RecoveredGameException
+}
 
 enum AIError:
   case InvalidPhase(actualGameState: PlayerGameState)
@@ -37,11 +43,11 @@ trait AIPort(inboundPort: InboundPort):
             state,
             _ => Left(AIError.InvalidPhase(state))
           )
-      .recover { 
+      .recover {
         case e: EntityNotFound                         => Left(AIError.GameException(e))
         case AbortedGameException(e: EntityNotFound)   => Left(AIError.GameException(e))
         case RecoveredGameException(e: EntityNotFound) => Left(AIError.GameException(e))
-        case _: GameException | _: AbortedGameException | _: RecoveredGameException => 
+        case _: GameException | _: AbortedGameException | _: RecoveredGameException =>
           Left(AIError.NoHintFound)
       }
 

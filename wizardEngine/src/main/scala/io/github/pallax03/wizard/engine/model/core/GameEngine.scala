@@ -65,7 +65,10 @@ object GameEngine:
    * @throws GameException if the server state machine encounters a corrupted state
    *                       (e.g., missing hands, no winner on table).
    */
-  def processAction(state: ServerGameState, action: GameAction): Either[GameActionError, GameEngine] =
+  def processAction(
+      state: ServerGameState,
+      action: GameAction
+  ): Either[GameActionError, GameEngine] =
     state match
       case currentState @ GameState.ChoosingTrump(_) =>
         action match

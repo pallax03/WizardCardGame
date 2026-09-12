@@ -100,7 +100,10 @@ class RedisInboundAdapter(
       .flatMap(_ => outboundPort.publish(lobbyId, LifecycleEvent.GameCancelled(None)))
 
   /** @inheritdoc */
-  override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameActionError, Unit]] =
+  override def submitAction(
+      lobbyId: LobbyId,
+      action: GameAction
+  ): Future[Either[GameActionError, Unit]] =
     withRecovery(lobbyId):
       fetchGameState(lobbyId).flatMap:
         case None => Future.successful(Right(()))

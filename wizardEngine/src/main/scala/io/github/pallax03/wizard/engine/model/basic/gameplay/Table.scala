@@ -22,7 +22,7 @@ object Table:
 
     /**
      * Returns the [[PlayerId]] of the player who played the given card.
- *
+     *
      * @throws GameException if the card is not found on the table.
      */
     def playerOf(card: Card): PlayerId =

@@ -49,7 +49,11 @@ object BiddingRules:
      * @param totalPlayers the total number of players in the game.
      * @return Right(()) if valid, Left with a [[GameActionError]] otherwise.
      */
-    def validateBid(round: Round, currentBids: Bids, totalPlayers: Int): Either[GameActionError, Unit] =
+    def validateBid(
+        round: Round,
+        currentBids: Bids,
+        totalPlayers: Int
+    ): Either[GameActionError, Unit] =
       if !isWithinBounds(bid, round) then Left(GameActionError.InvalidBid(round, bid))
       else if isLastPlayerInvalid(bid, round, currentBids, totalPlayers) then
         Left(GameActionError.InvalidBid(round, bid))

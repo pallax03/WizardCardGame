@@ -13,7 +13,7 @@ object PlayerGameState:
    * @param serverGameState The complete server-side game state.
    * @param playerId The ID of the player requesting the state.
    * @return A restricted PlayerGameState tailored for the specified player.
-   *         
+   *
    * @throws GameException [[GameException.PlayerNotFound]]
    */
   def from(

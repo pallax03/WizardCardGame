@@ -21,7 +21,9 @@ class TestTableRules extends AnyWordSpec with Matchers:
       "return a CardNotInHand reason" in:
         val hand = (Five of Blue).asHand
         val result = (Ten of Red).validateAgainst(Table.empty, hand)
-        result shouldBe Left(GameActionError.CardNotAllowed(CardNotInHand(hand.legalCards(Table.empty))))
+        result shouldBe Left(
+          GameActionError.CardNotAllowed(CardNotInHand(hand.legalCards(Table.empty)))
+        )
 
     "evaluating standard rules" should:
       val c1: Card = Five of Blue
