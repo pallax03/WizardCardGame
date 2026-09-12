@@ -12,7 +12,6 @@ import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.*
-import io.github.pallax03.wizard.engine.model.core.InconsistentState.*
 import io.github.pallax03.wizard.engine.model.core.state.*
 import io.github.pallax03.wizard.engine.model.events.*
 import io.github.pallax03.wizard.engine.model.rules.FallbackStrategy
@@ -29,7 +28,7 @@ class RedisInboundAdapter(
   private def decodeGameState(rawGameState: String): ServerGameState =
     rawGameState.decodeAs[ServerGameState] match
       case Right(state) => state
-      case Left(err)    => throw GameException(CorruptedState(err.toString))
+      case Left(err)    => throw GameException.CorruptedState(s"redis: ${err.toString}")
 
   private def fetchGameState(lobbyId: LobbyId): Future[Option[ServerGameState]] =
     redisClient
@@ -62,7 +61,7 @@ class RedisInboundAdapter(
     withRecovery(lobbyId):
       fetchGameState(lobbyId).map:
         case Some(state) => PlayerGameState.from(state, playerId)
-        case None        => throw GameException(GameNotFound)
+        case None        => throw GameException.GameNotFound
 
   /** @inheritdoc */
   override def startGame(
@@ -88,7 +87,7 @@ class RedisInboundAdapter(
         outboundPort.publish(lobbyId, LifecycleEvent.GameResumed(state.playersIds) +: invitations*)
         Future.unit
       case None =>
-        Future.failed(GameException(GameNotFound))
+        Future.failed(GameException.GameNotFound)
 
   /** @inheritdoc */
   override def deleteGame(lobbyId: LobbyId): Future[Unit] =
@@ -101,7 +100,10 @@ class RedisInboundAdapter(
       .flatMap(_ => outboundPort.publish(lobbyId, LifecycleEvent.GameCancelled(None)))
 
   /** @inheritdoc */
-  override def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]] =
+  override def submitAction(
+      lobbyId: LobbyId,
+      action: GameAction
+  ): Future[Either[GameActionError, Unit]] =
     withRecovery(lobbyId):
       fetchGameState(lobbyId).flatMap:
         case None => Future.successful(Right(()))
@@ -126,6 +128,6 @@ class RedisInboundAdapter(
       playerGameState.pendingInvitation(playerId) match
         case Some(invitationEvent: InvitationEvent) =>
           submitAction(lobbyId, FallbackStrategy.fallbackMove(invitationEvent)).flatMap:
-            case Left(err) => Future.failed(GameException(CorruptedState(s"Fallback failed: $err")))
+            case Left(err) => Future.failed(GameException.CorruptedState(s"Fallback failed: $err"))
             case Right(_)  => Future.unit
         case None => Future.unit

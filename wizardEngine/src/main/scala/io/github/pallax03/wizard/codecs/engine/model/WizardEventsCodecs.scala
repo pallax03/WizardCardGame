@@ -4,7 +4,7 @@ import io.circe.*
 import io.circe.syntax.*
 
 import io.github.pallax03.wizard.engine.model.basic.*
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.GameActionError
 import io.github.pallax03.wizard.engine.model.events.*
 
 object WizardEventsCodecs:
@@ -17,7 +17,7 @@ object WizardEventsCodecs:
   import basic.TrumpCodecs.given
   import basic.CardCodecs.given
   import basic.ScoreboardCodecs.given
-  import core.GameErrorCodecs.given
+  import core.GameActionErrorCodecs.given
 
   given Encoder[WizardEvent] = Encoder.instance: e =>
     val encodedEvent = e match
@@ -79,7 +79,7 @@ object WizardEventsCodecs:
         case "ActionFailed" =>
           for {
             p <- ev.get[PlayerId]("playerId")
-            err <- fields.get[GameError]("reason")
+            err <- fields.get[GameActionError]("reason")
           } yield FailureEvent.ActionFailed(p, err)
         case "StateRecovered" =>
           Right(LifecycleEvent.StateRecovered)

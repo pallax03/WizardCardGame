@@ -20,7 +20,7 @@ object PlayerCoreState:
    * @param serverCore The current ServerCoreState.
    * @param playerId The ID of the player requesting the state.
    * @return A PlayerCoreState tailored for the specified player.
-   * @throws GameException if the player's hand is not found in the server state,
+   * @throws GameException [[GameException.PlayerNotFound]] if the player's hand is not found in the server state,
    *                       indicating a corrupted state.
    */
   def from(serverCore: ServerCoreState, playerId: PlayerId): PlayerCoreState =
