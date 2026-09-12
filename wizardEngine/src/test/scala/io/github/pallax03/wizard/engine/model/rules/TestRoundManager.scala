@@ -2,7 +2,7 @@ package io.github.pallax03.wizard.engine.model.rules
 
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
-import io.github.pallax03.wizard.engine.model.core.{GameError, GameException}
+import io.github.pallax03.wizard.engine.model.core.{GameActionError, GameException}
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -73,7 +73,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         expected.validateTurnOf(p2) shouldBe Right(())
 
       "fail with NotYourTurn if the action player is different" in:
-        p2.validateTurnOf(p1) shouldBe Left(GameError.NotYourTurn(p2))
+        p2.validateTurnOf(p1) shouldBe Left(GameActionError.NotYourTurn(p2))
 
     "initializing a new round" should:
       val deckCards = (One of Red) - (Two of Yellow) - jester

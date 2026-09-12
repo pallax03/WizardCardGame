@@ -16,7 +16,7 @@ import io.github.pallax03.wizard.engine.model.rules.*
 
 /**
  * The GameEngine is responsible for processing game actions and managing the game state.
- * It takes a GameState and a GameAction as input and produces either a new GameEngine or a GameError.
+ * It takes a GameState and a GameAction as input and produces either a new GameEngine or a GameActionError.
  */
 opaque type GameEngine = (ServerGameState, List[WizardEvent])
 
@@ -38,7 +38,7 @@ object GameEngine:
    * Deals cards, sets the initial game state, and generates relevant events.
    *
    * @param playersIds The playersIds participating in the game.
-   * @return Either a new GameEngine or a GameError.
+   * @return Either a new GameEngine or a GameActionError.
    * @throws GameException if an unexpected inconsistent state is encountered during setup.
    */
   def initializeGame(playersIds: List[PlayerId]): GameEngine =
@@ -57,40 +57,40 @@ object GameEngine:
 
   /**
    * Processes a game action based on the current game state.
-   * Returns either a new GameEngine or a GameError if the action is invalid.
+   * Returns either a new GameEngine or a GameActionError if the action is invalid.
    *
    * @param state The current game state.
    * @param action The game action to be processed.
-   * @return Either a new GameEngine or a GameError (domain error).
+   * @return Either a new GameEngine or a GameActionError (domain error).
    * @throws GameException if the server state machine encounters a corrupted state
    *                       (e.g., missing hands, no winner on table).
    */
-  def processAction(state: ServerGameState, action: GameAction): Either[GameError, GameEngine] =
+  def processAction(state: ServerGameState, action: GameAction): Either[GameActionError, GameEngine] =
     state match
       case currentState @ GameState.ChoosingTrump(_) =>
         action match
           case GameAction.ResolveTrumpColor(playerId, color) =>
             handleResolveTrump(currentState, playerId, color)
-          case _ => Left(GameError.InvalidAction(state.pendingInvitation(action.playerId)))
+          case _ => Left(GameActionError.InvalidAction(state.pendingInvitation(action.playerId)))
 
       case currentState @ GameState.Bidding(_, _, _) =>
         action match
           case GameAction.PlaceBid(playerId, bid) => handlePlaceBid(currentState, playerId, bid)
-          case _ => Left(GameError.InvalidAction(state.pendingInvitation(action.playerId)))
+          case _ => Left(GameActionError.InvalidAction(state.pendingInvitation(action.playerId)))
 
       case currentState @ GameState.Playing(_, _, _, _, _) =>
         action match
           case GameAction.PlayCard(playerId, card) => handlePlayCard(currentState, playerId, card)
-          case _ => Left(GameError.InvalidAction(state.pendingInvitation(action.playerId)))
+          case _ => Left(GameActionError.InvalidAction(state.pendingInvitation(action.playerId)))
 
-      case _ => Left(GameError.InvalidAction(state.pendingInvitation(action.playerId)))
+      case _ => Left(GameActionError.InvalidAction(state.pendingInvitation(action.playerId)))
 
   /** Handles the action of playing a card during the Playing phase. */
   private def handlePlayCard(
       currentState: GameState.Playing[ServerCoreState],
       playerId: PlayerId,
       card: Card
-  ): Either[GameError, GameEngine] =
+  ): Either[GameActionError, GameEngine] =
     for
       _ <- currentState.playerTurn.validateTurnOf(playerId)
       playerHand = currentState.core.hands.getHand(playerId)
@@ -140,7 +140,7 @@ object GameEngine:
       currentState: GameState.Bidding[ServerCoreState],
       playerId: PlayerId,
       bid: Bid
-  ): Either[GameError, GameEngine] =
+  ): Either[GameActionError, GameEngine] =
     for
       _ <- currentState.playerTurn.validateTurnOf(playerId)
       updatedBids <- BiddingRules.processBid(
@@ -163,7 +163,7 @@ object GameEngine:
   ): GameEngine =
     val firstPlayer = currentState.core.round.firstPlayer(currentState.core.playersIds)
     val hand = currentState.core.hands.getHand(firstPlayer)
-    if hand.isEmpty then throw GameException(InconsistentState.CorruptedHand(firstPlayer))
+    if hand.isEmpty then throw GameException.CorruptedHand(firstPlayer)
 
     GameState
       .Playing(
@@ -205,7 +205,7 @@ object GameEngine:
       currentState: GameState.ChoosingTrump[ServerCoreState],
       playerId: PlayerId,
       color: Card.Color
-  ): Either[GameError, GameEngine] =
+  ): Either[GameActionError, GameEngine] =
     for
       _ <- currentState.core.dealerId.validateTurnOf(playerId)
       updatedTrump <- currentState.core.trump resolveWizard color
@@ -242,7 +242,7 @@ object GameEngine:
   ): GameEngine =
     val winningCard = completedTable
       .evaluateTrick(updatedCore.trump)
-      .getOrElse(throw GameException(InconsistentState.TableNoWinner))
+      .getOrElse(throw GameException.TableNoWinner)
 
     val winnerId = completedTable
       .playerOf(winningCard)

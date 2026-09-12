@@ -7,9 +7,8 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bids
 import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.*
-import io.github.pallax03.wizard.engine.model.core.InconsistentState.PlayerNotFound
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, ServerCoreState}
-import io.github.pallax03.wizard.engine.model.core.{GameError, GameException}
+import io.github.pallax03.wizard.engine.model.core.{GameActionError, GameException}
 
 /** Manages game round lifecycle operations, player turns, card dealing, and state initialization. */
 object RoundManager:
@@ -24,7 +23,7 @@ object RoundManager:
     def nextAfter(current: PlayerId): PlayerId =
       playersIds.indexWhere(_ == current) match
         case id if id >= 0 => playersIds((id + 1) % playersIds.size)
-        case _             => throw GameException(PlayerNotFound(current))
+        case _             => throw GameException.PlayerNotFound(current)
 
   extension (round: Round)
     /**
@@ -91,9 +90,9 @@ object RoundManager:
      * Validates if the action is being performed by the player whose turn it currently is.
      *
      * @param actionPlayer the ID of the player attempting to make a move.
-     * @return Right(()) if the turn is valid, Left with [[GameError.NotYourTurn]] otherwise.
+     * @return Right(()) if the turn is valid, Left with [[GameActionError.NotYourTurn]] otherwise.
      */
-    def validateTurnOf(actionPlayer: PlayerId): Either[GameError, Unit] =
-      Either.cond(actionPlayer == expectedPlayer, (), GameError.NotYourTurn(expectedPlayer))
+    def validateTurnOf(actionPlayer: PlayerId): Either[GameActionError, Unit] =
+      Either.cond(actionPlayer == expectedPlayer, (), GameActionError.NotYourTurn(expectedPlayer))
 
 export RoundManager.*

@@ -18,13 +18,14 @@ object LobbyId:
   def apply(id: String): LobbyId = id
   def generate: LobbyId = UUID.randomUUID().toString
 
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.{GameActionError, EntityNotFound, GameException}
 import io.github.pallax03.wizard.engine.ports.AIError
 
 enum LobbyError:
-  case Full, GameInProgress, GamePaused, NotEnoughPlayers, PlayersOffline, PlayerNotFound,
-    LobbyNotFound, NotAuthenticated, GameNotFound
-  case GameActionRejected(err: GameError)
+  case Full, GameInProgress, GamePaused, NotEnoughPlayers, PlayersOffline,
+    LobbyNotFound, NotAuthenticated
+  case NotFound(err: EntityNotFound)
+  case GameActionRejected(err: GameActionError)
   case IAHintError(err: AIError)
   case ConfigurationInvalid(err: ConfigurationErrors)
   case InternalServerError(code: String)
@@ -67,7 +68,7 @@ case class Lobby(
 
   def removePlayer(playerId: PlayerId): Either[LobbyError, Lobby] =
     val newPlayers = players.filterNot(_.id == playerId)
-    if newPlayers.size == players.size then Left(LobbyError.PlayerNotFound)
+    if newPlayers.size == players.size then Left(LobbyError.NotFound(GameException.PlayerNotFound(playerId)))
     else Right(copy(players = newPlayers, version = version + 1))
 
   private def evaluateStatus(currentPlayers: List[Player]): LobbyStatus =
@@ -79,37 +80,29 @@ case class Lobby(
       else if humans.forall(_.isOnline) then LobbyStatus.IN_GAME
       else LobbyStatus.DISCONNECTING
 
-  def handleOnlineStatusChange(playerId: PlayerId, isOnline: Boolean): Either[LobbyError, Lobby] =
+  private def modifyPlayer(playerId: PlayerId, updateStatus: Boolean = false)(f: Player => Player): Either[LobbyError, Lobby] =
     players.indexWhere(_.id == playerId) match
-      case -1 => Left(LobbyError.PlayerNotFound)
+      case -1 => Left(LobbyError.NotFound(GameException.PlayerNotFound(playerId)))
       case idx =>
-        val player = players(idx)
-        val updatedPlayer =
-          if isOnline && player.isBot && player.isHuman then
-            player.returnHuman.copy(strikes = math.max(0, player.strikes - 1))
-          else if isOnline then
-            player.copy(isOnline = isOnline, strikes = math.max(0, player.strikes - 1))
-          else player.copy(isOnline = isOnline)
-        val newPlayers = players.updated(idx, updatedPlayer)
-        Right(
-          copy(players = newPlayers, status = evaluateStatus(newPlayers), version = version + 1)
-        )
+        val newPlayers = players.updated(idx, f(players(idx)))
+        val newStatus = if updateStatus then evaluateStatus(newPlayers) else status
+        Right(copy(players = newPlayers, status = newStatus, version = version + 1))
+
+  def handleOnlineStatusChange(playerId: PlayerId, isOnline: Boolean): Either[LobbyError, Lobby] =
+    modifyPlayer(playerId, updateStatus = true): player =>
+      if isOnline && player.isBot && player.isHuman then
+        player.returnHuman.copy(strikes = math.max(0, player.strikes - 1))
+      else if isOnline then
+        player.copy(isOnline = isOnline, strikes = math.max(0, player.strikes - 1))
+      else player.copy(isOnline = isOnline)
 
   def updateStrikes(playerId: PlayerId, diff: Int): Either[LobbyError, (Int, Lobby)] =
-    players.indexWhere(_.id == playerId) match
-      case -1 => Left(LobbyError.PlayerNotFound)
-      case idx =>
-        val p = players(idx)
-        val newStrikes = math.max(0, p.strikes + diff)
-        val newPlayers = players.updated(idx, p.copy(strikes = newStrikes))
-        Right(newStrikes -> copy(players = newPlayers, version = version + 1))
+    modifyPlayer(playerId): p =>
+      p.copy(strikes = math.max(0, p.strikes + diff))
+    .map(l => l.players.find(_.id == playerId).get.strikes -> l)
 
   def resetStrikes(playerId: PlayerId): Either[LobbyError, Lobby] =
-    players.indexWhere(_.id == playerId) match
-      case -1 => Left(LobbyError.PlayerNotFound)
-      case idx =>
-        val newPlayers = players.updated(idx, players(idx).copy(strikes = 0))
-        Right(copy(players = newPlayers, version = version + 1))
+    modifyPlayer(playerId)(_.copy(strikes = 0))
 
   /** Replaces all offline human players with bots and updates the lobby status. */
   def replaceOfflinePlayersWithBots(): (List[PlayerId], Lobby) =

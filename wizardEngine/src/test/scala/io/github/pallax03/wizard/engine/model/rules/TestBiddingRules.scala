@@ -1,7 +1,7 @@
 package io.github.pallax03.wizard.engine.model.rules
 
 import io.github.pallax03.wizard.engine.model.basic.*
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.GameActionError
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -20,13 +20,13 @@ class TestBiddingRules extends AnyWordSpec with Matchers:
       "reject negative bids" in:
         val invalidBid = -1
         invalidBid.validateBid(round2, Bids.empty, totalPlayers) shouldBe Left(
-          GameError.InvalidBid(round2, invalidBid)
+          GameActionError.InvalidBid(round2, invalidBid)
         )
 
       "reject bids exceeding the current round number" in:
         val validBid = 3
         validBid.validateBid(round2, Bids.empty, totalPlayers) shouldBe Left(
-          GameError.InvalidBid(round2, validBid)
+          GameActionError.InvalidBid(round2, validBid)
         )
 
     "processing the final bid (Hook Rule)" should:
@@ -36,7 +36,7 @@ class TestBiddingRules extends AnyWordSpec with Matchers:
       "reject the bid if it causes the total to equal the round number" in:
         val validBid = 1
         validBid.validateBid(round2, bidsAfterP2, totalPlayers) shouldBe Left(
-          GameError.InvalidBid(round2, validBid)
+          GameActionError.InvalidBid(round2, validBid)
         )
 
       "allow the bid if the total is different from the round number" in:

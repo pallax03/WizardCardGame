@@ -7,6 +7,7 @@ import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
+import io.github.pallax03.wizard.engine.model.core.GameException
 
 import sttp.tapir.server.ServerEndpoint
 
@@ -64,7 +65,7 @@ class LobbyRoutes(
           _ <- EitherT.cond[Future](
             lobby.status != LobbyStatus.WAITING,
             (),
-            LobbyError.GameNotFound
+            LobbyError.NotFound(GameException.GameNotFound)
           )
           state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recoverWith {
             case _ =>
@@ -72,7 +73,7 @@ class LobbyRoutes(
                 .updateLobby[Unit](lobbyId) { l =>
                   Right(((), l.copy(status = LobbyStatus.WAITING), None))
                 }
-                .map(_ => Left(LobbyError.GameNotFound))
+                .map(_ => Left(LobbyError.NotFound(GameException.GameNotFound)))
           })
         yield state).value
       }
@@ -107,7 +108,7 @@ class LobbyRoutes(
             Right(
               ((), lobby.copy(status = LobbyStatus.PAUSED), Some(SystemEvent.paused(player.id)))
             )
-          else Left(LobbyError.GameNotFound)
+          else Left(LobbyError.NotFound(GameException.GameNotFound))
         }).value
       }
 
@@ -150,7 +151,8 @@ class LobbyRoutes(
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
           if lobby.status == LobbyStatus.FINISHED || lobby.status == LobbyStatus.PAUSED then
             Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
-          else Left(LobbyError.GameInProgress)
+          else if lobby.status.isGame then Left(LobbyError.GameInProgress)
+          else Left(LobbyError.NotFound(GameException.GameNotFound))
         }).flatMap { _ =>
           EitherT.right[LobbyError](gameEngine.deleteGame(lobbyId))
         }.value

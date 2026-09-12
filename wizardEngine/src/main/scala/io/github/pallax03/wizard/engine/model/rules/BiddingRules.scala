@@ -4,7 +4,7 @@ import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.GameActionError
 
 /** Rules and validations governing the bidding phase of a round. */
 object BiddingRules:
@@ -17,7 +17,7 @@ object BiddingRules:
    * @param currentPlayer the ID of the player placing the bid.
    * @param round         the current game round.
    * @param totalPlayers  the total number of players in the game.
-   * @return Right with the updated [[Bids]] if valid, Left with a [[GameError]] otherwise.
+   * @return Right with the updated [[Bids]] if valid, Left with a [[GameActionError]] otherwise.
    */
   def processBid(
       bid: Bid,
@@ -25,7 +25,7 @@ object BiddingRules:
       currentPlayer: PlayerId,
       round: Round,
       totalPlayers: Int
-  ): Either[GameError, Bids] =
+  ): Either[GameActionError, Bids] =
     bid
       .validateBid(round, currentBids, totalPlayers)
       .map(_ => currentBids + (currentPlayer place bid))
@@ -47,12 +47,12 @@ object BiddingRules:
      * @param round the current game round.
      * @param currentBids the bids placed so far in this round.
      * @param totalPlayers the total number of players in the game.
-     * @return Right(()) if valid, Left with a [[GameError]] otherwise.
+     * @return Right(()) if valid, Left with a [[GameActionError]] otherwise.
      */
-    def validateBid(round: Round, currentBids: Bids, totalPlayers: Int): Either[GameError, Unit] =
-      if !isWithinBounds(bid, round) then Left(GameError.InvalidBid(round, bid))
+    def validateBid(round: Round, currentBids: Bids, totalPlayers: Int): Either[GameActionError, Unit] =
+      if !isWithinBounds(bid, round) then Left(GameActionError.InvalidBid(round, bid))
       else if isLastPlayerInvalid(bid, round, currentBids, totalPlayers) then
-        Left(GameError.InvalidBid(round, bid))
+        Left(GameActionError.InvalidBid(round, bid))
       else Right(())
 
   private def isWithinBounds(bid: Bid, round: Round): Boolean =

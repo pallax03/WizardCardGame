@@ -33,7 +33,7 @@ object HttpSupport:
   val errorOutput: EndpointOutput[LobbyError] =
     oneOf[LobbyError](
       oneOfVariantValueMatcher(StatusCode.NotFound, jsonBody[LobbyError]) {
-        case LobbyError.PlayerNotFound | LobbyError.LobbyNotFound => true
+        case LobbyError.NotFound(_) | LobbyError.LobbyNotFound => true
       },
       oneOfVariantValueMatcher(StatusCode.Unauthorized, jsonBody[LobbyError]) {
         case LobbyError.NotAuthenticated => true

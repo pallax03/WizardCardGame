@@ -1,15 +1,12 @@
 package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
-
 import cats.data.EitherT
 import cats.implicits.*
-
 import io.github.pallax03.wizard.application.web.http.endpoints.AIEndpoints
 import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.{AIError, AIPort, LobbyStatePort}
-
 import sttp.tapir.server.ServerEndpoint
 
 class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: ExecutionContext):
@@ -23,8 +20,8 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
       playerPair <- EitherT(lobbyStatePort.getAuthLobby(lobbyId, secret))
       player = playerPair._1
       aiResultOpt <- EitherT(action(player.id)).leftMap {
-        case AIError.PlayerNotFound => LobbyError.PlayerNotFound
-        case err                    => LobbyError.IAHintError(err)
+        case AIError.GameException(err) => LobbyError.NotFound(err)
+        case err                                                        => LobbyError.IAHintError(err)
       }
       aiResult <- EitherT.fromOption[Future](
         aiResultOpt,

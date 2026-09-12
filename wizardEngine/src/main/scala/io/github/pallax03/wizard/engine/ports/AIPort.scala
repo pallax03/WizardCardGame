@@ -2,16 +2,16 @@ package io.github.pallax03.wizard.engine.ports
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
+import io.github.pallax03.wizard.engine.model.core.{EntityNotFound, GameException, AbortedGameException, RecoveredGameException}
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
 
 enum AIError:
   case InvalidPhase(actualGameState: PlayerGameState)
-  case PlayerNotFound
+  case GameException(entityNotFound: EntityNotFound)
   case NoHintFound
 
 /**
@@ -37,7 +37,13 @@ trait AIPort(inboundPort: InboundPort):
             state,
             _ => Left(AIError.InvalidPhase(state))
           )
-      .recover { case _ => Left(AIError.PlayerNotFound) }
+      .recover { 
+        case e: EntityNotFound                         => Left(AIError.GameException(e))
+        case AbortedGameException(e: EntityNotFound)   => Left(AIError.GameException(e))
+        case RecoveredGameException(e: EntityNotFound) => Left(AIError.GameException(e))
+        case _: GameException | _: AbortedGameException | _: RecoveredGameException => 
+          Left(AIError.NoHintFound)
+      }
 
   protected def resolveTrumpColorLogic(
       playerId: PlayerId

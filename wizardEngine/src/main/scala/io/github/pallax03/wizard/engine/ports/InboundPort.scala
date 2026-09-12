@@ -5,7 +5,7 @@ import scala.concurrent.Future
 import io.github.pallax03.wizard.engine.lobby.{GameConfiguration, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
-import io.github.pallax03.wizard.engine.model.core.{GameAction, GameError}
+import io.github.pallax03.wizard.engine.model.core.{GameAction, GameActionError}
 
 /**
  * Inbound port for the Wizard game engine.
@@ -48,9 +48,9 @@ trait InboundPort:
    *
    * @param lobbyId the identifier of the lobby
    * @param action the game action to submit
-   * @return a Future indicating the completion of the action submission, or the domain GameError if invalid
+   * @return a Future indicating the completion of the action submission, or the domain GameActionError if invalid
    */
-  def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameError, Unit]]
+  def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameActionError, Unit]]
 
   /**
    * Forces the game engine to play a fallback move on behalf of the player.
