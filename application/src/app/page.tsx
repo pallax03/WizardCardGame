@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
-import { createLobbyAction, joinLobbyAction } from "@/features/lobby/actions/join-actions";
+import { createLobbyAction, joinLobbyAction } from "@/features/lobby/api";
+import { readStoredSession } from "@/features/lobby-session/storage";
 import { t } from "@/ui/i18n/core";
 const homeI18n = t("home");
 import { Button } from "@/ui/components/button";
@@ -24,9 +25,9 @@ export default function Home() {
     const searchParams = new URLSearchParams(window.location.search);
     const lobbyId = searchParams.get("lobbyId");
     
-    // Auto-resume from local storage if both exist
-    const storedLobbyId = localStorage.getItem("wizard_lobbyId");
-    const storedPlayerId = localStorage.getItem("wizard_playerId");
+    const stored = readStoredSession();
+    const storedLobbyId = stored.lobbyId;
+    const storedPlayerId = stored.playerId !== null ? String(stored.playerId) : null;
     
     if (storedLobbyId && storedPlayerId && !lobbyId) {
       router.push(`/lobby/${storedLobbyId}`);
@@ -34,13 +35,17 @@ export default function Home() {
     }
 
     if (lobbyId) {
-      // ponytail: defer state update to next tick to dodge synchronous effect warning
       setTimeout(() => {
         setLobbyIdToJoin(lobbyId);
         setShowJoinInput(true);
       }, 0);
     }
   }, [router]);
+
+  const handleToggleJoin = () => {
+    setError(null);
+    setShowJoinInput((prev) => !prev);
+  };
 
   const handleCreateLobby = async () => {
     setIsCreating(true);
@@ -127,14 +132,12 @@ export default function Home() {
             <div className="space-y-3 pt-2">
               <div className="grid grid-cols-2 gap-3">
                 <Button
-                  onClick={() => {
-                    setShowJoinInput(!showJoinInput);
-                    if (error) setError(null);
-                  }}
+                  type="button"
+                  onClick={handleToggleJoin}
                   disabled={isCreating || isJoining}
                   variant={showJoinInput ? "outline" : "secondary"}
                   size="lg"
-                  className="gap-2 transition-all"
+                  className="gap-2 transition-all cursor-pointer"
                 >
                   {showJoinInput ? (
                     <>
@@ -148,10 +151,11 @@ export default function Home() {
                 </Button>
 
                 <Button
+                  type="button"
                   onClick={handleCreateLobby}
                   disabled={isCreating || isJoining}
                   size="lg"
-                  className="gap-2 font-medium transition-all"
+                  className="gap-2 font-medium transition-all cursor-pointer"
                 >
                   {isCreating ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -172,6 +176,7 @@ export default function Home() {
                     <Input
                       placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
                       value={lobbyIdToJoin}
+                      autoFocus
                       onChange={(e) => {
                         setLobbyIdToJoin(e.target.value);
                         if (error) setError(null);
@@ -179,10 +184,11 @@ export default function Home() {
                       className="bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-primary h-11 font-mono uppercase text-sm"
                     />
                     <Button
+                      type="button"
                       onClick={handleJoinLobby}
                       disabled={isJoining || !lobbyIdToJoin.trim()}
                       size="lg"
-                      className="px-4 font-medium gap-1 shrink-0"
+                      className="px-4 font-medium gap-1 shrink-0 cursor-pointer"
                     >
                       {isJoining ? (
                         <Loader2 className="w-4 h-4 animate-spin" />

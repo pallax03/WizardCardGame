@@ -3,15 +3,16 @@
 import { Button } from "@/ui/components/button";
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
-import { LogOut, Check, Loader2 } from "lucide-react";
+import { LogOut, Check, Play, Loader2 } from "lucide-react";
 import { LobbyActionsProps } from "../types";
 
-export function LobbyActions({ isLeaving, onLeave, onStart }: LobbyActionsProps) {
+export function LobbyActions({ isLeaving, isStarting, onLeave, onStart, isResuming }: LobbyActionsProps) {
+  const busy = isLeaving || isStarting;
   return (
     <div className="flex gap-3">
       <Button
         onClick={onLeave}
-        disabled={isLeaving}
+        disabled={busy}
         variant="destructive"
         size="lg"
         className="w-1/3 gap-2"
@@ -20,10 +21,18 @@ export function LobbyActions({ isLeaving, onLeave, onStart }: LobbyActionsProps)
       </Button>
       <Button
         onClick={onStart}
+        disabled={busy}
         size="lg"
         className="w-2/3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-2 shadow-lg shadow-emerald-950/40"
       >
-        <Check className="w-5 h-5" /> {lobbyI18n.actions.startGame}
+        {isStarting ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : isResuming ? (
+          <Play className="w-5 h-5" />
+        ) : (
+          <Check className="w-5 h-5" />
+        )}{" "}
+        {isResuming ? lobbyI18n.actions.resumeGame : lobbyI18n.actions.startGame}
       </Button>
     </div>
   );

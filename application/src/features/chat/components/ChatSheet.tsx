@@ -7,6 +7,7 @@ import { AnimatePresence, MotionConfig, motion } from "motion/react";
 import { useChat } from "../hooks/useChat";
 import { ChatMessage } from "../types";
 import { useLobbySession } from "@/features/lobby-session";
+import { isBotPlayer } from "@/features/lobby-session/presence";
 import { t } from "@/ui/i18n/core";
 const chatI18n = t("chat");
 import { Badge } from "@/ui/components/badge";
@@ -28,10 +29,32 @@ export function ChatSheet() {
     () => Object.fromEntries((lobby?.players ?? []).map((player) => [player.id, player.name])),
     [lobby?.players],
   );
+  const botIds = useMemo(
+    () =>
+      new Set(
+        (lobby?.players ?? [])
+          .filter((player) => isBotPlayer(player))
+          .map((player) => player.id),
+      ),
+    [lobby?.players],
+  );
+  const feedMessages = useMemo(
+    () =>
+      messages.filter(
+        (message) =>
+          message.type !== "event" &&
+          (message.type !== "system" || !botIds.has(message.playerId)),
+      ),
+    [messages, botIds],
+  );
+  const humanConnectedPlayerIds = useMemo(
+    () => connectedPlayerIds.filter((id) => !botIds.has(id)),
+    [connectedPlayerIds, botIds],
+  );
 
   const chatMessages = useMemo(
-    () => messages.filter((message): message is ChatMessage => message.type === "message"),
-    [messages],
+    () => feedMessages.filter((message): message is ChatMessage => message.type === "message"),
+    [feedMessages],
   );
   const privatePeers = useMemo(() => {
     if (playerId === null) return [];
@@ -42,13 +65,13 @@ export function ChatSheet() {
   }, [chatMessages, playerId]);
   const visibleMessages = useMemo(() => {
     if (activePrivateId === null) {
-      return messages.filter((message) => message.type !== "message" || message.destinationId === undefined);
+      return feedMessages.filter((message) => message.type !== "message" || message.destinationId === undefined);
     }
     return chatMessages.filter((message) => message.destinationId !== undefined &&
       (message.playerId === activePrivateId || message.destinationId === activePrivateId));
-  }, [activePrivateId, chatMessages, messages]);
+  }, [activePrivateId, chatMessages, feedMessages]);
 
-  const unreadTotal = isOpen ? 0 : Math.max(0, messages.length - seenMessageCount);
+  const unreadTotal = isOpen ? 0 : Math.max(0, feedMessages.length - seenMessageCount);
   const privateUnread = (peerId: number) => {
     if (playerId === null) return 0;
     if (isOpen && activePrivateId === peerId) return 0;
@@ -66,7 +89,7 @@ export function ChatSheet() {
   };
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    setSeenMessageCount(messages.length);
+    setSeenMessageCount(feedMessages.length);
     if (open && activePrivateId !== null) markPrivateSeen(activePrivateId);
   };
 
@@ -75,19 +98,15 @@ export function ChatSheet() {
       const customEvent = e as CustomEvent<{ playerId: number }>;
       setIsOpen(true);
       setActivePrivateId(customEvent.detail.playerId);
-      // We don't call markPrivateSeen here because it might be stale, 
-      // but setActivePrivateId and setIsOpen are guaranteed to be stable.
     };
     window.addEventListener('open-private-chat', handler);
     return () => window.removeEventListener('open-private-chat', handler);
   }, []);
   useEffect(() => {
     if (isOpen && activePrivateId !== null) {
-      // ponytail: defer to avoid set-state-in-effect warning
       setTimeout(() => markPrivateSeen(activePrivateId), 0);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, activePrivateId, messages.length]);
+  }, [isOpen, activePrivateId, feedMessages.length]);
 
   if (playerId === null) {
     return <Skeleton className="fixed right-4 bottom-4 z-40 size-14 rounded-full sm:right-6 sm:bottom-6" />;
@@ -114,7 +133,7 @@ export function ChatSheet() {
             activePrivateId={activePrivateId}
             privateName={privateName}
             connectionState={connectionState}
-            connectedPlayerIds={connectedPlayerIds}
+            connectedPlayerIds={humanConnectedPlayerIds}
             privatePeers={privatePeers}
             playersMap={playersMap}
             privateUnread={privateUnread}
@@ -127,6 +146,7 @@ export function ChatSheet() {
             playerId={playerId}
             activePrivateId={activePrivateId}
             playersMap={playersMap}
+            botIds={botIds}
           />
 
           <ChatInput

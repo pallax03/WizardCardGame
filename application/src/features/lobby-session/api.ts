@@ -1,20 +1,20 @@
 "use server";
 
-import type { LobbyState, GameState } from "./types";
+import { apiFetch } from "@/lib/api/api";
+import { getClientSecretCookie } from "@/lib/auth/clientSecret";
+import type { LobbyState } from "./types";
 
-async function getJson<T>(path: string): Promise<T> {
-  const backendUrl = process.env.BACKEND_INTERNAL_URL || process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:5001";
-  const response = await fetch(`${backendUrl}${path}`, { cache: "no-store" });
-  if (!response.ok) {
-    throw new Error(`GET ${path} failed with status ${response.status}`);
-  }
-  return response.json() as Promise<T>;
+export async function getLobbyState(lobbyId: string): Promise<LobbyState> {
+  return await apiFetch<LobbyState>(`/api/lobby/${lobbyId}`, { cache: "no-store" });
 }
 
-export async function getLobbyState(lobbyId: string) {
-  return await getJson<LobbyState>(`/api/lobby/${lobbyId}`);
-}
-
-export async function getGameState(lobbyId: string, playerId: number) {
-  return await getJson<GameState>(`/game/${lobbyId}/player/${playerId}`);
+/**
+ * Restituisce il secret del player per autenticare il WebSocket.
+ * Il secret vive in un cookie httpOnly (non leggibile da JS), mentre
+ * l'engine richiede `GET /lobby/{lobbyId}?secret=...` per l'upgrade WS
+ * (`WebSocketsVerticle`): i WebSocket browser non possono inviare
+ * header `Authorization`, quindi il secret va passato in query string.
+ */
+export async function getLobbyWsSecret(lobbyId: string): Promise<string | undefined> {
+  return await getClientSecretCookie(lobbyId);
 }

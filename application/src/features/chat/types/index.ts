@@ -9,8 +9,8 @@ export type ChatMessage = {
 export type SystemMessage = {
     type: 'system';
     playerId: number;
-    action: 'joined' | 'left' | 'online' | 'offline';
-    timestamp: string; // added by frontend when receiving if not provided
+    action: 'joined' | 'left' | 'online' | 'offline' | 'paused' | 'resumed' | 'afk_replaced' | 'config_updated' | (string & {});
+    timestamp: string;
 };
 
 export type EventMessage = {

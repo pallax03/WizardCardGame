@@ -1,12 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addBotAction, leaveLobbyAction } from "@/features/lobby/actions/manage-actions";
-import { useLobbySession } from "@/features/lobby-session";
+import { useLobby } from "../hooks/useLobby";
+import { clearStoredSession } from "@/features/lobby-session/storage";
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
-
 
 import { LobbyHeader } from "@/features/lobby/components/LobbyHeader";
 import { PlayerList } from "@/features/lobby/components/PlayerList";
@@ -16,74 +15,29 @@ import { getErrorMessage } from "@/ui/i18n/errors";
 
 export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   const router = useRouter();
-  const { lobby, playerId, connectionState, refreshLobby, connectedPlayerIds, error: sessionError } = useLobbySession();
+  const {
+    lobby,
+    playerId,
+    connectionState,
+    connectedPlayerIds,
+    sessionError,
+    actionError,
+    isAddingBot,
+    removingBotId,
+    activeBotSlot,
+    isLeaving,
+    isStarting,
+    setActiveBotSlot,
+    handleLeaveLobby,
+    handleStartGame,
+    handleAddBot,
+    handleRemoveBot,
+  } = useLobby();
 
-  const [isAddingBot, setIsAddingBot] = useState<boolean>(false);
-  const [removingBotId, setRemovingBotId] = useState<string | number | null>(null);
-  const [activeBotSlot, setActiveBotSlot] = useState<number | null>(null);
-  const [isLeaving, setIsLeaving] = useState<boolean>(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-
-  const handleLeaveLobby = async () => {
-    setActionError(null);
-    if (lobby?.lobbyId && playerId !== null) {
-      setIsLeaving(true);
-      const result = await leaveLobbyAction(lobby.lobbyId, playerId);
-      if (result?.error) {
-        setActionError(getErrorMessage(result.error));
-        setIsLeaving(false);
-        return;
-      }
-    }
-    localStorage.removeItem("wizard_lobbyId");
-    localStorage.removeItem("wizard_playerId");
-    router.push("/");
-  };
-
-  const handleStartGame = () => {
-    // todo: implement start game logic, possibly calling an action to start the game and handling errors
-  };
-
-  const handleAddBot = async (difficulty: string) => {
-    if (!lobby?.lobbyId) return;
-    if (difficulty !== "Dumb" && difficulty !== "Prolog") return;
-    setActionError(null);
-    setIsAddingBot(true);
-    const result = await addBotAction(lobby.lobbyId, difficulty);
-    
-    if (result.error) {
-      setActionError(getErrorMessage(result.error));
-    } else {
-      await refreshLobby();
-    }
-    setIsAddingBot(false);
-  };
-
-  const handleRemoveBot = async (botId: number) => {
-    if (!lobby?.lobbyId) return;
-    setActionError(null);
-    setRemovingBotId(botId);
-    const result = await leaveLobbyAction(lobby.lobbyId, botId);
-    
-    if (result?.error) {
-      setActionError(getErrorMessage(result.error));
-    } else {
-      await refreshLobby();
-    }
-    setRemovingBotId(null);
-  };
-
+  // Sessione invalida: pulizia fuori dal render (effetto, non side-effect in render).
   useEffect(() => {
-    if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
-      localStorage.removeItem("wizard_lobbyId");
-      localStorage.removeItem("wizard_playerId");
-      router.push("/");
-      return;
-    }
-    if (lobby?.status === "IN_GAME") {
-      router.push(`/lobby/${lobby.lobbyId}/game`);
-    }
-  }, [lobby, playerId, router]);
+    if (sessionError) clearStoredSession();
+  }, [sessionError]);
 
   if (!lobby && connectionState === "connecting") {
     return (
@@ -94,11 +48,8 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   }
 
   if (sessionError) {
-    localStorage.removeItem("wizard_lobbyId");
-    localStorage.removeItem("wizard_playerId");
     return (
       <div className="flex flex-col items-center justify-center min-h-100 gap-4">
-        {/* Traduzione del codice d'errore proveniente dalla sessione */}
         <p className="text-red-400 font-medium">{getErrorMessage(sessionError.message)}</p>
         <button onClick={() => router.push("/")} className="px-4 py-2 border rounded-md text-slate-200">
           {lobbyI18n.backToHome}
@@ -108,6 +59,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   }
 
   const players = lobby?.players || [];
+  const isPaused = lobby?.status === "PAUSED";
 
   return (
     <div className="w-full max-w-4xl space-y-6">
@@ -117,7 +69,12 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         </div>
       )}
 
-      {/* Box opzionale per mostrare errori temporanei delle azioni (es. rimozione bot fallita) */}
+      {isPaused && (
+        <div className="bg-sky-500/10 border border-sky-500/30 text-sky-300 px-4 py-2 rounded-md text-sm text-center font-semibold">
+          ⏸️ {lobbyI18n.pausedNotice}
+        </div>
+      )}
+
       {actionError && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-md text-xs text-center">
           {actionError}
@@ -141,8 +98,10 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       
       <LobbyActions
         isLeaving={isLeaving}
+        isStarting={isStarting}
         onLeave={handleLeaveLobby}
         onStart={handleStartGame}
+        isResuming={isPaused}
       />
     </div>
   );
