@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.engine.model.basic.gameplay
 import scala.language.postfixOps
 
 import io.github.pallax03.wizard.engine.model.basic.*
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.GameActionError
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -20,7 +20,7 @@ class TestTrump extends AnyWordSpec with Matchers:
         trump.card shouldBe None
         trump.effectiveColor shouldBe None
         trump resolveWizard Blue match
-          case Left(error) => error shouldBe GameError.InvalidAction(None)
+          case Left(error) => error shouldBe GameActionError.InvalidAction(None)
           case _           =>
 
     "created from a Standard card" should:

@@ -4,7 +4,7 @@ import scala.language.postfixOps
 
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.CardNotAllowedReasons.*
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.GameActionError
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
@@ -21,7 +21,9 @@ class TestTableRules extends AnyWordSpec with Matchers:
       "return a CardNotInHand reason" in:
         val hand = (Five of Blue).asHand
         val result = (Ten of Red).validateAgainst(Table.empty, hand)
-        result shouldBe Left(GameError.CardNotAllowed(CardNotInHand(hand.legalCards(Table.empty))))
+        result shouldBe Left(
+          GameActionError.CardNotAllowed(CardNotInHand(hand.legalCards(Table.empty)))
+        )
 
     "evaluating standard rules" should:
       val c1: Card = Five of Blue
@@ -34,7 +36,7 @@ class TestTableRules extends AnyWordSpec with Matchers:
         val table = Table.empty + (p1 plays (Four of Blue))
         val result = c2.validateAgainst(table, hand)
         result shouldBe Left(
-          GameError.CardNotAllowed(MustFollowColor(Blue, hand.legalCards(table)))
+          GameActionError.CardNotAllowed(MustFollowColor(Blue, hand.legalCards(table)))
         )
 
       "player LACKS the following color" in:

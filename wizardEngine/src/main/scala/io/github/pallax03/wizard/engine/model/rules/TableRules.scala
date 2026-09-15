@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.engine.model.rules
 import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.*
 import io.github.pallax03.wizard.engine.model.core.CardNotAllowedReasons.*
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.GameActionError
 
 /** Defines the rules for card validation and trick evaluation. */
 object TableRules:
@@ -24,14 +24,14 @@ object TableRules:
      *
      * @param table the current state of the table to check the following color.
      * @param hand the hand of the player attempting the move.
-     * @return Right if the move is valid, else: Left([[GameError]]) if the move violates game rules:
+     * @return Right if the move is valid, else: Left([[GameActionError]]) if the move violates game rules:
      *         - [[CardNotInHand]]: if the card is not present in the player's hand.
      *         - [[MustFollowColor]]: if a color must be followed but a different
      *           standard card is played.
      */
-    def validateAgainst(table: Table, hand: Hand): Either[GameError, Unit] =
+    def validateAgainst(table: Table, hand: Hand): Either[GameActionError, Unit] =
       if !hand.contains(cardPlayed) then
-        Left(GameError.CardNotAllowed(CardNotInHand(hand.legalCards(table))))
+        Left(GameActionError.CardNotAllowed(CardNotInHand(hand.legalCards(table))))
       else
         cardPlayed match
           case _: SpecialCard => Right(())
@@ -40,7 +40,7 @@ object TableRules:
               case Some(followingColor)
                   if playedColor != followingColor && hand.hasColor(followingColor) =>
                 Left(
-                  GameError.CardNotAllowed(
+                  GameActionError.CardNotAllowed(
                     MustFollowColor(followingColor, hand.legalCards(table))
                   )
                 )

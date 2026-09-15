@@ -1,7 +1,7 @@
 package io.github.pallax03.wizard.engine.model.basic.gameplay
 
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
-import io.github.pallax03.wizard.engine.model.core.GameError
+import io.github.pallax03.wizard.engine.model.core.GameActionError
 
 /**
  * Represents the trump card (briscola) for a round and its resolution state.
@@ -65,6 +65,6 @@ object Trump:
      * @return [[Right]] containing the resolved Trump, or [[Left(InvalidAction)]]
      *         if the Trump is not a Wizard or already resolved.
      */
-    infix def resolveWizard(color: Card.Color): Either[GameError, Trump] = t match
+    infix def resolveWizard(color: Card.Color): Either[GameActionError, Trump] = t match
       case Trump.WizardUnresolved(c) => Right(Trump.WizardResolved(c, color))
-      case _                         => Left(GameError.InvalidAction(None))
+      case _                         => Left(GameActionError.InvalidAction(None))

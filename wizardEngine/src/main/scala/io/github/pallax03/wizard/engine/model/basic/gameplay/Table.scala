@@ -2,7 +2,7 @@ package io.github.pallax03.wizard.engine.model.basic.gameplay
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
-import io.github.pallax03.wizard.engine.model.core.{GameException, InconsistentState}
+import io.github.pallax03.wizard.engine.model.core.GameException
 
 /**
  * Represents the cards currently played on the table during a trick.
@@ -22,12 +22,13 @@ object Table:
 
     /**
      * Returns the [[PlayerId]] of the player who played the given card.
+     *
      * @throws GameException if the card is not found on the table.
      */
     def playerOf(card: Card): PlayerId =
       t.find(_._2 == card)
         .map(_._1)
-        .getOrElse(throw GameException(InconsistentState.TableNoWinner))
+        .getOrElse(throw GameException.TableNoWinner)
 
     /**
      * Determines the color that players must follow in the current trick.

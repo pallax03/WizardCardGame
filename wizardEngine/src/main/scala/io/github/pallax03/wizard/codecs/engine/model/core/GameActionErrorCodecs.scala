@@ -6,12 +6,12 @@ import io.circe.syntax.*
 import io.github.pallax03.wizard.codecs.combinators.DiscriminatedCodecs.*
 import io.github.pallax03.wizard.codecs.engine.model.*
 import io.github.pallax03.wizard.engine.model.basic.*
-import io.github.pallax03.wizard.engine.model.core.{CardNotAllowedReasons, GameError}
+import io.github.pallax03.wizard.engine.model.core.{CardNotAllowedReasons, GameActionError}
 import io.github.pallax03.wizard.engine.model.events.{InvitationEvent, WizardEvent}
 
 import sttp.tapir.Schema
 
-object GameErrorCodecs:
+object GameActionErrorCodecs:
   import basic.CardCodecs.given
   import basic.PlayerIdCodecs.given
   import WizardEventsCodecs.given
@@ -34,26 +34,26 @@ object GameErrorCodecs:
         CardNotAllowedReasons.MustFollowColor.apply
       )
 
-  given Encoder[GameError] = Encoder.instance:
-    case GameError.NotYourTurn(turnOf) =>
+  given Encoder[GameActionError] = Encoder.instance:
+    case GameActionError.NotYourTurn(turnOf) =>
       Json.obj("turnOf" -> turnOf.asJson).withTag("error", "NotYourTurn")
-    case GameError.InvalidBid(round, bid) =>
+    case GameActionError.InvalidBid(round, bid) =>
       Json.obj("round" -> round.asJson, "bid" -> bid.asJson).withTag("error", "InvalidBid")
-    case GameError.InvalidAction(invitationEvent) =>
+    case GameActionError.InvalidAction(invitationEvent) =>
       Json
         .obj("invitationEvent" -> invitationEvent.map(_.asInstanceOf[WizardEvent]).asJson)
         .withTag("error", "InvalidAction")
-    case GameError.CardNotAllowed(reason) =>
+    case GameActionError.CardNotAllowed(reason) =>
       Json.obj("reason" -> reason.asJson).withTag("error", "CardNotAllowed")
 
-  given Decoder[GameError] = decodeByTag("error"):
-    case "NotYourTurn" => Decoder.forProduct1("turnOf")(GameError.NotYourTurn.apply)
-    case "InvalidBid"  => Decoder.forProduct2("round", "bid")(GameError.InvalidBid.apply)
+  given Decoder[GameActionError] = decodeByTag("error"):
+    case "NotYourTurn" => Decoder.forProduct1("turnOf")(GameActionError.NotYourTurn.apply)
+    case "InvalidBid"  => Decoder.forProduct2("round", "bid")(GameActionError.InvalidBid.apply)
     case "InvalidAction" =>
-      Decoder.forProduct1[GameError, Option[WizardEvent]]("invitationEvent") { ev =>
-        GameError.InvalidAction(ev.map(_.asInstanceOf[InvitationEvent]))
+      Decoder.forProduct1[GameActionError, Option[WizardEvent]]("invitationEvent") { ev =>
+        GameActionError.InvalidAction(ev.map(_.asInstanceOf[InvitationEvent]))
       }
-    case "CardNotAllowed" => Decoder.forProduct1("reason")(GameError.CardNotAllowed.apply)
+    case "CardNotAllowed" => Decoder.forProduct1("reason")(GameActionError.CardNotAllowed.apply)
 
   given Schema[CardNotAllowedReasons] = Schema.string
-  given Schema[GameError] = Schema.string
+  given Schema[GameActionError] = Schema.string

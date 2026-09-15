@@ -7,7 +7,7 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 /**
  * Represents an explicit command or intention submitted by a player.
  * GameActions are the only acceptable inputs that the [[GameEngine]] can process to advance the state of the game.
- * They represent attempts to alter the game state and can be rejected (as [[GameError]]) if they violate game rules.
+ * They represent attempts to alter the game state and can be rejected (as [[GameActionError]]) if they violate game rules.
  */
 enum GameAction:
   def playerId: PlayerId

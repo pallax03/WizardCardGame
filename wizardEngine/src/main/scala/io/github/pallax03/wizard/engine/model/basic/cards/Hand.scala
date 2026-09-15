@@ -2,7 +2,6 @@ package io.github.pallax03.wizard.engine.model.basic.cards
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.core.GameException
-import io.github.pallax03.wizard.engine.model.core.InconsistentState.CorruptedHand
 
 /**
  * Represents the set of cards currently held by a single player.
@@ -42,7 +41,7 @@ object Hands:
      * @throws GameException if the player is not found, indicating a corrupted system state.
      */
     def getHand(player: PlayerId): Hand =
-      hands.getOrElse(player, throw GameException(CorruptedHand(player)))
+      hands.getOrElse(player, throw GameException.CorruptedHand(player))
 
     /**
      * Removes a specific card from a player's hand.

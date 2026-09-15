@@ -78,7 +78,7 @@ class HttpServerVerticle(
         case ge: GameException =>
           (s"NOT HANDLED GameException ${ctx.endpoint.show}", ge.getMessage, "GAME_EXCEPTION")
         case _ =>
-          (s"CRASH ${ctx.endpoint.show}", "Internal Server Error", "INTERNAL_ERROR")
+          (s"CRITICAL ${ctx.endpoint.show}", "Internal Server Error", "INTERNAL_ERROR")
 
       WizardLogger.error(logMsg, ctx.e)
       val errorOutput = jsonBody[LobbyError].and(statusCode(StatusCode.InternalServerError))
@@ -86,7 +86,7 @@ class HttpServerVerticle(
         Some(
           ValuedEndpointOutput(
             errorOutput,
-            LobbyError.GameActionRejected(s"CRASH_$code")
+            LobbyError.InternalServerError(code)
           )
         )
       )
