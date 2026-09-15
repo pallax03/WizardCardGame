@@ -4,8 +4,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLobbySession } from "@/features/lobby-session";
 import { buildPlayersMap } from "@/features/lobby-session/presence";
 import type { EventMessage } from "@/features/chat/types";
-import { chooseTrumpColor, getPlayerGameSnapshot, placeBid, playCard } from "../api";
+import { chooseTrumpColor, getBestBidHint, getBestCardHint, getBestTrumpHint, getPlayerGameSnapshot, placeBid, playCard } from "../api";
 import {
+  cardToString,
   extractApiErrorCode,
   formatGameActionError,
   formatInvalidBidError,
@@ -47,6 +48,15 @@ export function useGameBoard(customPlayerId?: number) {
   const [snapshotBaseline, setSnapshotBaseline] = useState(0);
   const [isRestoring, setIsRestoring] = useState(false);
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
+  const [hintedCard, setHintedCard] = useState<Card | null>(null);
+  const [hintMeta, setHintMeta] = useState<{
+    round: number;
+    status: string;
+    playerId: number | null;
+    action: string;
+  } | null>(null);
+  const [isHintLoading, setIsHintLoading] = useState<boolean>(false);
+  const [hintError, setHintError] = useState<string | null>(null);
 
   const [revealedTrick, setRevealedTrick] = useState<{
     entries: PlayedCardEntry[];
@@ -123,6 +133,10 @@ export function useGameBoard(customPlayerId?: number) {
       setBidAckRound(null);
       setBidErrorRaw(null);
       setActionError(null);
+      setHintedCard(null);
+      setHintMeta(null);
+      setHintError(null);
+      setIsHintLoading(false);
       hasConnectedRef.current = false;
       trickWonCountRef.current = 0;
       completedTableRef.current = null;
@@ -459,6 +473,8 @@ export function useGameBoard(customPlayerId?: number) {
         setActionError(null);
         setActionStatus("Card played successfully");
         setSelectedCard(null);
+        setHintedCard(null);
+        setHintMeta(null);
       } catch (error) {
         const code = extractApiErrorCode(error);
         const msg = error instanceof Error ? error.message : String(error);
@@ -483,6 +499,70 @@ export function useGameBoard(customPlayerId?: number) {
     },
     [canPlay, gameState.legalCards]
   );
+
+  const canRequestHint = isMyTurn && (canPlay || canBid || canChooseTrump);
+
+  const requestHint = useCallback(async () => {
+    if (!lobbyId || !isMyTurn || isHintLoading) return;
+    if (!canPlay && !canBid && !canChooseTrump) {
+      setHintError("Suggerimento disponibile solo durante il tuo turno.");
+      return;
+    }
+    setIsHintLoading(true);
+    setHintError(null);
+    try {
+      if (canPlay) {
+        const hint = await getBestCardHint(lobbyId);
+        if (!isCardInList(hint, gameState.hand)) {
+          setHintedCard(null);
+          setHintMeta(null);
+          setHintError("Suggerimento non valido: la carta non è nella tua mano.");
+        } else {
+          setHintedCard(hint);
+          setHintMeta({
+            round: gameState.round,
+            status: gameState.status,
+            playerId: gameState.currentTurn.playerId,
+            action: gameState.currentTurn.actionType,
+          });
+          setActionStatus(`💡 Suggerimento: gioca ${cardToString(hint)}.`);
+        }
+      } else if (canBid) {
+        const hint = await getBestBidHint(lobbyId);
+        setBidInput(hint);
+        setActionStatus(`💡 Suggerimento: punta ${hint}.`);
+      } else if (canChooseTrump) {
+        const hint = await getBestTrumpHint(lobbyId);
+        setSelectedColor(hint);
+        setActionStatus(`💡 Suggerimento: scegli ${hint} come briscola.`);
+      }
+    } catch (error) {
+      const code = extractApiErrorCode(error);
+      const msg = error instanceof Error ? error.message : String(error);
+      setHintError(
+        code && code !== "SERVER_ERROR"
+          ? `Suggerimento non disponibile (${shortGameActionReason(code)}).`
+          : `Suggerimento non disponibile: ${msg}`
+      );
+    } finally {
+      setIsHintLoading(false);
+    }
+  }, [lobbyId, isMyTurn, isHintLoading, canPlay, canBid, canChooseTrump, gameState.hand, gameState.round, gameState.status, gameState.currentTurn]);
+
+  /**
+   * Carta suggerita effettivamente visibile: mostrata solo se il turno/fase/round
+   * sono gli stessi della richiesta e la carta è ancora in mano. Così l'hint
+   * decade da solo al cambio turno senza setState negli effect.
+   */
+  const visibleHintedCard = useMemo<Card | null>(() => {
+    if (!hintedCard || !hintMeta) return null;
+    if (hintMeta.round !== gameState.round) return null;
+    if (hintMeta.status !== gameState.status) return null;
+    if (hintMeta.playerId !== gameState.currentTurn.playerId) return null;
+    if (hintMeta.action !== gameState.currentTurn.actionType) return null;
+    if (!isCardInList(hintedCard, gameState.hand)) return null;
+    return hintedCard;
+  }, [hintedCard, hintMeta, gameState.round, gameState.status, gameState.currentTurn, gameState.hand]);
 
   return {
     lobbyId,
@@ -531,5 +611,12 @@ export function useGameBoard(customPlayerId?: number) {
     handleChooseTrump,
     handlePlaceBid,
     handlePlayCard,
+    // AI hint (mossa migliore dal backend)
+    hintedCard: visibleHintedCard,
+    setHintedCard,
+    isHintLoading,
+    hintError,
+    canRequestHint,
+    requestHint,
   };
 }

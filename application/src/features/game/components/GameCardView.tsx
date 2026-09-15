@@ -10,6 +10,8 @@ interface GameCardViewProps {
   isSelected?: boolean;
   isLegal?: boolean;
   isClickable?: boolean;
+  /** Evidenzia la carta suggerita dall'AI (hint del backend). */
+  isHinted?: boolean;
   onClick?: () => void;
   size?: "sm" | "md" | "lg";
 }
@@ -19,6 +21,7 @@ export function GameCardView({
   isSelected = false,
   isLegal = true,
   isClickable = false,
+  isHinted = false,
   onClick,
   size = "md",
 }: GameCardViewProps) {
@@ -63,7 +66,10 @@ export function GameCardView({
         !isClickable && "cursor-default",
         !isLegal && "opacity-35 grayscale-[60%] hover:translate-y-0",
         isSelected &&
-          "ring-4 ring-amber-400 -translate-y-4 shadow-2xl shadow-amber-500/50 scale-105 z-20"
+          "ring-4 ring-amber-400 -translate-y-4 shadow-2xl shadow-amber-500/50 scale-105 z-20",
+        isHinted &&
+          !isSelected &&
+          "ring-4 ring-cyan-300 -translate-y-2 shadow-2xl shadow-cyan-500/50 scale-105 animate-pulse"
       )}
     >
       <div className="flex justify-between items-start">
@@ -81,6 +87,15 @@ export function GameCardView({
       <div className="truncate text-[9px] sm:text-[10px] uppercase font-sans font-black tracking-wider opacity-90 text-center">
         {subLabel}
       </div>
+      {isHinted && (
+        <span
+          aria-label="Carta suggerita"
+          title="Carta suggerita dall'AI"
+          className="absolute -top-2.5 -right-2.5 grid size-7 place-items-center rounded-full border-2 border-cyan-200 bg-cyan-500 text-sm shadow-lg shadow-cyan-500/50"
+        >
+          💡
+        </span>
+      )}
     </button>
   );
 }

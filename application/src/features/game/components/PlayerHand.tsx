@@ -15,6 +15,8 @@ interface PlayerHandProps {
   isSubmitting?: boolean;
   isCardPlayable: (card: Card) => boolean;
   onSelectCard: (card: Card | null) => void;
+  /** Carta suggerita dal backend: viene evidenziata con stile dedicato. */
+  hintedCard?: Card | null;
   /** Ref del tavolo: la carta viene giocata se rilasciata dentro i suoi bounds. */
   dropZoneRef?: RefObject<HTMLDivElement | null>;
   onDropCard?: (card: Card) => void;
@@ -26,6 +28,7 @@ type OverlayOrigin = { left: number; top: number };
 interface DraggableHandCardProps {
   card: Card;
   isSelected: boolean;
+  isHinted: boolean;
   isLegal: boolean;
   draggable: boolean;
   dropZoneRef?: RefObject<HTMLDivElement | null>;
@@ -42,6 +45,7 @@ interface DraggableHandCardProps {
 function DraggableHandCard({
   card,
   isSelected,
+  isHinted,
   isLegal,
   draggable,
   dropZoneRef,
@@ -160,13 +164,14 @@ function DraggableHandCard({
         }}
         role="button"
         tabIndex={draggable ? 0 : -1}
-        aria-label={`${cardToString(card)}${isLegal ? "" : " (non giocabile)"}. Trascina sul tavolo per giocarla.`}
+        aria-label={`${cardToString(card)}${isLegal ? "" : " (non giocabile)"}${isHinted ? " (suggerita dall'AI)" : ""}. Trascina sul tavolo per giocarla.`}
         className={`${draggable ? "cursor-grab touch-none active:cursor-grabbing" : ""}${overlayOrigin ? " opacity-0" : ""}`}
       >
         <GameCardView
           card={card}
           size="lg"
           isSelected={isSelected}
+          isHinted={isHinted}
           isLegal={isLegal}
           isClickable={false}
         />
@@ -195,6 +200,7 @@ export function PlayerHand({
   isSubmitting = false,
   isCardPlayable,
   onSelectCard,
+  hintedCard = null,
   dropZoneRef,
   onDropCard,
   onDragStateChange,
@@ -205,17 +211,23 @@ export function PlayerHand({
         <CardTitle className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
           <span>🃏</span> La Tua Mano ({hand.length} carte)
         </CardTitle>
-        {canPlay && (
-          <span className="text-xs text-amber-300 font-bold animate-pulse">
-            Trascina una carta sul tavolo per giocarla
-          </span>
-        )}
+        <div className="flex flex-col items-end gap-1">
+          {canPlay && (
+            <span className="text-xs text-amber-300 font-bold animate-pulse">
+              Trascina una carta sul tavolo per giocarla
+            </span>
+          )}
+          {hintedCard && (
+            <span className="text-xs text-cyan-300 font-bold">💡 Suggerita evidenziata</span>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="p-3">
         {hand.length > 0 ? (
           <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center p-3 bg-zinc-900/60 rounded-xl border border-zinc-800/80 min-h-[140px]">
             {hand.map((card, index) => {
               const isSelected = cardEquals(card, selectedCard);
+              const isHinted = cardEquals(card, hintedCard);
               const isLegal = isCardPlayable(card);
               const draggable = canPlay && isLegal && !isSubmitting;
               return (
@@ -223,6 +235,7 @@ export function PlayerHand({
                   key={index}
                   card={card}
                   isSelected={isSelected}
+                  isHinted={isHinted}
                   isLegal={canPlay ? isLegal : true}
                   draggable={draggable}
                   dropZoneRef={dropZoneRef}

@@ -108,6 +108,11 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     handleChooseTrump,
     handlePlaceBid,
     handlePlayCard,
+    hintedCard,
+    isHintLoading,
+    hintError,
+    canRequestHint,
+    requestHint,
   } = useGameBoard(customPlayerId);
 
   const [isCardDragging, setIsCardDragging] = useState(false);
@@ -355,6 +360,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             isSubmitting={isSubmitting}
             isCardPlayable={isCardPlayable}
             onSelectCard={setSelectedCard}
+            hintedCard={hintedCard}
             dropZoneRef={tableRef}
             onDropCard={handleDropCard}
             onDragStateChange={setIsCardDragging}
@@ -377,6 +383,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             isSubmitting={isSubmitting}
             forbiddenBid={forbiddenBid}
             bidsTotal={bidsTotal}
+            canRequestHint={canRequestHint}
+            onRequestHint={() => void requestHint()}
+            isHintLoading={isHintLoading}
+            hintError={hintError}
           />
         </div>
       </div>

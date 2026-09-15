@@ -23,6 +23,11 @@ interface GameActionControlsProps {
   forbiddenBid?: number | null;
   /** Somma delle bid già piazzate nel round, per spiegare il divieto. */
   bidsTotal?: number;
+  /** Hint AI: visibile solo durante il proprio turno. */
+  canRequestHint?: boolean;
+  onRequestHint?: () => void;
+  isHintLoading?: boolean;
+  hintError?: string | null;
 }
 
 export function GameActionControls({
@@ -40,7 +45,18 @@ export function GameActionControls({
   isSubmitting,
   forbiddenBid,
   bidsTotal,
+  canRequestHint = false,
+  onRequestHint,
+  isHintLoading = false,
+  hintError = null,
 }: GameActionControlsProps) {
+  const hintLabel = canPlay
+    ? "Suggerisci carta"
+    : canBid
+      ? "Suggerisci puntata"
+      : canChooseTrump
+        ? "Suggerisci briscola"
+        : "Suggerimento";
   return (
     <UiCard className="bg-zinc-950/80 border-amber-500/40 backdrop-blur-md shadow-2xl h-full">
       <CardHeader className="p-3 pb-2 border-b border-zinc-800/60">
@@ -49,6 +65,25 @@ export function GameActionControls({
         </CardTitle>
       </CardHeader>
       <CardContent className="p-3 space-y-3">
+        {canRequestHint && (
+          <div className="space-y-1.5">
+            <Button
+              type="button"
+              size="default"
+              variant="secondary"
+              disabled={isSubmitting || isHintLoading}
+              onClick={onRequestHint}
+              className="w-full font-bold"
+            >
+              {isHintLoading ? "💡 Suggerimento in corso…" : `💡 ${hintLabel}`}
+            </Button>
+            {hintError && (
+              <p className="text-[11px] font-semibold text-rose-200 bg-rose-950/60 border border-rose-500/40 rounded-lg px-2 py-1 text-center">
+                ⚠️ {hintError}
+              </p>
+            )}
+          </div>
+        )}
         {/* Scelta Colore Briscola */}
         {canChooseTrump && (
           <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-2">

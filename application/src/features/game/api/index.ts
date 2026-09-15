@@ -42,3 +42,24 @@ export async function placeBid(lobbyId: string, bid: number): Promise<void> {
     body: bid,
   });
 }
+
+export async function getBestCardHint(lobbyId: string): Promise<Card> {
+  return await apiFetch<Card>(`/api/lobby/${lobbyId}/hint/card`, {
+    cache: "no-store",
+    headers: await authHeadersForLobby(lobbyId),
+  });
+}
+
+export async function getBestBidHint(lobbyId: string): Promise<number> {
+  return await apiFetch<number>(`/api/lobby/${lobbyId}/hint/bid`, {
+    cache: "no-store",
+    headers: await authHeadersForLobby(lobbyId),
+  });
+}
+
+export async function getBestTrumpHint(lobbyId: string): Promise<CardColor> {
+  return await apiFetch<CardColor>(`/api/lobby/${lobbyId}/hint/choose`, {
+    cache: "no-store",
+    headers: await authHeadersForLobby(lobbyId),
+  });
+}
