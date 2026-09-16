@@ -8,7 +8,7 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 enum LobbyStatus:
   case WAITING, IN_GAME, DISCONNECTING, PAUSED, FINISHED
 
-  def isGame: Boolean = this match
+  def existGame: Boolean = this match
     case IN_GAME | DISCONNECTING | PAUSED => true
     case WAITING | FINISHED               => false
 

@@ -66,7 +66,7 @@ class VertxWebSocketsAdapter(
         lobbyStatePort
           .setPlayerOnlineStatus(lobbyId, playerId, true)
           .onComplete:
-            case Success(Some(LobbyStatus.DISCONNECTING)) =>
+            case Success(Some(lobbyStatus: LobbyStatus)) if lobbyStatus != LobbyStatus.PAUSED && lobbyStatus.existGame  =>
               gameEngineInPort.resumeGame(lobbyId)
             case _ => ()
         pubSubPort.publish(

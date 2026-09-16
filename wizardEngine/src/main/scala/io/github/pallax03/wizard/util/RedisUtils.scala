@@ -32,9 +32,6 @@ object ChannelsKeys:
   def pubSubLobbyPlayerChannel(id: LobbyId, playerId: PlayerId): String =
     s"channel:${id.toString}:${playerId.toInt}"
 
-  /** Key that stores every log. */
-  val LOGS_CHANNEL: String = "system:logs"
-
   /** Key that stores a pending turn timer for a player. Expires after config.timer + grace seconds. */
   def turnTimer(lobbyId: LobbyId, playerId: PlayerId): String =
     s"timer:${lobbyId.toString}:${playerId.toInt}"
