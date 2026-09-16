@@ -75,7 +75,8 @@ object WizardEventsCodecs:
           for {
             p <- ev.get[PlayerId]("destinationId")
             cards <- fields.get[List[Card]]("legalCards")
-          } yield InvitationEvent.WaitingForCard(p, cards)
+            isTableEmpty <- fields.get[Boolean]("isTableEmpty")
+          } yield InvitationEvent.WaitingForCard(p, cards, isTableEmpty)
         case "ActionFailed" =>
           for {
             p <- ev.get[PlayerId]("playerId")

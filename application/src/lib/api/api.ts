@@ -1,7 +1,8 @@
+const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
 const BASE_URL =
   process.env.BACKEND_INTERNAL_URL ||
   process.env.NEXT_PUBLIC_BACKEND_URL ||
-  "http://localhost:5001";
+  `http://${host}:5001`;
 
 export interface ApiFetchOptions extends Omit<RequestInit, "body"> {
   body?: unknown;

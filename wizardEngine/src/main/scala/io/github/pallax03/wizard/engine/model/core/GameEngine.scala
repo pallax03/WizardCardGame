@@ -135,7 +135,11 @@ object GameEngine:
       )
       .toGameEngine(
         ProgressEvent.TurnOf(nextPlayer, GameAction.PlayCard.toString),
-        InvitationEvent.WaitingForCard(nextPlayer, nextHand.legalCards(updatedTable))
+        InvitationEvent.WaitingForCard(
+          nextPlayer,
+          nextHand.legalCards(updatedTable),
+          updatedTable.playedCards.isEmpty
+        )
       )
 
   /** Handles the action of placing a bid during the Bidding phase. */
@@ -179,7 +183,7 @@ object GameEngine:
       .toGameEngine(
         ProgressEvent.PhaseChanged(GameState.Playing.toString),
         ProgressEvent.TurnOf(firstPlayer, GameAction.PlayCard.toString),
-        InvitationEvent.WaitingForCard(firstPlayer, hand.legalCards(Table.empty))
+        InvitationEvent.WaitingForCard(firstPlayer, hand.legalCards(Table.empty), true)
       )
 
   private def advanceToNextBidder(
@@ -281,7 +285,11 @@ object GameEngine:
       .toGameEngine(
         ProgressEvent.TurnOf(winnerId, GameAction.PlayCard.toString),
         InvitationEvent
-          .WaitingForCard(winnerId, updatedCore.hands.getHand(winnerId).legalCards(Table.empty))
+          .WaitingForCard(
+            winnerId,
+            updatedCore.hands.getHand(winnerId).legalCards(Table.empty),
+            true
+          )
       )
 
   private def completeRound(
@@ -336,5 +344,5 @@ object GameEngine:
       ProgressEvent.CardsDealt(pId, newCore.hands.getHand(pId), newCore.trump, newCore.round)
 
     val allEvents =
-      cardsDeals ::: ProgressEvent.PhaseChanged(gameState.toString) :: invitationEvents
+      cardsDeals ::: ProgressEvent.PhaseChanged(gameState.productPrefix) :: invitationEvents
     gameState.toGameEngine(allEvents*)

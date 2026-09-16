@@ -19,8 +19,8 @@ import io.github.pallax03.wizard.engine.model.events.{
   WizardEvent
 }
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, OutboundPort, PubSubPort}
-import io.github.pallax03.wizard.util.ChannelsKeys
 import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, WizardLogger}
 
 /**
  * Redis implementation of [[OutboundPort]].
@@ -39,8 +39,9 @@ class RedisOutboundAdapter(
   override def publish(lobbyId: LobbyId, events: WizardEvent*): Future[Unit] =
     Future
       .traverse(events.toList): ev =>
+        given LogContext = LogContext(lobbyId)
         val jsonMsg = ev.toJson
-        pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"INFO:[Lobby $lobbyId] $jsonMsg")
+        WizardLogger.info(s"Outbound event: $jsonMsg")
 
         for
           _ <- publishToClients(lobbyId, ev, jsonMsg)

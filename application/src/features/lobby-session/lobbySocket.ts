@@ -74,7 +74,10 @@ export function connectLobbySocket({
   onConnectionChange,
   onClose,
 }: LobbySocketOptions): LobbySocket {
-  const baseUrl = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:5002";
+  const wsProtocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
+  const wsHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
+  const wsPort = process.env.NEXT_PUBLIC_WS_PORT || "5002";
+  const baseUrl = process.env.NEXT_PUBLIC_WS_URL || `${wsProtocol}//${wsHost}:${wsPort}`;
   const socket = new WebSocket(
     `${baseUrl}/lobby/${encodeURIComponent(lobbyId)}?secret=${encodeURIComponent(secret)}`
   );
