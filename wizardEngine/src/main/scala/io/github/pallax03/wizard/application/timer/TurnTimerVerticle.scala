@@ -16,7 +16,7 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubSubPort}
 import io.github.pallax03.wizard.util.FutureSyntax.*
-import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
+import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, RedisUtil, WizardLogger}
 
 class TurnTimerVerticle(
     pubSubPort: PubSubPort,
@@ -80,10 +80,8 @@ class TurnTimerVerticle(
                   else inboundPort.forceFallbackAction(lobbyId, playerId)
               yield ()
         yield ()).recover: ex =>
-          pubSubPort.publish(
-            ChannelsKeys.LOGS_CHANNEL,
-            s"ERROR:[TurnTimer] Failed for $lobbyIdStr/$playerIdStr: ${ex.getMessage}"
-          )
+          given LogContext = LogContext(lobbyId, playerId)
+          WizardLogger.error(s"Timer action failed: ${ex.getMessage}")
 
       case Array("disconnect", lobbyIdStr) =>
         val lobbyId = LobbyId(lobbyIdStr)
@@ -110,9 +108,7 @@ class TurnTimerVerticle(
               yield ()
             case _ => Future.unit
           .recover: ex =>
-            pubSubPort.publish(
-              ChannelsKeys.LOGS_CHANNEL,
-              s"ERROR:[DisconnectTimer] Failed for $lobbyIdStr: ${ex.getMessage}"
-            )
+            given LogContext = LogContext(lobbyId)
+            WizardLogger.error(s"Disconnect timer failed: ${ex.getMessage}")
 
       case _ => ()

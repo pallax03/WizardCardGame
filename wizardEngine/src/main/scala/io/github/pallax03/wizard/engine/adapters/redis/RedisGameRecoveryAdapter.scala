@@ -15,21 +15,18 @@ import io.github.pallax03.wizard.engine.model.core.state.{
 }
 import io.github.pallax03.wizard.engine.model.core.{GameEngine, GameException}
 import io.github.pallax03.wizard.engine.model.events.LifecycleEvent
-import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, OutboundPort, PubSubPort}
+import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, OutboundPort}
 import io.github.pallax03.wizard.util.FutureSyntax.*
-import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
+import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, RedisUtil, WizardLogger}
 
 class RedisGameRecoveryAdapter(
     private val redisClient: Redis,
     private val outboundPort: OutboundPort,
-    private val pubSubPort: PubSubPort
 ) extends GameRecoveryPort:
 
   override def attemptRecovery(lobbyId: LobbyId, exception: GameException): Future[Boolean] =
-    pubSubPort.publish(
-      ChannelsKeys.LOGS_CHANNEL,
-      s"ERROR:Attempting game recovery for lobby $lobbyId due to GameException: ${exception.getMessage}"
-    )
+    given LogContext = LogContext(lobbyId)
+    WizardLogger.error(s"Attempting game recovery due to GameException: ${exception.getMessage}")
 
     val processCheckpoint = redisClient
       .send(Request.cmd(Command.GET).arg(ChannelsKeys.gameCheckpoint(lobbyId)))
@@ -46,28 +43,19 @@ class RedisGameRecoveryAdapter(
               recoverCheckpointWithNewRound(lobbyId, core)
 
             case Right(GameState.Ended(_, _)) =>
-              pubSubPort.publish(
-                ChannelsKeys.LOGS_CHANNEL,
-                s"WARN:Checkpoint contains ended game. Aborting."
-              )
+              WizardLogger.warn("Checkpoint contains ended game. Aborting.")
               abortGame(lobbyId, exception)
 
             case Left(_) =>
-              pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"WARN:Checkpoint corrupted. Aborting.")
+              WizardLogger.warn("Checkpoint corrupted. Aborting.")
               abortGame(lobbyId, exception)
 
         case None =>
-          pubSubPort.publish(
-            ChannelsKeys.LOGS_CHANNEL,
-            s"WARN:Checkpoint missing for lobby $lobbyId. Aborting game."
-          )
+          WizardLogger.warn("Checkpoint missing. Aborting game.")
           abortGame(lobbyId, exception)
 
     processCheckpoint.recoverWith { case e =>
-      pubSubPort.publish(
-        ChannelsKeys.LOGS_CHANNEL,
-        s"ERROR:Failed during recovery process for lobby $lobbyId: ${e.getMessage}"
-      )
+      WizardLogger.error(s"Failed during recovery process: ${e.getMessage}")
       abortGame(lobbyId, exception)
     }
 
@@ -75,7 +63,8 @@ class RedisGameRecoveryAdapter(
       lobbyId: LobbyId,
       core: ServerCoreState
   ): Future[Boolean] =
-    pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, s"INFO:Restoring checkpoint for lobby $lobbyId")
+    given LogContext = LogContext(lobbyId)
+    WizardLogger.info("Restoring checkpoint")
     redisClient
       .send(
         Request
@@ -84,10 +73,7 @@ class RedisGameRecoveryAdapter(
       )
       .asScala
       .map: _ =>
-        pubSubPort.publish(
-          ChannelsKeys.LOGS_CHANNEL,
-          s"INFO:Removing checkpoint for lobby:$lobbyId"
-        )
+        WizardLogger.info("Removing checkpoint")
         true
       .flatMap: _ =>
         val engine = GameEngine.recoverRound(core)

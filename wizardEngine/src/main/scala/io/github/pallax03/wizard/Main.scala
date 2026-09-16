@@ -7,7 +7,6 @@ import io.vertx.core.{AbstractVerticle, Vertx}
 import io.vertx.redis.client.{ProtocolVersion, Redis, RedisOptions}
 
 import io.github.pallax03.wizard.application.bot.BotManagerVerticle
-import io.github.pallax03.wizard.application.logging.PubSubLoggerVerticle
 import io.github.pallax03.wizard.application.timer.TurnTimerVerticle
 import io.github.pallax03.wizard.application.web.http.HttpServerVerticle
 import io.github.pallax03.wizard.application.web.http.routes.*
@@ -36,6 +35,7 @@ object Main:
   private val wsPort: Int = sys.env.getOrElse("WS_PORT", "5002").toInt
   private val redisHost: String = sys.env.getOrElse("REDIS_HOST", "localhost")
   private val redisPort: Int = sys.env.getOrElse("REDIS_PORT", "6379").toInt
+  private val redisPassword: Option[String] = sys.env.get("REDIS_PASSWORD")
   private val redisPoolSize: Int = sys.env.getOrElse("REDIS_POOL_SIZE", "6").toInt
   private val role: String = sys.env.getOrElse("ROLE", "engine").toLowerCase
 
@@ -46,12 +46,15 @@ object Main:
       .setConnectionString(s"redis://$redisHost:$redisPort")
       .setMaxPoolSize(redisPoolSize)
       .setPreferredProtocolVersion(ProtocolVersion.RESP2)
+      
+    redisPassword.foreach(redisOptions.setPassword)
+      
     val redisClient = Redis.createClient(vertx, redisOptions)
 
     val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)
     val lobbyStatePort: LobbyStatePort = RedisLobbyStateAdapter(redisClient)
     val outPort: OutboundPort = RedisOutboundAdapter(pubSubPort, redisClient, lobbyStatePort)
-    val recoveryPort: GameRecoveryPort = RedisGameRecoveryAdapter(redisClient, outPort, pubSubPort)
+    val recoveryPort: GameRecoveryPort = RedisGameRecoveryAdapter(redisClient, outPort)
     val inPort: InboundPort = RedisInboundAdapter(redisClient, outPort, recoveryPort)
     val prologPort = WizardPrologAdapter(inPort)
 
@@ -63,7 +66,6 @@ object Main:
         deploy(
           vertx,
           BotManagerVerticle(
-            pubSubPort,
             prologPort,
             lobbyStatePort,
             inPort,
@@ -72,13 +74,11 @@ object Main:
           "bot worker",
           0
         )
-        deploy(vertx, PubSubLoggerVerticle(pubSubPort), "pubsub logger", 0)
 
       case _ =>
         println(
           s"[Main] Starting as ENGINE (http=$httpPort, ws=$wsPort, redis=$redisHost:$redisPort)"
         )
-        deploy(vertx, PubSubLoggerVerticle(pubSubPort), "pubsub logger", 0)
         deploy(
           vertx,
           TurnTimerVerticle(pubSubPort, redisClient, inPort, lobbyStatePort),

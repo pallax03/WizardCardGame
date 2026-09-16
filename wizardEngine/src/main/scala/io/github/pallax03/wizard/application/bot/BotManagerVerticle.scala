@@ -18,11 +18,10 @@ import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.model.rules.FallbackStrategy
 import io.github.pallax03.wizard.engine.ports.*
-import io.github.pallax03.wizard.util.ChannelsKeys
+import io.github.pallax03.wizard.util.{ChannelsKeys, WizardLogger}
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
 class BotManagerVerticle(
-    pubSubPort: PubSubPort,
     prologPort: AIPort,
     lobbyStatePort: LobbyStatePort,
     gameInboundPort: InboundPort,
@@ -50,7 +49,7 @@ class BotManagerVerticle(
         case Success(_) =>
           vertx.setPeriodic(POLL_INTERVAL_MS, _ => poll())
           vertx.setPeriodic(CLAIM_CHECK_INTERVAL_MS, _ => reclaim())
-        case Failure(e) => log(s"ERROR: Group init failed: ${e.getMessage}")
+        case Failure(e) => logError(s"Group init failed: ${e.getMessage}")
 
   private def poll(): Unit =
     redisClient
@@ -103,7 +102,7 @@ class BotManagerVerticle(
       dataJson.decodeAs[BotTask] match
         case Right(task) => processTask(entryId, task)
         case Left(_)     => ackEntry(entryId)
-    catch case e: Exception => log(s"ERROR: Entry parse failed: ${e.getMessage}")
+    catch case e: Exception => logError(s"Entry parse failed: ${e.getMessage}")
 
   private def processTask(entryId: String, task: BotTask): Unit =
     task.invitation match
@@ -124,7 +123,7 @@ class BotManagerVerticle(
                           _ => submitAndAck(task.lobbyId, inv, action, entryId)
                         )
                       case Failure(e) =>
-                        log(s"ERROR: Strategy failed: ${e.getMessage}"); ackEntry(entryId)
+                        logError(s"Strategy failed: ${e.getMessage}"); ackEntry(entryId)
                 case None => ackEntry(entryId)
             case _ => ackEntry(entryId)
       case _ => ackEntry(entryId)
@@ -140,7 +139,7 @@ class BotManagerVerticle(
       .flatMap:
         case Right(_) => Future.unit
         case Left(err) =>
-          log(s"WARN: Action failed for bot ${inv.destinationId} ($err). Forcing fallback.")
+          logWarn(s"Action failed for bot ${inv.destinationId} ($err). Forcing fallback.")
           gameInboundPort.submitAction(lobbyId, FallbackStrategy.fallbackMove(inv)).void
       .onComplete(_ => ackEntry(entryId))
 
@@ -155,7 +154,11 @@ class BotManagerVerticle(
       )
       .onComplete(_ => ())
 
-  private def log(msg: String): Unit = pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, msg)
+  private def logError(msg: String): Unit =
+    WizardLogger.error(s"[BotManager] $msg")
+
+  private def logWarn(msg: String): Unit =
+    WizardLogger.warn(s"[BotManager] $msg")
 
 object BotManagerVerticle:
   private val DEFAULT_BOT_DELAY_MS: Int = Random().between(2, 5) * 1000
