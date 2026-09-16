@@ -336,5 +336,5 @@ object GameEngine:
       ProgressEvent.CardsDealt(pId, newCore.hands.getHand(pId), newCore.trump, newCore.round)
 
     val allEvents =
-      cardsDeals ::: ProgressEvent.PhaseChanged(gameState.toString) :: invitationEvents
+      cardsDeals ::: ProgressEvent.PhaseChanged(gameState.productPrefix) :: invitationEvents
     gameState.toGameEngine(allEvents*)
