@@ -22,30 +22,21 @@ services:
       - HTTP_PORT=${HTTP_PORT}
       - WS_PORT=${WS_PORT}
       - REDIS_HOST=redis
-      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     depends_on:
       - redis
     restart: on-failure
 
-  # ---------------------------------------------------------------------------
-  # Bot workers – stateless, horizontally scalable.
-  #
-  # Scale independently of the engine with:
-  #   docker compose up --scale wizard-bot-worker=3
-  #
-  # Each replica registers itself as a distinct consumer in the "bot_workers"
-  # Redis Streams Consumer Group. Redis guarantees that each task is delivered
-  # to exactly one replica, so no distributed lock is needed.
-  #
-  # BOT_DELAY_MS: milliseconds the bot "thinks" before playing (default 3000).
-  # ---------------------------------------------------------------------------
   wizard-bot-worker:
     build:
       context: ./wizardEngine
     environment:
       - ROLE=bot_worker
+      - APP_ENV=${APP_ENV}
       - REDIS_HOST=redis
-      - REDIS_PORT=${REDIS_PORT:-6379}
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     depends_on:
       - redis
       - wizard-engine
@@ -62,7 +53,7 @@ services:
     environment:
       - PORT=${APPLICATION_PORT}
       - BACKEND_INTERNAL_URL=http://wizard-engine:${HTTP_PORT}
-      - NEXT_PUBLIC_WS_URL=ws://localhost:${WS_PORT}
+      - NEXT_PUBLIC_WS_PORT=${WS_PORT}
     depends_on:
       - wizard-engine
     restart: always
