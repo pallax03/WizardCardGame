@@ -116,7 +116,7 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       lobby: Lobby,
       isOnline: Boolean
   ): Future[LobbyStatus] =
-    if !lobby.status.isGame then Future.successful(lobby.status)
+    if !lobby.status.existGame then Future.successful(lobby.status)
     else if isOnline && lobby.status != LobbyStatus.DISCONNECTING then
       redisClient
         .send(Request.cmd(Command.DEL).arg(ChannelsKeys.disconnectTimer(lobbyId)))

@@ -151,7 +151,7 @@ class LobbyRoutes(
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
           if lobby.status == LobbyStatus.FINISHED || lobby.status == LobbyStatus.PAUSED then
             Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
-          else if lobby.status.isGame then Left(LobbyError.GameInProgress)
+          else if lobby.status.existGame then Left(LobbyError.GameInProgress)
           else Left(LobbyError.NotFound(GameException.GameNotFound))
         }).flatMap { _ =>
           EitherT.right[LobbyError](gameEngine.deleteGame(lobbyId))
