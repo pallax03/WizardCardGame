@@ -158,7 +158,7 @@ class BotManagerVerticle(
   private def log(msg: String): Unit = pubSubPort.publish(ChannelsKeys.LOGS_CHANNEL, msg)
 
 object BotManagerVerticle:
-  private val DEFAULT_BOT_DELAY_MS: Int = Random().between(5, 10) * 1000
+  private val DEFAULT_BOT_DELAY_MS: Int = Random().between(2, 5) * 1000
   private val POLL_INTERVAL_MS: Long = 500L
   private val CLAIM_CHECK_INTERVAL_MS: Long = 10_000L
   private val CLAIM_IDLE_MS: Long = 15_000L
