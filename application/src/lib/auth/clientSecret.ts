@@ -21,7 +21,7 @@ export async function clearClientSecretCookie(lobbyId: string) {
   (await cookies()).delete(cookieName(lobbyId));
 }
 
-export async function authHeadersForLobby(lobbyId: string) {
+export async function authHeadersForLobby(lobbyId: string): Promise<Record<string, string>> {
   const secret = await getClientSecretCookie(lobbyId);
   return secret ? { Authorization: `Bearer ${secret}` } : {};
 }
