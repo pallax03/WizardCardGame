@@ -36,7 +36,7 @@ class TestFallbackStrategy extends AnyWordSpec with Matchers:
     "handling WaitingForCard" should:
       "return a PlayCard action picking the first legal card" in:
         val cards = (One of Red) - jester
-        FallbackStrategy.fallbackMove(InvitationEvent.WaitingForCard(p1, cards)) match
+        FallbackStrategy.fallbackMove(InvitationEvent.WaitingForCard(p1, cards, true)) match
           case GameAction.PlayCard(playerId, card) =>
             playerId shouldBe p1
             card shouldBe cards.head

@@ -6,7 +6,7 @@ object GameConfiguration:
   private val gracePeriodSeconds: Int = 3
 
 enum ConfigurationErrors(val min: Int, val max: Int):
-  case TimerNotValid extends ConfigurationErrors(30, 120)
+  case TimerNotValid extends ConfigurationErrors(15, 90)
   case MaxStrikesNotValid extends ConfigurationErrors(1, 3)
 
 /**
@@ -16,7 +16,7 @@ enum ConfigurationErrors(val min: Int, val max: Int):
  * @param maxStrikes number of consecutive AFK timeouts before a player is automatically disconnected.
  */
 case class GameConfiguration(
-    timer: Int = 60,
+    timer: Int = 30,
     maxStrikes: Int = 2
 ):
   def validate: Either[ConfigurationErrors, Unit] =

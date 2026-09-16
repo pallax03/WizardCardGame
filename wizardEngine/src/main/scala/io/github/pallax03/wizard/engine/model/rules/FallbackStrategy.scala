@@ -14,5 +14,5 @@ object FallbackStrategy:
     case InvitationEvent.WaitingForBid(playerId, round, invalidBid) =>
       val validBids = (0 to round).filterNot(b => invalidBid.contains(b))
       GameAction.PlaceBid(playerId, validBids(Random.nextInt(validBids.size)))
-    case InvitationEvent.WaitingForCard(playerId, legalCards) =>
+    case InvitationEvent.WaitingForCard(playerId, legalCards, _) =>
       GameAction.PlayCard(playerId, legalCards.head)

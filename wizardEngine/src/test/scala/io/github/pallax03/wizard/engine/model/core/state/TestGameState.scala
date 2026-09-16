@@ -41,7 +41,7 @@ class TestGameState extends AnyWordSpec with Matchers:
         GameState
           .Playing(core.copy(hands = hands), Bids.empty, Table.empty, p1, Tricks.empty)
           .pendingInvitation(p1) match
-          case Some(InvitationEvent.WaitingForCard(p, hand)) =>
+          case Some(InvitationEvent.WaitingForCard(p, hand, _)) =>
             p shouldBe p1
             hand shouldBe cards
           case _ => fail("Expected WaitingForCard")

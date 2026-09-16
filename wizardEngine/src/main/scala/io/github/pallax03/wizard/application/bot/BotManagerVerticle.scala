@@ -118,8 +118,11 @@ class BotManagerVerticle(
                     .resolveInvitation(task.lobbyId, inv)
                     .onComplete:
                       case Success(action) =>
+                        val delay = inv match
+                          case c: InvitationEvent.WaitingForCard if c.isTableEmpty => DEFAULT_BOT_DELAY_MS + FIRST_CARD_DELAY_MS
+                          case _ => DEFAULT_BOT_DELAY_MS
                         vertx.setTimer(
-                          DEFAULT_BOT_DELAY_MS,
+                          delay,
                           _ => submitAndAck(task.lobbyId, inv, action, entryId)
                         )
                       case Failure(e) =>
@@ -161,7 +164,8 @@ class BotManagerVerticle(
     WizardLogger.warn(s"[BotManager] $msg")
 
 object BotManagerVerticle:
-  private val DEFAULT_BOT_DELAY_MS: Int = Random().between(2, 5) * 1000
+  private def DEFAULT_BOT_DELAY_MS: Int = Random.between(800, 2000)
+  private def FIRST_CARD_DELAY_MS: Int = 5000
   private val POLL_INTERVAL_MS: Long = 500L
   private val CLAIM_CHECK_INTERVAL_MS: Long = 10_000L
   private val CLAIM_IDLE_MS: Long = 15_000L

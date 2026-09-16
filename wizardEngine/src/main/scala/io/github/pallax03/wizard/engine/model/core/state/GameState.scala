@@ -47,11 +47,11 @@ object GameState:
           )
         case GameState.Playing(core: ServerCoreState, _, table, turn, _) if turn == playerId =>
           Some(
-            InvitationEvent.WaitingForCard(playerId, core.hands.getHand(playerId).legalCards(table))
+            InvitationEvent.WaitingForCard(playerId, core.hands.getHand(playerId).legalCards(table), table.playedCards.isEmpty)
           )
         case GameState.Playing(core: PlayerCoreState, _, table, turn, _) if turn == playerId =>
           Some(
-            InvitationEvent.WaitingForCard(playerId, core.hand.legalCards(table))
+            InvitationEvent.WaitingForCard(playerId, core.hand.legalCards(table), table.playedCards.isEmpty)
           )
         case GameState.ChoosingTrump(core) if core.dealerId == playerId =>
           Some(InvitationEvent.WaitingForTrump(playerId))
