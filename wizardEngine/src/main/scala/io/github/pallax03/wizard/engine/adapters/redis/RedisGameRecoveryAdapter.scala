@@ -21,7 +21,7 @@ import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, RedisUtil, Wiza
 
 class RedisGameRecoveryAdapter(
     private val redisClient: Redis,
-    private val outboundPort: OutboundPort,
+    private val outboundPort: OutboundPort
 ) extends GameRecoveryPort:
 
   override def attemptRecovery(lobbyId: LobbyId, exception: GameException): Future[Boolean] =

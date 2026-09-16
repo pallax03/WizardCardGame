@@ -19,8 +19,8 @@ import io.github.pallax03.wizard.engine.model.events.{
   WizardEvent
 }
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, OutboundPort, PubSubPort}
-import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, WizardLogger}
 import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, WizardLogger}
 
 /**
  * Redis implementation of [[OutboundPort]].

@@ -46,9 +46,9 @@ object Main:
       .setConnectionString(s"redis://$redisHost:$redisPort")
       .setMaxPoolSize(redisPoolSize)
       .setPreferredProtocolVersion(ProtocolVersion.RESP2)
-      
+
     redisPassword.foreach(redisOptions.setPassword)
-      
+
     val redisClient = Redis.createClient(vertx, redisOptions)
 
     val pubSubPort: PubSubPort = RedisPubSubAdapter(redisClient)

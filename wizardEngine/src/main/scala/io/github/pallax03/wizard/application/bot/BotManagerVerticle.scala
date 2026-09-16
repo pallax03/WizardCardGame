@@ -18,8 +18,8 @@ import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.model.rules.FallbackStrategy
 import io.github.pallax03.wizard.engine.ports.*
-import io.github.pallax03.wizard.util.{ChannelsKeys, WizardLogger}
 import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.github.pallax03.wizard.util.{ChannelsKeys, WizardLogger}
 
 class BotManagerVerticle(
     prologPort: AIPort,
