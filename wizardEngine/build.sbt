@@ -46,6 +46,8 @@ assembly / assemblyMergeStrategy := {
   case PathList("META-INF", "resources", "webjars", "swagger-ui", _*)                => MergeStrategy.singleOrError
   case x if x.endsWith("module-info.class")                                          => MergeStrategy.discard
   case x if x.endsWith("io.netty.versions.properties")                               => MergeStrategy.first
+  case x if x.contains("FastDoubleParser-LICENSE")                                   => MergeStrategy.discard
+  case PathList("META-INF", xs @ _*) if xs.last.toLowerCase.endsWith(".license") || xs.last.toLowerCase.endsWith(".txt") => MergeStrategy.discard
   case x                                                                             => (assembly / assemblyMergeStrategy).value(x)
 }
 
