@@ -285,7 +285,11 @@ object GameEngine:
       .toGameEngine(
         ProgressEvent.TurnOf(winnerId, GameAction.PlayCard.toString),
         InvitationEvent
-          .WaitingForCard(winnerId, updatedCore.hands.getHand(winnerId).legalCards(Table.empty), true)
+          .WaitingForCard(
+            winnerId,
+            updatedCore.hands.getHand(winnerId).legalCards(Table.empty),
+            true
+          )
       )
 
   private def completeRound(

@@ -119,7 +119,8 @@ class BotManagerVerticle(
                     .onComplete:
                       case Success(action) =>
                         val delay = inv match
-                          case c: InvitationEvent.WaitingForCard if c.isTableEmpty => DEFAULT_BOT_DELAY_MS + FIRST_CARD_DELAY_MS
+                          case c: InvitationEvent.WaitingForCard if c.isTableEmpty =>
+                            DEFAULT_BOT_DELAY_MS + FIRST_CARD_DELAY_MS
                           case _ => DEFAULT_BOT_DELAY_MS
                         vertx.setTimer(
                           delay,
