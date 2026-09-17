@@ -18,11 +18,12 @@ export function PlayerList({
   activeBotSlot,
   isAddingBot,
   removingBotId,
+  canManagePlayers,
   onSelectBotSlot,
   onAddBot,
   onRemoveBot,
 }: PlayerListProps) {
-  const emptySlotsCount = Math.max(0, maxPlayers - players.length);
+  const emptySlotsCount = canManagePlayers ? Math.max(0, maxPlayers - players.length) : 0;
 
   return (
     <Card className="surface-card text-zinc-100">
@@ -51,6 +52,7 @@ export function PlayerList({
               isBot={isBot}
               isOnline={isOnline}
               isRemoving={removingBotId === player.id}
+              canRemove={canManagePlayers}
               onRemoveBot={onRemoveBot}
             />
           );

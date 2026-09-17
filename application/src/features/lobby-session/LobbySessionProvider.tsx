@@ -204,6 +204,9 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       if (event.event.action === "GameStarted" || event.event.action === "GameResumed") {
         void refreshLobby();
       }
+      if (event.event.action === "GameCancelled") {
+        void refreshLobby();
+      }
     }
   }, [refreshLobby]);
 
