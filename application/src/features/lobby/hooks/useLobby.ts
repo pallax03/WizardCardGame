@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addBotAction, leaveLobbyAction, startGameAction } from "@/features/lobby/api";
+import { addBotAction, discardPausedGameAction, leaveLobbyAction, startGameAction } from "@/features/lobby/api";
 import { useLobbySession } from "@/features/lobby-session";
 import { clearStoredSession } from "@/features/lobby-session/storage";
 import { getErrorMessage } from "@/ui/i18n/errors";
@@ -23,6 +23,7 @@ export function useLobby() {
   const [activeBotSlot, setActiveBotSlot] = useState<number | null>(null);
   const [isLeaving, setIsLeaving] = useState<boolean>(false);
   const [isStarting, setIsStarting] = useState<boolean>(false);
+  const [isDiscarding, setIsDiscarding] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleLeaveLobby = async () => {
@@ -84,6 +85,19 @@ export function useLobby() {
     setRemovingBotId(null);
   };
 
+  const handleDiscardPausedGame = async () => {
+    if (!lobby?.lobbyId || isDiscarding) return;
+    setActionError(null);
+    setIsDiscarding(true);
+    const result = await discardPausedGameAction(lobby.lobbyId);
+    if (result.error) {
+      setActionError(getErrorMessage(result.error));
+    } else {
+      await refreshLobby();
+    }
+    setIsDiscarding(false);
+  };
+
   useEffect(() => {
     if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
       clearStoredSession();
@@ -104,9 +118,11 @@ export function useLobby() {
     activeBotSlot,
     isLeaving,
     isStarting,
+    isDiscarding,
     setActiveBotSlot,
     handleLeaveLobby,
     handleStartGame,
+    handleDiscardPausedGame,
     handleAddBot,
     handleRemoveBot,
   };
