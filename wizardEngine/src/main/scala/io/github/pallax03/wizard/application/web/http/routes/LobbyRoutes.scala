@@ -149,9 +149,7 @@ class LobbyRoutes(
       .serverSecurityLogicSuccess(Future.successful)
       .serverLogic { secret => lobbyId =>
         EitherT(lobbyStatePort.updateAuthLobby[Unit](lobbyId, secret) { (_, lobby) =>
-          val discardable =
-            lobby.status == LobbyStatus.FINISHED || lobby.status == LobbyStatus.PAUSED
-          if discardable || lobby.status == LobbyStatus.WAITING then
+          if lobby.status == LobbyStatus.FINISHED || lobby.status == LobbyStatus.PAUSED then
             Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
           else if lobby.status.existGame then Left(LobbyError.GameInProgress)
           else Left(LobbyError.NotFound(GameException.GameNotFound))
