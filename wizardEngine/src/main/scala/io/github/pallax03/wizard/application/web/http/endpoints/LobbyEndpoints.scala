@@ -83,7 +83,7 @@ object LobbyEndpoints:
     secureBase.post
       .summary("Return to lobby")
       .description(
-        "Transitions FINISHED, PAUSED or WAITING lobby back to WAITING and deletes any saved game in Redis."
+        "Transitions FINISHED or PAUSED lobby back to WAITING and deletes the game in Redis."
       )
       .in(HttpSupport.lobbyIdPath / "return")
 
