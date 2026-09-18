@@ -16,6 +16,7 @@ export interface PlayerListProps {
   activeBotSlot: number | null;
   isAddingBot: boolean;
   removingBotId: number | null;
+  canManagePlayers: boolean;
   onSelectBotSlot: (slotIndex: number | null) => void;
   onAddBot: (difficulty: string) => Promise<void>;
   onRemoveBot: (botId: number) => Promise<void>;
@@ -27,6 +28,7 @@ export interface PlayerCardProps {
   isBot: boolean;
   isOnline: boolean;
   isRemoving: boolean;
+  canRemove: boolean;
   onRemoveBot: (botId: number) => Promise<void>;
 }
 
@@ -44,4 +46,8 @@ export interface LobbyActionsProps {
   onLeave: () => void;
   onStart: () => void;
   isResuming?: boolean;
+  isDiscarding?: boolean;
+  onDiscard?: () => void;
+  disableStart?: boolean;
+  discardMode?: "paused" | "finished";
 }

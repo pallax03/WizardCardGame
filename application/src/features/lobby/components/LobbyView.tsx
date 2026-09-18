@@ -10,6 +10,8 @@ const lobbyI18n = t("lobby");
 import { LobbyHeader } from "@/features/lobby/components/LobbyHeader";
 import { PlayerList } from "@/features/lobby/components/PlayerList";
 import { LobbyActions } from "@/features/lobby/components/LobbyActions";
+import { PausedGameSummary } from "@/features/lobby/components/PausedGameSummary";
+import { useLobbyGameSnapshot } from "../hooks/useLobbyGameSnapshot";
 import { LobbyViewProps } from "../types";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
@@ -27,17 +29,33 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     activeBotSlot,
     isLeaving,
     isStarting,
+    isDiscarding,
     setActiveBotSlot,
     handleLeaveLobby,
     handleStartGame,
+    handleDiscardPausedGame,
     handleAddBot,
     handleRemoveBot,
   } = useLobby();
 
-  // Sessione invalida: pulizia fuori dal render (effetto, non side-effect in render).
   useEffect(() => {
     if (sessionError) clearStoredSession();
   }, [sessionError]);
+
+  const players = lobby?.players || [];
+  const isPaused = lobby?.status === "PAUSED";
+  const isFinished = lobby?.status === "FINISHED";
+  const isWaiting = lobby?.status === "WAITING";
+  const canManagePlayers = isWaiting;
+
+  const snapshotEnabled = Boolean(lobby?.lobbyId) && (isPaused || isFinished || isWaiting);
+  const {
+    board: savedBoard,
+    isLoading: isSnapshotLoading,
+    loadFailed: isSnapshotFailed,
+  } = useLobbyGameSnapshot(lobby?.lobbyId ?? null, playerId, snapshotEnabled, lobby?.status);
+  const showSummary = isPaused || isFinished || savedBoard !== null;
+  const showDiscard = isPaused || isFinished || savedBoard !== null;
 
   if (!lobby && connectionState === "connecting") {
     return (
@@ -57,9 +75,6 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       </div>
     );
   }
-
-  const players = lobby?.players || [];
-  const isPaused = lobby?.status === "PAUSED";
 
   return (
     <div className="w-full max-w-4xl space-y-6">
@@ -82,6 +97,16 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       )}
 
       <LobbyHeader lobbyCode={lobby?.lobbyId || ""} />
+
+      {showSummary && (
+        <PausedGameSummary
+          board={savedBoard}
+          isLoading={isSnapshotLoading && !isWaiting}
+          loadFailed={isSnapshotFailed}
+          playerId={playerId}
+          players={players}
+        />
+      )}
       
       <PlayerList
         players={players}
@@ -91,6 +116,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         activeBotSlot={activeBotSlot}
         isAddingBot={isAddingBot}
         removingBotId={removingBotId}
+        canManagePlayers={canManagePlayers}
         onSelectBotSlot={setActiveBotSlot}
         onAddBot={handleAddBot}
         onRemoveBot={handleRemoveBot}
@@ -102,6 +128,10 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         onLeave={handleLeaveLobby}
         onStart={handleStartGame}
         isResuming={isPaused}
+        isDiscarding={isDiscarding}
+        onDiscard={showDiscard ? handleDiscardPausedGame : undefined}
+        disableStart={isFinished}
+        discardMode={isFinished ? "finished" : "paused"}
       />
     </div>
   );

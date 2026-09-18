@@ -134,3 +134,19 @@ export async function startGameAction(
 
   return { success: true };
 }
+
+export async function discardPausedGameAction(
+  lobbyId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const { error } = await safeApiFetch(`/api/lobby/${lobbyId}/return`, {
+    method: "POST",
+    headers: await authHeadersForLobby(lobbyId)
+  });
+
+  if (error) {
+    console.error("Error discarding paused game:", error);
+    return { error };
+  }
+
+  return { success: true };
+}

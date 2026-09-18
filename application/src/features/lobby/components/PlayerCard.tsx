@@ -8,7 +8,7 @@ import { PlayerCardProps } from "../types";
 
 import { PlayerAvatar } from "@/ui/components/player-avatar";
 
-export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, onRemoveBot }: PlayerCardProps) {
+export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemove, onRemoveBot }: PlayerCardProps) {
   return (
     <div
       className={`flex items-center justify-between p-3.5 rounded-xl border ${
@@ -46,7 +46,7 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, onRemove
         </div>
       </div>
 
-      {!isMe && (
+      {!isMe && canRemove && (
         <Button
           size="icon"
           variant="ghost"
