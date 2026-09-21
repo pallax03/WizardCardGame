@@ -35,6 +35,7 @@ ThisBuild / libraryDependencies ++= Seq(
   "com.softwaremill.sttp.tapir" %%    "tapir-vertx-server"      % tapirVersion,
   "com.softwaremill.sttp.tapir" %%    "tapir-json-circe"        % tapirVersion,
   "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle"    % tapirVersion,
+  "com.softwaremill.sttp.tapir" %% "tapir-prometheus-metrics"   % tapirVersion,
   "net.logstash.logback"       %    "logstash-logback-encoder"  % logstashVersion,
   "org.codehaus.janino"        %    "janino"                    % janinoVersion
 )
