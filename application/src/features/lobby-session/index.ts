@@ -8,6 +8,7 @@ export { clearStoredSession, readStoredSession, writeStoredSession } from "./sto
 export type { StoredSession } from "./storage";
 export type {
   ConnectionState,
+  GameConfiguration,
   LobbyPlayer,
   LobbySessionState,
   LobbyState,

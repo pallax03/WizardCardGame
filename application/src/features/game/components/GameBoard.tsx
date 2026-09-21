@@ -87,6 +87,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     canBid,
     canPlay,
     turnPrompt,
+    turnTimerSeconds,
     isCardPlayable,
     forbiddenBid,
     bidsTotal,
@@ -362,9 +363,21 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                   <span>Trick <strong className="text-emerald-400">{playerTricks}</strong></span>
                 </span>
                 {isCurrentTurn && (
-                  <span className="mt-0.5 block animate-pulse text-[9px] font-extrabold tracking-wider text-amber-300 uppercase">
-                    {isMe ? "▶ tocca a te" : "▶ turno"}
-                  </span>
+                  <>
+                    <span className="mt-0.5 block animate-pulse text-[9px] font-extrabold tracking-wider text-amber-300 uppercase">
+                      {isMe ? "▶ tocca a te" : "▶ turno"}
+                    </span>
+                    {turnTimerSeconds !== null && turnTimerSeconds !== undefined && (
+                      <span className="mt-0.5 flex items-center gap-2 font-mono text-[10px] font-black">
+                        <span className={turnTimerSeconds <= 5 ? "animate-pulse text-rose-300" : "text-amber-200"}>
+                          ⏱ {turnTimerSeconds}s
+                        </span>
+                        <span className="text-orange-300">
+                          ⚠ Strikes: {player.strikes ?? 0}
+                        </span>
+                      </span>
+                    )}
+                  </>
                 )}
               </span>
             </div>

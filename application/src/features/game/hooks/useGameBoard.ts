@@ -203,6 +203,38 @@ export function useGameBoard(customPlayerId?: number) {
     return tail.reduce((state, event) => gameReducer(state, event, reducerPlayerId), snapshotState);
   }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, reducerPlayerId]);
 
+  const latestTurnEvent = useMemo(
+    () => [...gameEvents].reverse().find((event) => event.event.action === "TurnOf") ?? null,
+    [gameEvents]
+  );
+  const turnTimerDuration = useMemo(() => {
+    if (!latestTurnEvent || !lobby?.configuration) return null;
+    const activePlayerId = Number(
+      latestTurnEvent.event.playerId ?? latestTurnEvent.event.fields?.playerId
+    );
+    if (gameState.currentTurn.playerId !== activePlayerId) return null;
+    const timer = Number(lobby.configuration.timer);
+    const player = lobby.players.find((candidate) => candidate.id === activePlayerId);
+    if (!Number.isFinite(timer) || timer <= 0 || !player) return null;
+    const strikes = Math.max(0, Number(player.strikes ?? 0));
+    return Math.max(1, timer / 2 ** strikes);
+  }, [gameState.currentTurn.playerId, latestTurnEvent, lobby?.configuration, lobby?.players]);
+  const [turnTimerSeconds, setTurnTimerSeconds] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!latestTurnEvent || turnTimerDuration === null) {
+      setTurnTimerSeconds(null);
+      return;
+    }
+    const deadline = Date.now() + turnTimerDuration * 1000;
+    const updateTimer = () => {
+      setTurnTimerSeconds(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    };
+    updateTimer();
+    const interval = setInterval(updateTimer, 200);
+    return () => clearInterval(interval);
+  }, [latestTurnEvent, turnTimerDuration]);
+
   useEffect(() => {
     if (gameState.table.length > 0) {
       completedTableRef.current = {
@@ -572,6 +604,7 @@ export function useGameBoard(customPlayerId?: number) {
     playersMap,
     gameState,
     gameEvents,
+    turnTimerSeconds,
     // Reveal di fine presa (tavolo congelato + conto alla rovescia)
     revealedTrick,
     revealSecondsLeft,
