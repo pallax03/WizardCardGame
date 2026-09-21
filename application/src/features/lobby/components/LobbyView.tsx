@@ -3,7 +3,8 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useLobby } from "../hooks/useLobby";
-import { clearStoredSession } from "@/features/lobby-session/storage";
+import { removeSavedLobby } from "@/features/lobby-session/storage";
+import { ArrowLeft } from "lucide-react";
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
 
@@ -21,6 +22,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   const router = useRouter();
   const {
     lobby,
+    lobbyId,
     playerId,
     connectionState,
     connectedPlayerIds,
@@ -36,7 +38,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     isSavingConfig,
     setActiveBotSlot,
     handleLeaveLobby,
-    handleExitToHome,
+    handleBackToHome,
     handleStartGame,
     handleDiscardPausedGame,
     handlePauseGame,
@@ -46,8 +48,9 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   } = useLobby();
 
   useEffect(() => {
-    if (sessionError) clearStoredSession();
-  }, [sessionError]);
+    // Secret invalido o lobby sparita: togli solo questa dalla lista, non le altre.
+    if (sessionError) removeSavedLobby(lobbyId);
+  }, [sessionError, lobbyId]);
 
   const players = lobby?.players || [];
   const status = lobby?.status;
@@ -88,6 +91,13 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
 
   return (
     <div className="w-full max-w-4xl space-y-6">
+      <button
+        type="button"
+        onClick={handleBackToHome}
+        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+      >
+        <ArrowLeft className="w-3.5 h-3.5" /> {lobbyI18n.backToLobbies}
+      </button>
       {connectionState === "reconnecting" && (
         <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-md text-xs text-center animate-pulse">
           {lobbyI18n.reconnecting}
@@ -165,7 +175,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         status={status}
         isPausing={isPausing}
         onPause={isDisconnecting ? handlePauseGame : undefined}
-        onExitHome={handleExitToHome}
+        onExitHome={handleBackToHome}
       />
     </div>
   );

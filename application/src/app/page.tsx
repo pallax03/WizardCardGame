@@ -2,9 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
+import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe, History } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/api";
-import { clearVoluntaryLeave, markVoluntaryLeave, readStoredSession, readVoluntaryLeave, writeStoredSession } from "@/features/lobby-session/storage";
+import { getLobbyState } from "@/features/lobby-session/api";
+import { readSavedLobbies, removeSavedLobby } from "@/features/lobby-session/storage";
+import { ApiError } from "@/lib/api/api";
 import { t } from "@/ui/i18n/core";
 const homeI18n = t("home");
 import { Button } from "@/ui/components/button";
@@ -20,35 +22,62 @@ export default function Home() {
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [savedLobbyId, setSavedLobbyId] = useState<string | null>(null);
+  const [savedEntries, setSavedEntries] = useState<
+    { lobbyId: string; playerId: number; status?: string; playersCount?: number; failed?: boolean }[]
+  >([]);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const lobbyId = searchParams.get("lobbyId");
-    
-    const stored = readStoredSession();
-    const storedLobbyId = stored.lobbyId;
-    const storedPlayerId = stored.playerId !== null ? String(stored.playerId) : null;
-    const voluntaryLeave = readVoluntaryLeave();
 
     if (lobbyId) {
-      setTimeout(() => {
+      queueMicrotask(() => {
         setLobbyIdToJoin(lobbyId);
         setShowJoinInput(true);
-      }, 0);
+      });
       return;
     }
 
-    if (storedLobbyId && storedPlayerId) {
-      if (voluntaryLeave === storedLobbyId) {
-        const id = storedLobbyId;
-        queueMicrotask(() => setSavedLobbyId(id));
-        return;
+    // Niente auto-rerouting: la home mostra sempre la lista delle lobby
+    // salvate (partite in pausa incluse), con stato live e rientro.
+    const saved = readSavedLobbies();
+    if (saved.length === 0) return;
+    queueMicrotask(() =>
+      setSavedEntries(saved.map((entry) => ({ lobbyId: entry.lobbyId, playerId: entry.playerId })))
+    );
+    let cancelled = false;
+    void (async () => {
+      for (const entry of saved) {
+        try {
+          const state = await getLobbyState(entry.lobbyId);
+          if (cancelled) return;
+          setSavedEntries((prev) =>
+            prev.map((item) =>
+              item.lobbyId === entry.lobbyId
+                ? { ...item, status: state.status, playersCount: state.players.length }
+                : item
+            )
+          );
+        } catch (reason) {
+          if (cancelled) return;
+          if (reason instanceof ApiError && reason.status === 404) {
+            // Lobby sparita dal backend: toglila anche dalla lista.
+            removeSavedLobby(entry.lobbyId);
+            setSavedEntries((prev) => prev.filter((item) => item.lobbyId !== entry.lobbyId));
+          } else {
+            setSavedEntries((prev) =>
+              prev.map((item) =>
+                item.lobbyId === entry.lobbyId ? { ...item, failed: true } : item
+              )
+            );
+          }
+        }
       }
-      router.push(`/lobby/${storedLobbyId}`);
-      return;
-    }
-  }, [router]);
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleToggleJoin = () => {
     setError(null);
@@ -79,19 +108,31 @@ export default function Home() {
     }
   };
 
-  const handleRejoinSaved = () => {
-    if (!savedLobbyId) return;
-    const stored = readStoredSession();
-    if (stored.playerId !== null) {
-      writeStoredSession(savedLobbyId, stored.playerId);
-    }
-    clearVoluntaryLeave();
-    router.push(`/lobby/${savedLobbyId}`);
+  const handleRejoinSaved = (lobbyId: string) => {
+    router.push(`/lobby/${lobbyId}`);
   };
 
-  const handleDismissSaved = () => {
-    if (savedLobbyId) markVoluntaryLeave(savedLobbyId);
-    setSavedLobbyId(null);
+  const handleRemoveSaved = (lobbyId: string) => {
+    removeSavedLobby(lobbyId);
+    setSavedEntries((prev) => prev.filter((item) => item.lobbyId !== lobbyId));
+  };
+
+  const savedStatusLabel = (status?: string, failed?: boolean) => {
+    if (failed) return homeI18n.savedLobbies.unavailable;
+    switch (status) {
+      case "WAITING":
+        return homeI18n.savedLobbies.statusWaiting;
+      case "IN_GAME":
+        return homeI18n.savedLobbies.statusInGame;
+      case "DISCONNECTING":
+        return homeI18n.savedLobbies.statusDisconnecting;
+      case "PAUSED":
+        return homeI18n.savedLobbies.statusPaused;
+      case "FINISHED":
+        return homeI18n.savedLobbies.statusFinished;
+      default:
+        return homeI18n.savedLobbies.loading;
+    }
   };
 
   return (
@@ -119,21 +160,47 @@ export default function Home() {
 
       <div className="relative z-10 w-full max-w-md space-y-8">
 
-        {savedLobbyId && (
-          <Card className="bg-sky-950/60 border-sky-500/30 backdrop-blur-md shadow-2xl">
+        {savedEntries.length > 0 && (
+          <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-md shadow-2xl">
             <CardHeader>
-              <CardTitle className="text-base text-sky-200 font-semibold">{homeI18n.resume.title}</CardTitle>
-              <CardDescription className="text-sky-300/70 text-sm">
-                {homeI18n.resume.description} <span className="font-mono">{savedLobbyId}</span>
-              </CardDescription>
+              <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-sky-500/15 text-sky-300"><History className="size-5" /></div>
+              <CardTitle className="text-lg text-zinc-100 font-semibold">{homeI18n.savedLobbies.title}</CardTitle>
+              <CardDescription className="text-zinc-400 text-sm">{homeI18n.savedLobbies.subtitle}</CardDescription>
             </CardHeader>
-            <CardContent className="flex gap-2">
-              <Button type="button" onClick={handleRejoinSaved} size="lg" className="flex-1 gap-2">
-                {homeI18n.resume.rejoin} <ArrowRight className="w-4 h-4" />
-              </Button>
-              <Button type="button" onClick={handleDismissSaved} variant="outline" size="lg">
-                <X className="w-4 h-4" /> {homeI18n.resume.dismiss}
-              </Button>
+            <CardContent className="space-y-2">
+              {savedEntries.map((entry) => (
+                <div
+                  key={entry.lobbyId}
+                  className="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-sm text-zinc-100 truncate">{entry.lobbyId}</p>
+                    <p className="text-[11px] text-zinc-500">
+                      {savedStatusLabel(entry.status, entry.failed)}
+                      {entry.playersCount !== undefined &&
+                        ` · ${homeI18n.savedLobbies.players(entry.playersCount)}`}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleRejoinSaved(entry.lobbyId)}
+                    className="gap-1 shrink-0"
+                  >
+                    {homeI18n.savedLobbies.rejoin} <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleRemoveSaved(entry.lobbyId)}
+                    title={homeI18n.savedLobbies.removeTitle}
+                    className="h-8 w-8 shrink-0 text-zinc-500 hover:text-red-400 hover:bg-red-950/40"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
             </CardContent>
           </Card>
         )}

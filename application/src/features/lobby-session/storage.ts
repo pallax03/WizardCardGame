@@ -1,53 +1,83 @@
-const LOBBY_ID_KEY = "wizard_lobbyId";
-const PLAYER_ID_KEY = "wizard_playerId";
-const VOLUNTARY_LEAVE_KEY = "wizard_voluntary_leave";
+const SAVED_LOBBIES_KEY = "wizard_saved_lobbies";
+// Chiavi legacy (singola sessione): migrate in automatico alla prima lettura.
+const LEGACY_LOBBY_ID_KEY = "wizard_lobbyId";
+const LEGACY_PLAYER_ID_KEY = "wizard_playerId";
+const LEGACY_VOLUNTARY_LEAVE_KEY = "wizard_voluntary_leave";
 
-export interface StoredSession {
-  lobbyId: string | null;
-  playerId: number | null;
+export interface SavedLobby {
+  lobbyId: string;
+  playerId: number;
+  savedAt: number;
 }
 
 function storageAvailable(): boolean {
   return typeof window !== "undefined";
 }
 
-export function readStoredSession(): StoredSession {
-  if (!storageAvailable()) return { lobbyId: null, playerId: null };
-  const lobbyId = localStorage.getItem(LOBBY_ID_KEY);
-  const rawPlayerId = localStorage.getItem(PLAYER_ID_KEY);
-  const parsed = rawPlayerId !== null ? Number(rawPlayerId) : NaN;
-  return {
-    lobbyId,
-    playerId: Number.isInteger(parsed) && parsed >= 0 ? parsed : null,
-  };
+function parsePlayerId(raw: string | null): number | null {
+  const parsed = raw !== null ? Number(raw) : NaN;
+  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
-export function writeStoredSession(lobbyId: string, playerId: string | number): void {
+/** Migra una sola volta la vecchia sessione singola nella nuova lista. */
+function migrateLegacy(): void {
   if (!storageAvailable()) return;
-  localStorage.setItem(LOBBY_ID_KEY, lobbyId);
-  localStorage.setItem(PLAYER_ID_KEY, String(playerId));
-  if (localStorage.getItem(VOLUNTARY_LEAVE_KEY) === lobbyId) {
-    localStorage.removeItem(VOLUNTARY_LEAVE_KEY);
+  if (localStorage.getItem(SAVED_LOBBIES_KEY) !== null) return;
+  const lobbyId = localStorage.getItem(LEGACY_LOBBY_ID_KEY);
+  const playerId = parsePlayerId(localStorage.getItem(LEGACY_PLAYER_ID_KEY));
+  if (lobbyId && playerId !== null) {
+    persist([{ lobbyId, playerId, savedAt: Date.now() }]);
+  }
+  localStorage.removeItem(LEGACY_LOBBY_ID_KEY);
+  localStorage.removeItem(LEGACY_PLAYER_ID_KEY);
+  localStorage.removeItem(LEGACY_VOLUNTARY_LEAVE_KEY);
+}
+
+function persist(lobbies: SavedLobby[]): void {
+  localStorage.setItem(SAVED_LOBBIES_KEY, JSON.stringify(lobbies));
+}
+
+/**
+ * Lista delle lobby in cui il giocatore è ancora membro (partite in pausa
+ * incluse): il secret resta nel cookie httpOnly, qui basta lobbyId+playerId
+ * per ritrovarle e riconnettersi dalla home.
+ */
+export function readSavedLobbies(): SavedLobby[] {
+  if (!storageAvailable()) return [];
+  migrateLegacy();
+  try {
+    const raw = localStorage.getItem(SAVED_LOBBIES_KEY);
+    if (!raw) return [];
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (entry): entry is SavedLobby =>
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof (entry as SavedLobby).lobbyId === "string" &&
+        Number.isInteger((entry as SavedLobby).playerId) &&
+        (entry as SavedLobby).playerId >= 0
+    );
+  } catch {
+    return [];
   }
 }
 
-export function clearStoredSession(): void {
-  if (!storageAvailable()) return;
-  localStorage.removeItem(LOBBY_ID_KEY);
-  localStorage.removeItem(PLAYER_ID_KEY);
+export function findSavedLobby(lobbyId: string): SavedLobby | null {
+  return readSavedLobbies().find((entry) => entry.lobbyId === lobbyId) ?? null;
 }
 
-export function markVoluntaryLeave(lobbyId: string): void {
+/** Salva (o aggiorna) una lobby in lista: usato a ogni join e al pulsante indietro. */
+export function saveLobby(lobbyId: string, playerId: string | number): void {
   if (!storageAvailable()) return;
-  localStorage.setItem(VOLUNTARY_LEAVE_KEY, lobbyId);
+  const parsed = typeof playerId === "number" ? playerId : Number(playerId);
+  if (!Number.isInteger(parsed) || parsed < 0) return;
+  const others = readSavedLobbies().filter((entry) => entry.lobbyId !== lobbyId);
+  persist([...others, { lobbyId, playerId: parsed, savedAt: Date.now() }]);
 }
 
-export function clearVoluntaryLeave(): void {
+/** Rimuove una lobby dalla lista: abbandono reale (DELETE) o lobby non più esistente. */
+export function removeSavedLobby(lobbyId: string): void {
   if (!storageAvailable()) return;
-  localStorage.removeItem(VOLUNTARY_LEAVE_KEY);
-}
-
-export function readVoluntaryLeave(): string | null {
-  if (!storageAvailable()) return null;
-  return localStorage.getItem(VOLUNTARY_LEAVE_KEY);
+  persist(readSavedLobbies().filter((entry) => entry.lobbyId !== lobbyId));
 }

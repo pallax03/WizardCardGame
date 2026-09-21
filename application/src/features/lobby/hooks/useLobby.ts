@@ -4,18 +4,19 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { addBotAction, discardPausedGameAction, leaveLobbyAction, pauseGameAction, startGameAction, updateConfigurationAction } from "@/features/lobby/api";
 import { useLobbySession } from "@/features/lobby-session";
-import { clearStoredSession, markVoluntaryLeave } from "@/features/lobby-session/storage";
+import { removeSavedLobby, saveLobby } from "@/features/lobby-session/storage";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
 export function useLobby() {
   const router = useRouter();
-  const { 
-    lobby, 
-    playerId, 
-    connectionState, 
-    refreshLobby, 
-    connectedPlayerIds, 
-    error: sessionError 
+  const {
+    lobby,
+    lobbyId,
+    playerId,
+    connectionState,
+    refreshLobby,
+    connectedPlayerIds,
+    error: sessionError
   } = useLobbySession();
 
   const [isAddingBot, setIsAddingBot] = useState<boolean>(false);
@@ -42,17 +43,20 @@ export function useLobby() {
       setIsLeaving(false);
       return;
     }
-    clearStoredSession();
+    removeSavedLobby(lobby.lobbyId);
     router.push("/");
   };
 
-  const handleExitToHome = () => {
+  /**
+   * Indietro senza uscire dalla lobby: salva lobby+player nella lista
+   * (resta membro, il secret resta nel cookie) e torna alla home,
+   * dove la partita in pausa resta visibile e rientrabile.
+   */
+  const handleBackToHome = () => {
     setActionError(null);
-    if (!lobby?.lobbyId) {
-      router.push("/");
-      return;
+    if (lobby?.lobbyId && playerId !== null) {
+      saveLobby(lobby.lobbyId, playerId);
     }
-    markVoluntaryLeave(lobby.lobbyId);
     router.push("/");
   };
 
@@ -142,7 +146,7 @@ export function useLobby() {
 
   useEffect(() => {
     if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
-      clearStoredSession();
+      removeSavedLobby(lobby.lobbyId);
       router.push("/");
       return;
     }
@@ -150,6 +154,7 @@ export function useLobby() {
 
   return {
     lobby,
+    lobbyId,
     playerId,
     connectionState,
     connectedPlayerIds,
@@ -165,7 +170,7 @@ export function useLobby() {
     isSavingConfig,
     setActiveBotSlot,
     handleLeaveLobby,
-    handleExitToHome,
+    handleBackToHome,
     handleStartGame,
     handleDiscardPausedGame,
     handlePauseGame,

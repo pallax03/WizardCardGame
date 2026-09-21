@@ -2,7 +2,7 @@
 
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { Loader2, Pause } from "lucide-react";
+import { ArrowLeft, Loader2, Pause } from "lucide-react";
 
 interface GameHeaderProps {
   lobbyId: string;
@@ -13,6 +13,8 @@ interface GameHeaderProps {
   canPauseExit?: boolean;
   isPausing?: boolean;
   onPauseExit?: () => void;
+  isGoingHome?: boolean;
+  onBackHome?: () => void;
 }
 
 export function GameHeader({
@@ -24,10 +26,26 @@ export function GameHeader({
   canPauseExit,
   isPausing,
   onPauseExit,
+  isGoingHome,
+  onBackHome,
 }: GameHeaderProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl bg-zinc-950/90 border border-amber-500/30 shadow-2xl backdrop-blur-md">
       <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+        {onBackHome && (
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={isGoingHome || isPausing}
+            onClick={onBackHome}
+            title="Torna alla home senza uscire dalla lobby (la partita resta salvata)"
+            className="gap-1.5 text-zinc-400 hover:text-zinc-100 text-xs font-semibold"
+          >
+            {isGoingHome ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowLeft className="w-3.5 h-3.5" />}
+            Home
+          </Button>
+        )}
         <h1 className="text-lg sm:text-xl font-black tracking-wider text-amber-400 flex items-center gap-2">
           <span>♦</span> WIZARD POKER TABLE
         </h1>

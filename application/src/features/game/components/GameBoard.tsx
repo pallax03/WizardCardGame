@@ -119,6 +119,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const [isCardDragging, setIsCardDragging] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
   const [isPausing, setIsPausing] = useState(false);
+  const [isGoingHome, setIsGoingHome] = useState(false);
   const [pauseError, setPauseError] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -197,6 +198,41 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     router.push(`/lobby/${lobbyId}`);
   };
 
+  /**
+   * Indietro verso la home senza uscire dalla lobby: se la partita è in corso
+   * la mette prima in pausa, poi salva lobby+player nella lista e naviga.
+   * Dalla home la partita resta visibile e rientrabile.
+   */
+  const handleBackHome = async () => {
+    if (isGoingHome || isPausing || !lobbyId) return;
+    setPauseError(null);
+    if (lobby?.status === "IN_GAME" || lobby?.status === "DISCONNECTING") {
+      setIsPausing(true);
+      try {
+        const { pauseGameAction } = await import("@/features/lobby/api");
+        const { getErrorMessage } = await import("@/ui/i18n/errors");
+        const result = await pauseGameAction(lobbyId);
+        if (result.error) {
+          setPauseError(getErrorMessage(result.error));
+          setIsPausing(false);
+          return;
+        }
+      } catch {
+        setPauseError("Impossibile mettere in pausa la partita.");
+        setIsPausing(false);
+        return;
+      }
+      setIsPausing(false);
+    }
+    setIsGoingHome(true);
+    try {
+      const { saveLobby } = await import("@/features/lobby-session/storage");
+      if (playerId !== null) saveLobby(lobbyId, playerId);
+    } catch {
+    }
+    router.push("/");
+  };
+
   const canPauseExit =
     !isGameEnded && (lobby?.status === "IN_GAME" || lobby?.status === "DISCONNECTING");
 
@@ -224,6 +260,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         canPauseExit={canPauseExit}
         isPausing={isPausing}
         onPauseExit={() => void handlePauseAndExit()}
+        isGoingHome={isGoingHome}
+        onBackHome={() => void handleBackHome()}
       />
 
       {pauseError && (

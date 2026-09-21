@@ -16,7 +16,7 @@ import { useParams, useRouter } from "next/navigation";
 import type { ChatMessage } from "@/features/chat/types";
 import { getLobbyState, getLobbyWsSecret } from "./api";
 import { connectLobbySocket, type LobbySocket } from "./lobbySocket";
-import { clearStoredSession, readStoredSession, writeStoredSession, clearVoluntaryLeave } from "./storage";
+import { findSavedLobby, removeSavedLobby, saveLobby } from "./storage";
 import type {
   LobbySessionAction,
   LobbySessionState,
@@ -128,24 +128,22 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     const urlPlayerId = new URLSearchParams(window.location.search).get("playerId");
-    const stored = readStoredSession();
-    const candidate =
-      urlPlayerId ?? (stored.lobbyId === lobbyId && stored.playerId !== null ? String(stored.playerId) : null);
+    const saved = findSavedLobby(lobbyId);
+    const candidate = urlPlayerId ?? (saved ? String(saved.playerId) : null);
     const playerId = candidate === null ? Number.NaN : Number.parseInt(candidate, 10);
 
     if (!Number.isInteger(playerId) || playerId < 0) {
-      clearStoredSession();
+      // Nessuna identità per questa lobby: torna alla lista senza toccare le altre salvate.
+      removeSavedLobby(lobbyId);
       router.replace("/");
       return;
     }
 
     if (urlPlayerId) {
-      writeStoredSession(lobbyId, urlPlayerId);
+      saveLobby(lobbyId, urlPlayerId);
       if (typeof window !== "undefined" && !window.location.pathname.endsWith("/game")) {
         router.replace(`/lobby/${lobbyId}`);
       }
-    } else if (stored.lobbyId === lobbyId && stored.playerId !== null) {
-      clearVoluntaryLeave();
     }
 
     queueMicrotask(() => dispatch({ type: "identity/resolved", playerId }));
