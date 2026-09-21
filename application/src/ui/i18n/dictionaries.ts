@@ -89,11 +89,10 @@ export const it = {
     finishedNotice: "Partita conclusa — guarda la classifica o torna alla lobby per iniziarne una nuova.",
     config: {
       title: "Configurazione",
-      timer: "Timer turno (s)",
+      timer: "Timer turno (secondi)",
       maxStrikes: "Strike massimi",
       save: "Salva",
       saving: "Salvataggio...",
-      hint: "Timer 15–90s, strike 1–3. Modificabile in attesa o in pausa.",
     },
     pausedSummary: {
       title: "Partita in pausa",
@@ -262,11 +261,10 @@ export const en = {
     finishedNotice: "Game finished — check the standings or return to the lobby to start a new one.",
     config: {
       title: "Configuration",
-      timer: "Turn timer (s)",
+      timer: "Turn timer (seconds)",
       maxStrikes: "Max strikes",
       save: "Save",
       saving: "Saving...",
-      hint: "Timer 15–90s, strikes 1–3. Editable while waiting or paused.",
     },
     pausedSummary: {
       title: "Paused game",
