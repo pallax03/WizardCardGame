@@ -18,6 +18,12 @@ export const it = {
       label: "Inserisci Codice Lobby:",
       lobbyCodePlaceholder: "Es. 8X92",
     },
+    resume: {
+      title: "Hai una partita salvata",
+      description: "Ti sei disconnesso, la lobby ti aspetta.",
+      rejoin: "Rientra in lobby",
+      dismiss: "Ignora",
+    },
   },
   lobby: {
     loading: "Caricamento lobby in corso...",
@@ -45,8 +51,14 @@ export const it = {
     },
     actions: {
       leave: "Abbandona",
+      leaveConfirm: "Sei sicuro di voler abbandonare?",
+      leaving: "Uscita...",
+      exitHome: "Torna alle lobby",
+      exitHomeHint: "Ti disconnetti (risulti offline), la partita resta salvata.",
       startGame: "Avvia Partita",
       resumeGame: "Riprendi Partita",
+      pauseGame: "Metti in pausa",
+      pausing: "Pausa in corso...",
       discardPaused: "Elimina partita in pausa",
       discardPausedConfirm: "Confermi? La partita salvata verrà eliminata",
       discardFinished: "Elimina partita conclusa",
@@ -55,6 +67,17 @@ export const it = {
       discardPausedHint: "Elimina la partita salvata per modificare i giocatori o iniziarne una nuova.",
     },
     pausedNotice: "Partita in pausa — premi Riprendi Partita per continuare.",
+    disconnectingNotice: "Un giocatore è offline — la partita riprenderà al rientro o i bot lo sostituiranno allo scadere del timer.",
+    disconnectingTimer: (seconds: number) => `Sostituzione con bot tra ${seconds}s`,
+    finishedNotice: "Partita conclusa — guarda la classifica o torna alla lobby per iniziarne una nuova.",
+    config: {
+      title: "Configurazione",
+      timer: "Timer turno (s)",
+      maxStrikes: "Strike massimi",
+      save: "Salva",
+      saving: "Salvataggio...",
+      hint: "Timer 15–90s, strike 1–3. Modificabile in attesa o in pausa.",
+    },
     pausedSummary: {
       title: "Partita in pausa",
       titleEnded: "Partita conclusa",
@@ -123,6 +146,7 @@ export const it = {
     NotEnoughPlayers: "Non ci sono abbastanza giocatori per iniziare la partita.",
     NotAuthenticated: "Non sei autenticato.",
     GameNotFound: "Partita non trovata.",
+    ConfigurationInvalid: "Configurazione non valida (timer 15–90, strike 1–3).",
   },
   ui: {
     close: "Chiudi",
@@ -149,6 +173,12 @@ export const en = {
     joinSection: {
       label: "Enter Lobby Code:",
       lobbyCodePlaceholder: "E.g. 8X92",
+    },
+    resume: {
+      title: "You have a saved game",
+      description: "You disconnected, the lobby is waiting for you.",
+      rejoin: "Rejoin lobby",
+      dismiss: "Dismiss",
     },
   },
   lobby: {
@@ -177,8 +207,14 @@ export const en = {
     },
     actions: {
       leave: "Leave",
+      leaveConfirm: "Are you sure you want to leave?",
+      leaving: "Leaving...",
+      exitHome: "Back to lobbies",
+      exitHomeHint: "You disconnect (appear offline), the game stays saved.",
       startGame: "Start Game",
       resumeGame: "Resume Game",
+      pauseGame: "Pause game",
+      pausing: "Pausing...",
       discardPaused: "Discard paused game",
       discardPausedConfirm: "Confirm? The saved game will be deleted",
       discardFinished: "Discard finished game",
@@ -187,6 +223,17 @@ export const en = {
       discardPausedHint: "Delete the saved game to edit players or start a new one.",
     },
     pausedNotice: "Game paused — press Resume Game to continue.",
+    disconnectingNotice: "A player is offline — the game resumes on return or a bot replaces them when the timer expires.",
+    disconnectingTimer: (seconds: number) => `Bot replacement in ${seconds}s`,
+    finishedNotice: "Game finished — check the standings or return to the lobby to start a new one.",
+    config: {
+      title: "Configuration",
+      timer: "Turn timer (s)",
+      maxStrikes: "Max strikes",
+      save: "Save",
+      saving: "Saving...",
+      hint: "Timer 15–90s, strikes 1–3. Editable while waiting or paused.",
+    },
     pausedSummary: {
       title: "Paused game",
       titleEnded: "Finished game",
@@ -255,6 +302,7 @@ export const en = {
     NotEnoughPlayers: "Not enough players to start the game.",
     NotAuthenticated: "You are not authenticated.",
     GameNotFound: "Game not found.",
+    ConfigurationInvalid: "Invalid configuration (timer 15–90, strikes 1–3).",
   },
   ui: {
     close: "Close",

@@ -11,6 +11,8 @@ import { LobbyHeader } from "@/features/lobby/components/LobbyHeader";
 import { PlayerList } from "@/features/lobby/components/PlayerList";
 import { LobbyActions } from "@/features/lobby/components/LobbyActions";
 import { PausedGameSummary } from "@/features/lobby/components/PausedGameSummary";
+import { LobbyConfiguration } from "@/features/lobby/components/LobbyConfiguration";
+import { DisconnectingBanner } from "@/features/lobby/components/DisconnectingBanner";
 import { useLobbyGameSnapshot } from "../hooks/useLobbyGameSnapshot";
 import { LobbyViewProps } from "../types";
 import { getErrorMessage } from "@/ui/i18n/errors";
@@ -30,10 +32,15 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     isLeaving,
     isStarting,
     isDiscarding,
+    isPausing,
+    isSavingConfig,
     setActiveBotSlot,
     handleLeaveLobby,
+    handleExitToHome,
     handleStartGame,
     handleDiscardPausedGame,
+    handlePauseGame,
+    handleUpdateConfiguration,
     handleAddBot,
     handleRemoveBot,
   } = useLobby();
@@ -43,10 +50,13 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   }, [sessionError]);
 
   const players = lobby?.players || [];
-  const isPaused = lobby?.status === "PAUSED";
-  const isFinished = lobby?.status === "FINISHED";
-  const isWaiting = lobby?.status === "WAITING";
+  const status = lobby?.status;
+  const isPaused = status === "PAUSED";
+  const isFinished = status === "FINISHED";
+  const isWaiting = status === "WAITING" || status === undefined;
+  const isDisconnecting = status === "DISCONNECTING";
   const canManagePlayers = isWaiting;
+  const canEditConfig = isWaiting || isPaused;
 
   const snapshotEnabled = Boolean(lobby?.lobbyId) && (isPaused || isFinished || isWaiting);
   const {
@@ -55,7 +65,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     loadFailed: isSnapshotFailed,
   } = useLobbyGameSnapshot(lobby?.lobbyId ?? null, playerId, snapshotEnabled, lobby?.status);
   const showSummary = isPaused || isFinished || savedBoard !== null;
-  const showDiscard = isPaused || isFinished || savedBoard !== null;
+  const showDiscard = isPaused || isFinished;
 
   if (!lobby && connectionState === "connecting") {
     return (
@@ -90,6 +100,16 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         </div>
       )}
 
+      {isDisconnecting && (
+        <DisconnectingBanner timerSeconds={lobby?.configuration?.timer ?? 30} />
+      )}
+
+      {isFinished && (
+        <div className="bg-amber-500/10 border border-amber-500/30 text-amber-300 px-4 py-2 rounded-md text-sm text-center font-semibold">
+          🏆 {lobbyI18n.finishedNotice}
+        </div>
+      )}
+
       {actionError && (
         <div className="bg-red-500/10 border border-red-500/20 text-red-400 px-4 py-2 rounded-md text-xs text-center">
           {actionError}
@@ -121,6 +141,16 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         onAddBot={handleAddBot}
         onRemoveBot={handleRemoveBot}
       />
+
+      {lobby?.configuration && (
+        <LobbyConfiguration
+          timer={lobby.configuration.timer}
+          maxStrikes={lobby.configuration.maxStrikes}
+          canEdit={canEditConfig}
+          isSaving={isSavingConfig}
+          onSave={handleUpdateConfiguration}
+        />
+      )}
       
       <LobbyActions
         isLeaving={isLeaving}
@@ -132,6 +162,10 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         onDiscard={showDiscard ? handleDiscardPausedGame : undefined}
         disableStart={isFinished}
         discardMode={isFinished ? "finished" : "paused"}
+        status={status}
+        isPausing={isPausing}
+        onPause={isDisconnecting ? handlePauseGame : undefined}
+        onExitHome={handleExitToHome}
       />
     </div>
   );

@@ -9,11 +9,16 @@ export type LobbyPlayer = {
   isOnline?: boolean;
 };
 
+export type LobbyConfiguration = {
+  timer: number;
+  maxStrikes: number;
+};
+
 export type LobbyState = {
   lobbyId: string;
   players: LobbyPlayer[];
   status?: "WAITING" | "IN_GAME" | "DISCONNECTING" | "PAUSED" | "FINISHED";
-  configuration?: unknown; //todo: add in getLobbyState endpoint GameConfiguration type
+  configuration?: LobbyConfiguration;
 };
 
 export type ServerEvent = ChatMessage | SystemMessage | EventMessage;

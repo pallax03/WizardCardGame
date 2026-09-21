@@ -50,4 +50,8 @@ export interface LobbyActionsProps {
   onDiscard?: () => void;
   disableStart?: boolean;
   discardMode?: "paused" | "finished";
+  status?: "WAITING" | "IN_GAME" | "DISCONNECTING" | "PAUSED" | "FINISHED";
+  isPausing?: boolean;
+  onPause?: () => void;
+  onExitHome?: () => void;
 }

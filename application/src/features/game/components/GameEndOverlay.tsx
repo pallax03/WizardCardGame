@@ -17,6 +17,7 @@ interface GameEndOverlayProps {
   sortedScoreboard: ScoreItem[];
   playerId?: number | null;
   onReturnToLobby: () => void;
+  isReturning?: boolean;
 }
 
 export function GameEndOverlay({
@@ -24,6 +25,7 @@ export function GameEndOverlay({
   sortedScoreboard,
   playerId,
   onReturnToLobby,
+  isReturning,
 }: GameEndOverlayProps) {
   const { width, height } = useWindowSize();
 
@@ -97,9 +99,10 @@ export function GameEndOverlay({
 
           <Button
             onClick={onReturnToLobby}
+            disabled={isReturning}
             className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-6 text-base tracking-wide uppercase transition-all shadow-lg hover:shadow-amber-500/25"
           >
-            Torna Alla Lobby
+            {isReturning ? "Uscita..." : "Torna Alla Lobby"}
           </Button>
         </CardContent>
       </UiCard>

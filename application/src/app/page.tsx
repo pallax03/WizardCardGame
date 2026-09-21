@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/api";
-import { readStoredSession } from "@/features/lobby-session/storage";
+import { clearVoluntaryLeave, markVoluntaryLeave, readStoredSession, readVoluntaryLeave, writeStoredSession } from "@/features/lobby-session/storage";
 import { t } from "@/ui/i18n/core";
 const homeI18n = t("home");
 import { Button } from "@/ui/components/button";
@@ -20,6 +20,7 @@ export default function Home() {
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedLobbyId, setSavedLobbyId] = useState<string | null>(null);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -28,17 +29,24 @@ export default function Home() {
     const stored = readStoredSession();
     const storedLobbyId = stored.lobbyId;
     const storedPlayerId = stored.playerId !== null ? String(stored.playerId) : null;
-    
-    if (storedLobbyId && storedPlayerId && !lobbyId) {
-      router.push(`/lobby/${storedLobbyId}`);
-      return;
-    }
+    const voluntaryLeave = readVoluntaryLeave();
 
     if (lobbyId) {
       setTimeout(() => {
         setLobbyIdToJoin(lobbyId);
         setShowJoinInput(true);
       }, 0);
+      return;
+    }
+
+    if (storedLobbyId && storedPlayerId) {
+      if (voluntaryLeave === storedLobbyId) {
+        const id = storedLobbyId;
+        queueMicrotask(() => setSavedLobbyId(id));
+        return;
+      }
+      router.push(`/lobby/${storedLobbyId}`);
+      return;
     }
   }, [router]);
 
@@ -71,6 +79,21 @@ export default function Home() {
     }
   };
 
+  const handleRejoinSaved = () => {
+    if (!savedLobbyId) return;
+    const stored = readStoredSession();
+    if (stored.playerId !== null) {
+      writeStoredSession(savedLobbyId, stored.playerId);
+    }
+    clearVoluntaryLeave();
+    router.push(`/lobby/${savedLobbyId}`);
+  };
+
+  const handleDismissSaved = () => {
+    if (savedLobbyId) markVoluntaryLeave(savedLobbyId);
+    setSavedLobbyId(null);
+  };
+
   return (
     <main className="app-page relative flex flex-col items-center justify-center p-4 selection:bg-purple-500/30 overflow-hidden">
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-15%,rgba(99,102,241,0.28),transparent_42%)]" />
@@ -96,6 +119,24 @@ export default function Home() {
 
       <div className="relative z-10 w-full max-w-md space-y-8">
 
+        {savedLobbyId && (
+          <Card className="bg-sky-950/60 border-sky-500/30 backdrop-blur-md shadow-2xl">
+            <CardHeader>
+              <CardTitle className="text-base text-sky-200 font-semibold">{homeI18n.resume.title}</CardTitle>
+              <CardDescription className="text-sky-300/70 text-sm">
+                {homeI18n.resume.description} <span className="font-mono">{savedLobbyId}</span>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="flex gap-2">
+              <Button type="button" onClick={handleRejoinSaved} size="lg" className="flex-1 gap-2">
+                {homeI18n.resume.rejoin} <ArrowRight className="w-4 h-4" />
+              </Button>
+              <Button type="button" onClick={handleDismissSaved} variant="outline" size="lg">
+                <X className="w-4 h-4" /> {homeI18n.resume.dismiss}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5" /> {homeI18n.badge}
@@ -114,7 +155,6 @@ export default function Home() {
             <CardTitle className="text-lg text-zinc-100 font-semibold">{homeI18n.card.title}</CardTitle>
             <CardDescription className="text-zinc-400 text-sm">{homeI18n.card.description}</CardDescription>
           </CardHeader>
-
           <CardContent className="space-y-5">
             <div className="space-y-2">
               <Input

@@ -16,7 +16,7 @@ import { useParams, useRouter } from "next/navigation";
 import type { ChatMessage } from "@/features/chat/types";
 import { getLobbyState, getLobbyWsSecret } from "./api";
 import { connectLobbySocket, type LobbySocket } from "./lobbySocket";
-import { clearStoredSession, readStoredSession, writeStoredSession } from "./storage";
+import { clearStoredSession, readStoredSession, writeStoredSession, clearVoluntaryLeave } from "./storage";
 import type {
   LobbySessionAction,
   LobbySessionState,
@@ -144,6 +144,8 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       if (typeof window !== "undefined" && !window.location.pathname.endsWith("/game")) {
         router.replace(`/lobby/${lobbyId}`);
       }
+    } else if (stored.lobbyId === lobbyId && stored.playerId !== null) {
+      clearVoluntaryLeave();
     }
 
     queueMicrotask(() => dispatch({ type: "identity/resolved", playerId }));

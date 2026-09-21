@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addBotAction, discardPausedGameAction, leaveLobbyAction, startGameAction } from "@/features/lobby/api";
+import { addBotAction, discardPausedGameAction, leaveLobbyAction, pauseGameAction, startGameAction, updateConfigurationAction } from "@/features/lobby/api";
 import { useLobbySession } from "@/features/lobby-session";
-import { clearStoredSession } from "@/features/lobby-session/storage";
+import { clearStoredSession, markVoluntaryLeave } from "@/features/lobby-session/storage";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
 export function useLobby() {
@@ -24,11 +24,17 @@ export function useLobby() {
   const [isLeaving, setIsLeaving] = useState<boolean>(false);
   const [isStarting, setIsStarting] = useState<boolean>(false);
   const [isDiscarding, setIsDiscarding] = useState<boolean>(false);
+  const [isPausing, setIsPausing] = useState<boolean>(false);
+  const [isSavingConfig, setIsSavingConfig] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleLeaveLobby = async () => {
     setActionError(null);
     if (!lobby?.lobbyId || playerId === null || isLeaving) return;
+    if (lobby.status !== "WAITING") {
+      setActionError(getErrorMessage("GameInProgress"));
+      return;
+    }
     setIsLeaving(true);
     const result = await leaveLobbyAction(lobby.lobbyId, playerId);
     if (result?.error) {
@@ -37,6 +43,16 @@ export function useLobby() {
       return;
     }
     clearStoredSession();
+    router.push("/");
+  };
+
+  const handleExitToHome = () => {
+    setActionError(null);
+    if (!lobby?.lobbyId) {
+      router.push("/");
+      return;
+    }
+    markVoluntaryLeave(lobby.lobbyId);
     router.push("/");
   };
 
@@ -98,6 +114,32 @@ export function useLobby() {
     setIsDiscarding(false);
   };
 
+  const handlePauseGame = async () => {
+    if (!lobby?.lobbyId || isPausing) return;
+    setActionError(null);
+    setIsPausing(true);
+    const result = await pauseGameAction(lobby.lobbyId);
+    if (result.error) {
+      setActionError(getErrorMessage(result.error));
+    } else {
+      await refreshLobby();
+    }
+    setIsPausing(false);
+  };
+
+  const handleUpdateConfiguration = async (timer: number, maxStrikes: number) => {
+    if (!lobby?.lobbyId || isSavingConfig) return;
+    setActionError(null);
+    setIsSavingConfig(true);
+    const result = await updateConfigurationAction(lobby.lobbyId, { timer, maxStrikes });
+    if (result.error) {
+      setActionError(getErrorMessage(result.error));
+    } else {
+      await refreshLobby();
+    }
+    setIsSavingConfig(false);
+  };
+
   useEffect(() => {
     if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
       clearStoredSession();
@@ -119,10 +161,15 @@ export function useLobby() {
     isLeaving,
     isStarting,
     isDiscarding,
+    isPausing,
+    isSavingConfig,
     setActiveBotSlot,
     handleLeaveLobby,
+    handleExitToHome,
     handleStartGame,
     handleDiscardPausedGame,
+    handlePauseGame,
+    handleUpdateConfiguration,
     handleAddBot,
     handleRemoveBot,
   };

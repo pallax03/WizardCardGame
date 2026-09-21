@@ -150,3 +150,37 @@ export async function discardPausedGameAction(
 
   return { success: true };
 }
+
+export async function pauseGameAction(
+  lobbyId: string
+): Promise<{ success?: boolean; error?: string }> {
+  const { error } = await safeApiFetch(`/api/lobby/${lobbyId}/pause`, {
+    method: "POST",
+    headers: await authHeadersForLobby(lobbyId)
+  });
+
+  if (error) {
+    console.error("Error pausing game:", error);
+    return { error };
+  }
+
+  return { success: true };
+}
+
+export async function updateConfigurationAction(
+  lobbyId: string,
+  configuration: { timer: number; maxStrikes: number }
+): Promise<{ success?: boolean; error?: string }> {
+  const { error } = await safeApiFetch(`/api/lobby/${lobbyId}/configuration`, {
+    method: "POST",
+    headers: await authHeadersForLobby(lobbyId),
+    body: configuration,
+  });
+
+  if (error) {
+    console.error("Error updating configuration:", error);
+    return { error };
+  }
+
+  return { success: true };
+}

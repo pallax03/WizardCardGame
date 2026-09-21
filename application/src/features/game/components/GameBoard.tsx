@@ -116,6 +116,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   } = useGameBoard(customPlayerId);
 
   const [isCardDragging, setIsCardDragging] = useState(false);
+  const [isReturning, setIsReturning] = useState(false);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
   const players = lobby?.players ?? [];
@@ -156,7 +157,14 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       .sort((a, b) => b.score - a.score);
   }, [gameState.scoreboard, playersMap]);
 
-  const handleReturnToLobby = () => {
+  const handleReturnToLobby = async () => {
+    if (isReturning) return;
+    setIsReturning(true);
+    try {
+      const { discardPausedGameAction } = await import("@/features/lobby/api");
+      await discardPausedGameAction(lobbyId);
+    } catch {
+    }
     router.push(lobbyId ? `/lobby/${lobbyId}` : "/");
   };
 
@@ -171,7 +179,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         isGameEnded={isGameEnded}
         sortedScoreboard={sortedScoreboard}
         playerId={playerId}
-        onReturnToLobby={handleReturnToLobby}
+        onReturnToLobby={() => void handleReturnToLobby()}
+        isReturning={isReturning}
       />
 
       <GameHeader
