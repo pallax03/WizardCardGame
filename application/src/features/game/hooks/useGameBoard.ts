@@ -218,20 +218,20 @@ export function useGameBoard(customPlayerId?: number) {
     if (!Number.isFinite(timer) || timer <= 0 || !player) return null;
     const strikes = Math.max(0, Number(player.strikes ?? 0));
     return Math.max(1, timer / 2 ** strikes);
-  }, [gameState.currentTurn.playerId, latestTurnEvent, lobby?.configuration, lobby?.players]);
+  }, [gameState.currentTurn.playerId, latestTurnEvent, lobby]);
   const [turnTimerSeconds, setTurnTimerSeconds] = useState<number | null>(null);
 
   useEffect(() => {
     if (!latestTurnEvent || turnTimerDuration === null) {
-      setTurnTimerSeconds(null);
+      queueMicrotask(() => setTurnTimerSeconds(null));
       return;
     }
     const deadline = Date.now() + turnTimerDuration * 1000;
-    const updateTimer = () => {
+    const initialSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    queueMicrotask(() => setTurnTimerSeconds(initialSeconds));
+    const interval = setInterval(() => {
       setTurnTimerSeconds(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
-    };
-    updateTimer();
-    const interval = setInterval(updateTimer, 200);
+    }, 200);
     return () => clearInterval(interval);
   }, [latestTurnEvent, turnTimerDuration]);
 

@@ -7,9 +7,10 @@ export type LobbyPlayer = {
   name: string;
   difficulty?: string | null;
   isOnline?: boolean;
+  strikes?: number;
 };
 
-export type LobbyConfiguration = {
+export type GameConfiguration = {
   timer: number;
   maxStrikes: number;
 };
@@ -18,7 +19,7 @@ export type LobbyState = {
   lobbyId: string;
   players: LobbyPlayer[];
   status?: "WAITING" | "IN_GAME" | "DISCONNECTING" | "PAUSED" | "FINISHED";
-  configuration?: LobbyConfiguration;
+  configuration?: GameConfiguration;
 };
 
 export type ServerEvent = ChatMessage | SystemMessage | EventMessage;
