@@ -23,6 +23,8 @@ import sttp.tapir.server.interceptor.log.DefaultServerLog
 import sttp.tapir.server.model.ValuedEndpointOutput
 import sttp.tapir.server.vertx.{VertxFutureServerInterpreter, VertxFutureServerOptions}
 
+import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
+
 class HttpServerVerticle(
     serverEndpoints: List[ServerEndpoint[Any, Future]],
     port: Int
@@ -31,13 +33,18 @@ class HttpServerVerticle(
   override def start(): Unit =
     val router = Router.router(vertx)
 
+    val prometheusMetrics = PrometheusMetrics.default[Future]()
+
     val serverOptions = VertxFutureServerOptions.customiseInterceptors
       .serverLog(serverLog)
       .exceptionHandler(exceptionHandler)
+      .metricsInterceptor(prometheusMetrics.metricsInterceptor())
       .options
 
     val interpreter = VertxFutureServerInterpreter(serverOptions)
+    
     serverEndpoints.foreach(endpoint => interpreter.route(endpoint)(router))
+    interpreter.route(prometheusMetrics.metricsEndpoint)(router)
 
     vertx
       .createHttpServer()
