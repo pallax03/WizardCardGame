@@ -36,8 +36,9 @@ export type Trump =
 // --- Scoreboard Types ---
 export interface ScoreEntry {
   round: number;
-  score: number;
+  tricksWon: number;
   bid: number;
+  score: number;
 }
 
 // Map from PlayerId (as string key) to list of score entries for each round
