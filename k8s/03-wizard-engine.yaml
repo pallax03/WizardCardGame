@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wizard-engine
+  labels:
+    app: wizard-engine
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: wizard-engine
+  template:
+    metadata:
+      labels:
+        app: wizard-engine
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "5001"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: wizard-engine
+        image: wizardcardgame-wizard-engine:latest
+        ports:
+        - containerPort: 5001
+        - containerPort: 5002
+        envFrom:
+        - configMapRef:
+            name: wizard-config
+        env:
+        - name: ROLE
+          value: "engine"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: wizard-secrets
+              key: REDIS_PASSWORD
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: wizard-engine-service
+spec:
+  type: LoadBalancer
+  selector:
+    app: wizard-engine
+  ports:
+    - name: http
+      protocol: TCP
+      port: 5001
+      targetPort: 5001
+    - name: ws
+      protocol: TCP
+      port: 5002
+      targetPort: 5002
