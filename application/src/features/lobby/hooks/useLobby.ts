@@ -2,20 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addBotAction, discardPausedGameAction, leaveLobbyAction, startGameAction } from "@/features/lobby/api";
+import { addBotAction, discardPausedGameAction, leaveLobbyAction, pauseGameAction, startGameAction, updateConfigurationAction } from "@/features/lobby/api";
 import { useLobbySession } from "@/features/lobby-session";
-import { clearStoredSession } from "@/features/lobby-session/storage";
+import { removeSavedLobby, saveLobby } from "@/features/lobby-session/storage";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
 export function useLobby() {
   const router = useRouter();
-  const { 
-    lobby, 
-    playerId, 
-    connectionState, 
-    refreshLobby, 
-    connectedPlayerIds, 
-    error: sessionError 
+  const {
+    lobby,
+    lobbyId,
+    playerId,
+    connectionState,
+    refreshLobby,
+    reconnect,
+    awaitOpen,
+    connectedPlayerIds,
+    error: sessionError
   } = useLobbySession();
 
   const [isAddingBot, setIsAddingBot] = useState<boolean>(false);
@@ -24,11 +27,17 @@ export function useLobby() {
   const [isLeaving, setIsLeaving] = useState<boolean>(false);
   const [isStarting, setIsStarting] = useState<boolean>(false);
   const [isDiscarding, setIsDiscarding] = useState<boolean>(false);
+  const [isPausing, setIsPausing] = useState<boolean>(false);
+  const [isSavingConfig, setIsSavingConfig] = useState<boolean>(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
   const handleLeaveLobby = async () => {
     setActionError(null);
     if (!lobby?.lobbyId || playerId === null || isLeaving) return;
+    if (lobby.status !== "WAITING") {
+      setActionError(getErrorMessage("GameInProgress"));
+      return;
+    }
     setIsLeaving(true);
     const result = await leaveLobbyAction(lobby.lobbyId, playerId);
     if (result?.error) {
@@ -36,7 +45,15 @@ export function useLobby() {
       setIsLeaving(false);
       return;
     }
-    clearStoredSession();
+    removeSavedLobby(lobby.lobbyId);
+    router.push("/");
+  };
+
+  const handleBackToHome = () => {
+    setActionError(null);
+    if (lobby?.lobbyId && playerId !== null) {
+      saveLobby(lobby.lobbyId, playerId);
+    }
     router.push("/");
   };
 
@@ -45,6 +62,16 @@ export function useLobby() {
 
     setActionError(null);
     setIsStarting(true);
+
+    if (connectionState !== "open") {
+      reconnect();
+      const connected = await awaitOpen(8000);
+      if (!connected) {
+        setActionError(getErrorMessage("RECONNECT_FAILED"));
+        setIsStarting(false);
+        return;
+      }
+    }
 
     const result = await startGameAction(lobby.lobbyId);
 
@@ -98,9 +125,35 @@ export function useLobby() {
     setIsDiscarding(false);
   };
 
+  const handlePauseGame = async () => {
+    if (!lobby?.lobbyId || isPausing) return;
+    setActionError(null);
+    setIsPausing(true);
+    const result = await pauseGameAction(lobby.lobbyId);
+    if (result.error) {
+      setActionError(getErrorMessage(result.error));
+    } else {
+      await refreshLobby();
+    }
+    setIsPausing(false);
+  };
+
+  const handleUpdateConfiguration = async (timer: number, maxStrikes: number) => {
+    if (!lobby?.lobbyId || isSavingConfig) return;
+    setActionError(null);
+    setIsSavingConfig(true);
+    const result = await updateConfigurationAction(lobby.lobbyId, { timer, maxStrikes });
+    if (result.error) {
+      setActionError(getErrorMessage(result.error));
+    } else {
+      await refreshLobby();
+    }
+    setIsSavingConfig(false);
+  };
+
   useEffect(() => {
     if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
-      clearStoredSession();
+      removeSavedLobby(lobby.lobbyId);
       router.push("/");
       return;
     }
@@ -108,8 +161,10 @@ export function useLobby() {
 
   return {
     lobby,
+    lobbyId,
     playerId,
     connectionState,
+    reconnect,
     connectedPlayerIds,
     sessionError,
     actionError,
@@ -119,10 +174,15 @@ export function useLobby() {
     isLeaving,
     isStarting,
     isDiscarding,
+    isPausing,
+    isSavingConfig,
     setActiveBotSlot,
     handleLeaveLobby,
+    handleBackToHome,
     handleStartGame,
     handleDiscardPausedGame,
+    handlePauseGame,
+    handleUpdateConfiguration,
     handleAddBot,
     handleRemoveBot,
   };

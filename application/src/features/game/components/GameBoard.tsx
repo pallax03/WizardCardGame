@@ -87,6 +87,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     canBid,
     canPlay,
     turnPrompt,
+    turnTimerSeconds,
     isCardPlayable,
     forbiddenBid,
     bidsTotal,
@@ -116,6 +117,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   } = useGameBoard(customPlayerId);
 
   const [isCardDragging, setIsCardDragging] = useState(false);
+  const [isReturning, setIsReturning] = useState(false);
+  const [isPausing, setIsPausing] = useState(false);
+  const [isGoingHome, setIsGoingHome] = useState(false);
+  const [pauseError, setPauseError] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
   const players = lobby?.players ?? [];
@@ -156,9 +161,80 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       .sort((a, b) => b.score - a.score);
   }, [gameState.scoreboard, playersMap]);
 
-  const handleReturnToLobby = () => {
+  const handleReturnToLobby = async () => {
+    if (isReturning) return;
+    setIsReturning(true);
+    try {
+      const { discardPausedGameAction } = await import("@/features/lobby/api");
+      await discardPausedGameAction(lobbyId);
+    } catch {
+    }
     router.push(lobbyId ? `/lobby/${lobbyId}` : "/");
   };
+
+  /**
+   * Mette in pausa la partita (POST /pause) e torna alla lobby,
+   * stesso stato PAUSED che si ottiene con disconnessione + pausa.
+   * Se la pausa fallisce si resta in partita e si mostra l'errore.
+   */
+  const handlePauseAndExit = async () => {
+    if (isPausing || !lobbyId) return;
+    setPauseError(null);
+    setIsPausing(true);
+    try {
+      const { pauseGameAction } = await import("@/features/lobby/api");
+      const { getErrorMessage } = await import("@/ui/i18n/errors");
+      const result = await pauseGameAction(lobbyId);
+      if (result.error) {
+        setPauseError(getErrorMessage(result.error));
+        setIsPausing(false);
+        return;
+      }
+    } catch {
+      setPauseError("Impossibile mettere in pausa la partita.");
+      setIsPausing(false);
+      return;
+    }
+    router.push(`/lobby/${lobbyId}`);
+  };
+
+  /**
+   * Indietro verso la home senza uscire dalla lobby: se la partita è in corso
+   * la mette prima in pausa, poi salva lobby+player nella lista e naviga.
+   * Dalla home la partita resta visibile e rientrabile.
+   */
+  const handleBackHome = async () => {
+    if (isGoingHome || isPausing || !lobbyId) return;
+    setPauseError(null);
+    if (lobby?.status === "IN_GAME" || lobby?.status === "DISCONNECTING") {
+      setIsPausing(true);
+      try {
+        const { pauseGameAction } = await import("@/features/lobby/api");
+        const { getErrorMessage } = await import("@/ui/i18n/errors");
+        const result = await pauseGameAction(lobbyId);
+        if (result.error) {
+          setPauseError(getErrorMessage(result.error));
+          setIsPausing(false);
+          return;
+        }
+      } catch {
+        setPauseError("Impossibile mettere in pausa la partita.");
+        setIsPausing(false);
+        return;
+      }
+      setIsPausing(false);
+    }
+    setIsGoingHome(true);
+    try {
+      const { saveLobby } = await import("@/features/lobby-session/storage");
+      if (playerId !== null) saveLobby(lobbyId, playerId);
+    } catch {
+    }
+    router.push("/");
+  };
+
+  const canPauseExit =
+    !isGameEnded && (lobby?.status === "IN_GAME" || lobby?.status === "DISCONNECTING");
 
   const handleDropCard = (card: Card) => {
     setSelectedCard(null);
@@ -171,7 +247,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         isGameEnded={isGameEnded}
         sortedScoreboard={sortedScoreboard}
         playerId={playerId}
-        onReturnToLobby={handleReturnToLobby}
+        onReturnToLobby={() => void handleReturnToLobby()}
+        isReturning={isReturning}
       />
 
       <GameHeader
@@ -180,7 +257,18 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         connectionState={connectionState}
         round={gameState.round}
         status={gameState.status}
+        canPauseExit={canPauseExit}
+        isPausing={isPausing}
+        onPauseExit={() => void handlePauseAndExit()}
+        isGoingHome={isGoingHome}
+        onBackHome={() => void handleBackHome()}
       />
+
+      {pauseError && (
+        <div className="p-3 rounded-2xl border border-rose-700/60 bg-rose-950/60 text-rose-200 text-sm text-center">
+          <p className="font-semibold">⚠️ {pauseError}</p>
+        </div>
+      )}
 
       {isRestoring && (
         <div className="p-3 rounded-2xl border border-amber-400/50 bg-amber-950/60 text-amber-200 text-sm font-semibold text-center animate-pulse">
@@ -313,9 +401,21 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                   <span>Trick <strong className="text-emerald-400">{playerTricks}</strong></span>
                 </span>
                 {isCurrentTurn && (
-                  <span className="mt-0.5 block animate-pulse text-[9px] font-extrabold tracking-wider text-amber-300 uppercase">
-                    {isMe ? "▶ tocca a te" : "▶ turno"}
-                  </span>
+                  <>
+                    <span className="mt-0.5 block animate-pulse text-[9px] font-extrabold tracking-wider text-amber-300 uppercase">
+                      {isMe ? "▶ tocca a te" : "▶ turno"}
+                    </span>
+                    {turnTimerSeconds !== null && turnTimerSeconds !== undefined && (
+                      <span className="mt-0.5 flex items-center gap-2 font-mono text-[10px] font-black">
+                        <span className={turnTimerSeconds <= 5 ? "animate-pulse text-rose-300" : "text-amber-200"}>
+                          ⏱ {turnTimerSeconds}s
+                        </span>
+                        <span className="text-orange-300">
+                          ⚠ Strikes: {player.strikes ?? 0}
+                        </span>
+                      </span>
+                    )}
+                  </>
                 )}
               </span>
             </div>
