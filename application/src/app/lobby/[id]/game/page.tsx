@@ -12,7 +12,7 @@ function GamePageContent() {
     Number.isInteger(parsed) && parsed >= 0 ? (parsed as number) : undefined;
 
   return (
-    <main className="min-h-screen bg-radial from-zinc-900 via-zinc-950 to-black text-zinc-100 p-2 sm:p-6 overflow-x-hidden">
+    <main className="h-dvh bg-radial from-zinc-900 via-zinc-950 to-black text-zinc-100 overflow-hidden p-2.5 sm:p-4">
       <GameBoard customPlayerId={customPlayerId} />
     </main>
   );
@@ -22,7 +22,7 @@ export default function GamePage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-radial from-zinc-900 via-zinc-950 to-black text-zinc-100 p-2 sm:p-6">
+        <main className="h-dvh bg-radial from-zinc-900 via-zinc-950 to-black text-zinc-100 flex items-center justify-center p-2.5 sm:p-4">
           <p className="text-slate-400 animate-pulse font-medium text-center">
             Caricamento partita…
           </p>
