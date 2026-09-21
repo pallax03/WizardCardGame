@@ -168,50 +168,6 @@ export default function Home() {
 
       <div className="relative z-10 w-full max-w-md space-y-8">
 
-        {savedEntries.length > 0 && (
-          <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-md shadow-2xl">
-            <CardHeader>
-              <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-sky-500/15 text-sky-300"><History className="size-5" /></div>
-              <CardTitle className="text-lg text-zinc-100 font-semibold">{homeI18n.savedLobbies.title}</CardTitle>
-              <CardDescription className="text-zinc-400 text-sm">{homeI18n.savedLobbies.subtitle}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              {savedEntries.map((entry) => (
-                <div
-                  key={entry.lobbyId}
-                  className="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-mono text-sm text-zinc-100 truncate">{entry.lobbyId}</p>
-                    <p className="text-[11px] text-zinc-500">
-                      {savedStatusLabel(entry.status, entry.failed)}
-                      {entry.playersCount !== undefined &&
-                        ` · ${homeI18n.savedLobbies.players(entry.playersCount)}`}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => handleRejoinSaved(entry.lobbyId)}
-                    className="gap-1 shrink-0"
-                  >
-                    {homeI18n.savedLobbies.rejoin} <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    type="button"
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleRemoveSaved(entry.lobbyId)}
-                    title={homeI18n.savedLobbies.removeTitle}
-                    className="h-8 w-8 shrink-0 text-zinc-500 hover:text-red-400 hover:bg-red-950/40"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        )}
         <div className="flex flex-col items-center gap-3 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium backdrop-blur-md">
             <Sparkles className="w-3.5 h-3.5" /> {homeI18n.badge}
@@ -322,6 +278,51 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>
+
+        {savedEntries.length > 0 && (
+          <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-md shadow-2xl">
+            <CardHeader>
+              <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-sky-500/15 text-sky-300"><History className="size-5" /></div>
+              <CardTitle className="text-lg text-zinc-100 font-semibold">{homeI18n.savedLobbies.title}</CardTitle>
+              <CardDescription className="text-zinc-400 text-sm">{homeI18n.savedLobbies.subtitle}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {savedEntries.map((entry) => (
+                <div
+                  key={entry.lobbyId}
+                  className="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="font-mono text-sm text-zinc-100 truncate">{entry.lobbyId}</p>
+                    <p className="text-[11px] text-zinc-500">
+                      {savedStatusLabel(entry.status, entry.failed)}
+                      {entry.playersCount !== undefined &&
+                        ` · ${homeI18n.savedLobbies.players(entry.playersCount)}`}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => handleRejoinSaved(entry.lobbyId)}
+                    className="gap-1 shrink-0"
+                  >
+                    {homeI18n.savedLobbies.rejoin} <ArrowRight className="w-3.5 h-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => handleRemoveSaved(entry.lobbyId)}
+                    title={homeI18n.savedLobbies.removeTitle}
+                    className="h-8 w-8 shrink-0 text-zinc-500 hover:text-red-400 hover:bg-red-950/40"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </Button>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        )}
 
       </div>
     </main>
