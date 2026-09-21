@@ -2,7 +2,7 @@
 
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { ArrowLeft, Loader2, Pause } from "lucide-react";
+import { ArrowLeft, Loader2, Pause, Trophy } from "lucide-react";
 
 interface GameHeaderProps {
   lobbyId: string;
@@ -15,6 +15,7 @@ interface GameHeaderProps {
   onPauseExit?: () => void;
   isGoingHome?: boolean;
   onBackHome?: () => void;
+  onToggleScoreboard?: () => void;
 }
 
 export function GameHeader({
@@ -28,51 +29,42 @@ export function GameHeader({
   onPauseExit,
   isGoingHome,
   onBackHome,
+  onToggleScoreboard,
 }: GameHeaderProps) {
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 p-3 sm:p-4 rounded-2xl bg-zinc-950/90 border border-amber-500/30 shadow-2xl backdrop-blur-md">
-      <div className="flex flex-wrap items-center gap-2 sm:gap-3">
+    <div className="flex items-center justify-between gap-2 p-2 sm:p-3 rounded-xl bg-zinc-950/90 border border-amber-500/30 shadow-xl backdrop-blur-md">
+      <div className="flex items-center gap-1.5">
         {onBackHome && (
           <Button
             type="button"
-            size="sm"
+            size="icon"
             variant="ghost"
             disabled={isGoingHome || isPausing}
             onClick={onBackHome}
-            title="Torna alla home senza uscire dalla lobby (la partita resta salvata)"
-            className="gap-1.5 text-zinc-400 hover:text-zinc-100 text-xs font-semibold"
+            title="Home"
+            className="size-8 text-zinc-400 hover:text-zinc-100"
           >
-            {isGoingHome ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <ArrowLeft className="w-3.5 h-3.5" />}
-            Home
+            {isGoingHome ? <Loader2 className="size-4 animate-spin" /> : <ArrowLeft className="size-4" />}
           </Button>
         )}
-        <h1 className="text-lg sm:text-xl font-black tracking-wider text-amber-400 flex items-center gap-2">
-          <span>♦</span> WIZARD POKER TABLE
-        </h1>
-        <Badge variant="outline" className="text-[11px] bg-zinc-900 border-zinc-700 text-zinc-300">
-          Lobby: <span className="font-mono ml-1 text-amber-400">{lobbyId}</span>
-        </Badge>
-        <Badge variant="outline" className="text-[11px] bg-zinc-900 border-zinc-700 text-zinc-300">
-          Player: <span className="font-mono ml-1 text-emerald-400">#{playerId ?? "…"}</span>
-        </Badge>
-        <Badge
-          variant={connectionState === "open" ? "default" : "destructive"}
-          className="text-[10px] font-bold"
-        >
-          WS: {connectionState}
-        </Badge>
+        <div className="flex flex-col">
+          <span className="text-xs font-black text-amber-400 leading-none">WIZARD</span>
+          <span className="text-[9px] font-mono text-zinc-400">R:{round}</span>
+        </div>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Badge variant="secondary" className="text-xs px-3 py-1 font-bold bg-zinc-800 text-zinc-200 border border-zinc-700">
-          Round: {round}
-        </Badge>
-        <Badge
-          variant="default"
-          className="text-xs px-3 py-1 font-bold bg-amber-500 text-zinc-950 uppercase tracking-wider"
+      <div className="flex items-center gap-1.5">
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={onToggleScoreboard}
+          className="h-7 px-2 border-amber-500/40 bg-amber-950/30 text-amber-300 hover:bg-amber-900/50 text-[10px] font-bold gap-1"
         >
-          {status}
-        </Badge>
+          <Trophy className="size-3" />
+          <span className="hidden sm:inline">Punteggi</span>
+        </Button>
+
         {canPauseExit && onPauseExit && (
           <Button
             type="button"
@@ -80,11 +72,10 @@ export function GameHeader({
             variant="outline"
             disabled={isPausing}
             onClick={onPauseExit}
-            title="Mette in pausa la partita e torna alla lobby"
-            className="gap-1.5 border-sky-500/50 bg-sky-950/40 text-sky-300 hover:text-sky-200 hover:bg-sky-900/50 text-xs font-semibold"
+            className="h-7 px-2 border-sky-500/50 bg-sky-950/40 text-sky-300 text-[10px] font-semibold gap-1"
           >
-            {isPausing ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Pause className="w-3.5 h-3.5" />}
-            {isPausing ? "Pausa..." : "Pausa e torna alla lobby"}
+            {isPausing ? <Loader2 className="size-3 animate-spin" /> : <Pause className="size-3" />}
+            <span className="hidden sm:inline">Pausa</span>
           </Button>
         )}
       </div>
