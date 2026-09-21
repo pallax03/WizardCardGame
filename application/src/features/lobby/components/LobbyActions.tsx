@@ -125,7 +125,6 @@ export function LobbyActions({ isLeaving, isStarting, onLeave, onStart, isResumi
               variant="outline"
               size="lg"
               className="w-1/3 gap-2 border-zinc-700 bg-transparent text-zinc-300 hover:text-indigo-300 hover:border-indigo-500/50 hover:bg-indigo-950/30"
-              title={lobbyI18n.actions.exitHomeHint}
             >
               <Home className="w-4 h-4" /> {lobbyI18n.actions.exitHome}
             </Button>
@@ -158,32 +157,6 @@ export function LobbyActions({ isLeaving, isStarting, onLeave, onStart, isResumi
           {isPausing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pause className="w-4 h-4" />}{" "}
           {isPausing ? lobbyI18n.actions.pausing : lobbyI18n.actions.pauseGame}
         </Button>
-      )}
-      {showDiscardMain ? (
-        <div className="space-y-1.5">
-          {!confirmingDiscard && (
-            <p className="text-center text-[11px] text-zinc-500">
-              {lobbyI18n.actions.discardPausedHint}
-            </p>
-          )}
-          {onExitHome && (
-            <button
-              type="button"
-              onClick={onExitHome}
-              disabled={busy}
-              className="mx-auto flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-indigo-300 transition-colors"
-              title={lobbyI18n.actions.exitHomeHint}
-            >
-              <Home className="w-3 h-3" /> {lobbyI18n.actions.exitHome}
-            </button>
-          )}
-        </div>
-      ) : (
-        !isWaiting && onExitHome && (
-          <p className="text-center text-[11px] text-zinc-500">
-            {lobbyI18n.actions.exitHomeHint}
-          </p>
-        )
       )}
     </div>
   );
