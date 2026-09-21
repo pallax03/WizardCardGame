@@ -43,6 +43,8 @@ export const it = {
   lobby: {
     loading: "Caricamento lobby in corso...",
     reconnecting: "Riconnessione al server in corso...",
+    reconnectClosed: "Connessione persa.",
+    retryConnection: "Riconnetti",
     backToHome: "Torna alla Home",
     backToLobbies: "Tutte le lobby",
     header: {
@@ -160,6 +162,7 @@ export const it = {
     NotEnoughPlayers: "Non ci sono abbastanza giocatori per iniziare la partita.",
     NotAuthenticated: "Non sei autenticato.",
     GameNotFound: "Partita non trovata.",
+    RECONNECT_FAILED: "Riconnessione fallita: controlla la rete e riprova.",
     ConfigurationInvalid: "Configurazione non valida (timer 15–90, strike 1–3).",
   },
   ui: {
@@ -213,6 +216,8 @@ export const en = {
   lobby: {
     loading: "Loading lobby...",
     reconnecting: "Reconnecting to server...",
+    reconnectClosed: "Connection lost.",
+    retryConnection: "Reconnect",
     backToHome: "Back to Home",
     backToLobbies: "All lobbies",
     header: {
@@ -330,6 +335,7 @@ export const en = {
     NotEnoughPlayers: "Not enough players to start the game.",
     NotAuthenticated: "You are not authenticated.",
     GameNotFound: "Game not found.",
+    RECONNECT_FAILED: "Reconnection failed: check your network and retry.",
     ConfigurationInvalid: "Invalid configuration (timer 15–90, strikes 1–3).",
   },
   ui: {
