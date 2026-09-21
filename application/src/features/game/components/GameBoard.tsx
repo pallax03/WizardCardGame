@@ -14,6 +14,8 @@ import { PlayerHand } from "./PlayerHand";
 import { TrumpArea } from "./TrumpArea";
 import { GameEndOverlay } from "./GameEndOverlay";
 import { Badge } from "@/ui/components/badge";
+import { Button } from "@/ui/components/button";
+import { Lightbulb, X } from "lucide-react";
 
 type SeatLayout = {
   pos: string;
@@ -21,44 +23,36 @@ type SeatLayout = {
   cardFirst: boolean;
 };
 
-const SEAT_BOTTOM: SeatLayout = {
-  pos: "bottom-0 left-1/2 -translate-x-1/2 translate-y-1/4",
-  dir: "flex-col",
-  cardFirst: true,
-};
-const SEAT_TOP: SeatLayout = {
-  pos: "top-0 left-1/2 -translate-x-1/2 -translate-y-1/4",
-  dir: "flex-col",
-  cardFirst: false,
-};
-
 const SEAT_PRESETS: Record<number, SeatLayout[]> = {
-  2: [SEAT_BOTTOM, SEAT_TOP],
+  2: [
+    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
+    { pos: "top-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: false },
+  ],
   3: [
-    SEAT_BOTTOM,
-    { pos: "left-0 top-[38%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-    { pos: "right-0 top-[38%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
+    { pos: "top-[25%] left-1 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+    { pos: "top-[25%] right-1 -translate-y-1/2", dir: "flex-row", cardFirst: true },
   ],
   4: [
-    SEAT_BOTTOM,
-    { pos: "left-0 top-1/2 -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-    SEAT_TOP,
-    { pos: "right-0 top-1/2 translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
+    { pos: "top-1/2 left-1 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+    { pos: "top-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: false },
+    { pos: "top-1/2 right-1 -translate-y-1/2", dir: "flex-row", cardFirst: true },
   ],
   5: [
-    SEAT_BOTTOM,
-    { pos: "left-0 top-[55%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-    { pos: "left-[24%] top-0 -translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
-    { pos: "left-[76%] top-0 translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
-    { pos: "right-0 top-[55%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
+    { pos: "top-[62%] left-1 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+    { pos: "top-[12%] left-[18%] -translate-x-1/2", dir: "flex-col", cardFirst: false },
+    { pos: "top-[12%] right-[18%] translate-x-1/2", dir: "flex-col", cardFirst: false },
+    { pos: "top-[62%] right-1 -translate-y-1/2", dir: "flex-row", cardFirst: true },
   ],
   6: [
-    SEAT_BOTTOM,
-    { pos: "left-0 top-[55%] -translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-    { pos: "left-[20%] top-0 -translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
-    SEAT_TOP,
-    { pos: "left-[80%] top-0 translate-x-1/4 -translate-y-1/4", dir: "flex-col", cardFirst: false },
-    { pos: "right-0 top-[55%] translate-x-1/4 -translate-y-1/2", dir: "flex-row", cardFirst: true },
+    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
+    { pos: "top-[65%] left-1 -translate-y-1/2", dir: "flex-row", cardFirst: false },
+    { pos: "top-[15%] left-[12%] -translate-x-1/2", dir: "flex-col", cardFirst: false },
+    { pos: "top-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: false },
+    { pos: "top-[15%] right-[12%] translate-x-1/2", dir: "flex-col", cardFirst: false },
+    { pos: "top-[65%] right-1 -translate-y-1/2", dir: "flex-row", cardFirst: true },
   ],
 };
 
@@ -121,6 +115,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const [isPausing, setIsPausing] = useState(false);
   const [isGoingHome, setIsGoingHome] = useState(false);
   const [pauseError, setPauseError] = useState<string | null>(null);
+  const [showScoreboard, setShowScoreboard] = useState(false);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
   const players = lobby?.players ?? [];
@@ -128,6 +123,11 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const orderedPlayers = useMemo(
     () => (myIndex !== -1 ? [...players.slice(myIndex), ...players.slice(0, myIndex)] : players),
     [players, myIndex]
+  );
+
+  const activeTurnPlayer = useMemo(
+    () => players.find((p) => p.id === gameState.currentTurn.playerId),
+    [players, gameState.currentTurn.playerId]
   );
 
   const isGameEnded = gameState.status === "GAME_ENDED";
@@ -167,16 +167,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     try {
       const { discardPausedGameAction } = await import("@/features/lobby/api");
       await discardPausedGameAction(lobbyId);
-    } catch {
-    }
+    } catch {}
     router.push(lobbyId ? `/lobby/${lobbyId}` : "/");
   };
 
-  /**
-   * Mette in pausa la partita (POST /pause) e torna alla lobby,
-   * stesso stato PAUSED che si ottiene con disconnessione + pausa.
-   * Se la pausa fallisce si resta in partita e si mostra l'errore.
-   */
   const handlePauseAndExit = async () => {
     if (isPausing || !lobbyId) return;
     setPauseError(null);
@@ -198,11 +192,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     router.push(`/lobby/${lobbyId}`);
   };
 
-  /**
-   * Indietro verso la home senza uscire dalla lobby: se la partita è in corso
-   * la mette prima in pausa, poi salva lobby+player nella lista e naviga.
-   * Dalla home la partita resta visibile e rientrabile.
-   */
   const handleBackHome = async () => {
     if (isGoingHome || isPausing || !lobbyId) return;
     setPauseError(null);
@@ -228,8 +217,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     try {
       const { saveLobby } = await import("@/features/lobby-session/storage");
       if (playerId !== null) saveLobby(lobbyId, playerId);
-    } catch {
-    }
+    } catch {}
     router.push("/");
   };
 
@@ -241,8 +229,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     void handlePlayCard(card);
   };
 
+  const hasActiveControls = isMyTurn && (canBid || canChooseTrump);
+
   return (
-    <div className="relative w-full max-w-7xl mx-auto space-y-6 pb-20 px-2 sm:px-4">
+    <div className="relative flex flex-col min-h-screen w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-6 space-y-2 sm:space-y-3 select-none overflow-x-hidden">
       <GameEndOverlay
         isGameEnded={isGameEnded}
         sortedScoreboard={sortedScoreboard}
@@ -262,33 +252,36 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         onPauseExit={() => void handlePauseAndExit()}
         isGoingHome={isGoingHome}
         onBackHome={() => void handleBackHome()}
+        onToggleScoreboard={() => setShowScoreboard((prev) => !prev)}
       />
 
       {pauseError && (
-        <div className="p-3 rounded-2xl border border-rose-700/60 bg-rose-950/60 text-rose-200 text-sm text-center">
+        <div className="p-2 rounded-xl border border-rose-700/60 bg-rose-950/80 text-rose-200 text-xs text-center">
           <p className="font-semibold">⚠️ {pauseError}</p>
         </div>
       )}
 
       {isRestoring && (
-        <div className="p-3 rounded-2xl border border-amber-400/50 bg-amber-950/60 text-amber-200 text-sm font-semibold text-center animate-pulse">
+        <div className="p-2 rounded-xl border border-amber-400/50 bg-amber-950/80 text-amber-200 text-xs font-semibold text-center animate-pulse">
           🔄 Ripristino stato partita dal server...
         </div>
       )}
+
       {snapshotError && !isRestoring && (
-        <div className="p-3 rounded-2xl border border-rose-700/60 bg-rose-950/60 text-rose-200 text-sm text-center space-y-2">
+        <div className="p-2 rounded-xl border border-rose-700/60 bg-rose-950/80 text-rose-200 text-xs text-center space-y-1">
           <p className="font-semibold">⚠️ {snapshotError}</p>
           <button
             type="button"
             onClick={() => void refreshSnapshot("manual")}
-            className="px-4 py-1.5 rounded-xl bg-rose-500 text-white text-xs font-bold uppercase tracking-wider hover:bg-rose-400 transition-colors"
+            className="px-3 py-1 rounded-lg bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider"
           >
             Riprova sincronizzazione
           </button>
         </div>
       )}
 
-      <div className="mx-auto w-full max-w-md">
+      {/* Banner Turno */}
+      <div className="w-full">
         <GameTurnBanner
           isMyTurn={isMyTurn}
           turnPrompt={turnPrompt}
@@ -296,70 +289,43 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           actionStatus={actionStatus}
           bidWarning={bidWarning}
           statusWarning={lobbyWarning}
+          turnTimerSeconds={turnTimerSeconds}
+          strikes={activeTurnPlayer?.strikes ?? 0}
         />
       </div>
 
+      {/* Board Tonda */}
       <div
         ref={tableRef}
-        className={`relative w-full my-10 py-10 px-4 min-h-[560px] sm:min-h-[600px] rounded-[120px] sm:rounded-[180px] bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[12px] border-amber-950/80 shadow-[inset_0_0_80px_rgba(0,0,0,0.8),0_20px_50px_rgba(0,0,0,0.6)] transition-shadow duration-200 ${
-          isCardDragging ? "ring-4 ring-emerald-300/80" : ""
-        }`}
+        className={`relative w-full transition-all duration-300 mx-auto rounded-full bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[6px] sm:border-[10px] border-amber-950/90 shadow-[inset_0_0_50px_rgba(0,0,0,0.85),0_10px_30px_rgba(0,0,0,0.5)] ${
+          hasActiveControls
+            ? "h-[300px] sm:h-[400px] max-w-[340px] sm:max-w-[480px]"
+            : "h-[360px] sm:h-[480px] max-w-[400px] sm:max-w-[580px]"
+        } ${isCardDragging ? "ring-4 ring-emerald-300/80" : ""}`}
       >
         {isCardDragging && (
-          <div className="pointer-events-none absolute top-5 left-1/2 z-30 -translate-x-1/2 animate-pulse rounded-full border border-emerald-300/60 bg-emerald-500/20 px-4 py-1.5 text-[11px] font-black tracking-widest whitespace-nowrap text-emerald-100 uppercase">
-            Rilascia qui per giocare
+          <div className="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 animate-pulse rounded-full border border-emerald-300/60 bg-emerald-500/30 px-3 py-0.5 text-[9px] font-black tracking-widest text-emerald-100 uppercase backdrop-blur-sm">
+            Rilascia qui
           </div>
         )}
 
-        <div className="absolute inset-4 rounded-[100px] sm:rounded-[160px] border-2 border-emerald-600/30 pointer-events-none flex items-center justify-center">
-          <span className="text-emerald-900/20 text-6xl sm:text-8xl font-black uppercase tracking-widest select-none">
+        <div className="absolute inset-2 sm:inset-4 rounded-full border border-emerald-600/30 pointer-events-none flex items-center justify-center">
+          <span className="text-emerald-900/20 text-3xl sm:text-6xl font-black uppercase tracking-widest select-none">
             WIZARD
           </span>
         </div>
 
-        <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2">
+        {/* Area Briscola Centrata */}
+        <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 scale-85 sm:scale-100">
           <TrumpArea trump={gameState.trump} effectiveTrumpColor={gameState.effectiveTrumpColor} />
           {gameState.followingColor && (
-            <span className="rounded-full border border-emerald-600/40 bg-emerald-950/70 px-2.5 py-0.5 text-[10px] font-bold text-emerald-300">
-              Seme di mano: {gameState.followingColor}
+            <span className="rounded-full border border-emerald-600/40 bg-emerald-950/80 px-2 py-0.5 text-[8px] sm:text-[10px] font-bold text-emerald-300 shadow">
+              Seme: {gameState.followingColor}
             </span>
           )}
         </div>
 
-        {revealedTrick && (
-          <div className="pointer-events-none absolute top-1/2 left-1/2 z-30 flex w-max max-w-[92%] -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-2 rounded-3xl border border-amber-400/60 bg-zinc-950/95 p-3 shadow-2xl backdrop-blur-md sm:p-4">
-            <span className="rounded-full border border-amber-400/50 bg-amber-500/15 px-3 py-0.5 text-[11px] font-black tracking-wider text-amber-300 uppercase">
-              ★ Presa di {playersMap.get(revealedTrick.winnerId)?.name ?? `Giocatore ${revealedTrick.winnerId}`}
-            </span>
-            <div className="flex max-w-full flex-wrap items-start justify-center gap-2">
-              {revealedTrick.entries.map((entry, index) => {
-                const entryName = playersMap.get(entry.playerId)?.name ?? `Giocatore ${entry.playerId}`;
-                const entryWinning = Boolean(
-                  revealedTrick.winningCard && cardEquals(entry.card, revealedTrick.winningCard)
-                );
-                return (
-                  <div key={`${entry.playerId}-${index}`} className="flex flex-col items-center gap-1">
-                    <div className={entryWinning ? "rounded-xl ring-2 ring-amber-400 ring-offset-2 ring-offset-zinc-950" : ""}>
-                      <GameCardView card={entry.card} size="sm" isClickable={false} />
-                    </div>
-                    <span className={`max-w-16 truncate text-[9px] font-bold ${entryWinning ? "text-amber-300" : "text-zinc-400"}`}>
-                      {entryName}
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
-            <span className="animate-pulse font-mono text-[11px] font-bold text-zinc-300">
-              Si continua tra {revealSecondsLeft}s…
-            </span>
-            <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
-              <div
-                className="h-full rounded-full bg-amber-400 transition-[width] duration-1000 ease-linear"
-                style={{ width: `${Math.max(0, Math.min(100, (revealSecondsLeft / TRICK_REVEAL_SECONDS) * 100))}%` }}
-              />
-            </div>
-          </div>
-        )}
+        {/* Postazioni Giocatori */}
         {orderedPlayers.map((player, idx) => {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
           const isMe = player.id === playerId;
@@ -375,47 +341,42 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
           const badge = (
             <div
-              className={`flex items-center gap-2 rounded-2xl border px-2 py-1.5 shadow-xl backdrop-blur-md transition-all duration-300 sm:px-2.5 sm:py-2 ${
+              className={`flex items-center gap-1 rounded-lg border px-1.5 py-0.5 shadow-md backdrop-blur-md transition-all duration-200 ${
                 isCurrentTurn
-                  ? "border-amber-400 bg-amber-500/20 ring-2 ring-amber-400/60"
-                  : "border-zinc-700/80 bg-zinc-900/90"
+                  ? "border-amber-400 bg-amber-500/30 ring-2 ring-amber-400/60 scale-105"
+                  : "border-zinc-800 bg-zinc-950/85"
               }`}
             >
               <span
-                className={`grid size-8 shrink-0 place-items-center rounded-full text-xs font-black ${
+                className={`grid size-5 shrink-0 place-items-center rounded-full text-[9px] font-black ${
                   isMe ? "bg-amber-400 text-zinc-950" : "bg-zinc-700 text-zinc-100"
                 }`}
               >
                 {player.name.charAt(0).toUpperCase()}
               </span>
               <span className="min-w-0">
-                <span className="flex items-center gap-1">
-                  <span className="max-w-[84px] truncate text-xs font-bold text-white sm:max-w-[110px]">
+                <span className="flex items-center gap-0.5">
+                  <span className="max-w-[45px] sm:max-w-[70px] truncate text-[9px] font-bold text-white">
                     {player.name}
                   </span>
-                  {isMe && <Badge variant="secondary" className="px-1 py-0 text-[9px]">TU</Badge>}
-                  {isBot && <Badge variant="outline" className="px-1 py-0 text-[9px] text-zinc-400">BOT</Badge>}
+                  {isMe && <Badge variant="secondary" className="px-0.5 py-0 text-[7px]">TU</Badge>}
+                  {isBot && <Badge variant="outline" className="px-0.5 py-0 text-[7px] text-zinc-400">BOT</Badge>}
                 </span>
-                <span className="mt-0.5 flex items-center gap-2 font-mono text-[10px] text-zinc-400">
-                  <span>Bid <strong className="text-amber-400">{playerBid !== undefined ? playerBid : "-"}</strong></span>
-                  <span>Trick <strong className="text-emerald-400">{playerTricks}</strong></span>
+                <span className="flex items-center gap-1 font-mono text-[8px] text-zinc-400">
+                  <span>B:<strong className="text-amber-400">{playerBid ?? "-"}</strong></span>
+                  <span>T:<strong className="text-emerald-400">{playerTricks}</strong></span>
                 </span>
                 {isCurrentTurn && (
-                  <>
-                    <span className="mt-0.5 block animate-pulse text-[9px] font-extrabold tracking-wider text-amber-300 uppercase">
-                      {isMe ? "▶ tocca a te" : "▶ turno"}
-                    </span>
+                  <span className="flex items-center gap-1 font-mono text-[8px] font-black mt-0.5">
                     {turnTimerSeconds !== null && turnTimerSeconds !== undefined && (
-                      <span className="mt-0.5 flex items-center gap-2 font-mono text-[10px] font-black">
-                        <span className={turnTimerSeconds <= 5 ? "animate-pulse text-rose-300" : "text-amber-200"}>
-                          ⏱ {turnTimerSeconds}s
-                        </span>
-                        <span className="text-orange-300">
-                          ⚠ Strikes: {player.strikes ?? 0}
-                        </span>
+                      <span className={turnTimerSeconds <= 5 ? "text-rose-400 animate-pulse" : "text-amber-300"}>
+                        ⏱{turnTimerSeconds}s
                       </span>
                     )}
-                  </>
+                    <span className={(player.strikes ?? 0) > 0 ? "text-rose-300" : "text-zinc-400"}>
+                      ⚡{player.strikes ?? 0}
+                    </span>
+                  </span>
                 )}
               </span>
             </div>
@@ -423,26 +384,21 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
           const slot = showSlot ? (
             played ? (
-              <div className="flex origin-center scale-[0.8] flex-col items-center gap-1 sm:scale-100">
-                <div className={isWinning ? "rounded-xl ring-2 ring-amber-400 ring-offset-2 ring-offset-emerald-900" : ""}>
-                  <GameCardView card={played.card} size="md" isClickable={false} />
+              <div className="flex origin-center scale-70 sm:scale-85 flex-col items-center">
+                <div className={isWinning ? "rounded-lg ring-2 ring-amber-400" : ""}>
+                  <GameCardView card={played.card} size="sm" isClickable={false} />
                 </div>
-                {isWinning && (
-                  <span className="animate-pulse rounded border border-amber-400/60 bg-amber-500/20 px-1.5 py-0.5 text-[9px] font-black tracking-wider text-amber-300 uppercase">
-                    ★ in testa
-                  </span>
-                )}
               </div>
             ) : (
-              <div className="grid h-28 w-20 origin-center scale-[0.8] place-items-center rounded-xl border-2 border-dashed border-white/15 bg-black/25 sm:scale-100">
-                <span className="animate-pulse text-lg text-white/25">…</span>
+              <div className="grid h-14 w-10 origin-center scale-70 sm:scale-85 place-items-center rounded-lg border border-dashed border-white/20 bg-black/30">
+                <span className="animate-pulse text-[10px] text-white/30">…</span>
               </div>
             )
           ) : null;
 
           return (
             <div key={player.id} className={`absolute z-20 ${seat.pos}`}>
-              <div className={`flex items-center gap-2 sm:gap-3 ${seat.dir}`}>
+              <div className={`flex items-center gap-1 ${seat.dir}`}>
                 {seat.cardFirst ? (<>{slot}{badge}</>) : (<>{badge}{slot}</>)}
               </div>
             </div>
@@ -450,24 +406,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         })}
       </div>
 
-      {/* 3. Mano del Giocatore & Controlli d'Azione */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        <div className="lg:col-span-2">
-          <PlayerHand
-            hand={gameState.hand}
-            selectedCard={selectedCard}
-            canPlay={canPlay}
-            isSubmitting={isSubmitting}
-            isCardPlayable={isCardPlayable}
-            onSelectCard={setSelectedCard}
-            hintedCard={hintedCard}
-            dropZoneRef={tableRef}
-            onDropCard={handleDropCard}
-            onDragStateChange={setIsCardDragging}
-          />
-        </div>
-
-        <div>
+      {/* Controlli Azione */}
+      {hasActiveControls && (
+        <div className="w-full">
           <GameActionControls
             isMyTurn={isMyTurn}
             canChooseTrump={canChooseTrump}
@@ -483,22 +424,105 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             isSubmitting={isSubmitting}
             forbiddenBid={forbiddenBid}
             bidsTotal={bidsTotal}
-            canRequestHint={canRequestHint}
-            onRequestHint={() => void requestHint()}
-            isHintLoading={isHintLoading}
-            hintError={hintError}
           />
         </div>
-      </div>
+      )}
 
-      {/* 4. Pannelli Secondari & Dev Tool */}
-      <div className="space-y-6 pt-4 border-t border-zinc-800">
-        <GameScoreboard
-          scoreboard={gameState.scoreboard}
-          playersMap={playersMap}
-          myPlayerId={playerId}
+      {/* Presa Rivelata nello spazio tra il tavolo e la mano */}
+      {revealedTrick && (
+        <div className="w-full flex justify-center z-30 my-1 animate-in fade-in duration-200">
+          <div className="pointer-events-none flex w-max max-w-[95%] flex-col items-center gap-1 rounded-2xl border border-amber-400/60 bg-zinc-950/95 p-2 sm:p-3 shadow-2xl backdrop-blur-md">
+            <span className="rounded-full border border-amber-400/50 bg-amber-500/15 px-2 py-0.5 text-[9px] font-black tracking-wider text-amber-300 uppercase">
+              ★ Presa: {playersMap.get(revealedTrick.winnerId)?.name ?? `P${revealedTrick.winnerId}`}
+            </span>
+            <div className="flex max-w-full flex-wrap items-start justify-center gap-1">
+              {revealedTrick.entries.map((entry, index) => {
+                const entryName = playersMap.get(entry.playerId)?.name ?? `P${entry.playerId}`;
+                const entryWinning = Boolean(
+                  revealedTrick.winningCard && cardEquals(entry.card, revealedTrick.winningCard)
+                );
+                return (
+                  <div key={`${entry.playerId}-${index}`} className="flex flex-col items-center gap-0.5">
+                    <div className={entryWinning ? "rounded-lg ring-2 ring-amber-400" : ""}>
+                      <GameCardView card={entry.card} size="sm" isClickable={false} />
+                    </div>
+                    <span className={`max-w-10 truncate text-[8px] font-bold ${entryWinning ? "text-amber-300" : "text-zinc-400"}`}>
+                      {entryName}
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+            <span className="animate-pulse font-mono text-[9px] text-zinc-300">
+              Prossimo tra {revealSecondsLeft}s…
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Contenitore Mano Giocatore con Bottone Hint Tondo in Alto a Destra */}
+      <div className="w-full mt-auto overflow-visible relative flex flex-col items-end">
+        {canRequestHint && (
+          <div className="pr-2 sm:pr-4 -mb-10 z-30 flex flex-col items-end gap-1">
+            {hintError && (
+              <div className="max-w-xs text-[10px] font-semibold text-rose-200 bg-rose-950/90 border border-rose-500/60 rounded-xl px-2.5 py-1 shadow-2xl backdrop-blur-md">
+                ⚠️ {hintError}
+              </div>
+            )}
+            <Button
+              type="button"
+              size="icon"
+              disabled={isSubmitting || isHintLoading}
+              onClick={() => void requestHint()}
+              title={
+                canPlay
+                  ? "Suggerisci Carta"
+                  : canBid
+                  ? "Suggerisci Puntata"
+                  : canChooseTrump
+                  ? "Suggerisci Briscola"
+                  : "Suggerimento"
+              }
+              className="size-11 sm:size-12 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black shadow-xl shadow-amber-500/20 border-2 border-amber-300/80 p-0 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+            >
+              <Lightbulb className={`size-5 sm:size-6 ${isHintLoading ? "animate-spin text-zinc-950" : "text-zinc-950 fill-zinc-950"}`} />
+            </Button>
+          </div>
+        )}
+
+        <PlayerHand
+          hand={gameState.hand}
+          selectedCard={selectedCard}
+          canPlay={canPlay}
+          isSubmitting={isSubmitting}
+          isCardPlayable={isCardPlayable}
+          onSelectCard={setSelectedCard}
+          hintedCard={hintedCard}
+          dropZoneRef={tableRef}
+          onDropCard={handleDropCard}
+          onDragStateChange={setIsCardDragging}
         />
       </div>
+
+      {/* Modal Tabellone Scoreboard */}
+      {showScoreboard && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          onClick={() => setShowScoreboard(false)}
+        >
+          <div
+            className="w-full max-w-lg"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GameScoreboard
+              scoreboard={gameState.scoreboard}
+              playersMap={playersMap}
+              myPlayerId={playerId}
+              onClose={() => setShowScoreboard(false)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,6 @@
 ﻿"use client";
 
 import { Button } from "@/ui/components/button";
-import { Card as UiCard, CardContent, CardHeader, CardTitle } from "@/ui/components/card";
 import type { CardColor } from "../types";
 
 const TRUMP_COLORS: CardColor[] = ["Red", "Yellow", "Green", "Blue"];
@@ -19,15 +18,8 @@ interface GameActionControlsProps {
   onSelectBid: (b: number) => void;
   onPlaceBid: (b?: number) => void;
   isSubmitting: boolean;
-  /** Puntata vietata dalla regola somma != round (ultimo bidder). */
   forbiddenBid?: number | null;
-  /** Somma delle bid già piazzate nel round, per spiegare il divieto. */
   bidsTotal?: number;
-  /** Hint AI: visibile solo durante il proprio turno. */
-  canRequestHint?: boolean;
-  onRequestHint?: () => void;
-  isHintLoading?: boolean;
-  hintError?: string | null;
 }
 
 export function GameActionControls({
@@ -45,134 +37,77 @@ export function GameActionControls({
   isSubmitting,
   forbiddenBid,
   bidsTotal,
-  canRequestHint = false,
-  onRequestHint,
-  isHintLoading = false,
-  hintError = null,
 }: GameActionControlsProps) {
-  const hintLabel = canPlay
-    ? "Suggerisci carta"
-    : canBid
-      ? "Suggerisci puntata"
-      : canChooseTrump
-        ? "Suggerisci briscola"
-        : "Suggerimento";
+  if (!isMyTurn) return null;
+
   return (
-    <UiCard className="bg-zinc-950/80 border-amber-500/40 backdrop-blur-md shadow-2xl h-full">
-      <CardHeader className="p-3 pb-2 border-b border-zinc-800/60">
-        <CardTitle className="text-xs font-black uppercase tracking-widest text-amber-400">
-          Pulsantiera Azioni
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="p-3 space-y-3">
-        {canRequestHint && (
-          <div className="space-y-1.5">
-            <Button
-              type="button"
-              size="default"
-              variant="secondary"
-              disabled={isSubmitting || isHintLoading}
-              onClick={onRequestHint}
-              className="w-full font-bold"
-            >
-              {isHintLoading ? "💡 Suggerimento in corso…" : `💡 ${hintLabel}`}
-            </Button>
-            {hintError && (
-              <p className="text-[11px] font-semibold text-rose-200 bg-rose-950/60 border border-rose-500/40 rounded-lg px-2 py-1 text-center">
-                ⚠️ {hintError}
-              </p>
-            )}
+    <div className="w-full bg-zinc-950/90 border border-amber-500/40 rounded-2xl p-2.5 backdrop-blur-md shadow-xl space-y-2">
+      {/* Scelta Briscola */}
+      {canChooseTrump && (
+        <div className="p-2 rounded-xl bg-amber-950/40 border border-amber-500/40 space-y-1.5">
+          <p className="text-[11px] font-bold text-amber-300 text-center">Scegli Briscola:</p>
+          <div className="grid grid-cols-4 gap-1.5">
+            {TRUMP_COLORS.map((color) => (
+              <Button
+                key={color}
+                size="sm"
+                variant={selectedColor === color ? "confirming" : "outline"}
+                disabled={isSubmitting}
+                onClick={() => {
+                  onSelectColor(color);
+                  onChooseTrump(color);
+                }}
+                className="w-full font-bold text-[10px] py-1 px-0 h-8"
+              >
+                {color}
+              </Button>
+            ))}
           </div>
-        )}
-        {/* Scelta Colore Briscola */}
-        {canChooseTrump && (
-          <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-2">
-            <p className="text-xs font-bold text-white">Scegli Colore Briscola:</p>
-            <div className="grid grid-cols-2 gap-2">
-              {TRUMP_COLORS.map((color) => (
+        </div>
+      )}
+
+      {/* Scelta Puntata (Bid) */}
+      {canBid && (
+        <div className="p-2 rounded-xl bg-amber-950/40 border border-amber-500/40 space-y-2">
+          <p className="text-[11px] font-bold text-amber-300 text-center">
+            Puntata Round {round}:
+          </p>
+          <div className="flex flex-wrap gap-1 justify-center max-h-24 overflow-y-auto">
+            {Array.from({ length: round + 1 }, (_, i) => {
+              const isForbidden = forbiddenBid !== null && forbiddenBid !== undefined && i === forbiddenBid;
+              return (
                 <Button
-                  key={color}
+                  key={i}
                   size="sm"
-                  variant={selectedColor === color ? "confirming" : "outline"}
-                  disabled={isSubmitting}
-                  onClick={() => {
-                    onSelectColor(color);
-                    onChooseTrump(color);
-                  }}
-                  className="w-full font-bold text-xs"
+                  variant={bidInput === i ? "confirming" : "outline"}
+                  disabled={isSubmitting || isForbidden}
+                  onClick={() => onSelectBid(i)}
+                  className={`size-7 p-0 text-xs font-mono font-bold ${isForbidden ? "opacity-30 line-through" : ""}`}
                 >
-                  {color}
+                  {i}
                 </Button>
-              ))}
-            </div>
+              );
+            })}
           </div>
-        )}
-
-        {/* Inserimento Puntata / Bid */}
-        {canBid && (
-          <div className="p-3 rounded-xl bg-amber-950/30 border border-amber-500/40 space-y-2">
-            <p className="text-xs font-bold text-white">
-              Puntata Round {round}:
+          {forbiddenBid !== null && forbiddenBid !== undefined && (
+            <p className="text-[10px] font-semibold text-amber-200/90 bg-amber-950/60 border border-amber-500/40 rounded px-2 py-0.5 text-center">
+              🚫 {forbiddenBid} vietata (somma != {round})
             </p>
-            <div className="flex flex-wrap gap-1.5 justify-center mb-2">
-              {Array.from({ length: round + 1 }, (_, i) => {
-                const isForbidden = forbiddenBid !== null && forbiddenBid !== undefined && i === forbiddenBid;
-                return (
-                  <Button
-                    key={i}
-                    size="sm"
-                    variant={bidInput === i ? "confirming" : "outline"}
-                    disabled={isSubmitting || isForbidden}
-                    onClick={() => onSelectBid(i)}
-                    title={
-                      isForbidden
-                        ? `Puntata non valida: con ${bidsTotal ?? 0} già puntati, ${bidsTotal ?? 0} + ${i} pareggerebbe le carte del Round ${round}`
-                        : `Punta ${i}`
-                    }
-                    className={`w-8 h-8 p-0 text-xs font-mono font-bold ${isForbidden ? "opacity-40 line-through" : ""}`}
-                  >
-                    {i}
-                  </Button>
-                );
-              })}
-            </div>
-            {forbiddenBid !== null && forbiddenBid !== undefined && (
-              <p className="text-[11px] font-semibold text-amber-200/90 bg-amber-950/60 border border-amber-500/40 rounded-lg px-2 py-1 text-center">
-                🚫 La puntata {forbiddenBid} non è valida: la somma delle puntate non può essere
-                uguale al numero di carte ({round}).
-              </p>
-            )}
-            <Button
-              size="default"
-              variant="primary"
-              disabled={
-                isSubmitting ||
-                (forbiddenBid !== null && forbiddenBid !== undefined && bidInput === forbiddenBid)
-              }
-              onClick={() => onPlaceBid(bidInput)}
-              className="w-full font-bold bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow-lg disabled:opacity-40"
-            >
-              Conferma Puntata ({bidInput})
-            </Button>
-          </div>
-        )}
-
-        {/* Gioca Carta: drag & drop sul tavolo (doppio click come fallback) */}
-        {canPlay && (
-          <div className="p-4 text-center text-xs font-semibold text-amber-200/90 bg-amber-950/30 rounded-xl border border-amber-500/40">
-            🃏 Trascina una carta sul tavolo per giocarla
-            <span className="mt-1 block text-[11px] font-normal text-amber-200/60">
-              (oppure fai doppio click sulla carta)
-            </span>
-          </div>
-        )}
-
-        {!isMyTurn && (
-          <div className="p-4 text-center text-xs text-zinc-500 italic bg-zinc-900/40 rounded-xl border border-zinc-800">
-            Attendi il tuo turno per abilitare i comandi di gioco.
-          </div>
-        )}
-      </CardContent>
-    </UiCard>
+          )}
+          <Button
+            size="sm"
+            variant="primary"
+            disabled={
+              isSubmitting ||
+              (forbiddenBid !== null && forbiddenBid !== undefined && bidInput === forbiddenBid)
+            }
+            onClick={() => onPlaceBid(bidInput)}
+            className="w-full font-bold text-xs bg-amber-500 hover:bg-amber-400 text-zinc-950 shadow"
+          >
+            Conferma Puntata ({bidInput})
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }
