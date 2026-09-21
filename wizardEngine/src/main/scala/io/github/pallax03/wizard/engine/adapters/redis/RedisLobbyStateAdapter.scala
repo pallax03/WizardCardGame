@@ -82,6 +82,12 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       case None        => Left(LobbyError.LobbyNotFound)
 
   /** @inheritdoc */
+  override def deleteLobby(lobbyId: LobbyId): Future[Either[LobbyError, Unit]] =
+    redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.lobby(lobbyId)))
+      .asScala
+      .map(_ => Right(()))
+  
+  /** @inheritdoc */
   override def addPlayer(
       lobbyId: LobbyId,
       name: String,
