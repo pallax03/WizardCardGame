@@ -3,7 +3,6 @@
 import { useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
 import { animate, motion, useMotionValue, type AnimationPlaybackControls } from "motion/react";
-import { Card as UiCard, CardContent, CardHeader, CardTitle } from "@/ui/components/card";
 import { GameCardView } from "./GameCardView";
 import { cardEquals, cardToString } from "../state/gameReducer";
 import type { Card } from "../types";
@@ -15,9 +14,7 @@ interface PlayerHandProps {
   isSubmitting?: boolean;
   isCardPlayable: (card: Card) => boolean;
   onSelectCard: (card: Card | null) => void;
-  /** Carta suggerita dal backend: viene evidenziata con stile dedicato. */
   hintedCard?: Card | null;
-  /** Ref del tavolo: la carta viene giocata se rilasciata dentro i suoi bounds. */
   dropZoneRef?: RefObject<HTMLDivElement | null>;
   onDropCard?: (card: Card) => void;
   onDragStateChange?: (dragging: boolean) => void;
@@ -31,23 +28,24 @@ interface DraggableHandCardProps {
   isHinted: boolean;
   isLegal: boolean;
   draggable: boolean;
+  rotation: number;
+  offsetY: number;
+  size: "sm" | "md" | "lg";
   dropZoneRef?: RefObject<HTMLDivElement | null>;
   onToggleSelect: () => void;
   onDropCard?: (card: Card) => void;
   onDragStateChange?: (dragging: boolean) => void;
 }
 
-/**
- * Carta trascinabile con overlay su document.body: mentre trascini, la carta
- * vive in un portal fixed z-[100], fuori da ogni stacking context della pagina
- * (backdrop-blur, transform, ...), quindi resta sempre sopra al tavolo.
- */
 function DraggableHandCard({
   card,
   isSelected,
   isHinted,
   isLegal,
   draggable,
+  rotation,
+  offsetY,
+  size,
   dropZoneRef,
   onToggleSelect,
   onDropCard,
@@ -115,7 +113,6 @@ function DraggableHandCard({
     const gesture = gestureRef.current;
     gestureRef.current = null;
     if (!gesture) return;
-    // Tocco senza movimento = tap = seleziona/deseleziona.
     if (!gesture.dragging) {
       onToggleSelect();
       return;
@@ -128,7 +125,6 @@ function DraggableHandCard({
       onDropCard?.(card);
       return;
     }
-    // Rilascio fuori dal tavolo: l'overlay torna elastico al suo posto.
     const seq = dragSeqRef.current;
     const done = () => {
       if (dragSeqRef.current !== seq) return;
@@ -147,7 +143,12 @@ function DraggableHandCard({
     <>
       <motion.div
         ref={slotRef}
-        whileHover={draggable ? { y: -6 } : undefined}
+        style={{
+          rotate: isSelected ? 0 : rotation,
+          y: isSelected ? -28 : offsetY,
+          zIndex: isSelected ? 50 : 10,
+        }}
+        whileHover={draggable ? { y: -28, rotate: 0, zIndex: 40, scale: 1.08 } : undefined}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={(event) => finishGesture(event.clientX, event.clientY, false)}
@@ -165,11 +166,13 @@ function DraggableHandCard({
         role="button"
         tabIndex={draggable ? 0 : -1}
         aria-label={`${cardToString(card)}${isLegal ? "" : " (non giocabile)"}${isHinted ? " (suggerita dall'AI)" : ""}. Trascina sul tavolo per giocarla.`}
-        className={`${draggable ? "cursor-grab touch-none active:cursor-grabbing" : ""}${overlayOrigin ? " opacity-0" : ""}`}
+        className={`relative shrink-0 transition-all duration-200 origin-bottom ${
+          draggable ? "cursor-grab touch-none active:cursor-grabbing" : ""
+        } ${overlayOrigin ? "opacity-0" : ""}`}
       >
         <GameCardView
           card={card}
-          size="lg"
+          size={size}
           isSelected={isSelected}
           isHinted={isHinted}
           isLegal={isLegal}
@@ -183,11 +186,11 @@ function DraggableHandCard({
             className="pointer-events-none fixed z-[100]"
             style={{ left: overlayOrigin.left, top: overlayOrigin.top, x, y }}
           >
-            <div className="rounded-xl ring-2 ring-amber-300 ring-offset-2 ring-offset-transparent">
-              <GameCardView card={card} size="lg" isClickable={false} />
+            <div className="rounded-xl ring-2 ring-amber-300 ring-offset-2 ring-offset-transparent shadow-2xl">
+              <GameCardView card={card} size={size} isClickable={false} />
             </div>
           </motion.div>,
-          document.body,
+          document.body
         )}
     </>
   );
@@ -205,55 +208,94 @@ export function PlayerHand({
   onDropCard,
   onDragStateChange,
 }: PlayerHandProps) {
-  return (
-    <UiCard className="bg-zinc-950/80 border-amber-500/40 backdrop-blur-md shadow-2xl">
-      <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between border-b border-zinc-800/60">
-        <CardTitle className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-2">
-          <span>🃏</span> La Tua Mano ({hand.length} carte)
-        </CardTitle>
-        <div className="flex flex-col items-end gap-1">
-          {canPlay && (
-            <span className="text-xs text-amber-300 font-bold animate-pulse">
-              Trascina una carta sul tavolo per giocarla
-            </span>
-          )}
-          {hintedCard && (
-            <span className="text-xs text-cyan-300 font-bold">💡 Suggerita evidenziata</span>
-          )}
+  const totalCards = hand.length;
+
+  // Regola richiesta: < 5 -> "lg", 5..9 -> "md", >= 10 -> "sm"
+  const cardSize: "sm" | "md" | "lg" =
+    totalCards <= 4 ? "lg" : totalCards <= 7 ? "md" : "sm";
+
+  const renderRow = (cardsRow: Card[], startIndex: number, size: "sm" | "md" | "lg") => {
+    const rowTotal = cardsRow.length;
+
+    // Spaziatura adattata alla dimensione della carta
+    const spacingClass =
+      size === "sm"
+        ? rowTotal <= 5
+          ? "-space-x-3 sm:-space-x-5"
+          : "-space-x-5 sm:-space-x-7"
+        : rowTotal <= 2
+        ? "space-x-4 sm:space-x-8"
+        : rowTotal <= 4
+        ? "-space-x-4 sm:-space-x-6"
+        : rowTotal <= 6
+        ? "-space-x-6 sm:-space-x-8"
+        : "-space-x-8 sm:-space-x-10";
+
+    return (
+      <div className={`flex items-end justify-center w-full max-w-full ${spacingClass} min-h-[120px] sm:min-h-[140px] py-2 px-0.5 overflow-visible`}>
+        {cardsRow.map((card, i) => {
+          const index = startIndex + i;
+          const isSelected = cardEquals(card, selectedCard);
+          const isHinted = cardEquals(card, hintedCard);
+          const isLegal = isCardPlayable(card);
+          const draggable = canPlay && isLegal && !isSubmitting;
+
+          const midIndex = (rowTotal - 1) / 2;
+          const offsetFromCenter = i - midIndex;
+          const rotation = rowTotal > 1 ? offsetFromCenter * 2.2 : 0;
+          const offsetY = rowTotal > 1 ? Math.abs(offsetFromCenter) * 1.2 : 0;
+
+          return (
+            <DraggableHandCard
+              key={index}
+              card={card}
+              isSelected={isSelected}
+              isHinted={isHinted}
+              isLegal={canPlay ? isLegal : true}
+              draggable={draggable}
+              rotation={rotation}
+              offsetY={offsetY}
+              size={size}
+              dropZoneRef={dropZoneRef}
+              onToggleSelect={() => {
+                if (canPlay && isLegal) onSelectCard(isSelected ? null : card);
+              }}
+              onDropCard={onDropCard}
+              onDragStateChange={onDragStateChange}
+            />
+          );
+        })}
+      </div>
+    );
+  };
+
+  if (totalCards === 0) {
+    return (
+      <div className="relative w-full pt-12 pb-4 px-2 overflow-visible">
+        <div className="text-center py-4 text-zinc-500 text-xs italic">
+          Mano vuota
         </div>
-      </CardHeader>
-      <CardContent className="p-3">
-        {hand.length > 0 ? (
-          <div className="flex flex-wrap gap-2 sm:gap-3 items-center justify-center p-3 bg-zinc-900/60 rounded-xl border border-zinc-800/80 min-h-[140px]">
-            {hand.map((card, index) => {
-              const isSelected = cardEquals(card, selectedCard);
-              const isHinted = cardEquals(card, hintedCard);
-              const isLegal = isCardPlayable(card);
-              const draggable = canPlay && isLegal && !isSubmitting;
-              return (
-                <DraggableHandCard
-                  key={index}
-                  card={card}
-                  isSelected={isSelected}
-                  isHinted={isHinted}
-                  isLegal={canPlay ? isLegal : true}
-                  draggable={draggable}
-                  dropZoneRef={dropZoneRef}
-                  onToggleSelect={() => {
-                    if (canPlay && isLegal) onSelectCard(isSelected ? null : card);
-                  }}
-                  onDropCard={onDropCard}
-                  onDragStateChange={onDragStateChange}
-                />
-              );
-            })}
-          </div>
-        ) : (
-          <div className="text-center py-8 text-zinc-500 text-xs">
-            Mano vuota (in attesa delle carte del prossimo round)
-          </div>
-        )}
-      </CardContent>
-    </UiCard>
+      </div>
+    );
+  }
+
+  /* Dai 10 elementi in poi la mano viene divisa a metà su 2 righe con dimensione "sm" */
+  if (totalCards >= 10) {
+    const halfIndex = Math.ceil(totalCards / 2);
+    const topRow = hand.slice(0, halfIndex);
+    const bottomRow = hand.slice(halfIndex);
+
+    return (
+      <div className="relative w-full pt-12 pb-4 px-0.5 overflow-visible flex flex-col items-center -space-y-10">
+        <div className="z-10 relative w-full flex justify-center">{renderRow(topRow, 0, cardSize)}</div>
+        <div className="z-20 relative w-full flex justify-center">{renderRow(bottomRow, halfIndex, cardSize)}</div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative w-full pt-16 pb-4 px-0.5 overflow-visible">
+      {renderRow(hand, 0, cardSize)}
+    </div>
   );
 }
