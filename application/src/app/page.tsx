@@ -38,8 +38,6 @@ export default function Home() {
       return;
     }
 
-    // Niente auto-rerouting: la home mostra sempre la lista delle lobby
-    // salvate (partite in pausa incluse), con stato live e rientro.
     const saved = readSavedLobbies();
     if (saved.length === 0) return;
     queueMicrotask(() =>
@@ -61,7 +59,6 @@ export default function Home() {
         } catch (reason) {
           if (cancelled) return;
           if (reason instanceof ApiError && reason.status === 404) {
-            // Lobby sparita dal backend: toglila anche dalla lista.
             removeSavedLobby(entry.lobbyId);
             setSavedEntries((prev) => prev.filter((item) => item.lobbyId !== entry.lobbyId));
           } else {
@@ -105,6 +102,17 @@ export default function Home() {
     if (result?.error) {
       setError(getErrorMessage(result.error));
       setIsJoining(false);
+    }
+  };
+
+  const handleEnterKey = (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (isCreating || isJoining) return;
+    if (lobbyIdToJoin.trim()) {
+      void handleJoinLobby();
+    } else {
+      void handleCreateLobby();
     }
   };
 
@@ -231,6 +239,7 @@ export default function Home() {
                   setUsername(e.target.value);
                   if (error) setError(null);
                 }}
+                onKeyDown={handleEnterKey}
                 className="bg-zinc-950/60 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500 h-11"
               />
               {error && <p className="text-xs text-red-400 font-medium pl-1">{error}</p>}
@@ -288,6 +297,7 @@ export default function Home() {
                         setLobbyIdToJoin(e.target.value);
                         if (error) setError(null);
                       }}
+                      onKeyDown={handleEnterKey}
                       className="bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-primary h-11 font-mono uppercase text-sm"
                     />
                     <Button
