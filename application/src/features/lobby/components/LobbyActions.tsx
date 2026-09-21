@@ -55,11 +55,46 @@ export function LobbyActions({ isLeaving, isStarting, onLeave, onStart, isResumi
   const isPaused = status === "PAUSED";
   const isDisconnecting = status === "DISCONNECTING";
   const isFinished = status === "FINISHED";
+  const showDiscardMain = (isPaused || isFinished) && onDiscard;
+
+  const discardLabel =
+    discardMode === "finished"
+      ? lobbyI18n.actions.discardFinished
+      : lobbyI18n.actions.discardPaused;
 
   return (
     <div className="space-y-3">
       <div className="flex gap-3">
-        {isWaiting ? (
+        {showDiscardMain ? (
+          <Button
+            onClick={handleDiscardClick}
+            disabled={busy}
+            variant={confirmingDiscard ? "destructive" : "outline"}
+            size="lg"
+            className={
+              confirmingDiscard
+                ? "w-1/3 min-w-0 shrink overflow-hidden gap-2 font-semibold"
+                : "w-1/3 min-w-0 shrink overflow-hidden gap-2 border-red-500/50 bg-transparent text-red-300 hover:text-red-200 hover:border-red-500 hover:bg-red-950/30"
+            }
+          >
+            {isDiscarding ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : confirmingDiscard ? (
+              <TriangleAlert className="w-4 h-4" />
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}{" "}
+            {isDiscarding ? (
+              lobbyI18n.actions.discarding
+            ) : confirmingDiscard ? (
+              <span className="block min-w-0 overflow-hidden whitespace-nowrap text-ellipsis">
+                {lobbyI18n.actions.confirmShort}
+              </span>
+            ) : (
+              discardLabel
+            )}
+          </Button>
+        ) : isWaiting ? (
           <Button
             onClick={handleLeaveClick}
             disabled={busy}
@@ -67,16 +102,20 @@ export function LobbyActions({ isLeaving, isStarting, onLeave, onStart, isResumi
             size="lg"
             className={
               confirmingLeave
-                ? "w-1/3 gap-2 font-semibold"
-                : "w-1/3 gap-2 border-zinc-700 bg-transparent text-zinc-300 hover:text-red-300 hover:border-red-500/50 hover:bg-red-950/30"
+                ? "w-1/3 min-w-0 shrink overflow-hidden gap-2 font-semibold"
+                : "w-1/3 min-w-0 shrink overflow-hidden gap-2 border-zinc-700 bg-transparent text-zinc-300 hover:text-red-300 hover:border-red-500/50 hover:bg-red-950/30"
             }
           >
             {isLeaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}{" "}
-            {isLeaving
-              ? lobbyI18n.actions.leaving
-              : confirmingLeave
-                ? lobbyI18n.actions.leaveConfirm
-                : lobbyI18n.actions.leave}
+            {isLeaving ? (
+              lobbyI18n.actions.leaving
+            ) : confirmingLeave ? (
+              <span className="block min-w-0 overflow-hidden whitespace-nowrap text-ellipsis">
+                {lobbyI18n.actions.confirmShort}
+              </span>
+            ) : (
+              lobbyI18n.actions.leave
+            )}
           </Button>
         ) : (
           onExitHome && (
@@ -120,47 +159,31 @@ export function LobbyActions({ isLeaving, isStarting, onLeave, onStart, isResumi
           {isPausing ? lobbyI18n.actions.pausing : lobbyI18n.actions.pauseGame}
         </Button>
       )}
-      {onDiscard && (isPaused || isFinished) && (
+      {showDiscardMain ? (
         <div className="space-y-1.5">
-          <Button
-            onClick={handleDiscardClick}
-            disabled={busy}
-            variant={confirmingDiscard ? "destructive" : "outline"}
-            size="sm"
-            className={
-              confirmingDiscard
-                ? "w-full gap-2 font-semibold"
-                : "w-full gap-2 border-zinc-700 bg-transparent text-zinc-400 hover:text-red-300 hover:border-red-500/50 hover:bg-red-950/30"
-            }
-          >
-            {isDiscarding ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : confirmingDiscard ? (
-              <TriangleAlert className="w-4 h-4" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}{" "}
-            {isDiscarding
-              ? lobbyI18n.actions.discarding
-              : confirmingDiscard
-                ? (discardMode === "finished"
-                    ? lobbyI18n.actions.discardFinishedConfirm
-                    : lobbyI18n.actions.discardPausedConfirm)
-                : (discardMode === "finished"
-                    ? lobbyI18n.actions.discardFinished
-                    : lobbyI18n.actions.discardPaused)}
-          </Button>
           {!confirmingDiscard && (
             <p className="text-center text-[11px] text-zinc-500">
               {lobbyI18n.actions.discardPausedHint}
             </p>
           )}
+          {onExitHome && (
+            <button
+              type="button"
+              onClick={onExitHome}
+              disabled={busy}
+              className="mx-auto flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-indigo-300 transition-colors"
+              title={lobbyI18n.actions.exitHomeHint}
+            >
+              <Home className="w-3 h-3" /> {lobbyI18n.actions.exitHome}
+            </button>
+          )}
         </div>
-      )}
-      {!isWaiting && onExitHome && (
-        <p className="text-center text-[11px] text-zinc-500">
-          {lobbyI18n.actions.exitHomeHint}
-        </p>
+      ) : (
+        !isWaiting && onExitHome && (
+          <p className="text-center text-[11px] text-zinc-500">
+            {lobbyI18n.actions.exitHomeHint}
+          </p>
+        )
       )}
     </div>
   );

@@ -68,6 +68,7 @@ export const it = {
     actions: {
       leave: "Abbandona",
       leaveConfirm: "Sei sicuro di voler abbandonare?",
+      confirmShort: "Sicuro?",
       leaving: "Uscita...",
       exitHome: "Torna alle lobby",
       exitHomeHint: "Ti disconnetti (risulti offline), la partita resta salvata.",
@@ -240,6 +241,7 @@ export const en = {
     actions: {
       leave: "Leave",
       leaveConfirm: "Are you sure you want to leave?",
+      confirmShort: "Sure?",
       leaving: "Leaving...",
       exitHome: "Back to lobbies",
       exitHomeHint: "You disconnect (appear offline), the game stays saved.",
