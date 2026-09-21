@@ -117,6 +117,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
   const [isCardDragging, setIsCardDragging] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
+  const [isPausing, setIsPausing] = useState(false);
+  const [pauseError, setPauseError] = useState<string | null>(null);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
   const players = lobby?.players ?? [];
@@ -168,6 +170,35 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     router.push(lobbyId ? `/lobby/${lobbyId}` : "/");
   };
 
+  /**
+   * Mette in pausa la partita (POST /pause) e torna alla lobby,
+   * stesso stato PAUSED che si ottiene con disconnessione + pausa.
+   * Se la pausa fallisce si resta in partita e si mostra l'errore.
+   */
+  const handlePauseAndExit = async () => {
+    if (isPausing || !lobbyId) return;
+    setPauseError(null);
+    setIsPausing(true);
+    try {
+      const { pauseGameAction } = await import("@/features/lobby/api");
+      const { getErrorMessage } = await import("@/ui/i18n/errors");
+      const result = await pauseGameAction(lobbyId);
+      if (result.error) {
+        setPauseError(getErrorMessage(result.error));
+        setIsPausing(false);
+        return;
+      }
+    } catch {
+      setPauseError("Impossibile mettere in pausa la partita.");
+      setIsPausing(false);
+      return;
+    }
+    router.push(`/lobby/${lobbyId}`);
+  };
+
+  const canPauseExit =
+    !isGameEnded && (lobby?.status === "IN_GAME" || lobby?.status === "DISCONNECTING");
+
   const handleDropCard = (card: Card) => {
     setSelectedCard(null);
     void handlePlayCard(card);
@@ -189,7 +220,16 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         connectionState={connectionState}
         round={gameState.round}
         status={gameState.status}
+        canPauseExit={canPauseExit}
+        isPausing={isPausing}
+        onPauseExit={() => void handlePauseAndExit()}
       />
+
+      {pauseError && (
+        <div className="p-3 rounded-2xl border border-rose-700/60 bg-rose-950/60 text-rose-200 text-sm text-center">
+          <p className="font-semibold">⚠️ {pauseError}</p>
+        </div>
+      )}
 
       {isRestoring && (
         <div className="p-3 rounded-2xl border border-amber-400/50 bg-amber-950/60 text-amber-200 text-sm font-semibold text-center animate-pulse">
