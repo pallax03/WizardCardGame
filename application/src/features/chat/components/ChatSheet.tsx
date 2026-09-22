@@ -43,9 +43,10 @@ export function ChatSheet() {
       messages.filter(
         (message) =>
           message.type !== "event" &&
-          (message.type !== "system" || !botIds.has(message.playerId)),
+          (message.type !== "system" ||
+            (!botIds.has(message.playerId) && message.playerId !== playerId)),
       ),
-    [messages, botIds],
+    [messages, botIds, playerId],
   );
   const humanConnectedPlayerIds = useMemo(
     () => connectedPlayerIds.filter((id) => !botIds.has(id)),
@@ -71,7 +72,7 @@ export function ChatSheet() {
       (message.playerId === activePrivateId || message.destinationId === activePrivateId));
   }, [activePrivateId, chatMessages, feedMessages]);
 
-  const unreadTotal = isOpen ? 0 : Math.max(0, feedMessages.length - seenMessageCount);
+  const unreadTotal = isOpen ? 0 : Math.max(0, chatMessages.length - seenMessageCount);
   const privateUnread = (peerId: number) => {
     if (playerId === null) return 0;
     if (isOpen && activePrivateId === peerId) return 0;
@@ -89,7 +90,7 @@ export function ChatSheet() {
   };
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
-    setSeenMessageCount(feedMessages.length);
+    setSeenMessageCount(chatMessages.length);
     if (open && activePrivateId !== null) markPrivateSeen(activePrivateId);
   };
 
@@ -106,7 +107,7 @@ export function ChatSheet() {
     if (isOpen && activePrivateId !== null) {
       setTimeout(() => markPrivateSeen(activePrivateId), 0);
     }
-  }, [isOpen, activePrivateId, feedMessages.length]);
+  }, [isOpen, activePrivateId, chatMessages.length]);
 
   if (playerId === null) {
     return <Skeleton className="fixed right-4 bottom-4 z-40 size-14 rounded-full sm:right-6 sm:bottom-6" />;
