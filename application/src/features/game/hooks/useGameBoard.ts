@@ -39,6 +39,7 @@ export function useGameBoard(customPlayerId?: number) {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [bidInput, setBidInput] = useState<number>(0);
   const [selectedColor, setSelectedColor] = useState<CardColor>("Red");
+  const [hintedBid, setHintedBid] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [bidErrorRaw, setBidErrorRaw] = useState<{ round: number; message: string } | null>(null);
@@ -134,6 +135,7 @@ export function useGameBoard(customPlayerId?: number) {
       setBidErrorRaw(null);
       setActionError(null);
       setHintedCard(null);
+      setHintedBid(null);
       setHintMeta(null);
       setHintError(null);
       setIsHintLoading(false);
@@ -562,6 +564,13 @@ export function useGameBoard(customPlayerId?: number) {
       } else if (canBid) {
         const hint = await getBestBidHint(lobbyId);
         setBidInput(hint);
+        setHintedBid(hint);
+        setHintMeta({
+          round: gameState.round,
+          status: gameState.status,
+          playerId: gameState.currentTurn.playerId,
+          action: gameState.currentTurn.actionType,
+        });
         setActionStatus(`💡 Suggerimento: punta ${hint}.`);
       } else if (canChooseTrump) {
         const hint = await getBestTrumpHint(lobbyId);
@@ -595,6 +604,15 @@ export function useGameBoard(customPlayerId?: number) {
     if (!isCardInList(hintedCard, gameState.hand)) return null;
     return hintedCard;
   }, [hintedCard, hintMeta, gameState.round, gameState.status, gameState.currentTurn, gameState.hand]);
+
+  const visibleHintedBid = useMemo<number | null>(() => {
+    if (hintedBid === null || !hintMeta) return null;
+    if (hintMeta.round !== gameState.round) return null;
+    if (hintMeta.status !== gameState.status) return null;
+    if (hintMeta.playerId !== gameState.currentTurn.playerId) return null;
+    if (hintMeta.action !== gameState.currentTurn.actionType) return null;
+    return hintedBid;
+  }, [hintedBid, hintMeta, gameState.round, gameState.status, gameState.currentTurn]);
 
   return {
     lobbyId,
@@ -646,6 +664,7 @@ export function useGameBoard(customPlayerId?: number) {
     handlePlayCard,
     // AI hint (mossa migliore dal backend)
     hintedCard: visibleHintedCard,
+    hintedBid: visibleHintedBid,
     setHintedCard,
     isHintLoading,
     hintError,

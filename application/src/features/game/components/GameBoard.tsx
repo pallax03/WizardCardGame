@@ -104,6 +104,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     handlePlaceBid,
     handlePlayCard,
     hintedCard,
+    hintedBid,
     isHintLoading,
     hintError,
     canRequestHint,
@@ -281,7 +282,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       )}
 
       {/* Banner Turno */}
-      <div className="w-full">
+      {/* <div className="w-full">
         <GameTurnBanner
           isMyTurn={isMyTurn}
           turnPrompt={turnPrompt}
@@ -292,7 +293,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           turnTimerSeconds={turnTimerSeconds}
           strikes={activeTurnPlayer?.strikes ?? 0}
         />
-      </div>
+      </div> */}
 
       {/* Board Tonda */}
       <div
@@ -424,6 +425,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             isSubmitting={isSubmitting}
             forbiddenBid={forbiddenBid}
             bidsTotal={bidsTotal}
+            hintedBid={hintedBid}
           />
         </div>
       )}

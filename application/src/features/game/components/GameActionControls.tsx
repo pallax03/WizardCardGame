@@ -1,6 +1,7 @@
 ﻿"use client";
 
 import { Button } from "@/ui/components/button";
+import { Lightbulb } from "lucide-react";
 import type { CardColor } from "../types";
 
 const TRUMP_COLORS: CardColor[] = ["Red", "Yellow", "Green", "Blue"];
@@ -20,6 +21,7 @@ interface GameActionControlsProps {
   isSubmitting: boolean;
   forbiddenBid?: number | null;
   bidsTotal?: number;
+  hintedBid?: number | null;
 }
 
 export function GameActionControls({
@@ -37,6 +39,7 @@ export function GameActionControls({
   isSubmitting,
   forbiddenBid,
   bidsTotal,
+  hintedBid = null,
 }: GameActionControlsProps) {
   if (!isMyTurn) return null;
 
@@ -72,9 +75,10 @@ export function GameActionControls({
           <p className="text-[11px] font-bold text-amber-300 text-center">
             Puntata Round {round}:
           </p>
-          <div className="flex flex-wrap gap-1 justify-center max-h-24 overflow-y-auto">
+          <div className="flex flex-wrap gap-1 justify-center max-h-24 overflow-y-auto p-4">
             {Array.from({ length: round + 1 }, (_, i) => {
               const isForbidden = forbiddenBid !== null && forbiddenBid !== undefined && i === forbiddenBid;
+              const isHinted = hintedBid === i && bidInput === i;
               return (
                 <Button
                   key={i}
@@ -82,9 +86,22 @@ export function GameActionControls({
                   variant={bidInput === i ? "confirming" : "outline"}
                   disabled={isSubmitting || isForbidden}
                   onClick={() => onSelectBid(i)}
-                  className={`size-7 p-0 text-xs font-mono font-bold ${isForbidden ? "opacity-30 line-through" : ""}`}
+                  aria-label={isHinted ? `Puntata ${i} suggerita` : `Puntata ${i}`}
+                  title={isHinted ? "Puntata suggerita dall'AI" : undefined}
+                  className={`relative size-7 p-0 text-xs font-mono font-bold ${
+                    isForbidden ? "opacity-30 line-through" : ""
+                  } ${
+                    isHinted
+                      ? "bg-cyan-400 text-zinc-950 border-cyan-200 ring-2 ring-cyan-300 shadow-lg shadow-cyan-500/50 scale-110 hover:bg-cyan-300"
+                      : ""
+                  }`}
                 >
                   {i}
+                  {isHinted && (
+                    <span className="absolute -top-2 -right-2 grid size-4 place-items-center rounded-full border border-cyan-200 bg-cyan-500 text-[9px] shadow-md shadow-cyan-500/50">
+                      <Lightbulb className="size-2.5 fill-current" />
+                    </span>
+                  )}
                 </Button>
               );
             })}

@@ -32,7 +32,7 @@ export function GameHeader({
   onToggleScoreboard,
 }: GameHeaderProps) {
   return (
-    <div className="flex items-center justify-between gap-2 p-2 sm:p-3 rounded-xl bg-zinc-950/90 border border-amber-500/30 shadow-xl backdrop-blur-md">
+    <div className="flex items-center justify-between gap-2 p-2 mb-8 sm:p-3 rounded-xl bg-zinc-950/90 border border-amber-500/30 shadow-xl backdrop-blur-md">
       <div className="flex items-center gap-1.5">
         {onBackHome && (
           <Button
