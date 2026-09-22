@@ -6,9 +6,11 @@ import { X, Trophy, Check, X as XIcon } from "lucide-react";
 import type { Scoreboard, ScoreEntry } from "../types";
 
 interface GameScoreboardProps {
+  players?: any[];
   scoreboard: Scoreboard | null;
-  playersMap: Map<number, { name: string }>;
-  myPlayerId: number | null;
+  playersMap: Map<number, { name: string; isOnline?: boolean }>;
+  myPlayerId?: number | null;
+  initialSelectedPlayerId?: number;
   onClose?: () => void;
 }
 
@@ -16,39 +18,47 @@ export function GameScoreboard({
   scoreboard,
   playersMap,
   myPlayerId,
+  initialSelectedPlayerId,
   onClose,
+  players,
 }: GameScoreboardProps) {
   if (!scoreboard) return null;
 
   // Elaborazione classifica e dati del tabellone
   const { leaderboard, playerEntriesMap } = useMemo(() => {
-    const entriesMap = new Map<number, ScoreEntry[]>();
+    const entriesMap = new Map<number, any[]>();
     const leaderboardData: { playerId: number; totalScore: number }[] = [];
 
-    Object.entries(scoreboard).forEach(([pIdStr, entries]) => {
-      const pId = Number(pIdStr);
-      // Ordina le entry per round crescente
-      const sortedEntries = [...entries].sort((a, b) => a.round - b.round);
-      entriesMap.set(pId, sortedEntries);
+    if (Array.isArray(players)) {
+      for (const p of players) {
+        entriesMap.set(p.id, []);
+      }
+    }
 
-      // Punteggio totale (preso dall'ultima entry disponibile)
-      const lastEntry = sortedEntries[sortedEntries.length - 1];
-      const totalScore = lastEntry ? lastEntry.score : 0;
+    if (scoreboard && typeof scoreboard === 'object') {
+      Object.entries(scoreboard).forEach(([pIdStr, entries]) => {
+        const pId = Number(pIdStr);
+        const validEntries = Array.isArray(entries) ? entries : [];
+        const sortedEntries = [...validEntries].sort((a, b) => (a.round || 0) - (b.round || 0));
+        entriesMap.set(pId, sortedEntries);
+      });
+    }
 
+    entriesMap.forEach((sortedEntries, pId) => {
+      const lastEntry = sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1] : null;
+      const totalScore = lastEntry ? (lastEntry.score || 0) : 0;
       leaderboardData.push({ playerId: pId, totalScore });
     });
 
-    // Ordina la classifica per punteggio decrescente
     leaderboardData.sort((a, b) => b.totalScore - a.totalScore);
-
-    return {
-      leaderboard: leaderboardData,
-      playerEntriesMap: entriesMap,
-    };
-  }, [scoreboard]);
+    return { leaderboard: leaderboardData, playerEntriesMap: entriesMap };
+  }, [scoreboard, players]);
 
   // Giocatore attualmente selezionato (default: myPlayerId o il primo in classifica)
   const [selectedPlayerId, setSelectedPlayerId] = useState<number>(() => {
+    if (initialSelectedPlayerId !== undefined && playerEntriesMap.has(initialSelectedPlayerId)) {
+      return initialSelectedPlayerId;
+    }
     if (myPlayerId && playerEntriesMap.has(myPlayerId)) {
       return myPlayerId;
     }
@@ -61,18 +71,29 @@ export function GameScoreboard({
     return index !== -1 ? index + 1 : null;
   }, [leaderboard, selectedPlayerId]);
 
-  const selectedPlayerName = playersMap.get(selectedPlayerId)?.name ?? `Giocatore ${selectedPlayerId}`;
+
+  const getBotDifficultyLabel = (p: any) => {
+    if (!p?.difficulty) return null;
+    const isRealBot = p.name.toLowerCase().includes("bot");
+    if (!isRealBot) return "BOT";
+    return p.difficulty === 'Dumb' ? 'Stupido' : p.difficulty === 'Prolog' ? 'Normale' : p.difficulty;
+  };
+
+  const selectedP = Array.isArray(players) ? players.find((p: any) => p.id === selectedPlayerId) : undefined;
+  const selectedPlayerNameRaw = playersMap.get(selectedPlayerId)?.name ?? `Giocatore ${selectedPlayerId}`;
+  const selectedDiff = getBotDifficultyLabel(selectedP);
+  const selectedPlayerName = selectedPlayerNameRaw;
   const selectedPlayerEntries = playerEntriesMap.get(selectedPlayerId) ?? [];
   const selectedTotalScore = selectedPlayerEntries.length > 0
     ? selectedPlayerEntries[selectedPlayerEntries.length - 1].score
     : 0;
 
   return (
-    <div className="relative bg-zinc-950/95 border border-amber-500/40 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden max-h-[85vh] flex flex-col w-full max-w-md mx-auto p-3 sm:p-4 space-y-4">
+    <div className="relative bg-zinc-950/95 border border-zinc-700/60 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden max-h-[85vh] flex flex-col w-full max-w-md mx-auto p-3 sm:p-4 space-y-4">
       {/* Header Classifica con pulsante di chiusura */}
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5 shrink-0">
-        <div className="text-xs font-black uppercase tracking-widest text-amber-400 flex items-center gap-1.5">
-          <Trophy className="size-4 text-amber-400" /> Classifica
+        <div className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-1.5">
+          <Trophy className="size-4 text-white" /> Classifica
         </div>
         {onClose && (
           <Button
@@ -93,7 +114,10 @@ export function GameScoreboard({
         <div className="flex flex-col gap-1.5 text-xs font-mono">
           {leaderboard.map((item, idx) => {
             const pId = item.playerId;
-            const pName = playersMap.get(pId)?.name ?? `P${pId}`;
+            const p = Array.isArray(players) ? players.find((p: any) => p.id === pId) : undefined;
+            const pNameRaw = playersMap.get(pId)?.name ?? `P${pId}`;
+            const diffLabel = getBotDifficultyLabel(p);
+            const pName = pNameRaw;
             const isMe = pId === myPlayerId;
             const isSelected = pId === selectedPlayerId;
             const rank = idx + 1;
@@ -105,20 +129,21 @@ export function GameScoreboard({
                 onClick={() => setSelectedPlayerId(pId)}
                 className={`flex items-center justify-between px-3 py-2 rounded-xl border text-xs transition-all w-full text-left cursor-pointer select-none ${
                   isSelected
-                    ? "bg-amber-500/20 border-amber-500 text-amber-200 shadow-md shadow-amber-500/10 font-bold"
+                    ? "bg-zinc-100 text-black border-white shadow-lg font-bold"
                     : isMe
-                    ? "bg-zinc-900 border-amber-500/30 text-amber-300/90 hover:bg-zinc-800/80"
+                    ? "bg-zinc-800 border-zinc-600 text-zinc-100 hover:bg-zinc-700"
                     : "bg-zinc-900/60 border-zinc-800/80 text-zinc-300 hover:bg-zinc-800/60 hover:text-white"
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate mr-2">
-                  <span className={`text-[11px] font-bold min-w-[22px] ${isSelected ? "text-amber-400" : "text-zinc-500"}`}>
+                  <span className={`text-[11px] font-bold min-w-[22px] ${isSelected ? "text-black" : "text-zinc-500"}`}>
                     {rank}°
                   </span>
                   <span className="truncate font-semibold">{pName}</span>
-                  {isMe && <span className="text-[10px] text-amber-400 font-normal">(Tu)</span>}
+                  {diffLabel && <span className={`text-[9px] uppercase font-bold px-1 rounded-sm ${isSelected ? "bg-black/10 text-black/60" : "bg-white/10 text-white/50"}`}>{diffLabel}</span>}
+                  {isMe && <span className="text-[10px] text-zinc-500 font-normal">(Tu)</span>}
                 </div>
-                <span className={`font-black shrink-0 ${isSelected ? "text-amber-300" : "text-white"}`}>
+                <span className={`font-black shrink-0 ${isSelected ? "text-black" : "text-white"}`}>
                   {item.totalScore} pt
                 </span>
               </button>
@@ -132,8 +157,9 @@ export function GameScoreboard({
           <div className="flex items-baseline justify-between border-b border-zinc-800 pb-1.5 px-1">
             <div className="font-black text-sm uppercase tracking-wide text-zinc-100 flex items-center gap-1.5">
               <span>{selectedPlayerName}</span>
+              {selectedDiff && <span className="text-[10px] uppercase font-bold bg-white/10 text-white/70 px-1.5 py-0.5 rounded-sm">{selectedDiff}</span>}
               {selectedPlayerId === myPlayerId && (
-                <span className="text-amber-400 text-xs font-normal">(Tu)</span>
+                <span className="text-black text-xs font-normal">(Tu)</span>
               )}
             </div>
           </div>

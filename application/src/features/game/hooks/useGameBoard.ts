@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLobbySession } from "@/features/lobby-session";
@@ -21,7 +21,7 @@ import { mapSnapshotToBoardState } from "../state/snapshotMapper";
 import type { Card, CardColor, GameBoardState, PlayedCardEntry } from "../types";
 
 /** Secondi di pausa a fine presa: il tavolo resta visibile prima di pulirsi. */
-export const TRICK_REVEAL_SECONDS = 4;
+export const TRICK_REVEAL_SECONDS = 6;
 
 export function useGameBoard(customPlayerId?: number) {
   const {
@@ -201,37 +201,83 @@ export function useGameBoard(customPlayerId?: number) {
     return tail.reduce((state, event) => gameReducer(state, event, reducerPlayerId), snapshotState);
   }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, reducerPlayerId]);
 
-  const latestTurnEvent = useMemo(
-    () => [...gameEvents].reverse().find((event) => event.event.action === "TurnOf") ?? null,
-    [gameEvents]
-  );
+  // Find the most recent TurnOf event for the current active player/action/round.
+  // Use its timestamp as the authoritative start time so reloads don't break the timer.
+  const latestTurnOfEvent = useMemo(() => {
+    const activeId = gameState.currentTurn.playerId;
+    const actionType = gameState.currentTurn.actionType;
+    const currentRound = gameState.round;
+    if (activeId === null || activeId === undefined || actionType === "NONE") return null;
+    const actionMap: Record<string, string> = {
+      BID: "PlaceBid",
+      PLAY_CARD: "PlayCard",
+      CHOOSE_TRUMP: "ResolveTrumpColor",
+    };
+    const requested = actionMap[actionType];
+    // Search backwards — stop as soon as we hit a RoundStarted for a different round
+    // to avoid matching TurnOf events from previous rounds for the same player.
+    for (let i = gameEvents.length - 1; i >= 0; i--) {
+      const ev = gameEvents[i];
+      if (ev.type !== "event") continue;
+      // Stop searching if we've gone past the start of the current round
+      if (ev.event.action === "RoundStarted") {
+        const evRound = Number(ev.event.fields?.round ?? ev.event.fields?.roundNumber ?? 0);
+        if (evRound < currentRound) break;
+      }
+      if (ev.event.action !== "TurnOf" && ev.event.action !== "WaitingForBid" && ev.event.action !== "WaitingForCard") continue;
+      const evPlayerId = Number(ev.event.playerId ?? ev.event.fields?.playerId ?? ev.event.fields?.destinationId ?? 0);
+      if (evPlayerId !== activeId) continue;
+      const evRequested = String(ev.event.fields?.actionRequested ?? "");
+      if (requested && evRequested && evRequested !== requested) continue;
+      return ev;
+    }
+    return null;
+  }, [gameEvents, gameState.currentTurn.playerId, gameState.currentTurn.actionType, gameState.round]);
+
   const turnTimerDuration = useMemo(() => {
-    if (!latestTurnEvent || !lobby?.configuration) return null;
-    const activePlayerId = Number(
-      latestTurnEvent.event.playerId ?? latestTurnEvent.event.fields?.playerId
-    );
-    if (gameState.currentTurn.playerId !== activePlayerId) return null;
+    if (!lobby?.configuration) return null;
+    const activePlayerId = gameState.currentTurn.playerId;
+    if (activePlayerId === null || activePlayerId === undefined) return null;
     const timer = Number(lobby.configuration.timer);
     const player = lobby.players.find((candidate) => candidate.id === activePlayerId);
     if (!Number.isFinite(timer) || timer <= 0 || !player) return null;
     const strikes = Math.max(0, Number(player.strikes ?? 0));
     return Math.max(1, timer / 2 ** strikes);
-  }, [gameState.currentTurn.playerId, latestTurnEvent, lobby]);
+  }, [gameState.currentTurn.playerId, lobby]);
+
+  // Track when the current turn started using a ref.
+  // Set once when the turn key changes, never reset for the same turn.
+  const turnDeadlineRef = useRef<number | null>(null);
+  const turnKeyRef = useRef<string>("");
+
   const [turnTimerSeconds, setTurnTimerSeconds] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!latestTurnEvent || turnTimerDuration === null) {
+    if (turnTimerDuration === null) {
+      turnDeadlineRef.current = null;
+      turnKeyRef.current = "";
       queueMicrotask(() => setTurnTimerSeconds(null));
       return;
     }
-    const deadline = Date.now() + turnTimerDuration * 1000;
+
+    const turnKey = `${gameState.currentTurn.playerId}-${gameState.currentTurn.actionType}-${gameState.round}-${turnTimerDuration}`;
+
+    if (turnKey !== turnKeyRef.current) {
+      console.log("[TIMER] New turn key:", turnKey, "prev:", turnKeyRef.current, "duration:", turnTimerDuration);
+      turnKeyRef.current = turnKey;
+      turnDeadlineRef.current = Date.now() + turnTimerDuration * 1000;
+      console.log("[TIMER] Deadline in", turnTimerDuration, "s, at", new Date(turnDeadlineRef.current).toISOString());
+    }
+
+    const deadline = turnDeadlineRef.current!;
     const initialSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    console.log("[TIMER] Starting interval, initialSeconds:", initialSeconds, "deadline delta:", (deadline - Date.now()) / 1000);
     queueMicrotask(() => setTurnTimerSeconds(initialSeconds));
     const interval = setInterval(() => {
       setTurnTimerSeconds(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
     }, 200);
     return () => clearInterval(interval);
-  }, [latestTurnEvent, turnTimerDuration]);
+  }, [turnTimerDuration, gameState.currentTurn.playerId, gameState.currentTurn.actionType, gameState.round]);
 
   const lastCompletedTrick = useMemo<{
     entries: PlayedCardEntry[];
@@ -338,6 +384,20 @@ export function useGameBoard(customPlayerId?: number) {
     },
     [],
   );
+
+  useEffect(() => {
+    if (revealedTrick) {
+      const shouldDismiss = gameState.status === 'BIDDING' || gameState.status === 'CHOOSING_TRUMP' || gameState.table.length > 0;
+      if (shouldDismiss) {
+        if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
+        if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
+        revealTimeoutRef.current = null;
+        revealIntervalRef.current = null;
+        setRevealedTrick(null);
+        setRevealSecondsLeft(0);
+      }
+    }
+  }, [gameState.status, gameState.table.length, revealedTrick]);
 
   const isMyTurn = gameState.currentTurn.isMyTurn && playerId !== null;
   const hasAlreadyBid = playerId !== null && gameState.bids[playerId] !== undefined;
@@ -669,6 +729,7 @@ export function useGameBoard(customPlayerId?: number) {
     gameState,
     gameEvents,
     turnTimerSeconds,
+    turnTimerDuration,
     // Reveal di fine presa (tavolo congelato + conto alla rovescia)
     revealedTrick,
     revealSecondsLeft,

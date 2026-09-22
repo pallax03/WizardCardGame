@@ -1,7 +1,7 @@
-﻿"use client";
+"use client";
 
 import { cn } from "@/lib/utils";
-import type { Card } from "../types";
+import type { Card, CardColor } from "../types";
 import { cardToString } from "../state/gameReducer";
 import { CARD_COLOR_STYLES } from "./cardStyles";
 
@@ -10,10 +10,10 @@ interface GameCardViewProps {
   isSelected?: boolean;
   isLegal?: boolean;
   isClickable?: boolean;
-  /** Evidenzia la carta suggerita dall'AI (hint del backend). */
   isHinted?: boolean;
   onClick?: () => void;
   size?: "sm" | "md" | "lg";
+  effectiveColor?: string; // e.g. "RED"
 }
 
 export function GameCardView({
@@ -24,6 +24,7 @@ export function GameCardView({
   isHinted = false,
   onClick,
   size = "md",
+  effectiveColor,
 }: GameCardViewProps) {
   const sizeClasses = {
     sm: "w-14 h-20 text-xs p-1.5 rounded-lg",
@@ -33,23 +34,34 @@ export function GameCardView({
 
   let cardStyle = "border-zinc-700 bg-zinc-900 text-zinc-300 shadow-black/60";
   let label = "";
-  let subLabel = "";
+
+  const mapColor = (c: string): CardColor => {
+    if (c === "RED") return "Red";
+    if (c === "BLUE") return "Blue";
+    if (c === "GREEN") return "Green";
+    if (c === "YELLOW") return "Yellow";
+    return c as CardColor;
+  };
 
   if (card.type === "Standard") {
     const style = CARD_COLOR_STYLES[card.color];
     cardStyle = `${style.border} ${style.bg} ${style.text} ${style.glow}`;
     label = String(card.rank);
-    subLabel = card.color;
   } else if (card.type === "Wizard") {
-    cardStyle =
-      "border-amber-400/80 bg-gradient-to-b from-zinc-950 via-zinc-900 to-black text-amber-300 shadow-zinc-900/60 ring-1 ring-amber-400/30";
     label = "W";
-    subLabel = `Wizard #${card.id}`;
+    if (effectiveColor) {
+      const style = CARD_COLOR_STYLES[mapColor(effectiveColor)];
+      if (style) {
+        cardStyle = `${style.border} ${style.bg} ${style.text} ${style.glow}`;
+      } else {
+        cardStyle = "border-zinc-300 bg-gradient-to-b from-zinc-100 via-zinc-200 to-zinc-300 text-zinc-900 shadow-zinc-400/60";
+      }
+    } else {
+      cardStyle = "border-zinc-300 bg-gradient-to-b from-zinc-100 via-zinc-200 to-zinc-300 text-zinc-900 shadow-zinc-400/60";
+    }
   } else if (card.type === "Jester") {
-    cardStyle =
-      "border-cyan-400/80 bg-gradient-to-b from-slate-950 via-cyan-950 to-slate-900 text-cyan-300 shadow-cyan-900/60 ring-1 ring-cyan-400/30";
     label = "J";
-    subLabel = `Jester #${card.id}`;
+    cardStyle = "border-zinc-600/80 bg-gradient-to-b from-black via-zinc-900 to-black text-white shadow-zinc-900/60 ring-1 ring-zinc-600/30";
   }
 
   return (
@@ -66,10 +78,10 @@ export function GameCardView({
         !isClickable && "cursor-default",
         !isLegal && "opacity-35 grayscale-[60%] hover:translate-y-0",
         isSelected &&
-          "ring-4 ring-amber-400 -translate-y-4 shadow-2xl shadow-amber-500/50 scale-105 z-20",
+          "ring-4 ring-sky-400 -translate-y-4 shadow-2xl shadow-sky-500/50 scale-105 z-20",
         isHinted &&
           !isSelected &&
-          "ring-4 ring-cyan-300 -translate-y-2 shadow-2xl shadow-cyan-500/50 scale-105 animate-pulse"
+          "ring-4 ring-purple-400 -translate-y-2 shadow-2xl shadow-purple-500/50 scale-105 animate-pulse"
       )}
     >
       <div className="flex justify-between items-start">
@@ -78,20 +90,17 @@ export function GameCardView({
         </span>
       </div>
 
-      <div className="my-auto text-center">
-        <span className="text-2xl sm:text-3xl leading-none drop-shadow-md">
-          {card.type === "Standard" ? "♦" : card.type === "Wizard" ? "🧙" : "🃏"}
+      <div className="flex justify-end items-end h-full">
+        <span className="text-base sm:text-lg leading-none font-extrabold tracking-tighter rotate-180">
+          {label}
         </span>
       </div>
 
-      <div className="truncate text-[9px] sm:text-[10px] uppercase font-sans font-black tracking-wider opacity-90 text-center">
-        {subLabel}
-      </div>
       {isHinted && (
         <span
           aria-label="Carta suggerita"
           title="Carta suggerita dall'AI"
-          className="absolute -top-2.5 -right-2.5 grid size-7 place-items-center rounded-full border-2 border-cyan-200 bg-cyan-500 text-sm shadow-lg shadow-cyan-500/50"
+          className="absolute -top-2.5 -right-2.5 grid size-7 place-items-center rounded-full border-2 border-purple-300 bg-purple-500 text-sm shadow-lg shadow-purple-500/50"
         >
           💡
         </span>

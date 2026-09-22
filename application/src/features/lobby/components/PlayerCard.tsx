@@ -45,9 +45,7 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
           <div className="min-w-0 flex flex-col">
             <p className="font-semibold text-sm flex items-center gap-1.5 truncate">
               <span className={`truncate ${gameData?.isTurn ? "text-sky-400" : "text-zinc-100"}`}>
-                {isBot 
-                  ? `${player.name} (${player.difficulty === "Dumb" ? lobbyI18n.botSelection.dumb : player.difficulty === "Prolog" ? lobbyI18n.botSelection.prolog : player.difficulty})` 
-                  : player.name}
+                {player.name}
               </span>
               {isMe && (
                 <span className="text-[10px] bg-zinc-900 text-zinc-300 border border-zinc-700/60 px-1.5 py-0.2 rounded font-mono shrink-0">
@@ -56,7 +54,7 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
               )}
             </p>
             <span className="text-xs text-zinc-400 font-mono">
-              {isOnline ? "Online" : "Offline"}
+              {isBot ? (player.difficulty === "Dumb" ? lobbyI18n.botSelection.dumb : player.difficulty === "Prolog" ? lobbyI18n.botSelection.prolog : player.difficulty) : (isOnline ? "Online" : "Offline")}
             </span>
           </div>
         </div>

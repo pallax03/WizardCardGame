@@ -2,65 +2,43 @@
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { useGameBoard, TRICK_REVEAL_SECONDS } from "../hooks/useGameBoard";
 import { cardEquals } from "../state/gameReducer";
-import type { Card } from "../types";
-import { GameActionControls } from "./GameActionControls";
+import type { Card, CardColor } from "../types";
 import { GameCardView } from "./GameCardView";
-import { GameHeader } from "./GameHeader";
 import { GameScoreboard } from "./GameScoreboard";
-import { GameTurnBanner } from "./GameTurnBanner";
 import { PlayerHand } from "./PlayerHand";
-import { TrumpArea } from "./TrumpArea";
 import { GameEndOverlay } from "./GameEndOverlay";
 import { DisconnectOverlay } from "./DisconnectOverlay";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { Lightbulb, X } from "lucide-react";
+import { ArrowLeft, Lightbulb, Trophy, Target, CheckSquare, MessageCircle, AlertTriangle, Check, X } from "lucide-react";
+import { t } from "@/ui/i18n/core";
 
-type SeatLayout = {
-  pos: string;
-  dir: "flex-col" | "flex-row";
-  cardFirst: boolean;
-};
+const lobbyI18n = t("lobby");
 
-const SEAT_PRESETS: Record<number, SeatLayout[]> = {
-  2: [
-    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
-    { pos: "top-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: false },
-  ],
-  3: [
-    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
-    { pos: "top-[25%] left-1 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-    { pos: "top-[25%] right-1 -translate-y-1/2", dir: "flex-row", cardFirst: true },
-  ],
-  4: [
-    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
-    { pos: "top-1/2 left-1 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-    { pos: "top-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: false },
-    { pos: "top-1/2 right-1 -translate-y-1/2", dir: "flex-row", cardFirst: true },
-  ],
-  5: [
-    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
-    { pos: "top-[62%] left-1 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-    { pos: "top-[12%] left-[18%] -translate-x-1/2", dir: "flex-col", cardFirst: false },
-    { pos: "top-[12%] right-[18%] translate-x-1/2", dir: "flex-col", cardFirst: false },
-    { pos: "top-[62%] right-1 -translate-y-1/2", dir: "flex-row", cardFirst: true },
-  ],
-  6: [
-    { pos: "bottom-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: true },
-    { pos: "top-[65%] left-1 -translate-y-1/2", dir: "flex-row", cardFirst: false },
-    { pos: "top-[15%] left-[12%] -translate-x-1/2", dir: "flex-col", cardFirst: false },
-    { pos: "top-1 left-1/2 -translate-x-1/2", dir: "flex-col", cardFirst: false },
-    { pos: "top-[15%] right-[12%] translate-x-1/2", dir: "flex-col", cardFirst: false },
-    { pos: "top-[65%] right-1 -translate-y-1/2", dir: "flex-row", cardFirst: true },
-  ],
-};
-
-function getSeatLayout(idx: number, total: number): SeatLayout {
-  const preset = SEAT_PRESETS[Math.min(Math.max(total, 2), 6)] ?? SEAT_PRESETS[6];
-  return preset[idx % preset.length];
+function phaseLabel(status: string): string {
+  const s = lobbyI18n.pausedSummary;
+  switch (status) {
+    case "CHOOSING_TRUMP": return s.phaseChoosingTrump;
+    case "BIDDING": return s.phaseBidding;
+    case "PLAYING": return s.phasePlaying;
+    case "ROUND_SCORED": return s.phaseRoundScored;
+    case "GAME_ENDED": return s.phaseEnded;
+    default: return s.phaseWaiting;
+  }
 }
+
+const getEffectiveColorCircle = (color: string) => {
+  switch (color) {
+    case "RED": return "bg-red-500";
+    case "BLUE": return "bg-blue-500";
+    case "GREEN": return "bg-emerald-500";
+    case "YELLOW": return "bg-amber-500";
+    default: return "";
+  }
+};
 
 interface GameBoardProps {
   customPlayerId?: number;
@@ -82,7 +60,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     canBid,
     canPlay,
     turnPrompt,
-    turnTimerSeconds,
+    turnTimerSeconds, turnTimerDuration,
     isCardPlayable,
     forbiddenBid,
     bidsTotal,
@@ -117,6 +95,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const [isPausing, setIsPausing] = useState(false);
   const [pauseError, setPauseError] = useState<string | null>(null);
   const [showScoreboard, setShowScoreboard] = useState(false);
+  const [scoreboardPlayer, setScoreboardPlayer] = useState<number | undefined>(undefined);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
   const players = lobby?.players ?? [];
@@ -126,12 +105,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     [players, myIndex]
   );
 
-  const activeTurnPlayer = useMemo(
-    () => players.find((p) => p.id === gameState.currentTurn.playerId),
-    [players, gameState.currentTurn.playerId]
-  );
-
   const isGameEnded = gameState.status === "GAME_ENDED";
+  const isDisconnecting = lobby?.status === "DISCONNECTING";
 
   const sortedScoreboard = useMemo(() => {
     if (!gameState.scoreboard) return [];
@@ -153,11 +128,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           finalScore = Number((entries as { score: unknown }).score ?? 0);
         }
 
-        return {
-          id: pId,
-          name: playerName,
-          score: Number.isNaN(finalScore) ? 0 : finalScore,
-        };
+        return { id: pId, name: playerName, score: Number.isNaN(finalScore) ? 0 : finalScore };
       })
       .sort((a, b) => b.score - a.score);
   }, [gameState.scoreboard, playersMap]);
@@ -196,7 +167,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     router.push(`/lobby/${lobbyId}`);
   };
 
-  const isDisconnecting = lobby?.status === "DISCONNECTING";
   const offlineNames = useMemo(() => {
     const names = (lobby?.players ?? [])
       .filter((p) => !p.difficulty && p.isOnline === false)
@@ -210,10 +180,14 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     void handlePlayCard(card);
   };
 
-  const hasActiveControls = isMyTurn && (canBid || canChooseTrump);
+  const effectiveTrumpColorClass = gameState.effectiveTrumpColor ? getEffectiveColorCircle(gameState.effectiveTrumpColor) : "";
+
+  const openChat = () => {
+    window.dispatchEvent(new CustomEvent('open-chat-global'));
+  };
 
   return (
-    <div className="relative flex flex-col min-h-screen w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-6 space-y-2 sm:space-y-3 select-none overflow-x-hidden">
+    <div className="relative flex flex-col min-h-[100dvh] w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-6 space-y-3 sm:space-y-4 select-none overflow-hidden">
       <GameEndOverlay
         isGameEnded={isGameEnded}
         sortedScoreboard={sortedScoreboard}
@@ -222,236 +196,361 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         isReturning={isReturning}
       />
 
-      <GameHeader
-        lobbyId={lobbyId}
-        playerId={playerId}
-        connectionState={connectionState}
-        round={gameState.round}
-        status={gameState.status}
-        isPausing={isPausing}
-        onBackToLobby={() => void handleBackToLobby()}
-        onToggleScoreboard={() => setShowScoreboard((prev) => !prev)}
-      />
+      {isDisconnecting && (
+        <DisconnectOverlay
+          key={`${lobbyId}-${offlineNames}`}
+          timerSeconds={disconnectTimerSeconds}
+          offlineNames={offlineNames}
+          isWorking={isPausing}
+          onBackToLobby={() => void handleBackToLobby()}
+        />
+      )}
 
       {pauseError && (
-        <div className="p-2 rounded-xl border border-rose-700/60 bg-rose-950/80 text-rose-200 text-xs text-center">
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 z-50 p-2 rounded-xl border border-rose-700/60 bg-rose-950/90 text-rose-200 text-xs text-center shadow-xl backdrop-blur-md w-[90%] max-w-sm">
           <p className="font-semibold">⚠️ {pauseError}</p>
         </div>
       )}
 
-      {isRestoring && (
-        <div className="p-2 rounded-xl border border-amber-400/50 bg-amber-950/80 text-amber-200 text-xs font-semibold text-center animate-pulse">
-          🔄 Ripristino stato partita dal server...
-        </div>
-      )}
+      {/* TOP HEADER */}
+      <div className="flex items-center justify-between mt-2 px-1">
+        <Button
+          type="button"
+          size="sm"
+          variant="ghost"
+          disabled={isPausing}
+          onClick={() => void handleBackToLobby()}
+          className="text-zinc-400 hover:text-white px-2 h-8"
+        >
+          <ArrowLeft className="size-4 mr-1" />
+          <span className="text-xs hidden sm:inline">Ritorna alla Lobby</span>
+        </Button>
 
-      {snapshotError && !isRestoring && (
-        <div className="p-2 rounded-xl border border-rose-700/60 bg-rose-950/80 text-rose-200 text-xs text-center space-y-1">
-          <p className="font-semibold">⚠️ {snapshotError}</p>
-          <button
-            type="button"
-            onClick={() => void refreshSnapshot("manual")}
-            className="px-3 py-1 rounded-lg bg-rose-500 text-white text-[10px] font-bold uppercase tracking-wider"
-          >
-            Riprova sincronizzazione
-          </button>
-        </div>
-      )}
-
-      {/* Banner Turno */}
-      {/* <div className="w-full">
-        <GameTurnBanner
-          isMyTurn={isMyTurn}
-          turnPrompt={turnPrompt}
-          lastError={gameState.lastError ?? bidError ?? actionError}
-          actionStatus={actionStatus}
-          bidWarning={bidWarning}
-          statusWarning={lobbyWarning}
-          turnTimerSeconds={turnTimerSeconds}
-          strikes={activeTurnPlayer?.strikes ?? 0}
-        />
-      </div> */}
-
-      <div
-        ref={tableRef}
-        className={`relative w-full transition-all duration-300 mx-auto bg-transparent border border-zinc-800/30 rounded-full shadow-[inset_0_0_50px_rgba(255,255,255,0.02)] ${
-          hasActiveControls
-            ? "h-[300px] sm:h-[400px] max-w-[340px] sm:max-w-[480px]"
-            : "h-[360px] sm:h-[480px] max-w-[400px] sm:max-w-[580px]"
-        } ${isCardDragging ? "ring-2 ring-zinc-500 ring-offset-2 ring-offset-zinc-950 scale-105" : ""}`}
-      >{isCardDragging && (
-          <div className="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 animate-pulse rounded-full border border-emerald-300/60 bg-emerald-500/30 px-3 py-0.5 text-[9px] font-black tracking-widest text-emerald-100 uppercase backdrop-blur-sm">
-            Rilascia qui
-          </div>
-        )}
-
-        <div className="absolute inset-2 sm:inset-4 rounded-full border border-emerald-600/30 pointer-events-none flex items-center justify-center">
-          <span className="text-emerald-900/20 text-3xl sm:text-6xl font-black uppercase tracking-widest select-none">
-            WIZARD
+        <div className="flex flex-col items-center">
+          <span className="text-xs font-bold text-white tracking-widest uppercase">
+            {lobbyI18n.pausedSummary.round(gameState.round)}
+          </span>
+          <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">
+            {phaseLabel(gameState.status)}
           </span>
         </div>
 
-        {/* Area Briscola Centrata */}
-        <div className="absolute top-1/2 left-1/2 z-10 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 scale-85 sm:scale-100">
-          <TrumpArea trump={gameState.trump} effectiveTrumpColor={gameState.effectiveTrumpColor} />
-          {gameState.followingColor && (
-            <span className="rounded-full border border-emerald-600/40 bg-emerald-950/80 px-2 py-0.5 text-[8px] sm:text-[10px] font-bold text-emerald-300 shadow">
-              Seme: {gameState.followingColor}
-            </span>
-          )}
+        <div className="flex items-center gap-2">
+          {/* Global Chat Button */}
+          <Button
+            type="button"
+            size="icon"
+            variant="ghost"
+            onClick={openChat}
+            className="text-zinc-400 hover:text-white h-8 w-8 rounded-full bg-zinc-900/60 border border-zinc-800"
+          >
+            <MessageCircle className="size-4" />
+          </Button>
         </div>
+      </div>
 
-        {/* Postazioni Giocatori */}
-        {isDisconnecting && (
-          <DisconnectOverlay
-            key={`${lobbyId}-${offlineNames}`}
-            timerSeconds={disconnectTimerSeconds}
-            offlineNames={offlineNames}
-            isWorking={isPausing}
-            onBackToLobby={() => void handleBackToLobby()}
-          />
-        )}
-        {orderedPlayers.map((player, idx) => {
+      {/* PLAYER MATRIX TABLE */}
+      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 w-full">
+        {orderedPlayers.map((player) => {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
           const isMe = player.id === playerId;
-          const playerBid = gameState.bids[player.id];
-          const playerTricks = gameState.tricksWon[player.id] ?? 0;
+          const hasBid = gameState.bids[player.id] !== undefined && gameState.bids[player.id] !== null;
+          const playerBid = hasBid ? gameState.bids[player.id] : "-";
+          const playerTricks = hasBid ? (gameState.tricksWon[player.id] ?? 0) : "-";
+          
+          const bidColor = hasBid ? "text-amber-400 font-bold" : "text-zinc-500";
+          const tricksColor = !hasBid 
+            ? "text-zinc-500" 
+            : (gameState.tricksWon[player.id] === gameState.bids[player.id] ? "text-emerald-400 font-bold" : "text-red-500 font-bold");
+          
+          const lastScore = gameState.scoreboard?.[String(player.id)]?.at(-1);
+          const score = lastScore ? lastScore.score : 0;
           const isBot = Boolean(player.difficulty);
-          const seat = getSeatLayout(idx, orderedPlayers.length);
-          const played = gameState.table.find((entry) => entry.playerId === player.id);
-          const isWinning = Boolean(
-            played && gameState.winningCard && cardEquals(played.card, gameState.winningCard)
-          );
-          const showSlot = played !== undefined || gameState.table.length > 0;
 
-          const badge = (
-            <div
-              className={`flex items-center gap-1 rounded-lg border px-1.5 py-0.5 shadow-md backdrop-blur-md transition-all duration-200 ${
-                isCurrentTurn
-                  ? "border-amber-400 bg-amber-500/30 ring-2 ring-amber-400/60 scale-105"
-                  : "border-zinc-800 bg-zinc-950/85"
-              }`}
-            >
-              <span
-                className={`grid size-5 shrink-0 place-items-center rounded-full text-[9px] font-black ${
-                  isMe ? "bg-amber-400 text-zinc-950" : "bg-zinc-700 text-zinc-100"
-                }`}
-              >
-                {player.name.charAt(0).toUpperCase()}
-              </span>
-              <span className="min-w-0">
-                <span className="flex items-center gap-0.5">
-                  <span className="max-w-[45px] sm:max-w-[70px] truncate text-[9px] font-bold text-white">
-                    {player.name}
-                  </span>
-                  {isMe && <Badge variant="secondary" className="px-0.5 py-0 text-[7px]">TU</Badge>}
-                  {isBot && <Badge variant="outline" className="px-0.5 py-0 text-[7px] text-zinc-400">BOT</Badge>}
-                </span>
-                <span className="flex items-center gap-1 font-mono text-[8px] text-zinc-400">
-                  <span>B:<strong className="text-amber-400">{playerBid ?? "-"}</strong></span>
-                  <span>T:<strong className="text-emerald-400">{playerTricks}</strong></span>
-                </span>
-                {isCurrentTurn && (
-                  <span className="flex items-center gap-1 font-mono text-[8px] font-black mt-0.5">
-                    {turnTimerSeconds !== null && turnTimerSeconds !== undefined && (
-                      <span className={turnTimerSeconds <= 5 ? "text-rose-400 animate-pulse" : "text-amber-300"}>
-                        ⏱{turnTimerSeconds}s
-                      </span>
-                    )}
-                    <span className={(player.strikes ?? 0) > 0 ? "text-rose-300" : "text-zinc-400"}>
-                      ⚡{player.strikes ?? 0}
-                    </span>
-                  </span>
-                )}
-              </span>
-            </div>
-          );
-
-          const slot = showSlot ? (
-            played ? (
-              <div className="flex origin-center scale-70 sm:scale-85 flex-col items-center">
-                <div className={isWinning ? "rounded-lg ring-2 ring-amber-400" : ""}>
-                  <GameCardView card={played.card} size="sm" isClickable={false} />
-                </div>
-              </div>
-            ) : (
-              <div className="grid h-14 w-10 origin-center scale-70 sm:scale-85 place-items-center rounded-lg border border-dashed border-white/20 bg-black/30">
-                <span className="animate-pulse text-[10px] text-white/30">…</span>
-              </div>
-            )
-          ) : null;
+          let timerPct = 0;
+          if (isCurrentTurn && turnTimerSeconds !== null && turnTimerSeconds !== undefined) {
+             const maxTime = turnTimerDuration ?? lobby?.configuration?.timer ?? 30;
+             timerPct = Math.max(0, Math.min(100, (turnTimerSeconds / maxTime) * 100));
+          }
 
           return (
-            <div key={player.id} className={`absolute z-20 ${seat.pos}`}>
-              <div className={`flex items-center gap-1 ${seat.dir}`}>
-                {seat.cardFirst ? (<>{slot}{badge}</>) : (<>{badge}{slot}</>)}
+            <button
+              type="button"
+              key={player.id}
+              onClick={() => { setScoreboardPlayer(player.id); setShowScoreboard(true); }}
+              className={`relative flex flex-col rounded-xl border transition-all overflow-hidden text-left cursor-pointer active:scale-95 ${
+                isCurrentTurn 
+                  ? "bg-sky-500/10 border-sky-500/40 ring-1 ring-sky-500/30 shadow-lg shadow-sky-900/20"
+                  : isMe
+                    ? "bg-zinc-800/80 border-zinc-500/50 hover:bg-zinc-700/80"
+                    : "bg-zinc-900/60 border-zinc-800/80 hover:bg-zinc-800/80"
+              }`}
+            >
+              <div className="p-1.5 pb-1 w-full flex flex-col justify-between h-[58px]">
+                <div className="flex flex-col gap-0 min-w-0 w-full">
+                  <div className="flex items-center justify-between min-w-0">
+                     <span className={`flex items-center gap-1 text-[10px] font-bold truncate ${isCurrentTurn ? 'text-sky-400' : 'text-zinc-100'}`}>
+                       {(() => {
+                         const isAllZero = sortedScoreboard.every(s => s.score === 0);
+                         if (isAllZero) return null;
+                         const rank = sortedScoreboard.findIndex(s => s.score === score) + 1;
+                         if (rank === 1 && score > 0) {
+                           return <Trophy className="size-3 text-amber-400 shrink-0" />;
+                         }
+                         return <span className="text-zinc-500 font-mono text-[9px]">{rank}#</span>;
+                       })()}
+                       <span className="truncate">{player.name}</span>
+                     </span>
+                     {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] h-3 bg-zinc-700">TU</Badge>}
+                  </div>
+                  <span className="text-[8px] text-zinc-500 uppercase font-bold truncate min-h-[12px] leading-tight">
+                    {Boolean(player.difficulty) ? (player.name.toLowerCase().includes("bot") ? (player.difficulty === "Dumb" ? "STUPIDO" : player.difficulty === "Prolog" ? "NORMALE" : player.difficulty) : "BOT") : ""}
+                  </span>
+                </div>
+                
+                <div className="flex justify-between items-center w-full text-[10px] sm:text-[11px] font-mono mt-auto">
+                  {hasBid ? (
+                    <div className="flex items-center gap-1 font-bold">
+                      {gameState.tricksWon[player.id] === gameState.bids[player.id] ? (
+                        <span className="text-emerald-400 flex items-center gap-0.5">{gameState.tricksWon[player.id]}/{gameState.bids[player.id]} <Check className="size-3" /></span>
+                      ) : gameState.tricksWon[player.id]! > gameState.bids[player.id]! ? (
+                        <span className="text-red-500 flex items-center gap-0.5">{gameState.tricksWon[player.id]}/{gameState.bids[player.id]} <X className="size-3" /></span>
+                      ) : (
+                        <span><span className="text-zinc-400">{gameState.tricksWon[player.id] ?? 0}</span><span className="text-zinc-600">/</span><span className="text-amber-400">{gameState.bids[player.id]}</span></span>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="text-zinc-600 font-bold">- / -</div>
+                  )}
+                  <div className="font-black text-white text-right shrink-0">
+                    {score} <span className="text-[8px] text-zinc-500 font-normal">Pts</span>
+                  </div>
+                </div>
               </div>
-            </div>
+              
+              {/* Timer Border (SVG Full) */}
+              {isCurrentTurn && (
+                <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ borderRadius: "12px" }}>
+                  <rect
+                    x="0" y="0" width="100%" height="100%"
+                    rx="12" ry="12"
+                    fill="none"
+                    stroke={turnTimerSeconds && turnTimerSeconds <= 5 ? "#ef4444" : "#38bdf8"}
+                    strokeWidth="4"
+                    pathLength="100"
+                    strokeDasharray="100"
+                    strokeDashoffset={100 - timerPct}
+                    className="transition-all duration-1000 ease-linear drop-shadow-md"
+                  />
+                </svg>
+              )}
+            </button>
           );
         })}
       </div>
 
-      {/* Controlli Azione */}
-      {hasActiveControls && (
-        <div className="w-full">
-          <GameActionControls
-            isMyTurn={isMyTurn}
-            canChooseTrump={canChooseTrump}
-            canBid={canBid}
-            canPlay={canPlay}
-            round={gameState.round}
-            selectedColor={selectedColor}
-            onSelectColor={setSelectedColor}
-            onChooseTrump={handleChooseTrump}
-            bidInput={bidInput}
-            onSelectBid={setBidInput}
-            onPlaceBid={handlePlaceBid}
-            isSubmitting={isSubmitting}
-            forbiddenBid={forbiddenBid}
-            bidsTotal={bidsTotal}
-            hintedBid={hintedBid}
-          />
+      {/* ERROR / WARNING OVERLAYS */}
+      {(gameState.lastError || bidError || actionError || lobbyWarning) && (
+        <div className="w-full flex justify-center z-40 my-1 animate-in slide-in-from-top-2">
+           <div className="flex items-center gap-2 max-w-sm bg-zinc-950/90 border border-rose-500/60 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md">
+             <AlertTriangle className="size-4 text-rose-400 shrink-0" />
+             <span className="text-[10px] font-semibold text-rose-200">
+               {gameState.lastError ?? bidError ?? actionError ?? lobbyWarning}
+             </span>
+           </div>
         </div>
       )}
 
-      {/* Presa Rivelata nello spazio tra il tavolo e la mano */}
-      {revealedTrick && (
-        <div className="w-full flex justify-center z-30 my-1 animate-in fade-in duration-200">
-          <div className="pointer-events-none flex w-max max-w-[95%] flex-col items-center gap-1 rounded-2xl border border-amber-400/60 bg-zinc-950/95 p-2 sm:p-3 shadow-2xl backdrop-blur-md">
-            <span className="rounded-full border border-amber-400/50 bg-amber-500/15 px-2 py-0.5 text-[9px] font-black tracking-wider text-amber-300 uppercase">
-              ★ Presa: {playersMap.get(revealedTrick.winnerId)?.name ?? `P${revealedTrick.winnerId}`}
+      {/* PLAY AREA (THE TABLE) */}
+      <div 
+        ref={tableRef}
+        className={`relative flex-1 min-h-[220px] w-full max-w-3xl mx-auto flex flex-col items-center justify-start pt-2 rounded-3xl transition-all duration-300 ${
+          isCardDragging ? "bg-emerald-950/20 border-2 border-dashed border-emerald-500/40 ring-4 ring-emerald-500/10" : "bg-transparent border-2 border-transparent"
+        }`}
+      >
+        {isCardDragging && (
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
+            <span className="text-xl sm:text-2xl font-black uppercase tracking-widest text-emerald-500/20 animate-pulse">
+              Rilascia Carta
             </span>
-            <div className="flex max-w-full flex-wrap items-start justify-center gap-1">
-              {revealedTrick.entries.map((entry, index) => {
-                const entryName = playersMap.get(entry.playerId)?.name ?? `P${entry.playerId}`;
-                const entryWinning = Boolean(
-                  revealedTrick.winningCard && cardEquals(entry.card, revealedTrick.winningCard)
-                );
-                return (
-                  <div key={`${entry.playerId}-${index}`} className="flex flex-col items-center gap-0.5">
-                    <div className={entryWinning ? "rounded-lg ring-2 ring-amber-400" : ""}>
-                      <GameCardView card={entry.card} size="sm" isClickable={false} />
-                    </div>
-                    <span className={`max-w-10 truncate text-[8px] font-bold ${entryWinning ? "text-amber-300" : "text-zinc-400"}`}>
-                      {entryName}
-                    </span>
+          </div>
+        )}
+
+        <div className="absolute inset-2 sm:inset-4 rounded-full border border-zinc-800/20 pointer-events-none flex flex-col items-center justify-center z-0">
+          <Image src="/wizard_logo.svg" alt="Wizard Logo" width={180} height={75} className="opacity-5 grayscale" />
+        </div>
+
+        {/* Trump In Table */}
+        {!isGameEnded && (
+          <div className="flex flex-col items-center gap-2 z-10 mb-4 bg-zinc-900/40 p-2 sm:p-3 rounded-xl backdrop-blur-sm border border-zinc-800/50 shadow-lg">
+            <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">
+              Briscola
+            </span>
+            {gameState.trump && "card" in gameState.trump && gameState.trump.card ? (
+              <div className="flex flex-col sm:flex-row items-center gap-2">
+                <div className="scale-75 origin-center -my-3 sm:my-0">
+                  <GameCardView card={gameState.trump.card} effectiveColor={gameState.effectiveTrumpColor || undefined} size="sm" isClickable={false} />
+                </div>
+                {/* se giocato un wizard, must decide color */}
+                {gameState.trump.card.type === "Wizard" && !gameState.effectiveTrumpColor && !canChooseTrump && (
+                  <span className="text-[10px] text-zinc-400 font-bold">Da decidere</span>
+                )}
+                {/* INLINE TRUMP CHOOSER */}
+                {isMyTurn && canChooseTrump && (
+                  <div className="flex gap-1.5 sm:ml-2">
+                    {["Red", "Yellow", "Green", "Blue"].map((c) => {
+                       const bg = c === "Red" ? "bg-rose-500 hover:bg-rose-400" :
+                                  c === "Yellow" ? "bg-amber-500 hover:bg-amber-400" :
+                                  c === "Green" ? "bg-emerald-500 hover:bg-emerald-400" : "bg-blue-500 hover:bg-blue-400";
+                       return (
+                         <button
+                           type="button"
+                           key={c}
+                           disabled={isSubmitting}
+                           onClick={() => { setSelectedColor(c as CardColor); handleChooseTrump(c as CardColor); }}
+                           className={`size-8 rounded-full shadow-lg border-2 border-zinc-900 transition-transform active:scale-90 ${bg}`}
+                           title={`Scegli ${c}`}
+                         />
+                       );
+                    })}
                   </div>
+                )}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <span className="text-[10px] font-bold text-zinc-400">Nessuna (No Trump)</span>
+                {/* INLINE TRUMP CHOOSER for NO TRUMP (if somehow it's a wizard played first on no trump game? Usually Wizard sets trump on its own) */}
+                {isMyTurn && canChooseTrump && (
+                  <div className="flex gap-1.5">
+                    {["Red", "Yellow", "Green", "Blue"].map((c) => {
+                       const bg = c === "Red" ? "bg-rose-500 hover:bg-rose-400" :
+                                  c === "Yellow" ? "bg-amber-500 hover:bg-amber-400" :
+                                  c === "Green" ? "bg-emerald-500 hover:bg-emerald-400" : "bg-blue-500 hover:bg-blue-400";
+                       return (
+                         <button
+                           type="button"
+                           key={c}
+                           disabled={isSubmitting}
+                           onClick={() => { setSelectedColor(c as CardColor); handleChooseTrump(c as CardColor); }}
+                           className={`size-8 rounded-full shadow-lg border-2 border-zinc-900 transition-transform active:scale-90 ${bg}`}
+                           title={`Scegli ${c}`}
+                         />
+                       );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 z-10 p-2 mt-auto mb-auto">
+          {orderedPlayers.map((player) => {
+            const tableSource = revealedTrick ? revealedTrick.entries : gameState.table;
+            const played = tableSource.find((entry: any) => entry.playerId === player.id);
+            if (!played) return null;
+            
+            const isWinning = revealedTrick ? player.id === revealedTrick.winnerId : Boolean(gameState.winningCard && cardEquals(played.card, gameState.winningCard));
+            const playerNameShort = player.name.substring(0, 3).toUpperCase();
+            
+            return (
+              <div key={player.id} className="relative flex flex-col items-center animate-in zoom-in-95 duration-200">
+                <div className={`transition-all relative ${isWinning ? 'scale-105 shadow-xl z-10' : 'scale-95 opacity-90'}`}>
+                  <GameCardView card={played.card} size="sm" isClickable={false} />
+                  {isWinning && (
+                    <div className="absolute -top-3 -right-3 z-30 bg-amber-500 rounded-full p-1 shadow-lg shadow-amber-500/50 border border-amber-300 animate-bounce">
+                      <Trophy className="size-3.5 text-zinc-950" />
+                    </div>
+                  )}
+                </div>
+                <div className={`absolute -bottom-2 sm:-bottom-3 px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider border shadow-md z-20 ${
+                  isWinning ? "bg-white text-black border-zinc-300" : "bg-zinc-800 text-zinc-300 border-zinc-600"
+                }`}>
+                  {player.name.length > 6 ? player.name.substring(0, 6) + '.' : player.name}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        
+        {/* REVEALED TRICK OVERLAY */}
+        {revealedTrick && (
+          <div className="absolute top-12 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center gap-1.5 animate-in slide-in-from-top-4 fade-in duration-300">
+            <div className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-700/80 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+              <span className="text-xs sm:text-sm font-black tracking-widest text-white uppercase flex items-center gap-1.5 whitespace-nowrap">
+                <Trophy className="size-4 text-amber-400" /> Vinto da {(() => {
+                  const wId = revealedTrick.winnerId;
+                  const p = lobby?.players.find(x => x.id === wId);
+                  if (!p) return playersMap.get(wId)?.name ?? `P${wId}`;
+                  const isRealBot = p.name.toLowerCase().includes("bot");
+                  const diff2 = p.difficulty === 'Dumb' ? 'Stupido' : p.difficulty === 'Prolog' ? 'Normale' : p.difficulty;
+                  return p.difficulty ? `${p.name} ${isRealBot ? diff2 : 'BOT'}` : p.name;
+                })()}
+              </span>
+              <div className="w-px h-4 bg-zinc-600 hidden sm:block"></div>
+              <div className="flex gap-3 text-[10px] sm:text-xs font-bold text-zinc-300 whitespace-nowrap">
+                <span className="flex items-center gap-1"><Target className="size-3 text-amber-400" /> {gameState.bids[revealedTrick.winnerId] ?? "-"}</span>
+                <span className="flex items-center gap-1"><CheckSquare className="size-3 text-emerald-400" /> {gameState.tricksWon[revealedTrick.winnerId] ?? 0}</span>
+              </div>
+              <div className="w-px h-4 bg-zinc-600"></div>
+              <div className="flex items-center gap-1">
+                <span className="font-mono text-xs sm:text-sm font-black text-white">{revealSecondsLeft}s</span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* BIDDING CHIPS (ABOVE HAND) */}
+      <div className="w-full flex justify-center items-end relative z-[70] mt-auto">
+        {isMyTurn && canBid && (
+          <div className="w-full sm:max-w-xl animate-in slide-in-from-bottom-4 mb-2 flex flex-col gap-2">
+            <div className="flex flex-wrap gap-2 justify-center px-1 pb-1">
+              {Array.from({ length: gameState.round + 1 }, (_, i) => {
+                const isForbidden = forbiddenBid !== null && forbiddenBid !== undefined && i === forbiddenBid;
+                const isHinted = hintedBid === i;
+                const isSelected = bidInput === i;
+                
+                return (
+                  <button
+                    type="button"
+                    key={i}
+                    disabled={isSubmitting || isForbidden}
+                    onClick={() => {
+                      if (isSelected) {
+                        handlePlaceBid(i);
+                      } else {
+                        setBidInput(i);
+                      }
+                    }}
+                    className={`relative flex items-center justify-center w-10 h-10 rounded-full font-black text-sm transition-all active:scale-90 border-2 ${
+                      isForbidden ? "opacity-30 bg-zinc-900 border-rose-900 text-rose-500 cursor-not-allowed" 
+                      : isSelected ? (isHinted ? "bg-white text-black border-purple-500 shadow-lg shadow-purple-500/40 scale-110 z-10" : "bg-white text-black border-white shadow-lg shadow-white/20 scale-110 z-10")
+                      : isHinted ? "bg-purple-500/20 text-purple-300 border-purple-500 hover:bg-purple-500/40"
+                      : "bg-zinc-800 text-zinc-300 border-zinc-600 hover:bg-zinc-700 hover:text-white"
+                    }`}
+                  >
+                    {i}
+                    {isHinted && (
+                      <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-purple-500 text-white shadow-md">
+                        <Lightbulb className="size-2.5 fill-current" />
+                      </span>
+                    )}
+                  </button>
                 );
               })}
             </div>
-            <span className="animate-pulse font-mono text-[9px] text-zinc-300">
-              Prossimo tra {revealSecondsLeft}s…
-            </span>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Contenitore Mano Giocatore con Bottone Hint Tondo in Alto a Destra */}
-      <div className="w-full mt-auto overflow-visible relative flex flex-col items-end">
+      {/* PLAYER HAND & HINT BUTTON */}
+      <div className="w-full relative z-20 pb-4 flex justify-center items-end">
+        {/* HINT BUTTON BOTTOM LEFT */}
         {canRequestHint && (
-          <div className="pr-2 sm:pr-4 -mb-10 z-30 flex flex-col items-end gap-1">
+          <div className="absolute right-2 sm:right-4 bottom-4 z-40 flex flex-col items-start gap-1">
             {hintError && (
-              <div className="max-w-xs text-[10px] font-semibold text-rose-200 bg-rose-950/90 border border-rose-500/60 rounded-xl px-2.5 py-1 shadow-2xl backdrop-blur-md">
+              <div className="text-[10px] font-semibold text-purple-200 bg-purple-950/90 border border-purple-500/60 rounded-xl px-2.5 py-1 shadow-lg">
                 ⚠️ {hintError}
               </div>
             )}
@@ -460,18 +559,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               size="icon"
               disabled={isSubmitting || isHintLoading}
               onClick={() => void requestHint()}
-              title={
-                canPlay
-                  ? "Suggerisci Carta"
-                  : canBid
-                  ? "Suggerisci Puntata"
-                  : canChooseTrump
-                  ? "Suggerisci Briscola"
-                  : "Suggerimento"
-              }
-              className="size-11 sm:size-12 rounded-full bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-zinc-950 font-black shadow-xl shadow-amber-500/20 border-2 border-amber-300/80 p-0 flex items-center justify-center transition-all hover:scale-110 active:scale-95"
+              title="Suggerimento"
+              className="size-10 sm:size-12 rounded-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-xl shadow-purple-500/20 border-2 border-purple-400/50 transition-all hover:scale-105 active:scale-95"
             >
-              <Lightbulb className={`size-5 sm:size-6 ${isHintLoading ? "animate-spin text-zinc-950" : "text-zinc-950 fill-zinc-950"}`} />
+              <Lightbulb className={`size-4 sm:size-5 ${isHintLoading ? "animate-spin" : ""}`} />
             </Button>
           </div>
         )}
@@ -490,20 +581,18 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         />
       </div>
 
-      {/* Modal Tabellone Scoreboard */}
+      {/* MODALS */}
       {showScoreboard && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/75 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
           onClick={() => setShowScoreboard(false)}
         >
-          <div
-            className="w-full max-w-lg"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GameScoreboard
+          <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <GameScoreboard players={lobby?.players}
               scoreboard={gameState.scoreboard}
               playersMap={playersMap}
               myPlayerId={playerId}
+              initialSelectedPlayerId={scoreboardPlayer}
               onClose={() => setShowScoreboard(false)}
             />
           </div>

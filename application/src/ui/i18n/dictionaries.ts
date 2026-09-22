@@ -77,7 +77,7 @@ export const it = {
       resumeGame: "Riprendi Partita",
       pauseGame: "Metti in pausa",
       pausing: "Pausa in corso...",
-      discardPaused: "Elimina partita in pausa",
+      discardPaused: "Eliminare la partita in corso?",
       discardPausedConfirm: "Confermi? La partita salvata verrà eliminata",
       discardFinished: "Elimina partita conclusa",
       discardFinishedConfirm: "Confermi? I risultati salvati verranno eliminati",

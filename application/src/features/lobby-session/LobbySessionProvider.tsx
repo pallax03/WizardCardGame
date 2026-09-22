@@ -76,6 +76,39 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
         }
       }
       let updatedLobby = state.lobby;
+      // Handle strikes_updated: update player strikes immediately without HTTP round-trip
+      if (
+        action.event.type === "system" &&
+        action.event.action === "strikes_updated" &&
+        state.lobby
+      ) {
+        const targetId = action.event.playerId;
+        const newStrikes = action.event.strikes ?? (action.event.fields?.strikes as number | undefined);
+        if (targetId !== undefined && newStrikes !== undefined) {
+          updatedLobby = {
+            ...state.lobby,
+            players: state.lobby.players.map((p) =>
+              p.id === targetId ? { ...p, strikes: Number(newStrikes) } : p
+            ),
+          };
+        }
+      }
+      // Handle afk_replaced: mark player as replaced bot (difficulty = "Bot")
+      if (
+        action.event.type === "system" &&
+        action.event.action === "afk_replaced" &&
+        state.lobby
+      ) {
+        const targetId = action.event.playerId;
+        if (targetId !== undefined) {
+          updatedLobby = {
+            ...(updatedLobby ?? state.lobby)!,
+            players: (updatedLobby ?? state.lobby)!.players.map((p) =>
+              p.id === targetId ? { ...p, difficulty: "Bot" } : p
+            ),
+          };
+        }
+      }
       if (
         action.event.type === "event" &&
         (action.event.event.action === "GameStarted" ||
@@ -83,7 +116,7 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
         state.lobby
       ) {
         updatedLobby = {
-          ...state.lobby,
+          ...(updatedLobby ?? state.lobby)!,
           status: "IN_GAME",
         };
       }
@@ -210,6 +243,10 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
         void refreshLobby();
       }
       if (event.event.action === "GameCancelled") {
+        void refreshLobby();
+      }
+      // Refresh lobby on TurnOf so player strikes are always current after a timeout
+      if (event.event.action === "TurnOf") {
         void refreshLobby();
       }
     }
