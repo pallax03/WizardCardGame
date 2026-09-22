@@ -86,6 +86,13 @@ export const it = {
     pausedNotice: "Partita in pausa — premi Riprendi Partita per continuare.",
     disconnectingNotice: "Un giocatore è offline — la partita riprenderà al rientro o i bot lo sostituiranno allo scadere del timer.",
     disconnectingTimer: (seconds: number) => `Sostituzione con bot tra ${seconds}s`,
+    disconnectOverlay: {
+      title: "Giocatore disconnesso",
+      description: (names: string) => `${names} ha raggiunto il massimo degli strike e risulta offline.`,
+      timer: (seconds: number) => `Sostituzione automatica con bot tra ${seconds}s`,
+      expired: "Sostituzione in corso...",
+      backToLobby: "Torna alla lobby",
+    },
     finishedNotice: "Partita conclusa — guarda la classifica o torna alla lobby per iniziarne una nuova.",
     config: {
       title: "Configurazione",
@@ -259,6 +266,13 @@ export const en = {
     pausedNotice: "Game paused — press Resume Game to continue.",
     disconnectingNotice: "A player is offline — the game resumes on return or a bot replaces them when the timer expires.",
     disconnectingTimer: (seconds: number) => `Bot replacement in ${seconds}s`,
+    disconnectOverlay: {
+      title: "Player disconnected",
+      description: (names: string) => `${names} reached max strikes and is offline.`,
+      timer: (seconds: number) => `Automatic bot replacement in ${seconds}s`,
+      expired: "Replacing...",
+      backToLobby: "Back to lobby",
+    },
     finishedNotice: "Game finished — check the standings or return to the lobby to start a new one.",
     config: {
       title: "Configuration",
