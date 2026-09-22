@@ -43,7 +43,8 @@ export function ChatSheet() {
       messages.filter(
         (message) =>
           message.type !== "event" &&
-          (message.type !== "system" || !botIds.has(message.playerId)),
+          message.type !== "system" && 
+          !botIds.has(message.playerId),
       ),
     [messages, botIds],
   );
