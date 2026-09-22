@@ -70,7 +70,7 @@ export function GameScoreboard({
       <CardContent className="p-2 sm:p-3 overflow-y-auto overflow-x-auto">
         <table className="w-full text-center text-xs font-mono border-collapse">
           <thead>
-            {/* Prima riga intestazione: Nomi Giocatori */}
+            {/* Prima riga intestazione: Nomi Giocatori (colSpan ridotto a 2) */}
             <tr className="border-b border-zinc-800 text-zinc-400 text-[10px] font-bold">
               <th className="py-2 px-2 text-left sticky left-0 bg-zinc-950/95 z-10 border-r border-zinc-800">
                 R
@@ -81,8 +81,8 @@ export function GameScoreboard({
                 return (
                   <th
                     key={pId}
-                    colSpan={3}
-                    className={`py-2 px-2 border-r border-zinc-800/60 min-w-[120px] ${
+                    colSpan={2}
+                    className={`py-2 px-2 border-r border-zinc-800/60 min-w-[90px] ${
                       isMe ? "bg-amber-500/10 text-amber-300" : "text-zinc-200"
                     }`}
                   >
@@ -95,7 +95,7 @@ export function GameScoreboard({
               })}
             </tr>
 
-            {/* Seconda riga intestazione: Dettagli per giocatore (Bid, Won, Totale) */}
+            {/* Seconda riga intestazione: Dettagli per giocatore (Bid, Totale) */}
             <tr className="border-b border-zinc-800 text-[9px] text-zinc-500 font-semibold uppercase">
               <th className="py-1 px-2 text-left sticky left-0 bg-zinc-950/95 z-10 border-r border-zinc-800">
                 #
@@ -103,7 +103,6 @@ export function GameScoreboard({
               {playerIds.map((pId) => (
                 <Fragment key={pId}>
                   <th className="py-1 px-1 text-amber-400/80">Bid</th>
-                  <th className="py-1 px-1 text-emerald-400/80">Won</th>
                   <th className="py-1 px-1 text-white border-r border-zinc-800/60">Tot</th>
                 </Fragment>
               ))}
@@ -131,10 +130,6 @@ export function GameScoreboard({
                         {/* Bid */}
                         <td className={`py-2 px-1 text-amber-300 ${isMe ? "bg-amber-500/5" : ""}`}>
                           {entry?.bid ?? "-"}
-                        </td>
-                        {/* Trick vinti */}
-                        <td className={`py-2 px-1 text-emerald-400 ${isMe ? "bg-amber-500/5" : ""}`}>
-                          {entry?.tricksWon ?? "-"}
                         </td>
                         {/* Punteggio Totale Personale accumulato */}
                         <td

@@ -36,7 +36,6 @@ export type Trump =
 // --- Scoreboard Types ---
 export interface ScoreEntry {
   round: number;
-  tricksWon: number;
   bid: number;
   score: number;
 }
