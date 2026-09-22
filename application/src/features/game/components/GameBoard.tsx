@@ -114,7 +114,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const [isCardDragging, setIsCardDragging] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
   const [isPausing, setIsPausing] = useState(false);
-  const [isGoingHome, setIsGoingHome] = useState(false);
   const [pauseError, setPauseError] = useState<string | null>(null);
   const [showScoreboard, setShowScoreboard] = useState(false);
   const tableRef = useRef<HTMLDivElement | null>(null);
@@ -172,29 +171,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     router.push(lobbyId ? `/lobby/${lobbyId}` : "/");
   };
 
-  const handlePauseAndExit = async () => {
+  const handleBackToLobby = async () => {
     if (isPausing || !lobbyId) return;
-    setPauseError(null);
-    setIsPausing(true);
-    try {
-      const { pauseGameAction } = await import("@/features/lobby/api");
-      const { getErrorMessage } = await import("@/ui/i18n/errors");
-      const result = await pauseGameAction(lobbyId);
-      if (result.error) {
-        setPauseError(getErrorMessage(result.error));
-        setIsPausing(false);
-        return;
-      }
-    } catch {
-      setPauseError("Impossibile mettere in pausa la partita.");
-      setIsPausing(false);
-      return;
-    }
-    router.push(`/lobby/${lobbyId}`);
-  };
-
-  const handleBackHome = async () => {
-    if (isGoingHome || isPausing || !lobbyId) return;
     setPauseError(null);
     if (lobby?.status === "IN_GAME" || lobby?.status === "DISCONNECTING") {
       setIsPausing(true);
@@ -214,16 +192,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       }
       setIsPausing(false);
     }
-    setIsGoingHome(true);
-    try {
-      const { saveLobby } = await import("@/features/lobby-session/storage");
-      if (playerId !== null) saveLobby(lobbyId, playerId);
-    } catch {}
-    router.push("/");
+    router.push(`/lobby/${lobbyId}`);
   };
-
-  const canPauseExit =
-    !isGameEnded && (lobby?.status === "IN_GAME" || lobby?.status === "DISCONNECTING");
 
   const handleDropCard = (card: Card) => {
     setSelectedCard(null);
@@ -248,11 +218,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         connectionState={connectionState}
         round={gameState.round}
         status={gameState.status}
-        canPauseExit={canPauseExit}
         isPausing={isPausing}
-        onPauseExit={() => void handlePauseAndExit()}
-        isGoingHome={isGoingHome}
-        onBackHome={() => void handleBackHome()}
+        onBackToLobby={() => void handleBackToLobby()}
         onToggleScoreboard={() => setShowScoreboard((prev) => !prev)}
       />
 
