@@ -13,6 +13,7 @@ import { GameTurnBanner } from "./GameTurnBanner";
 import { PlayerHand } from "./PlayerHand";
 import { TrumpArea } from "./TrumpArea";
 import { GameEndOverlay } from "./GameEndOverlay";
+import { DisconnectOverlay } from "./DisconnectOverlay";
 import { Badge } from "@/ui/components/badge";
 
 type SeatLayout = {
@@ -195,6 +196,15 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     router.push(`/lobby/${lobbyId}`);
   };
 
+  const isDisconnecting = lobby?.status === "DISCONNECTING";
+  const offlineNames = useMemo(() => {
+    const names = (lobby?.players ?? [])
+      .filter((p) => !p.difficulty && p.isOnline === false)
+      .map((p) => p.name);
+    return names.length > 0 ? names.join(", ") : "Un giocatore";
+  }, [lobby?.players]);
+  const disconnectTimerSeconds = lobby?.configuration?.timer ?? 30;
+
   const handleDropCard = (card: Card) => {
     setSelectedCard(null);
     void handlePlayCard(card);
@@ -315,6 +325,15 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               />
             </div>
           </div>
+        )}
+        {isDisconnecting && (
+          <DisconnectOverlay
+            key={`${lobbyId}-${offlineNames}`}
+            timerSeconds={disconnectTimerSeconds}
+            offlineNames={offlineNames}
+            isWorking={isPausing}
+            onBackToLobby={() => void handleBackToLobby()}
+          />
         )}
         {orderedPlayers.map((player, idx) => {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
