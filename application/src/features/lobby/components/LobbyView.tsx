@@ -25,6 +25,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     lobbyId,
     playerId,
     connectionState,
+    reconnect,
     connectedPlayerIds,
     sessionError,
     actionError,
@@ -48,7 +49,6 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   } = useLobby();
 
   useEffect(() => {
-    // Secret invalido o lobby sparita: togli solo questa dalla lista, non le altre.
     if (sessionError) removeSavedLobby(lobbyId);
   }, [sessionError, lobbyId]);
 
@@ -101,6 +101,18 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       {connectionState === "reconnecting" && (
         <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-md text-xs text-center animate-pulse">
           {lobbyI18n.reconnecting}
+        </div>
+      )}
+      {connectionState === "closed" && (
+        <div className="bg-red-500/10 border border-red-500/30 text-red-300 px-4 py-2 rounded-md text-xs text-center flex items-center justify-center gap-3">
+          <span>{lobbyI18n.reconnectClosed}</span>
+          <button
+            type="button"
+            onClick={reconnect}
+            className="px-3 py-1 rounded-md bg-red-500/20 border border-red-500/40 font-semibold hover:bg-red-500/30 transition-colors"
+          >
+            {lobbyI18n.retryConnection}
+          </button>
         </div>
       )}
 

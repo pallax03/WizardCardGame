@@ -15,6 +15,8 @@ export function useLobby() {
     playerId,
     connectionState,
     refreshLobby,
+    reconnect,
+    awaitOpen,
     connectedPlayerIds,
     error: sessionError
   } = useLobbySession();
@@ -47,11 +49,6 @@ export function useLobby() {
     router.push("/");
   };
 
-  /**
-   * Indietro senza uscire dalla lobby: salva lobby+player nella lista
-   * (resta membro, il secret resta nel cookie) e torna alla home,
-   * dove la partita in pausa resta visibile e rientrabile.
-   */
   const handleBackToHome = () => {
     setActionError(null);
     if (lobby?.lobbyId && playerId !== null) {
@@ -65,6 +62,16 @@ export function useLobby() {
 
     setActionError(null);
     setIsStarting(true);
+
+    if (connectionState !== "open") {
+      reconnect();
+      const connected = await awaitOpen(8000);
+      if (!connected) {
+        setActionError(getErrorMessage("RECONNECT_FAILED"));
+        setIsStarting(false);
+        return;
+      }
+    }
 
     const result = await startGameAction(lobby.lobbyId);
 
@@ -157,6 +164,7 @@ export function useLobby() {
     lobbyId,
     playerId,
     connectionState,
+    reconnect,
     connectedPlayerIds,
     sessionError,
     actionError,

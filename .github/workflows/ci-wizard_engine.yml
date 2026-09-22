@@ -41,6 +41,11 @@ jobs:
       - name: Install SBT
         uses: sbt/setup-sbt@v1
 
-      - name: SBT Format Check, Compile, Test & Coverage
+      - name: SBT Format & Fix Check
+        if: github.base_ref == 'master' || github.ref == 'refs/heads/master'
         working-directory: ./wizardEngine
-        run: sbt "; scalafmtCheckAll; scalafixAll --check; coverage; test; coverageReport"
+        run: sbt "; scalafmtCheckAll; scalafixAll --check"
+
+      - name: SBT Compile, Test & Coverage
+        working-directory: ./wizardEngine
+        run: sbt "; coverage; test; coverageReport"

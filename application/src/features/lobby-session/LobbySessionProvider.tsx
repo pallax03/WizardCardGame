@@ -104,6 +104,8 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
 type LobbySessionContextValue = LobbySessionState & {
   sendMessage: (text: string, destinationId?: number) => boolean;
   refreshLobby: () => Promise<void>;
+  reconnect: () => void;
+  awaitOpen: (timeoutMs?: number) => Promise<boolean>;
 };
 
 const LobbySessionContext = createContext<LobbySessionContextValue | null>(null);
@@ -118,6 +120,10 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
   const socketRef = useRef<LobbySocket | null>(null);
   const lobbyRequestRef = useRef<Promise<void> | null>(null);
   const lobbyRefreshQueuedRef = useRef(false);
+  const [reconnectNonce, setReconnectNonce] = useState(0);
+  const everConnectedRef = useRef(false);
+  const connectionOpenRef = useRef(false);
+  const openWaitersRef = useRef(new Set<(ok: boolean) => void>());
   const [wsAuth, setWsAuth] = useState<{ lobbyId: string; secret: string } | null>(null);
   const wsSecret = wsAuth !== null && wsAuth.lobbyId === lobbyId ? wsAuth.secret : null;
 
@@ -133,7 +139,6 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     const playerId = candidate === null ? Number.NaN : Number.parseInt(candidate, 10);
 
     if (!Number.isInteger(playerId) || playerId < 0) {
-      // Nessuna identità per questa lobby: torna alla lista senza toccare le altre salvate.
       removeSavedLobby(lobbyId);
       router.replace("/");
       return;
@@ -230,13 +235,30 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     }
   }, [state.lobby?.status, state.lobbyId, router]);
 
+  const reconnect = useCallback(() => {
+    setReconnectNonce((n) => n + 1);
+  }, []);
+
+  const awaitOpen = useCallback((timeoutMs = 8000): Promise<boolean> => {
+    if (connectionOpenRef.current) return Promise.resolve(true);
+    return new Promise<boolean>((resolve) => {
+      const waiter = (ok: boolean) => {
+        openWaitersRef.current.delete(waiter);
+        resolve(ok);
+      };
+      openWaitersRef.current.add(waiter);
+      setTimeout(() => {
+        if (openWaitersRef.current.delete(waiter)) resolve(false);
+      }, timeoutMs);
+    });
+  }, []);
+
   useEffect(() => {
     if (state.playerId === null || wsSecret === null) return;
 
     let disposed = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | undefined;
     let reconnectAttempt = 0;
-    let hasConnected = false;
 
     const connect = () => {
       if (disposed) return;
@@ -251,16 +273,20 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
         onEvent: handleServerEvent,
         onConnectionChange(connectionState) {
           dispatch({ type: "connection/changed", connectionState });
+          connectionOpenRef.current = connectionState === "open";
           if (connectionState === "open") {
             reconnectAttempt = 0;
-            if (hasConnected) {
+            if (everConnectedRef.current) {
               void refreshLobby();
             }
-            hasConnected = true;
+            everConnectedRef.current = true;
+            openWaitersRef.current.forEach((w) => w(true));
+            openWaitersRef.current.clear();
           }
         },
         onClose() {
           if (disposed) return;
+          connectionOpenRef.current = false;
           reconnectAttempt += 1;
           if (reconnectAttempt > MAX_RECONNECT_ATTEMPTS) {
             dispatch({ type: "connection/changed", connectionState: "closed" });
@@ -277,11 +303,12 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     connect();
     return () => {
       disposed = true;
+      connectionOpenRef.current = false;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [handleServerEvent, lobbyId, refreshLobby, state.playerId, wsSecret]);
+  }, [handleServerEvent, lobbyId, reconnectNonce, refreshLobby, state.playerId, wsSecret]);
 
   const sendMessage = useCallback((text: string, destinationId?: number) => {
     if (state.playerId === null) return false;
@@ -303,7 +330,9 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     ...state,
     sendMessage,
     refreshLobby,
-  }), [refreshLobby, sendMessage, state]);
+    reconnect,
+    awaitOpen,
+  }), [awaitOpen, reconnect, refreshLobby, sendMessage, state]);
 
   return <LobbySessionContext.Provider value={value}>{children}</LobbySessionContext.Provider>;
 }

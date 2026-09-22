@@ -43,6 +43,8 @@ export const it = {
   lobby: {
     loading: "Caricamento lobby in corso...",
     reconnecting: "Riconnessione al server in corso...",
+    reconnectClosed: "Connessione persa.",
+    retryConnection: "Riconnetti",
     backToHome: "Torna alla Home",
     backToLobbies: "Tutte le lobby",
     header: {
@@ -68,9 +70,9 @@ export const it = {
     actions: {
       leave: "Abbandona",
       leaveConfirm: "Sei sicuro di voler abbandonare?",
+      confirmShort: "Sicuro?",
       leaving: "Uscita...",
       exitHome: "Torna alle lobby",
-      exitHomeHint: "Ti disconnetti (risulti offline), la partita resta salvata.",
       startGame: "Avvia Partita",
       resumeGame: "Riprendi Partita",
       pauseGame: "Metti in pausa",
@@ -80,7 +82,6 @@ export const it = {
       discardFinished: "Elimina partita conclusa",
       discardFinishedConfirm: "Confermi? I risultati salvati verranno eliminati",
       discarding: "Eliminazione...",
-      discardPausedHint: "Elimina la partita salvata per modificare i giocatori o iniziarne una nuova.",
     },
     pausedNotice: "Partita in pausa — premi Riprendi Partita per continuare.",
     disconnectingNotice: "Un giocatore è offline — la partita riprenderà al rientro o i bot lo sostituiranno allo scadere del timer.",
@@ -88,11 +89,10 @@ export const it = {
     finishedNotice: "Partita conclusa — guarda la classifica o torna alla lobby per iniziarne una nuova.",
     config: {
       title: "Configurazione",
-      timer: "Timer turno (s)",
+      timer: "Timer turno (secondi)",
       maxStrikes: "Strike massimi",
       save: "Salva",
       saving: "Salvataggio...",
-      hint: "Timer 15–90s, strike 1–3. Modificabile in attesa o in pausa.",
     },
     pausedSummary: {
       title: "Partita in pausa",
@@ -162,6 +162,7 @@ export const it = {
     NotEnoughPlayers: "Non ci sono abbastanza giocatori per iniziare la partita.",
     NotAuthenticated: "Non sei autenticato.",
     GameNotFound: "Partita non trovata.",
+    RECONNECT_FAILED: "Riconnessione fallita: controlla la rete e riprova.",
     ConfigurationInvalid: "Configurazione non valida (timer 15–90, strike 1–3).",
   },
   ui: {
@@ -215,6 +216,8 @@ export const en = {
   lobby: {
     loading: "Loading lobby...",
     reconnecting: "Reconnecting to server...",
+    reconnectClosed: "Connection lost.",
+    retryConnection: "Reconnect",
     backToHome: "Back to Home",
     backToLobbies: "All lobbies",
     header: {
@@ -240,9 +243,9 @@ export const en = {
     actions: {
       leave: "Leave",
       leaveConfirm: "Are you sure you want to leave?",
+      confirmShort: "Sure?",
       leaving: "Leaving...",
       exitHome: "Back to lobbies",
-      exitHomeHint: "You disconnect (appear offline), the game stays saved.",
       startGame: "Start Game",
       resumeGame: "Resume Game",
       pauseGame: "Pause game",
@@ -252,7 +255,6 @@ export const en = {
       discardFinished: "Discard finished game",
       discardFinishedConfirm: "Confirm? The saved results will be deleted",
       discarding: "Discarding...",
-      discardPausedHint: "Delete the saved game to edit players or start a new one.",
     },
     pausedNotice: "Game paused — press Resume Game to continue.",
     disconnectingNotice: "A player is offline — the game resumes on return or a bot replaces them when the timer expires.",
@@ -260,11 +262,10 @@ export const en = {
     finishedNotice: "Game finished — check the standings or return to the lobby to start a new one.",
     config: {
       title: "Configuration",
-      timer: "Turn timer (s)",
+      timer: "Turn timer (seconds)",
       maxStrikes: "Max strikes",
       save: "Save",
       saving: "Saving...",
-      hint: "Timer 15–90s, strikes 1–3. Editable while waiting or paused.",
     },
     pausedSummary: {
       title: "Paused game",
@@ -334,6 +335,7 @@ export const en = {
     NotEnoughPlayers: "Not enough players to start the game.",
     NotAuthenticated: "You are not authenticated.",
     GameNotFound: "Game not found.",
+    RECONNECT_FAILED: "Reconnection failed: check your network and retry.",
     ConfigurationInvalid: "Invalid configuration (timer 15–90, strikes 1–3).",
   },
   ui: {
