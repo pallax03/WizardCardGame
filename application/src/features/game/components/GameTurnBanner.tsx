@@ -103,7 +103,7 @@ export function GameTurnBanner({
         {(statusWarning || bidWarning || lastError || actionStatus) && (
           <div className="flex flex-wrap items-center justify-center gap-1.5 pt-0.5">
             {statusWarning && (
-              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-sky-200 font-semibold bg-sky-950/80 py-0.5 px-2.5 rounded-lg border border-sky-500/50">
+              <span className="inline-flex items-center gap-1 text-[10px] sm:text-[11px] text-zinc-200 font-semibold bg-zinc-900/80 py-0.5 px-2.5 rounded-lg border border-zinc-500/50">
                 ⏸️ {statusWarning}
               </span>
             )}

@@ -33,14 +33,14 @@ export function ChatInput({ activePrivateId, connectionState, onSendMessage }: C
         placeholder={placeholder}
         aria-label={placeholder}
         autoComplete="off"
-        className="h-11 rounded-full border-white/8 bg-white/5 px-4 text-base text-white placeholder:text-zinc-600 focus-visible:border-indigo-400/50 focus-visible:ring-indigo-400/15 sm:text-sm"
+        className="h-11 rounded-full border-white/8 bg-white/5 px-4 text-base text-white placeholder:text-zinc-600 focus-visible:border-zinc-400/50 focus-visible:ring-zinc-400/15 sm:text-sm"
       />
       <Button
         type="submit"
         size="icon-lg"
         disabled={!input.trim() || connectionState !== "open"}
         aria-label={chatI18n.send}
-        className="size-11 rounded-full bg-indigo-500 text-white shadow-lg shadow-indigo-950/30 hover:bg-indigo-400"
+        className="size-11 rounded-full bg-zinc-100 text-zinc-900 shadow-lg shadow-zinc-950/30 hover:bg-zinc-200"
       >
         <Send className="size-4" />
       </Button>

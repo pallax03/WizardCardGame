@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe, History } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/api";
 import { getLobbyState } from "@/features/lobby-session/api";
@@ -144,17 +145,13 @@ export default function Home() {
   };
 
   return (
-    <main className="app-page relative flex flex-col items-center justify-center p-4 selection:bg-purple-500/30 overflow-hidden">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-15%,rgba(99,102,241,0.28),transparent_42%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950 pointer-events-none" />
-
-      {/* Language Switcher */}
-      <div className="absolute top-4 right-4 z-20">
+    <main className="app-page min-h-[100dvh] relative flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
+      <div className="fixed top-4 right-4 z-50">
         <Button
           suppressHydrationWarning
           variant="outline"
           size="sm"
-          className="gap-2 border-zinc-200 text-zinc-300"
+          className="gap-2 border-zinc-800 bg-zinc-900/50 backdrop-blur text-zinc-300 rounded-full cursor-pointer"
           onClick={() => {
             const isEn = document.cookie.includes('wizard_lang=en');
             document.cookie = `wizard_lang=${isEn ? 'it' : 'en'}; path=/; max-age=31536000`;
@@ -166,164 +163,113 @@ export default function Home() {
         </Button>
       </div>
 
-      <div className="relative z-10 w-full max-w-md space-y-8">
+      <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8">
+        
+        {/* Logo only, no duplicate text */}
+        <Image 
+          src="/wizard_logo.svg" 
+          alt="Wizard" 
+          width={280} 
+          height={120} 
+          className="w-full max-w-[280px] drop-shadow-2xl" 
+          priority 
+        />
 
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5" /> {homeI18n.badge}
+        {/* Unified Card for everything */}
+        <div className="w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-5 shadow-2xl space-y-5 relative">
+          
+          <div className="space-y-1">
+            <Input
+              placeholder={homeI18n.card.usernamePlaceholder}
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (error) setError(null);
+              }}
+              onKeyDown={handleEnterKey}
+              className="bg-zinc-950/80 border-zinc-800 text-center text-lg h-14 rounded-2xl focus-visible:ring-zinc-600"
+            />
+            {error && <p className="text-xs text-red-400 font-medium text-center">{error}</p>}
           </div>
-          <h1 suppressHydrationWarning className="text-6xl md:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-indigo-200 via-purple-300 to-pink-300 drop-shadow-sm">
-            {homeI18n.title}
-          </h1>
-          <p suppressHydrationWarning className="text-zinc-400 text-sm font-light">
-            {homeI18n.subtitle}
-          </p>
-        </div>
 
-        <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-md shadow-2xl">
-          <CardHeader>
-            <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-300"><Users className="size-5" /></div>
-            <CardTitle className="text-lg text-zinc-100 font-semibold">{homeI18n.card.title}</CardTitle>
-            <CardDescription className="text-zinc-400 text-sm">{homeI18n.card.description}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              onClick={handleToggleJoin}
+              disabled={isCreating || isJoining}
+              variant={showJoinInput ? "outline" : "secondary"}
+              className="h-12 rounded-xl font-bold cursor-pointer transition-colors"
+            >
+              {showJoinInput ? <X className="w-5 h-5" /> : homeI18n.buttons.join}
+            </Button>
+
+            <Button
+              type="button"
+              onClick={handleCreateLobby}
+              disabled={isCreating || isJoining}
+              variant="default"
+              className="h-12 rounded-xl font-bold cursor-pointer transition-colors"
+            >
+              {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : homeI18n.buttons.createLobby}
+            </Button>
+          </div>
+
+          {showJoinInput && (
+            <div className="flex gap-2 animate-in fade-in-50 slide-in-from-top-2">
               <Input
-                placeholder={homeI18n.card.usernamePlaceholder}
-                value={username}
+                placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
+                value={lobbyIdToJoin}
+                autoFocus
                 onChange={(e) => {
-                  setUsername(e.target.value);
+                  setLobbyIdToJoin(e.target.value);
                   if (error) setError(null);
                 }}
                 onKeyDown={handleEnterKey}
-                className="bg-zinc-950/60 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500 h-11"
+                className="bg-zinc-950 border-zinc-800 text-center text-lg h-12 rounded-xl font-mono uppercase"
               />
-              {error && <p className="text-xs text-red-400 font-medium pl-1">{error}</p>}
+              <Button
+                type="button"
+                onClick={handleJoinLobby}
+                disabled={isJoining || !lobbyIdToJoin.trim()}
+                variant="default"
+                className="w-12 h-12 p-0 shrink-0 rounded-xl cursor-pointer"
+              >
+                {isJoining ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+              </Button>
             </div>
-
-            <div className="space-y-3 pt-2">
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  onClick={handleToggleJoin}
-                  disabled={isCreating || isJoining}
-                  variant={showJoinInput ? "outline" : "secondary"}
-                  size="lg"
-                  className="gap-2 transition-all cursor-pointer"
-                >
-                  {showJoinInput ? (
-                    <>
-                      <X className="w-4 h-4" /> {homeI18n.buttons.close}
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="w-4 h-4" /> {homeI18n.buttons.join}
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={handleCreateLobby}
-                  disabled={isCreating || isJoining}
-                  size="lg"
-                  className="gap-2 font-medium transition-all cursor-pointer"
-                >
-                  {isCreating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <PlusCircle className="w-4 h-4" /> {homeI18n.buttons.createLobby}
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {showJoinInput && (
-                <div className="p-3 rounded-lg bg-zinc-950/80 border border-zinc-800 space-y-3 animate-in fade-in-50 slide-in-from-top-2 duration-200">
-                  <label className="text-xs font-medium text-zinc-400 block">
-                    {homeI18n.joinSection.label}
-                  </label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
-                      value={lobbyIdToJoin}
-                      autoFocus
-                      onChange={(e) => {
-                        setLobbyIdToJoin(e.target.value);
-                        if (error) setError(null);
-                      }}
-                      onKeyDown={handleEnterKey}
-                      className="bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-primary h-11 font-mono uppercase text-sm"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleJoinLobby}
-                      disabled={isJoining || !lobbyIdToJoin.trim()}
-                      size="lg"
-                      className="px-4 font-medium gap-1 shrink-0 cursor-pointer"
-                    >
-                      {isJoining ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          {homeI18n.buttons.enter} <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-            </div>
-          </CardContent>
-        </Card>
-
-        {savedEntries.length > 0 && (
-          <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-md shadow-2xl">
-            <CardHeader>
-              <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-sky-500/15 text-sky-300"><History className="size-5" /></div>
-              <CardTitle className="text-lg text-zinc-100 font-semibold">{homeI18n.savedLobbies.title}</CardTitle>
-              <CardDescription className="text-zinc-400 text-sm">{homeI18n.savedLobbies.subtitle}</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-2">
+          )}
+          
+          {/* Saved Lobbies */}
+          {savedEntries.length > 0 && (
+            <div className="pt-4 border-t border-zinc-800 space-y-2">
+              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">
+                {homeI18n.savedLobbies.title}
+              </p>
               {savedEntries.map((entry) => (
-                <div
-                  key={entry.lobbyId}
-                  className="flex items-center gap-2 p-2.5 rounded-xl border border-zinc-800 bg-zinc-950/60"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="font-mono text-sm text-zinc-100 truncate">{entry.lobbyId}</p>
-                    <p className="text-[11px] text-zinc-500">
-                      {savedStatusLabel(entry.status, entry.failed)}
-                      {entry.playersCount !== undefined &&
-                        ` · ${homeI18n.savedLobbies.players(entry.playersCount)}`}
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    size="sm"
+                <div key={entry.lobbyId} className="flex items-center gap-2 p-2 rounded-xl bg-zinc-950/50 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+                  <div 
+                    className="flex-1 flex flex-col cursor-pointer"
                     onClick={() => handleRejoinSaved(entry.lobbyId)}
-                    className="gap-1 shrink-0"
                   >
-                    {homeI18n.savedLobbies.rejoin} <ArrowRight className="w-3.5 h-3.5" />
-                  </Button>
+                    <span className="font-mono text-sm text-zinc-200">{entry.lobbyId}</span>
+                    <span className="text-[10px] text-zinc-500">
+                      {savedStatusLabel(entry.status, entry.failed)}
+                    </span>
+                  </div>
                   <Button
                     type="button"
                     size="icon"
                     variant="ghost"
-                    onClick={() => handleRemoveSaved(entry.lobbyId)}
-                    title={homeI18n.savedLobbies.removeTitle}
-                    className="h-8 w-8 shrink-0 text-zinc-500 hover:text-red-400 hover:bg-red-950/40"
+                    onClick={(e) => { e.stopPropagation(); handleRemoveSaved(entry.lobbyId); }}
+                    className="h-8 w-8 text-zinc-600 hover:text-red-400 cursor-pointer"
                   >
-                    <X className="w-3.5 h-3.5" />
+                    <X className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
-            </CardContent>
-          </Card>
-        )}
-
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );

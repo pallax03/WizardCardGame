@@ -34,8 +34,8 @@ export function PlayerAvatar({
 
   const avatar = (
     <div className="relative inline-block shrink-0">
-      <Avatar className={`${className} ${isBot ? "border border-cyan-500/50" : ""} ${isMe ? "ring-2 ring-indigo-400/60" : "ring-2 ring-transparent transition hover:ring-indigo-400/60"}`}>
-        <AvatarFallback className={isBot ? "bg-cyan-950 text-cyan-400" : isMe ? "bg-indigo-500/15 text-indigo-200" : "bg-zinc-800 text-zinc-300 font-semibold"}>
+      <Avatar className={`${className} ${isBot ? "border border-zinc-600/50" : ""} ${isMe ? "ring-2 ring-zinc-400/60" : "ring-2 ring-transparent transition hover:ring-zinc-400/60"}`}>
+        <AvatarFallback className={isBot ? "bg-zinc-900 text-zinc-400" : isMe ? "bg-zinc-800/50 text-zinc-200" : "bg-zinc-800 text-zinc-300 font-semibold"}>
           {isBot ? <BotIcon className="w-1/2 h-1/2" /> : <span className="text-[10px]">{fallbackText}</span>}
         </AvatarFallback>
       </Avatar>
@@ -55,15 +55,15 @@ export function PlayerAvatar({
 
   return (
     <Popover>
-      <PopoverTrigger aria-label={chatI18n.actionsFor(name)} className="shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-indigo-400">
+      <PopoverTrigger aria-label={chatI18n.actionsFor(name)} className="shrink-0 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-zinc-400">
         {avatar}
       </PopoverTrigger>
-      <PopoverContent side="top" align="start" className="w-64 gap-3 rounded-2xl border border-white/8 bg-zinc-900 p-3 text-white">
+      <PopoverContent side="top" align="start" className="w-64 gap-3 rounded-2xl border border-zinc-800 bg-zinc-900 p-3 text-white">
         <PopoverHeader>
           <PopoverTitle className="text-sm">{name}</PopoverTitle>
           <PopoverDescription className="text-xs text-zinc-400">{chatI18n.privateDescription}</PopoverDescription>
         </PopoverHeader>
-        <PopoverClose render={<Button className="w-full bg-indigo-500 text-white hover:bg-indigo-400" onClick={openPrivateChat} />}>
+        <PopoverClose render={<Button className="w-full bg-zinc-100 text-zinc-900 hover:bg-zinc-200" onClick={openPrivateChat} />}>
           <LockKeyhole className="w-4 h-4 mr-2" /> {chatI18n.startPrivate}
         </PopoverClose>
       </PopoverContent>

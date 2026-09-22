@@ -90,14 +90,17 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   }
 
   return (
-    <div className="w-full max-w-4xl space-y-6">
-      <button
-        type="button"
-        onClick={handleBackToHome}
-        className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" /> {lobbyI18n.backToLobbies}
-      </button>
+    <div className="w-full max-w-4xl space-y-6 relative">
+      <div className="sticky top-0 z-20 pt-2 pb-2 bg-transparent">
+        <button
+          type="button"
+          onClick={handleBackToHome}
+          className="flex items-center gap-1.5 text-xs font-medium text-zinc-400 hover:text-zinc-100 transition-colors"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" /> {lobbyI18n.backToLobbies}
+        </button>
+      </div>
+
       {connectionState === "reconnecting" && (
         <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 px-4 py-2 rounded-md text-xs text-center animate-pulse">
           {lobbyI18n.reconnecting}
@@ -113,12 +116,6 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
           >
             {lobbyI18n.retryConnection}
           </button>
-        </div>
-      )}
-
-      {isPaused && (
-        <div className="bg-sky-500/10 border border-sky-500/30 text-sky-300 px-4 py-2 rounded-md text-sm text-center font-semibold">
-          ⏸️ {lobbyI18n.pausedNotice}
         </div>
       )}
 
@@ -138,41 +135,46 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         </div>
       )}
 
-      <LobbyHeader lobbyCode={lobby?.lobbyId || ""} />
+      <div className="surface-card text-zinc-100 border border-zinc-800 bg-zinc-900/50 rounded-2xl p-4 sm:p-5 shadow-2xl flex flex-col gap-4">
+        <LobbyHeader lobbyCode={lobby?.lobbyId || ""} hideShare={showSummary}>
+          {lobby?.configuration && (
+            <LobbyConfiguration
+              timer={lobby.configuration.timer}
+              maxStrikes={lobby.configuration.maxStrikes}
+              canEdit={canEditConfig}
+              isSaving={isSavingConfig}
+              onSave={handleUpdateConfiguration}
+            />
+          )}
+        </LobbyHeader>
 
-      {showSummary && (
-        <PausedGameSummary
-          board={savedBoard}
-          isLoading={isSnapshotLoading && !isWaiting}
-          loadFailed={isSnapshotFailed}
-          playerId={playerId}
-          players={players}
-        />
-      )}
-      
-      <PlayerList
-        players={players}
-        maxPlayers={maxPlayers}
-        currentUserId={playerId}
-        connectedPlayerIds={connectedPlayerIds}
-        activeBotSlot={activeBotSlot}
-        isAddingBot={isAddingBot}
-        removingBotId={removingBotId}
-        canManagePlayers={canManagePlayers}
-        onSelectBotSlot={setActiveBotSlot}
-        onAddBot={handleAddBot}
-        onRemoveBot={handleRemoveBot}
-      />
+        <div className="h-px w-full bg-zinc-800" />
 
-      {lobby?.configuration && (
-        <LobbyConfiguration
-          timer={lobby.configuration.timer}
-          maxStrikes={lobby.configuration.maxStrikes}
-          canEdit={canEditConfig}
-          isSaving={isSavingConfig}
-          onSave={handleUpdateConfiguration}
-        />
-      )}
+        {showSummary ? (
+          <PausedGameSummary
+            board={savedBoard}
+            isLoading={isSnapshotLoading && !isWaiting}
+            loadFailed={isSnapshotFailed}
+            playerId={playerId}
+            players={players}
+            connectedPlayerIds={connectedPlayerIds}
+          />
+        ) : (
+          <PlayerList
+            players={players}
+            maxPlayers={maxPlayers}
+            currentUserId={playerId}
+            connectedPlayerIds={connectedPlayerIds}
+            activeBotSlot={activeBotSlot}
+            isAddingBot={isAddingBot}
+            removingBotId={removingBotId}
+            canManagePlayers={canManagePlayers}
+            onSelectBotSlot={setActiveBotSlot}
+            onAddBot={handleAddBot}
+            onRemoveBot={handleRemoveBot}
+          />
+        )}
+      </div>
       
       <LobbyActions
         isLeaving={isLeaving}

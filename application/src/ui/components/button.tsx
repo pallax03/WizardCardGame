@@ -8,18 +8,18 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-indigo-500 text-white shadow-lg shadow-indigo-950/30 hover:bg-indigo-400 border-none",
-        primary: "bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-400 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/20 border-none",
+        default: "bg-zinc-100 text-zinc-900 shadow-lg shadow-zinc-950/30 hover:bg-zinc-200 border-none",
+        primary: "bg-zinc-100 text-zinc-900 shadow-lg shadow-zinc-950/30 hover:bg-zinc-200 border-none",
         confirming: "bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-950/40 border-none",
         outline:
-          "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-transparent dark:hover:bg-input/30",
+          "border border-white/10 bg-transparent shadow-sm hover:bg-white/5 hover:text-white text-zinc-300",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/80 aria-expanded:bg-secondary aria-expanded:text-secondary-foreground",
-        ghost:
-          "hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:hover:bg-muted/50",
+          "bg-white/5 text-zinc-100 shadow-sm hover:bg-white/10 border border-white/5",
+        ghost: "hover:bg-white/5 hover:text-zinc-100 text-zinc-400 border border-transparent",
         destructive:
-          "bg-destructive/10 text-destructive hover:bg-destructive/20 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40",
-        link: "text-primary underline-offset-4 hover:underline",
+          "bg-red-500/10 text-red-500 hover:bg-red-500/20 border border-red-500/20",
+        glass: "bg-zinc-900/60 backdrop-blur-md border border-white/10 text-zinc-200 hover:bg-zinc-900/80 shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]",
+        link: "text-zinc-200 underline-offset-4 hover:underline",
       },
       size: {
         default:

@@ -121,9 +121,9 @@ export function ChatSheet() {
       <SheetTrigger
         render={<motion.button whileHover={{ scale: 1.06 }} whileTap={{ scale: 0.92 }} />}
         aria-label={chatI18n.open}
-        className="fixed right-4 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 grid size-14 place-items-center rounded-full bg-indigo-500 text-white shadow-xl shadow-indigo-950/40 transition-colors hover:bg-indigo-400 sm:right-6 sm:bottom-6"
+        className="fixed right-3 bottom-[max(1rem,env(safe-area-inset-bottom))] z-40 grid size-12 place-items-center rounded-full bg-zinc-800/80 backdrop-blur-md text-zinc-400 shadow-xl shadow-zinc-950/40 transition-all hover:bg-zinc-200 hover:text-zinc-900 opacity-60 hover:opacity-100 sm:right-6 sm:bottom-6"
       >
-        <MessageCircle className="size-6" />
+        <MessageCircle className="size-5" />
         <AnimatePresence>
           {unreadTotal > 0 && <Badge render={<motion.span initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.5 }} />} className="absolute -top-1 -right-1 min-w-5 border-2 border-zinc-950 bg-rose-500 px-1 text-white">{unreadTotal > 99 ? "99+" : unreadTotal}</Badge>}
         </AnimatePresence>

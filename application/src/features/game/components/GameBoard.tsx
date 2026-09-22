@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
@@ -272,16 +272,14 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         />
       </div> */}
 
-      {/* Board Tonda */}
       <div
         ref={tableRef}
-        className={`relative w-full transition-all duration-300 mx-auto rounded-full bg-gradient-to-b from-emerald-900 via-emerald-800 to-emerald-950 border-[6px] sm:border-[10px] border-amber-950/90 shadow-[inset_0_0_50px_rgba(0,0,0,0.85),0_10px_30px_rgba(0,0,0,0.5)] ${
+        className={`relative w-full transition-all duration-300 mx-auto bg-transparent border border-zinc-800/30 rounded-full shadow-[inset_0_0_50px_rgba(255,255,255,0.02)] ${
           hasActiveControls
             ? "h-[300px] sm:h-[400px] max-w-[340px] sm:max-w-[480px]"
             : "h-[360px] sm:h-[480px] max-w-[400px] sm:max-w-[580px]"
-        } ${isCardDragging ? "ring-4 ring-emerald-300/80" : ""}`}
-      >
-        {isCardDragging && (
+        } ${isCardDragging ? "ring-2 ring-zinc-500 ring-offset-2 ring-offset-zinc-950 scale-105" : ""}`}
+      >{isCardDragging && (
           <div className="pointer-events-none absolute top-3 left-1/2 z-30 -translate-x-1/2 animate-pulse rounded-full border border-emerald-300/60 bg-emerald-500/30 px-3 py-0.5 text-[9px] font-black tracking-widest text-emerald-100 uppercase backdrop-blur-sm">
             Rilascia qui
           </div>

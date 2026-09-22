@@ -63,98 +63,85 @@ export function LobbyActions({ isLeaving, isStarting, onLeave, onStart, isResumi
       : lobbyI18n.actions.discardPaused;
 
   return (
-    <div className="space-y-3">
-      <div className="flex gap-3">
-        {showDiscardMain ? (
-          <Button
-            onClick={handleDiscardClick}
-            disabled={busy}
-            variant={confirmingDiscard ? "destructive" : "outline"}
-            size="lg"
-            className={
-              confirmingDiscard
-                ? "w-1/3 min-w-0 shrink overflow-hidden gap-2 font-semibold"
-                : "w-1/3 min-w-0 shrink overflow-hidden gap-2 border-red-500/50 bg-transparent text-red-300 hover:text-red-200 hover:border-red-500 hover:bg-red-950/30"
-            }
-          >
-            {isDiscarding ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : confirmingDiscard ? (
-              <TriangleAlert className="w-4 h-4" />
-            ) : (
-              <Trash2 className="w-4 h-4" />
-            )}{" "}
-            {isDiscarding ? (
-              lobbyI18n.actions.discarding
-            ) : confirmingDiscard ? (
-              <span className="block min-w-0 overflow-hidden whitespace-nowrap text-ellipsis">
-                {lobbyI18n.actions.confirmShort}
-              </span>
-            ) : (
-              discardLabel
-            )}
-          </Button>
-        ) : isWaiting ? (
-          <Button
-            onClick={handleLeaveClick}
-            disabled={busy}
-            variant={confirmingLeave ? "destructive" : "outline"}
-            size="lg"
-            className={
-              confirmingLeave
-                ? "w-1/3 min-w-0 shrink overflow-hidden gap-2 font-semibold"
-                : "w-1/3 min-w-0 shrink overflow-hidden gap-2 border-zinc-700 bg-transparent text-zinc-300 hover:text-red-300 hover:border-red-500/50 hover:bg-red-950/30"
-            }
-          >
-            {isLeaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <LogOut className="w-4 h-4" />}{" "}
-            {isLeaving ? (
-              lobbyI18n.actions.leaving
-            ) : confirmingLeave ? (
-              <span className="block min-w-0 overflow-hidden whitespace-nowrap text-ellipsis">
-                {lobbyI18n.actions.confirmShort}
-              </span>
-            ) : (
-              lobbyI18n.actions.leave
-            )}
-          </Button>
+    <div className="flex flex-col gap-4">
+      {/* Primary Action Button (Start/Resume) */}
+      <Button
+        onClick={onStart}
+        disabled={busy || disableStart || isDisconnecting}
+        variant="default"
+        className="w-full h-12 rounded-xl font-bold cursor-pointer transition-colors"
+      >
+        {isStarting ? (
+          <Loader2 className="w-5 h-5 animate-spin" />
+        ) : isResuming ? (
+          <Play className="w-5 h-5" />
         ) : (
-          onExitHome && (
-            <Button
-              onClick={onExitHome}
-              disabled={busy}
-              variant="outline"
-              size="lg"
-              className="w-1/3 gap-2 border-zinc-700 bg-transparent text-zinc-300 hover:text-indigo-300 hover:border-indigo-500/50 hover:bg-indigo-950/30"
-            >
-              <Home className="w-4 h-4" /> {lobbyI18n.actions.exitHome}
-            </Button>
-          )
-        )}
+          <Check className="w-5 h-5" />
+        )}{" "}
+        {isResuming ? lobbyI18n.actions.resumeGame : lobbyI18n.actions.startGame}
+      </Button>
+
+      {/* Secondary Action Button (Discard/Leave/Home) */}
+      {showDiscardMain ? (
         <Button
-          onClick={onStart}
-          disabled={busy || disableStart || isDisconnecting}
-          size="lg"
-          className="w-2/3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-2 shadow-lg shadow-emerald-950/40"
+          onClick={handleDiscardClick}
+          disabled={busy}
+          variant={confirmingDiscard ? "destructive" : "secondary"}
+          className={`w-full h-12 rounded-xl font-bold cursor-pointer transition-colors ${!confirmingDiscard ? 'text-red-400 hover:text-red-300' : ''}`}
         >
-          {isStarting ? (
+          {isDiscarding ? (
             <Loader2 className="w-5 h-5 animate-spin" />
-          ) : isResuming ? (
-            <Play className="w-5 h-5" />
+          ) : confirmingDiscard ? (
+            <TriangleAlert className="w-5 h-5" />
           ) : (
-            <Check className="w-5 h-5" />
+            <Trash2 className="w-5 h-5" />
           )}{" "}
-          {isResuming ? lobbyI18n.actions.resumeGame : lobbyI18n.actions.startGame}
+          {isDiscarding ? (
+            lobbyI18n.actions.discarding
+          ) : confirmingDiscard ? (
+            lobbyI18n.actions.confirmShort
+          ) : (
+            discardLabel
+          )}
         </Button>
-      </div>
+      ) : isWaiting ? (
+        <Button
+          onClick={handleLeaveClick}
+          disabled={busy}
+          variant={confirmingLeave ? "destructive" : "outline"}
+          className="w-full h-12 rounded-xl font-bold cursor-pointer transition-colors"
+        >
+          {isLeaving ? <Loader2 className="w-5 h-5 animate-spin" /> : <LogOut className="w-5 h-5" />}{" "}
+          {isLeaving ? (
+            lobbyI18n.actions.leaving
+          ) : confirmingLeave ? (
+            lobbyI18n.actions.confirmShort
+          ) : (
+            lobbyI18n.actions.leave
+          )}
+        </Button>
+      ) : (
+        onExitHome && (
+          <Button
+            onClick={onExitHome}
+            disabled={busy}
+            variant="outline"
+            className="w-full h-12 rounded-xl font-bold cursor-pointer transition-colors"
+          >
+            <Home className="w-5 h-5" /> {lobbyI18n.actions.exitHome}
+          </Button>
+        )
+      )}
+
+      {/* Pausing Button when disconnecting */}
       {isDisconnecting && onPause && (
         <Button
           onClick={onPause}
           disabled={busy}
           variant="outline"
-          size="sm"
-          className="w-full gap-2 border-amber-500/50 bg-amber-950/30 text-amber-300 hover:text-amber-200 hover:bg-amber-900/40"
+          className="w-full h-12 rounded-xl font-bold border-amber-500/50 bg-amber-950/30 text-amber-300 hover:text-amber-200 hover:bg-amber-900/40 cursor-pointer"
         >
-          {isPausing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Pause className="w-4 h-4" />}{" "}
+          {isPausing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Pause className="w-5 h-5" />}{" "}
           {isPausing ? lobbyI18n.actions.pausing : lobbyI18n.actions.pauseGame}
         </Button>
       )}

@@ -42,7 +42,7 @@ export function GameCardView({
     subLabel = card.color;
   } else if (card.type === "Wizard") {
     cardStyle =
-      "border-amber-400/80 bg-gradient-to-b from-purple-950 via-purple-900 to-indigo-950 text-amber-300 shadow-purple-900/60 ring-1 ring-amber-400/30";
+      "border-amber-400/80 bg-gradient-to-b from-zinc-950 via-zinc-900 to-black text-amber-300 shadow-zinc-900/60 ring-1 ring-amber-400/30";
     label = "W";
     subLabel = `Wizard #${card.id}`;
   } else if (card.type === "Jester") {
