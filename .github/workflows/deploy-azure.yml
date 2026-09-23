@@ -10,8 +10,29 @@ env:
   IMAGE_NAME: ${{ github.repository }}-engine
 
 jobs:
+  changes:
+    name: Check for backend changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'wizardEngine/**'
+              - 'compose.yml'
+              - 'Caddyfile'
+              - '.github/workflows/deploy-azure.yml'
+
   build-and-push:
     name: Build & Push Docker Image
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
