@@ -1,0 +1,29 @@
+package io.github.pallax03.wizard.engine.model.basic.cards
+
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class TestCard extends AnyWordSpec with Matchers:
+  import io.github.pallax03.wizard.engine.model.basic.BasicTestDSL._
+
+  "A card" should:
+    "Create a Standard" in:
+      Thirteen of Red shouldBe a[Standard]
+
+    "Create a Wizard" in:
+      wizard shouldBe a[Wizard]
+
+    "Create a Jester" in:
+      jester shouldBe a[Jester]
+
+  "Some Cards" should:
+    "create a chain of Cards" in:
+      val myCards =
+        (Five of Red) - (Four of Yellow) - wizard - (Ten of Green) - jester - (Thirteen of Blue)
+      myCards should have size 6
+      myCards.head shouldBe (Five of Red)
+      myCards(1) shouldBe (Four of Yellow)
+      myCards(2) shouldBe a[Wizard]
+      myCards(3) shouldBe (Ten of Green)
+      myCards(4) shouldBe a[Jester]
+      myCards(5) shouldBe (Thirteen of Blue)

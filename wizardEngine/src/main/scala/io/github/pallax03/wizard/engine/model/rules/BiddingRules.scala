@@ -1,0 +1,73 @@
+package io.github.pallax03.wizard.engine.model.rules
+
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.basic.bidding.Bid.*
+import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Bids}
+import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
+import io.github.pallax03.wizard.engine.model.core.GameActionError
+
+/** Rules and validations governing the bidding phase of a round. */
+object BiddingRules:
+
+  /**
+   * Validates and processes a player's bid, adding it to the current bids if valid.
+   *
+   * @param bid           the bid value to be processed.
+   * @param currentBids   the bids placed so far in this round.
+   * @param currentPlayer the ID of the player placing the bid.
+   * @param round         the current game round.
+   * @param totalPlayers  the total number of players in the game.
+   * @return Right with the updated [[Bids]] if valid, Left with a [[GameActionError]] otherwise.
+   */
+  def processBid(
+      bid: Bid,
+      currentBids: Bids,
+      currentPlayer: PlayerId,
+      round: Round,
+      totalPlayers: Int
+  ): Either[GameActionError, Bids] =
+    bid
+      .validateBid(round, currentBids, totalPlayers)
+      .map(_ => currentBids + (currentPlayer place bid))
+
+  extension (currentBids: Bids)
+    /** Returns the invalid bid for the last player, if applicable. */
+    def notValidBid(round: Round, totalPlayers: Int): Option[Bid] =
+      val suspectedInvalid = round - currentBids.total
+      Option
+        .when(suspectedInvalid.validateBid(round, currentBids, totalPlayers).isLeft)(
+          suspectedInvalid
+        )
+        .filter(isWithinBounds(_, round))
+
+  extension (bid: Bid)
+    /**
+     * Validates if a bid conforms to both boundary rules and the last-player restriction.
+     *
+     * @param round the current game round.
+     * @param currentBids the bids placed so far in this round.
+     * @param totalPlayers the total number of players in the game.
+     * @return Right(()) if valid, Left with a [[GameActionError]] otherwise.
+     */
+    def validateBid(
+        round: Round,
+        currentBids: Bids,
+        totalPlayers: Int
+    ): Either[GameActionError, Unit] =
+      if !isWithinBounds(bid, round) then Left(GameActionError.InvalidBid(round, bid))
+      else if isLastPlayerInvalid(bid, round, currentBids, totalPlayers) then
+        Left(GameActionError.InvalidBid(round, bid))
+      else Right(())
+
+  private def isWithinBounds(bid: Bid, round: Round): Boolean =
+    bid >= 0 && bid.isValid(round)
+
+  private def isLastPlayerInvalid(
+      bid: Bid,
+      round: Round,
+      currentBids: Bids,
+      totalPlayers: Int
+  ): Boolean =
+    val isLastPlayer = currentBids.isComplete(totalPlayers - 1)
+    isLastPlayer && (currentBids.total + bid) == round
+export BiddingRules.*

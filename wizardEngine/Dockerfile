@@ -1,7 +1,15 @@
 # Stage 1: Build the fat JAR using sbt-assembly
 FROM sbtscala/scala-sbt:eclipse-temurin-17.0.13_11_1.10.7_3.6.3 AS builder
 WORKDIR /app
-COPY . .
+
+# Cache dependencies by copying build definitions first
+COPY build.sbt ./
+COPY project ./project/
+COPY .scalafmt.conf .scalafix.conf ./
+RUN sbt update
+
+# Now copy the source code and build
+COPY src ./src/
 RUN sbt assembly
 
 # Stage 2: Minimal JRE image

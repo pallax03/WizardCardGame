@@ -4,7 +4,6 @@ on:
   push:
     branches:
       - master
-      - develop
   pull_request:
     branches:
       - master
@@ -29,12 +28,8 @@ jobs:
     needs: changes
     if: ${{ needs.changes.outputs.engine == 'true' }}
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v7
-        with:
-          token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
       - name: Setup Java
         uses: actions/setup-java@v5
@@ -46,16 +41,11 @@ jobs:
       - name: Install SBT
         uses: sbt/setup-sbt@v1
 
-      - name: Auto-Format (Scalafmt & Scalafix)
+      - name: SBT Format & Fix Check
+        if: github.base_ref == 'master' || github.ref == 'refs/heads/master'
         working-directory: ./wizardEngine
-        run: sbt scalafmtAll scalafixAll || true
-
-      - name: Commit Auto-Formatting Changes
-        if: github.actor != 'dependabot[bot]'
-        uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          commit_message: 'style: auto-format scala code'
+        run: sbt "; scalafmtCheckAll; scalafixAll --check"
 
       - name: SBT Compile, Test & Coverage
         working-directory: ./wizardEngine
-        run: sbt "; clean; coverage; test; coverageReport"
+        run: sbt "; coverage; test; coverageReport"

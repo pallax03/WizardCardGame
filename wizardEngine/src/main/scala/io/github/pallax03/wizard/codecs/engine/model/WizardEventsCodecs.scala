@@ -1,0 +1,90 @@
+package io.github.pallax03.wizard.codecs.engine.model
+
+import io.circe.*
+import io.circe.syntax.*
+
+import io.github.pallax03.wizard.engine.model.basic.*
+import io.github.pallax03.wizard.engine.model.core.GameActionError
+import io.github.pallax03.wizard.engine.model.events.*
+
+object WizardEventsCodecs:
+
+  import gameplay.Round
+  import cards.Card
+  import bidding.Bid
+  import basic.PlayerIdCodecs.given
+  import basic.HandsCodecs.given
+  import basic.TrumpCodecs.given
+  import basic.CardCodecs.given
+  import basic.ScoreboardCodecs.given
+  import core.GameActionErrorCodecs.given
+
+  given Encoder[WizardEvent] = Encoder.instance: e =>
+    val encodedEvent = e match
+      case ev: LifecycleEvent  => Encoder.AsObject.derived[LifecycleEvent].encodeObject(ev)
+      case ev: ProgressEvent   => Encoder.AsObject.derived[ProgressEvent].encodeObject(ev)
+      case ev: ActionEvent     => Encoder.AsObject.derived[ActionEvent].encodeObject(ev)
+      case ev: InvitationEvent => Encoder.AsObject.derived[InvitationEvent].encodeObject(ev)
+      case ev: FailureEvent    => Encoder.AsObject.derived[FailureEvent].encodeObject(ev)
+
+    val eventType = e.getClass.getInterfaces
+      .map(_.getSimpleName)
+      .find(_.endsWith("Event"))
+      .getOrElse("WizardEvent")
+    val eventAction = encodedEvent.keys.head
+    val rawFields = encodedEvent(eventAction).get.asObject.get
+    val fields =
+      Json.fromJsonObject(rawFields.filterKeys(k => k != "playerId" && k != "destinationId"))
+
+    val scopedFields = e match
+      case p: PlayerScoped      => List("playerId" -> p.playerId.asJson)
+      case d: DestinationScoped => List("destinationId" -> d.destinationId.asJson)
+      case _                    => Nil
+
+    val eventFields = List(
+      "type" -> Json.fromString(eventType),
+      "action" -> Json.fromString(eventAction)
+    ) ::: scopedFields ::: List(
+      "fields" -> fields
+    )
+
+    Json.obj("event" -> Json.obj(eventFields*))
+
+  given Decoder[WizardEvent] = Decoder.instance: c =>
+    val ev = c.downField("event")
+    val fields = ev.downField("fields")
+    ev.downField("action")
+      .as[String]
+      .flatMap:
+        case "GameStarted" =>
+          fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameStarted.apply)
+        case "GameResumed" =>
+          fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameResumed.apply)
+        case "WaitingForTrump" =>
+          for {
+            p <- ev.get[PlayerId]("destinationId")
+            c <- ev.get[List[Card.Color]]("colorOptions")
+          } yield InvitationEvent.WaitingForTrump(p, c)
+        case "WaitingForBid" =>
+          for {
+            p <- ev.get[PlayerId]("destinationId")
+            r <- fields.get[Round]("round")
+            i <- fields.get[Option[Bid]]("invalidBid")
+          } yield InvitationEvent.WaitingForBid(p, r, i)
+        case "WaitingForCard" =>
+          for {
+            p <- ev.get[PlayerId]("destinationId")
+            cards <- fields.get[List[Card]]("legalCards")
+            isTableEmpty <- fields.get[Boolean]("isTableEmpty")
+          } yield InvitationEvent.WaitingForCard(p, cards, isTableEmpty)
+        case "ActionFailed" =>
+          for {
+            p <- ev.get[PlayerId]("playerId")
+            err <- fields.get[GameActionError]("reason")
+          } yield FailureEvent.ActionFailed(p, err)
+        case "StateRecovered" =>
+          Right(LifecycleEvent.StateRecovered)
+        case "GameCancelled" =>
+          fields.get[Option[String]]("reason").map(LifecycleEvent.GameCancelled.apply)
+        case other =>
+          Left(DecodingFailure(s"No decoding for $other.", c.history))

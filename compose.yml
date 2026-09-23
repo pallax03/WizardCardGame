@@ -1,19 +1,4 @@
 services:
-  nginx:
-    image: nginx:1.25-alpine
-    container_name: ${PROJECT_NAME}-nginx
-    ports:
-      - "80:80"
-    environment:
-      - ENGINE_PORT=${ENGINE_PORT}
-      - APPLICATION_PORT=${APPLICATION_PORT}
-    volumes:
-      - ./nginx/nginx.conf.template:/etc/nginx/templates/default.conf.template:ro
-    depends_on:
-      - application
-      - wizard-engine
-    restart: always
-
   redis:
     image: redis:7-alpine
     container_name: ${PROJECT_NAME}-redis
@@ -25,25 +10,74 @@ services:
     restart: always
 
   wizard-engine:
+    image: ${ENGINE_IMAGE:-wizard-engine:local}
     build:
       context: ./wizardEngine
     container_name: ${PROJECT_NAME}-wizard-engine
+    ports:
+      - "${HTTP_PORT}:${HTTP_PORT}"
+      - "${WS_PORT}:${WS_PORT}"
     environment:
-      - PORT=${ENGINE_PORT}
+      - ROLE=engine
+      - APP_ENV=${APP_ENV}
+      - HTTP_PORT=${HTTP_PORT}
+      - WS_PORT=${WS_PORT}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
     depends_on:
       - redis
     restart: on-failure
+
+  wizard-bot-worker:
+    image: ${ENGINE_IMAGE:-wizard-engine:local}
+    build:
+      context: ./wizardEngine
+    environment:
+      - ROLE=bot_worker
+      - APP_ENV=${APP_ENV}
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-}
+    depends_on:
+      - redis
+      - wizard-engine
+    restart: on-failure
+    deploy:
+      replicas: 3
 
   application:
     build:
       context: ./application
     container_name: ${PROJECT_NAME}-application
+    profiles: ["frontend"]
+    ports:
+      - "${APPLICATION_PORT}:${APPLICATION_PORT}"
     environment:
       - PORT=${APPLICATION_PORT}
-      - NEXT_PUBLIC_BACKEND_URL=http://localhost
+      - BACKEND_INTERNAL_URL=http://wizard-engine:${HTTP_PORT}
+      - NEXT_PUBLIC_WS_PORT=${WS_PORT}
     depends_on:
       - wizard-engine
     restart: always
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: ${PROJECT_NAME}-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - wizard-engine
+
 volumes:
   redis-data:
+  caddy_data:
+  caddy_config:

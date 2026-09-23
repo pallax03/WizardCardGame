@@ -24,6 +24,20 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.RELEASE_TOKEN || github.token }}
 
+      - name: Setup Java
+        uses: actions/setup-java@v5
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'sbt'
+      
+      - name: Install SBT
+        uses: sbt/setup-sbt@v1
+
+      - name: Build Wizard-Engine JAR
+        working-directory: ./wizardEngine
+        run: sbt assembly
+
       - name: Setup Node.js
         uses: actions/setup-node@v7
         with:

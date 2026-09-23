@@ -1,0 +1,114 @@
+package io.github.pallax03.wizard.application.timer
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
+import cats.syntax.all.*
+
+import io.vertx.core.AbstractVerticle
+import io.vertx.redis.client.{Command, Redis, Request}
+
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyPlayerCodecs.given
+import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
+import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
+import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyPlayer, LobbyStatus}
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.model.events.SystemEvent
+import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubSubPort}
+import io.github.pallax03.wizard.util.FutureSyntax.*
+import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, RedisUtil, WizardLogger}
+
+class TurnTimerVerticle(
+    pubSubPort: PubSubPort,
+    redisClient: Redis,
+    inboundPort: InboundPort,
+    lobbyStatePort: LobbyStatePort
+) extends AbstractVerticle:
+
+  override def start(): Unit =
+    redisClient
+      .send(
+        Request.cmd(Command.create("CONFIG")).arg("SET").arg("notify-keyspace-events").arg("Ex")
+      )
+      .onComplete(_ => ())
+
+    pubSubPort.subscribe(ChannelsKeys.TURN_TIMER_KEYSPACE, handleExpiredKey)
+    pubSubPort.subscribe(ChannelsKeys.TURN_EVENTS_CHANNEL, handleTurnEvent)
+
+  private def handleTurnEvent(jsonStr: String): Unit =
+    (for
+      payload <- Future.fromTry(jsonStr.decodeAs[LobbyPlayer].toTry)
+      case Right(lobby) <- lobbyStatePort.getLobby(payload.lobbyId)
+      if lobby.status == LobbyStatus.IN_GAME
+      strikes = lobby.players.find(_.id == payload.playerId).map(_.strikes).getOrElse(0)
+      _ <- redisClient
+        .send(
+          RedisUtil.setWithDefaultTTL(
+            ChannelsKeys.turnTimer(payload.lobbyId, payload.playerId),
+            "1",
+            lobby.configuration.calculateTTL(strikes).toString
+          )
+        )
+        .asScala
+    yield ()).recover(_ => ())
+
+  private def handleExpiredKey(expiredKey: String): Unit =
+    expiredKey.split(':') match
+      case Array("timer", lobbyIdStr, playerIdStr) =>
+        val lobbyId = LobbyId(lobbyIdStr)
+        val playerId = PlayerId(playerIdStr.toInt)
+        (for
+          case Right(lobby) <- lobbyStatePort.getLobby(lobbyId)
+          if lobby.status == LobbyStatus.IN_GAME
+          player = lobby.players.find(_.id == playerId).get
+          _ <-
+            if player.isBot then inboundPort.forceFallbackAction(lobbyId, playerId)
+            else
+              for
+                strikes <- lobbyStatePort.incrementPlayerStrikes(lobbyId, playerId)
+                _ <-
+                  if strikes >= lobby.configuration.maxStrikes then
+                    lobbyStatePort
+                      .setPlayerOnlineStatus(lobbyId, playerId, false)
+                      .flatMap: _ =>
+                        pubSubPort
+                          .publish(
+                            ChannelsKeys.pubSubLobbyChannel(lobbyId),
+                            SystemEvent.offline(playerId).toJson
+                          )
+                          .void
+                  else inboundPort.forceFallbackAction(lobbyId, playerId)
+              yield ()
+        yield ()).recover: ex =>
+          given LogContext = LogContext(lobbyId, playerId)
+          WizardLogger.error(s"Timer action failed: ${ex.getMessage}")
+
+      case Array("disconnect", lobbyIdStr) =>
+        val lobbyId = LobbyId(lobbyIdStr)
+        lobbyStatePort
+          .updateLobby[(List[PlayerId], LobbyStatus)](lobbyId): lobby =>
+            if lobby.status == LobbyStatus.DISCONNECTING then
+              val (offlineIds, newLobby) = lobby.replaceOfflinePlayersWithBots()
+              Right(((offlineIds, newLobby.status), newLobby, None))
+            else Right(((Nil, lobby.status), lobby, None))
+          .flatMap:
+            case Right((offlineIds, newStatus)) if offlineIds.nonEmpty =>
+              for
+                _ <- Future.sequence(
+                  offlineIds.map(pid =>
+                    pubSubPort.publish(
+                      ChannelsKeys.pubSubLobbyChannel(lobbyId),
+                      SystemEvent.afkReplaced(pid).toJson
+                    )
+                  )
+                )
+                _ <-
+                  if newStatus == LobbyStatus.IN_GAME then inboundPort.resumeGame(lobbyId)
+                  else Future.unit
+              yield ()
+            case _ => Future.unit
+          .recover: ex =>
+            given LogContext = LogContext(lobbyId)
+            WizardLogger.error(s"Disconnect timer failed: ${ex.getMessage}")
+
+      case _ => ()

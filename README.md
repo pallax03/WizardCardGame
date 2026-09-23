@@ -5,21 +5,18 @@ Final project of the course: Distributed Systems (87474)
 
 ### Application Run
 
-#### Test in Deployment
-- run redis
+#### no frontend
+- run redis and backend
 ```bash
-docker compose up
-```
-- run wizard game engine
-```bash
-sbt run
+docker compose up wizard-engine redis -d
 ```
 - run application (frontend)
 ```bash
+cd ./application
 npm run dev
 ```
 
-#### Test Production
+#### All up
 ```bash
 docker compose up --build
 ```
