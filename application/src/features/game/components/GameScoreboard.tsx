@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { Button } from "@/ui/components/button";
-import { X, Trophy, Check, X as XIcon } from "lucide-react";
+import { X, Trophy} from "lucide-react";
 import type { Scoreboard, ScoreEntry } from "../types";
 
 interface GameScoreboardProps {
@@ -26,7 +26,7 @@ export function GameScoreboard({
 }: GameScoreboardProps) {
   // Elaborazione classifica e dati del tabellone
   const { leaderboard, playerEntriesMap } = useMemo(() => {
-    const entriesMap = new Map<number, Record<string, unknown>[]>();
+    const entriesMap = new Map<number, ScoreEntry[]>();
     const leaderboardData: { playerId: number; totalScore: number }[] = [];
 
     if (Array.isArray(players)) {
@@ -41,7 +41,7 @@ export function GameScoreboard({
       Object.entries(scoreboard).forEach(([pIdStr, entries]) => {
         const pId = Number(pIdStr);
         const validEntries = Array.isArray(entries) ? entries : [];
-        const sortedEntries = [...validEntries].sort((a, b) => (Number(a.round) || 0) - (Number(b.round) || 0));
+        const sortedEntries = [...validEntries].sort((a, b) => (a.round || 0) - (b.round || 0));
         entriesMap.set(pId, sortedEntries);
       });
     }
@@ -67,12 +67,6 @@ export function GameScoreboard({
     return leaderboard[0]?.playerId ?? 0;
   });
 
-  // Trova il piazzamento in classifica del giocatore selezionato
-  const selectedRank = useMemo(() => {
-    const index = leaderboard.findIndex((item) => item.playerId === selectedPlayerId);
-    return index !== -1 ? index + 1 : null;
-  }, [leaderboard, selectedPlayerId]);
-
   if (!scoreboard) return null;
 
   const getBotDifficultyLabel = (p?: Record<string, unknown>) => {
@@ -87,9 +81,6 @@ export function GameScoreboard({
   const selectedDiff = getBotDifficultyLabel(selectedP);
   const selectedPlayerName = selectedPlayerNameRaw;
   const selectedPlayerEntries = playerEntriesMap.get(selectedPlayerId) ?? [];
-  const selectedTotalScore = selectedPlayerEntries.length > 0
-    ? Number(selectedPlayerEntries[selectedPlayerEntries.length - 1].score) || 0
-    : 0;
 
   return (
     <div className={`relative bg-zinc-950/95 border border-zinc-700/60 backdrop-blur-md shadow-2xl rounded-2xl ${isScrollable ? 'max-h-[85vh] overflow-hidden' : ''} flex flex-col w-full max-w-md mx-auto p-3 sm:p-4 space-y-4`}>
@@ -139,7 +130,7 @@ export function GameScoreboard({
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate mr-2">
-                  <span className={`text-[11px] font-bold min-w-[22px] ${isSelected ? "text-black" : "text-zinc-500"}`}>
+                  <span className={`text-[11px] font-bold min-w-5.5 ${isSelected ? "text-black" : "text-zinc-500"}`}>
                     {rank}°
                   </span>
                   <span className="truncate font-semibold">{pName}</span>
@@ -190,7 +181,6 @@ export function GameScoreboard({
                   const delta = entry.score - prevScore;
 
                   const bid = entry.bid;
-                  const isSuccess = delta > 0;
 
                   return (
                     <tr key={entry.round} className="hover:bg-zinc-900/40 transition-colors">

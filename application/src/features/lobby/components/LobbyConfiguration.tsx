@@ -1,8 +1,7 @@
 "use client";
 
 import { Button } from "@/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/components/card";
-import { Settings2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { t } from "@/ui/i18n/core";
 
 const lobbyI18n = t("lobby");

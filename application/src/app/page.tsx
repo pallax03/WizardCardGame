@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe, History } from "lucide-react";
+import { Loader2, ArrowRight, X, Globe } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/api";
 import { getLobbyState } from "@/features/lobby-session/api";
 import { readSavedLobbies, removeSavedLobby } from "@/features/lobby-session/storage";
@@ -11,7 +11,6 @@ import { ApiError } from "@/lib/api/api";
 import { t } from "@/ui/i18n/core";
 const homeI18n = t("home");
 import { Button } from "@/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/components/card";
 import { Input } from "@/ui/components/input";
 import { getErrorMessage } from "@/ui/i18n/errors";
 

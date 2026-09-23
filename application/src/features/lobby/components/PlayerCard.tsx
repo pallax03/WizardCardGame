@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/ui/components/button";
-import { X, Loader2, Target, CheckSquare, ChevronDown, ChevronUp, Check } from "lucide-react";
+import { X, Loader2, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
 import { PlayerCardProps } from "../types";

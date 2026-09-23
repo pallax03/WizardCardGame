@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardHeader, CardTitle } from "@/ui/components/card";
 import { Button } from "@/ui/components/button";
 import { Copy, Check, Share, Settings } from "lucide-react";
 import { LobbyHeaderProps } from "../types";

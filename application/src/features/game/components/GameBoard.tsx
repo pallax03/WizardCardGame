@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { useGameBoard, TRICK_REVEAL_SECONDS } from "../hooks/useGameBoard";
+import { useGameBoard } from "../hooks/useGameBoard";
 import { cardEquals } from "../state/gameReducer";
 import type { Card, CardColor } from "../types";
 import { GameCardView } from "./GameCardView";
@@ -13,7 +13,7 @@ import { GameEndOverlay } from "./GameEndOverlay";
 import { DisconnectOverlay } from "./DisconnectOverlay";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { ArrowLeft, Lightbulb, Trophy, Target, CheckSquare, MessageCircle, AlertTriangle, Check, X } from "lucide-react";
+import { ArrowLeft, Lightbulb, Trophy, MessageCircle, AlertTriangle, Check, X } from "lucide-react";
 import { t } from "@/ui/i18n/core";
 
 const lobbyI18n = t("lobby");
@@ -30,16 +30,6 @@ function phaseLabel(status: string): string {
   }
 }
 
-const getEffectiveColorCircle = (color: string) => {
-  switch (color) {
-    case "RED": return "bg-red-500";
-    case "BLUE": return "bg-blue-500";
-    case "GREEN": return "bg-emerald-500";
-    case "YELLOW": return "bg-amber-500";
-    default: return "";
-  }
-};
-
 interface GameBoardProps {
   customPlayerId?: number;
 }
@@ -49,7 +39,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const {
     lobbyId,
     playerId,
-    connectionState,
     lobby,
     playersMap,
     gameState,
@@ -59,12 +48,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     canChooseTrump,
     canBid,
     canPlay,
-    turnPrompt,
     turnTimerSeconds, turnTimerDuration,
     isCardPlayable,
     forbiddenBid,
-    bidsTotal,
-    bidWarning,
     bidError,
     actionError,
     lobbyWarning,
@@ -72,13 +58,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     setSelectedCard,
     bidInput,
     setBidInput,
-    selectedColor,
     setSelectedColor,
     isSubmitting,
-    actionStatus,
-    isRestoring,
-    snapshotError,
-    refreshSnapshot,
     handleChooseTrump,
     handlePlaceBid,
     handlePlayCard,
@@ -108,7 +89,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     return () => window.removeEventListener('chat-unread-change', handler);
   }, []);
 
-  const players = lobby?.players ?? [];
+  const players = useMemo(() => lobby?.players ?? [], [lobby?.players]);
   const myIndex = players.findIndex((p) => p.id === playerId);
   const orderedPlayers = useMemo(
     () => (myIndex !== -1 ? [...players.slice(myIndex), ...players.slice(0, myIndex)] : players),
@@ -190,14 +171,12 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     void handlePlayCard(card);
   };
 
-  const effectiveTrumpColorClass = gameState.effectiveTrumpColor ? getEffectiveColorCircle(gameState.effectiveTrumpColor) : "";
-
   const openChat = () => {
     window.dispatchEvent(new CustomEvent('open-chat-global'));
   };
 
   return (
-    <div className="relative flex flex-col min-h-[100dvh] w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-6 space-y-3 sm:space-y-4 select-none overflow-hidden">
+    <div className="relative flex flex-col min-h-dvh w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-6 space-y-3 sm:space-y-4 select-none overflow-hidden">
       <GameEndOverlay
         isGameEnded={isGameEnded}
         sortedScoreboard={sortedScoreboard}
@@ -265,7 +244,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           >
             <MessageCircle className="size-4" />
             {unreadChatCount > 0 && (
-              <span className="absolute -top-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-zinc-950">
+              <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-zinc-950">
                 {unreadChatCount > 9 ? "9+" : unreadChatCount}
               </span>
             )}
@@ -281,17 +260,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           const sourceBids = revealedTrick ? revealedTrick.bids : gameState.bids;
           const sourceTricks = revealedTrick ? revealedTrick.tricksSnapshot : gameState.tricksWon;
           const hasBid = sourceBids[player.id] !== undefined && sourceBids[player.id] !== null;
-          const playerBid = hasBid ? sourceBids[player.id] : "-";
-          const playerTricks = hasBid ? (sourceTricks[player.id] ?? 0) : "-";
-          
-          const bidColor = hasBid ? "text-amber-400 font-bold" : "text-zinc-500";
-          const tricksColor = !hasBid 
-            ? "text-zinc-500" 
-            : ((sourceTricks[player.id] ?? 0) === sourceBids[player.id] ? "text-emerald-400 font-bold" : "text-red-500 font-bold");
-          
           const lastScore = gameState.scoreboard?.[String(player.id)]?.at(-1);
           const score = lastScore ? lastScore.score : 0;
-          const isBot = Boolean(player.difficulty);
+
 
           let timerPct = 0;
           if (isCurrentTurn && turnTimerSeconds !== null && turnTimerSeconds !== undefined) {
@@ -312,7 +283,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                     : "bg-zinc-900/60 border-zinc-800/80 hover:bg-zinc-800/80"
               }`}
             >
-              <div className="p-1.5 pb-1 md:p-2 md:pb-1.5 w-full flex flex-col justify-between h-[58px] md:h-[68px]">
+              <div className="p-1.5 pb-1 md:p-2 md:pb-1.5 w-full flex flex-col justify-between h-14.5 md:h-17">
                 <div className="flex flex-col gap-0 min-w-0 w-full">
                   <div className="flex items-center justify-between min-w-0">
                      <span className={`flex items-center gap-1 text-[10px] md:text-[13px] font-bold truncate ${isCurrentTurn ? 'text-sky-400' : 'text-zinc-100'}`}>
@@ -329,7 +300,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                      </span>
                      {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] md:text-[9px] h-3 md:h-4 bg-zinc-700">TU</Badge>}
                   </div>
-                  <span className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-bold truncate min-h-[12px] md:min-h-[14px] leading-tight">
+                  <span className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-bold truncate min-h-3 md:min-h-3.5 leading-tight">
                     {Boolean(player.difficulty) ? (player.name.toLowerCase().includes("bot") ? (player.difficulty === "Dumb" ? "STUPIDO" : player.difficulty === "Prolog" ? "NORMALE" : player.difficulty) : "BOT") : ""}
                   </span>
                 </div>
@@ -390,7 +361,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       {/* PLAY AREA (THE TABLE) */}
       <div 
         ref={tableRef}
-        className={`relative flex-1 min-h-[220px] w-full max-w-3xl mx-auto flex flex-col items-center justify-start pt-2 rounded-3xl transition-all duration-300 ${
+        className={`relative flex-1 min-h-55 w-full max-w-3xl mx-auto flex flex-col items-center justify-start pt-2 rounded-3xl transition-all duration-300 ${
           isCardDragging ? "bg-emerald-950/20 border-2 border-dashed border-emerald-500/40 ring-4 ring-emerald-500/10" : "bg-transparent border-2 border-transparent"
         }`}
       >
@@ -477,7 +448,6 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             if (!played) return null;
             
             const isWinning = revealedTrick ? player.id === revealedTrick.winnerId : Boolean(gameState.winningCard && cardEquals(played.card, gameState.winningCard));
-            const playerNameShort = player.name.substring(0, 3).toUpperCase();
             
             return (
               <div key={player.id} className="relative flex flex-col items-center animate-in zoom-in-95 duration-200">
@@ -502,7 +472,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       </div>
 
       {/* REVEALED TRICK OVERLAY & BIDDING CHIPS (ABOVE HAND) */}
-      <div className="w-full flex justify-center items-end relative z-[80] mt-auto min-h-[48px]">
+      <div className="w-full flex justify-center items-end relative z-80 mt-auto min-h-12">
         {revealedTrick ? (
           <div className="w-full flex justify-center animate-in slide-in-from-bottom-4 fade-in duration-300 mb-2">
             <div className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-700/80 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.6)]">
@@ -597,7 +567,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               disabled={isSubmitting || isHintLoading}
               onClick={() => void requestHint()}
               title="Suggerimento"
-              className="size-10 sm:size-12 rounded-full bg-gradient-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-xl shadow-purple-500/20 border-2 border-purple-400/50 transition-all hover:scale-105 active:scale-95"
+              className="size-10 sm:size-12 rounded-full bg-linear-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-xl shadow-purple-500/20 border-2 border-purple-400/50 transition-all hover:scale-105 active:scale-95"
             >
               <Lightbulb className={`size-4 sm:size-5 ${isHintLoading ? "animate-spin" : ""}`} />
             </Button>
@@ -621,7 +591,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       {/* MODALS */}
       {showScoreboard && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
+          className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200"
           onClick={() => setShowScoreboard(false)}
         >
           <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
