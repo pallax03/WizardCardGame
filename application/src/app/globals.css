@@ -122,7 +122,7 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground no-scrollbar;
   }
   html {
     @apply font-sans;
@@ -132,10 +132,10 @@
 @layer components {
   .app-page {
     min-height: 100vh;
-    background-color: #09090b;
+    background-color: #000000;
     background-image:
-      radial-gradient(circle at 50% -15%, rgba(99, 102, 241, 0.28), transparent 42%),
-      radial-gradient(ellipse at top, rgba(49, 46, 129, 0.2), #09090b 60%);
+      radial-gradient(circle at 50% -15%, rgba(255, 255, 255, 0.1), transparent 42%),
+      radial-gradient(ellipse at top, rgba(50, 50, 50, 0.1), #000000 60%);
     color: #f4f4f5;
   }
 
@@ -146,6 +146,27 @@
   }
 
   .text-gradient-primary {
-    @apply tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-indigo-300 via-purple-300 to-pink-300 drop-shadow-sm;
+    @apply tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-white via-zinc-200 to-zinc-400 drop-shadow-sm;
   }
 }
+@layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+
+@layer utilities {
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+

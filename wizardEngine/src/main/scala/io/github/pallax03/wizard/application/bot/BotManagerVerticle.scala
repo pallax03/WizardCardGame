@@ -138,14 +138,20 @@ class BotManagerVerticle(
       action: GameAction,
       entryId: String
   ): Unit =
-    gameInboundPort
-      .submitAction(lobbyId, action)
-      .flatMap:
-        case Right(_) => Future.unit
-        case Left(err) =>
-          logWarn(s"Action failed for bot ${inv.destinationId} ($err). Forcing fallback.")
-          gameInboundPort.submitAction(lobbyId, FallbackStrategy.fallbackMove(inv)).void
-      .onComplete(_ => ackEntry(entryId))
+    lobbyStatePort
+      .getLobby(lobbyId)
+      .onComplete:
+        case Success(Right(lobby))
+            if lobby.players.find(_.id == inv.destinationId).exists(_.isBot) =>
+          gameInboundPort
+            .submitAction(lobbyId, action)
+            .flatMap:
+              case Right(_) => Future.unit
+              case Left(err) =>
+                logWarn(s"Action failed for bot ${inv.destinationId} ($err). Forcing fallback.")
+                gameInboundPort.submitAction(lobbyId, FallbackStrategy.fallbackMove(inv)).void
+            .onComplete(_ => ackEntry(entryId))
+        case _ => ackEntry(entryId)
 
   private def ackEntry(entryId: String): Unit =
     redisClient

@@ -9,8 +9,10 @@ export type ChatMessage = {
 export type SystemMessage = {
     type: 'system';
     playerId: number;
-    action: 'joined' | 'left' | 'online' | 'offline' | 'paused' | 'resumed' | 'afk_replaced' | 'config_updated' | (string & {});
+    action: 'joined' | 'left' | 'online' | 'offline' | 'paused' | 'resumed' | 'afk_replaced' | 'config_updated' | 'strikes_updated' | (string & {});
     timestamp: string;
+    strikes?: number;
+    fields?: Record<string, unknown>;
 };
 
 export type EventMessage = {

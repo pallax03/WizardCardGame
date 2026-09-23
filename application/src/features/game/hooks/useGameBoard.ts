@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLobbySession } from "@/features/lobby-session";
@@ -20,7 +20,7 @@ import { mapSnapshotToBoardState } from "../state/snapshotMapper";
 import type { Card, CardColor, GameBoardState, PlayedCardEntry } from "../types";
 
 /** Secondi di pausa a fine presa: il tavolo resta visibile prima di pulirsi. */
-export const TRICK_REVEAL_SECONDS = 4;
+export const TRICK_REVEAL_SECONDS = 6;
 
 export function useGameBoard(customPlayerId?: number) {
   const {
@@ -39,6 +39,7 @@ export function useGameBoard(customPlayerId?: number) {
   const [selectedCard, setSelectedCard] = useState<Card | null>(null);
   const [bidInput, setBidInput] = useState<number>(0);
   const [selectedColor, setSelectedColor] = useState<CardColor>("Red");
+  const [hintedBid, setHintedBid] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
   const [bidErrorRaw, setBidErrorRaw] = useState<{ round: number; message: string } | null>(null);
@@ -62,12 +63,11 @@ export function useGameBoard(customPlayerId?: number) {
     entries: PlayedCardEntry[];
     winningCard: Card | null;
     winnerId: number;
+    bids: Record<number, number>;
+    tricksSnapshot: Record<number, number>;
+    round: number;
   } | null>(null);
   const [revealSecondsLeft, setRevealSecondsLeft] = useState(0);
-  const completedTableRef = useRef<{
-    entries: PlayedCardEntry[];
-    winningCard: Card | null;
-  } | null>(null);
   const trickWonCountRef = useRef(0);
   const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const revealIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -134,12 +134,12 @@ export function useGameBoard(customPlayerId?: number) {
       setBidErrorRaw(null);
       setActionError(null);
       setHintedCard(null);
+      setHintedBid(null);
       setHintMeta(null);
       setHintError(null);
       setIsHintLoading(false);
       hasConnectedRef.current = false;
       trickWonCountRef.current = 0;
-      completedTableRef.current = null;
       if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
       if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
       revealTimeoutRef.current = null;
@@ -203,46 +203,50 @@ export function useGameBoard(customPlayerId?: number) {
     return tail.reduce((state, event) => gameReducer(state, event, reducerPlayerId), snapshotState);
   }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, reducerPlayerId]);
 
-  const latestTurnEvent = useMemo(
-    () => [...gameEvents].reverse().find((event) => event.event.action === "TurnOf") ?? null,
-    [gameEvents]
-  );
   const turnTimerDuration = useMemo(() => {
-    if (!latestTurnEvent || !lobby?.configuration) return null;
-    const activePlayerId = Number(
-      latestTurnEvent.event.playerId ?? latestTurnEvent.event.fields?.playerId
-    );
-    if (gameState.currentTurn.playerId !== activePlayerId) return null;
+    if (!lobby?.configuration) return null;
+    const activePlayerId = gameState.currentTurn.playerId;
+    if (activePlayerId === null || activePlayerId === undefined) return null;
     const timer = Number(lobby.configuration.timer);
     const player = lobby.players.find((candidate) => candidate.id === activePlayerId);
     if (!Number.isFinite(timer) || timer <= 0 || !player) return null;
     const strikes = Math.max(0, Number(player.strikes ?? 0));
     return Math.max(1, timer / 2 ** strikes);
-  }, [gameState.currentTurn.playerId, latestTurnEvent, lobby]);
+  }, [gameState.currentTurn.playerId, lobby]);
+
+  // Track when the current turn started using a ref.
+  // Set once when the turn key changes, never reset for the same turn.
+  const turnDeadlineRef = useRef<number | null>(null);
+  const turnKeyRef = useRef<string>("");
+
   const [turnTimerSeconds, setTurnTimerSeconds] = useState<number | null>(null);
 
   useEffect(() => {
-    if (!latestTurnEvent || turnTimerDuration === null) {
+    if (turnTimerDuration === null) {
+      turnDeadlineRef.current = null;
+      turnKeyRef.current = "";
       queueMicrotask(() => setTurnTimerSeconds(null));
       return;
     }
-    const deadline = Date.now() + turnTimerDuration * 1000;
+
+    const turnKey = `${gameState.currentTurn.playerId}-${gameState.currentTurn.actionType}-${gameState.round}-${turnTimerDuration}`;
+
+    if (turnKey !== turnKeyRef.current) {
+      console.log("[TIMER] New turn key:", turnKey, "prev:", turnKeyRef.current, "duration:", turnTimerDuration);
+      turnKeyRef.current = turnKey;
+      turnDeadlineRef.current = Date.now() + turnTimerDuration * 1000;
+      console.log("[TIMER] Deadline in", turnTimerDuration, "s, at", new Date(turnDeadlineRef.current).toISOString());
+    }
+
+    const deadline = turnDeadlineRef.current!;
     const initialSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    console.log("[TIMER] Starting interval, initialSeconds:", initialSeconds, "deadline delta:", (deadline - Date.now()) / 1000);
     queueMicrotask(() => setTurnTimerSeconds(initialSeconds));
     const interval = setInterval(() => {
       setTurnTimerSeconds(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
     }, 200);
     return () => clearInterval(interval);
-  }, [latestTurnEvent, turnTimerDuration]);
-
-  useEffect(() => {
-    if (gameState.table.length > 0) {
-      completedTableRef.current = {
-        entries: gameState.table,
-        winningCard: gameState.winningCard,
-      };
-    }
-  }, [gameState.table, gameState.winningCard]);
+  }, [turnTimerDuration, gameState.currentTurn.playerId, gameState.currentTurn.actionType, gameState.round]);
 
   const clearRevealTimers = () => {
     if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
@@ -256,23 +260,27 @@ export function useGameBoard(customPlayerId?: number) {
       if (trickWonCount < trickWonCountRef.current) {
         trickWonCountRef.current = trickWonCount;
         clearRevealTimers();
-        setRevealedTrick(null);
-        setRevealSecondsLeft(0);
+        queueMicrotask(() => {
+          setRevealedTrick(null);
+          setRevealSecondsLeft(0);
+        });
       }
       return;
     }
     trickWonCountRef.current = trickWonCount;
-    const snapshot = completedTableRef.current;
-    const winnerId = gameState.lastTrick?.winnerId;
-    if (!snapshot || snapshot.entries.length === 0 || winnerId === undefined) return;
+    const snapshot = gameState.lastTrick;
+    if (!snapshot || !snapshot.entries || snapshot.entries.length === 0) return;
     clearRevealTimers();
-    setRevealedTrick({
-      entries: snapshot.entries,
-      winningCard: snapshot.winningCard,
-      winnerId,
+    const entries = snapshot.entries;
+    const winningCard = snapshot.winningCard;
+    const winnerId = snapshot.winnerId;
+    const bids = snapshot.bids;
+    const tricksSnapshot = snapshot.tricksSnapshot;
+    queueMicrotask(() => {
+      setRevealedTrick({ entries, winningCard, winnerId, bids, tricksSnapshot, round: snapshot.round });
+      setRevealSecondsLeft(TRICK_REVEAL_SECONDS);
     });
     const deadline = Date.now() + TRICK_REVEAL_SECONDS * 1000;
-    setRevealSecondsLeft(TRICK_REVEAL_SECONDS);
     revealIntervalRef.current = setInterval(() => {
       setRevealSecondsLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
     }, 200);
@@ -281,7 +289,7 @@ export function useGameBoard(customPlayerId?: number) {
       setRevealedTrick(null);
       setRevealSecondsLeft(0);
     }, TRICK_REVEAL_SECONDS * 1000);
-  }, [trickWonCount]);
+  }, [trickWonCount, gameState.lastTrick]);
 
   useEffect(
     () => () => {
@@ -290,6 +298,22 @@ export function useGameBoard(customPlayerId?: number) {
     },
     [],
   );
+
+  useEffect(() => {
+    if (revealedTrick) {
+      const shouldDismiss = gameState.table.length > 0;
+      if (shouldDismiss) {
+        if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
+        if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
+        revealTimeoutRef.current = null;
+        revealIntervalRef.current = null;
+        setTimeout(() => {
+          setRevealedTrick(null);
+          setRevealSecondsLeft(0);
+        }, 0);
+      }
+    }
+  }, [gameState.status, gameState.table.length, revealedTrick]);
 
   const isMyTurn = gameState.currentTurn.isMyTurn && playerId !== null;
   const hasAlreadyBid = playerId !== null && gameState.bids[playerId] !== undefined;
@@ -562,6 +586,13 @@ export function useGameBoard(customPlayerId?: number) {
       } else if (canBid) {
         const hint = await getBestBidHint(lobbyId);
         setBidInput(hint);
+        setHintedBid(hint);
+        setHintMeta({
+          round: gameState.round,
+          status: gameState.status,
+          playerId: gameState.currentTurn.playerId,
+          action: gameState.currentTurn.actionType,
+        });
         setActionStatus(`💡 Suggerimento: punta ${hint}.`);
       } else if (canChooseTrump) {
         const hint = await getBestTrumpHint(lobbyId);
@@ -596,6 +627,15 @@ export function useGameBoard(customPlayerId?: number) {
     return hintedCard;
   }, [hintedCard, hintMeta, gameState.round, gameState.status, gameState.currentTurn, gameState.hand]);
 
+  const visibleHintedBid = useMemo<number | null>(() => {
+    if (hintedBid === null || !hintMeta) return null;
+    if (hintMeta.round !== gameState.round) return null;
+    if (hintMeta.status !== gameState.status) return null;
+    if (hintMeta.playerId !== gameState.currentTurn.playerId) return null;
+    if (hintMeta.action !== gameState.currentTurn.actionType) return null;
+    return hintedBid;
+  }, [hintedBid, hintMeta, gameState.round, gameState.status, gameState.currentTurn]);
+
   return {
     lobbyId,
     playerId,
@@ -605,6 +645,7 @@ export function useGameBoard(customPlayerId?: number) {
     gameState,
     gameEvents,
     turnTimerSeconds,
+    turnTimerDuration,
     // Reveal di fine presa (tavolo congelato + conto alla rovescia)
     revealedTrick,
     revealSecondsLeft,
@@ -646,6 +687,7 @@ export function useGameBoard(customPlayerId?: number) {
     handlePlayCard,
     // AI hint (mossa migliore dal backend)
     hintedCard: visibleHintedCard,
+    hintedBid: visibleHintedBid,
     setHintedCard,
     isHintLoading,
     hintError,

@@ -35,7 +35,8 @@ case class Lobby(
     players: List[Player],
     status: LobbyStatus,
     configuration: GameConfiguration,
-    version: Int = 1
+    version: Int = 1,
+    createdAt: Long = System.currentTimeMillis()
 ):
 
   def authenticate(secret: String): Either[LobbyError, Player] =
@@ -93,10 +94,8 @@ case class Lobby(
 
   def handleOnlineStatusChange(playerId: PlayerId, isOnline: Boolean): Either[LobbyError, Lobby] =
     modifyPlayer(playerId, updateStatus = true): player =>
-      if isOnline && player.isBot && player.isHuman then
-        player.returnHuman.copy(strikes = math.max(0, player.strikes - 1))
-      else if isOnline then
-        player.copy(isOnline = isOnline, strikes = math.max(0, player.strikes - 1))
+      if isOnline && player.isHuman then player.returnHuman.copy(strikes = 0)
+      else if isOnline then player.copy(isOnline = isOnline, strikes = 0)
       else player.copy(isOnline = isOnline)
 
   def updateStrikes(playerId: PlayerId, diff: Int): Either[LobbyError, (Int, Lobby)] =

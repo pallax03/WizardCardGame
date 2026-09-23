@@ -1,4 +1,4 @@
-﻿import type { EventMessage } from "@/features/chat/types";
+import type { EventMessage } from "@/features/chat/types";
 
 // --- Card Types ---
 export type CardColor = "Red" | "Yellow" | "Green" | "Blue";
@@ -36,8 +36,8 @@ export type Trump =
 // --- Scoreboard Types ---
 export interface ScoreEntry {
   round: number;
-  score: number;
   bid: number;
+  score: number;
 }
 
 // Map from PlayerId (as string key) to list of score entries for each round
@@ -90,6 +90,11 @@ export interface GameBoardState {
     winnerId: number;
     cards: Card[];
     tricksWon: number;
+    entries: { playerId: number; card: Card }[];
+    winningCard: Card | null;
+    bids: Record<number, number>;
+    tricksSnapshot: Record<number, number>;
+    round: number;
   } | null;
   lastError: string | null;
   invalidBid: number | null;

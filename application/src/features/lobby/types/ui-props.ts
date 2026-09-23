@@ -22,6 +22,8 @@ export interface PlayerListProps {
   onRemoveBot: (botId: number) => Promise<void>;
 }
 
+import { Card } from "@/features/game/types";
+
 export interface PlayerCardProps {
   player: LobbyPlayer;
   isMe: boolean;
@@ -30,6 +32,13 @@ export interface PlayerCardProps {
   isRemoving: boolean;
   canRemove: boolean;
   onRemoveBot: (botId: number) => Promise<void>;
+  gameData?: {
+    bid?: number | null;
+    tricks?: number;
+    points?: number;
+    isTurn?: boolean;
+    hand?: Card[];
+  };
 }
 
 export interface EmptySlotProps {

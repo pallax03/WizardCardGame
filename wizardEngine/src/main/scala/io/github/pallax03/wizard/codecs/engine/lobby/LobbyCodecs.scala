@@ -35,11 +35,18 @@ object LobbyCodecs:
   given Decoder[GameConfiguration] = deriveDecoder
 
   given Encoder[Lobby] =
-    Encoder.forProduct5("lobbyId", "players", "status", "configuration", "version")(l =>
-      (l.uuid, l.players, l.status, l.configuration, l.version)
+    Encoder.forProduct6("lobbyId", "players", "status", "configuration", "version", "createdAt")(
+      l => (l.uuid, l.players, l.status, l.configuration, l.version, l.createdAt)
     )
-  given Decoder[Lobby] =
-    Decoder.forProduct5("lobbyId", "players", "status", "configuration", "version")(Lobby.apply)
+  given Decoder[Lobby] = Decoder.instance: c =>
+    for
+      uuid <- c.downField("lobbyId").as[LobbyId]
+      players <- c.downField("players").as[List[Player]]
+      status <- c.downField("status").as[LobbyStatus]
+      configuration <- c.downField("configuration").as[GameConfiguration]
+      version <- c.downField("version").as[Int]
+      createdAt <- c.downField("createdAt").as[Long].orElse(Right(0L))
+    yield Lobby(uuid, players, status, configuration, version, createdAt)
 
   given Schema[LobbyId] = Schema.string
   given Schema[LobbyStatus] = Schema.string

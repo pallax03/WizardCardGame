@@ -26,7 +26,8 @@ case class LobbyStateResponse(
     lobbyId: LobbyId,
     status: LobbyStatus,
     players: List[PublicPlayerInfo],
-    configuration: GameConfiguration
+    configuration: GameConfiguration,
+    createdAt: Long
 )
 
 case class AuthLobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)
