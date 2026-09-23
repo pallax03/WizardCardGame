@@ -51,7 +51,8 @@ class LobbyRoutes(
           lobby.players.map(p =>
             PublicPlayerInfo(p.id, p.name, p.difficulty, p.isOnline, p.strikes)
           ),
-          lobby.configuration
+          lobby.configuration,
+          lobby.createdAt
         )
       }.value
     }
@@ -138,7 +139,7 @@ class LobbyRoutes(
       .serverLogic { secret => (lobbyId, playerId) =>
         EitherT(lobbyStatePort.updateAuthLobby[Boolean](lobbyId, secret) { (_, lobby) =>
           if lobby.status == LobbyStatus.WAITING then
-            for 
+            for
               newLobby <- lobby.removePlayer(playerId)
               emptyLobby = newLobby.players.count(_.isHuman) == 0
             yield (emptyLobby, newLobby, Some(SystemEvent.left(playerId)))
@@ -162,7 +163,7 @@ class LobbyRoutes(
           EitherT.right[LobbyError](gameEngine.deleteGame(lobbyId))
         }.value
       }
-  
+
   val all: List[ServerEndpoint[Any, Future]] = List(
     createLobbyEndpoint,
     joinLobbyEndpoint,

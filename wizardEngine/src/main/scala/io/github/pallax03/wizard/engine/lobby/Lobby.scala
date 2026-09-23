@@ -35,7 +35,8 @@ case class Lobby(
     players: List[Player],
     status: LobbyStatus,
     configuration: GameConfiguration,
-    version: Int = 1
+    version: Int = 1,
+    createdAt: Long = System.currentTimeMillis()
 ):
 
   def authenticate(secret: String): Either[LobbyError, Player] =

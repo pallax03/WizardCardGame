@@ -20,6 +20,7 @@ export type LobbyState = {
   players: LobbyPlayer[];
   status?: "WAITING" | "IN_GAME" | "DISCONNECTING" | "PAUSED" | "FINISHED";
   configuration?: GameConfiguration;
+  createdAt: number;
 };
 
 export type ServerEvent = ChatMessage | SystemMessage | EventMessage;

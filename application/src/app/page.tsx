@@ -24,7 +24,16 @@ export default function Home() {
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedEntries, setSavedEntries] = useState<
-    { lobbyId: string; playerId: number; status?: string; playersCount?: number; failed?: boolean }[]
+    {
+      lobbyId: string;
+      playerId: number;
+      savedAt: number;
+      status?: string;
+      playersCount?: number;
+      playerName?: string;
+      createdAt?: number;
+      failed?: boolean;
+    }[]
   >([]);
 
   useEffect(() => {
@@ -42,7 +51,14 @@ export default function Home() {
     const saved = readSavedLobbies();
     if (saved.length === 0) return;
     queueMicrotask(() =>
-      setSavedEntries(saved.map((entry) => ({ lobbyId: entry.lobbyId, playerId: entry.playerId })))
+      setSavedEntries(
+        saved.map((entry) => ({
+          lobbyId: entry.lobbyId,
+          playerId: entry.playerId,
+          savedAt: entry.savedAt,
+          createdAt: entry.savedAt,
+        }))
+      )
     );
     let cancelled = false;
     void (async () => {
@@ -53,7 +69,16 @@ export default function Home() {
           setSavedEntries((prev) =>
             prev.map((item) =>
               item.lobbyId === entry.lobbyId
-                ? { ...item, status: state.status, playersCount: state.players.length }
+                ? {
+                    ...item,
+                    status: state.status,
+                    playersCount: state.players.length,
+                    playerName: state.players.find((p) => p.id === entry.playerId)?.name,
+                    createdAt:
+                      typeof state.createdAt === "number" && state.createdAt > 0
+                        ? state.createdAt
+                        : entry.savedAt,
+                  }
                 : item
             )
           );
@@ -124,6 +149,18 @@ export default function Home() {
   const handleRemoveSaved = (lobbyId: string) => {
     removeSavedLobby(lobbyId);
     setSavedEntries((prev) => prev.filter((item) => item.lobbyId !== lobbyId));
+  };
+
+  const formatLobbyDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString(undefined, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   };
 
   const savedStatusLabel = (status?: string, failed?: boolean) => {
@@ -251,9 +288,19 @@ export default function Home() {
                     className="flex-1 flex flex-col cursor-pointer"
                     onClick={() => handleRejoinSaved(entry.lobbyId)}
                   >
-                    <span className="font-mono text-sm text-zinc-200">{entry.lobbyId}</span>
+                    <span className="text-sm font-medium text-zinc-200">
+                      {entry.playerName ?? homeI18n.savedLobbies.unknownPlayer}
+                    </span>
+                    {entry.createdAt ? (
+                      <span className="text-[10px] text-zinc-500">
+                        {homeI18n.savedLobbies.createdAt(formatLobbyDate(entry.createdAt))}
+                      </span>
+                    ) : null}
                     <span className="text-[10px] text-zinc-500">
                       {savedStatusLabel(entry.status, entry.failed)}
+                      {typeof entry.playersCount === "number"
+                        ? ` • ${homeI18n.savedLobbies.players(entry.playersCount)}`
+                        : null}
                     </span>
                   </div>
                   <Button
