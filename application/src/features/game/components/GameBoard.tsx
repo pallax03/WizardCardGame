@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -201,6 +201,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       <GameEndOverlay
         isGameEnded={isGameEnded}
         sortedScoreboard={sortedScoreboard}
+        scoreboard={gameState.scoreboard}
+        players={lobby?.players}
+        playersMap={playersMap}
         playerId={playerId}
         onReturnToLobby={() => void handleReturnToLobby()}
         isReturning={isReturning}

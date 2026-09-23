@@ -123,6 +123,7 @@ export const it = {
       phaseRoundScored: "Round chiuso",
       phaseEnded: "Finita",
       phaseWaiting: "In attesa",
+      finalScore: "Risultati finali",
     },
   },
   chat: {
@@ -303,6 +304,7 @@ export const en = {
       phaseRoundScored: "Round scored",
       phaseEnded: "Finished",
       phaseWaiting: "Waiting",
+      finalScore: "Final score",
     },
   },
   chat: {

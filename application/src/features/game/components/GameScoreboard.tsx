@@ -12,6 +12,7 @@ interface GameScoreboardProps {
   myPlayerId?: number | null;
   initialSelectedPlayerId?: number;
   onClose?: () => void;
+  isScrollable?: boolean;
 }
 
 export function GameScoreboard({
@@ -21,6 +22,7 @@ export function GameScoreboard({
   initialSelectedPlayerId,
   onClose,
   players,
+  isScrollable = true,
 }: GameScoreboardProps) {
   if (!scoreboard) return null;
 
@@ -89,7 +91,7 @@ export function GameScoreboard({
     : 0;
 
   return (
-    <div className="relative bg-zinc-950/95 border border-zinc-700/60 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden max-h-[85vh] flex flex-col w-full max-w-md mx-auto p-3 sm:p-4 space-y-4">
+    <div className={`relative bg-zinc-950/95 border border-zinc-700/60 backdrop-blur-md shadow-2xl rounded-2xl ${isScrollable ? 'max-h-[85vh] overflow-hidden' : ''} flex flex-col w-full max-w-md mx-auto p-3 sm:p-4 space-y-4`}>
       {/* Header Classifica con pulsante di chiusura */}
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5 shrink-0">
         <div className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-1.5">
@@ -109,7 +111,7 @@ export function GameScoreboard({
         )}
       </div>
 
-      <div className="overflow-y-auto space-y-4 pr-0.5">
+      <div className={`space-y-4 ${isScrollable ? "overflow-y-auto pr-0.5" : ""}`}>
         {/* Classifica Generale (Interattiva: cliccando si seleziona il giocatore) */}
         <div className="flex flex-col gap-1.5 text-xs font-mono">
           {leaderboard.map((item, idx) => {
