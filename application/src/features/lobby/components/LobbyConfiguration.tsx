@@ -68,7 +68,7 @@ export function LobbyConfiguration({ timer, maxStrikes, canEdit, isSaving, onSav
           ))}
         </div>
         <span className="text-[9px] text-zinc-500 leading-tight">
-          Max auto-play if you don't take any action before time runs out.
+          Max auto-play if you don&apos;t take any action before time runs out.
         </span>
       </div>
       

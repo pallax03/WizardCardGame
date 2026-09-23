@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { Button } from "@/ui/components/button";
@@ -6,7 +6,7 @@ import { X, Trophy, Check, X as XIcon } from "lucide-react";
 import type { Scoreboard, ScoreEntry } from "../types";
 
 interface GameScoreboardProps {
-  players?: any[];
+  players?: Record<string, unknown>[];
   scoreboard: Scoreboard | null;
   playersMap: Map<number, { name: string; isOnline?: boolean }>;
   myPlayerId?: number | null;
@@ -24,16 +24,16 @@ export function GameScoreboard({
   players,
   isScrollable = true,
 }: GameScoreboardProps) {
-  if (!scoreboard) return null;
-
   // Elaborazione classifica e dati del tabellone
   const { leaderboard, playerEntriesMap } = useMemo(() => {
-    const entriesMap = new Map<number, any[]>();
+    const entriesMap = new Map<number, Record<string, unknown>[]>();
     const leaderboardData: { playerId: number; totalScore: number }[] = [];
 
     if (Array.isArray(players)) {
       for (const p of players) {
-        entriesMap.set(p.id, []);
+        if (typeof p.id === "number") {
+          entriesMap.set(p.id, []);
+        }
       }
     }
 
@@ -41,14 +41,14 @@ export function GameScoreboard({
       Object.entries(scoreboard).forEach(([pIdStr, entries]) => {
         const pId = Number(pIdStr);
         const validEntries = Array.isArray(entries) ? entries : [];
-        const sortedEntries = [...validEntries].sort((a, b) => (a.round || 0) - (b.round || 0));
+        const sortedEntries = [...validEntries].sort((a, b) => (Number(a.round) || 0) - (Number(b.round) || 0));
         entriesMap.set(pId, sortedEntries);
       });
     }
 
     entriesMap.forEach((sortedEntries, pId) => {
       const lastEntry = sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1] : null;
-      const totalScore = lastEntry ? (lastEntry.score || 0) : 0;
+      const totalScore = lastEntry ? (Number(lastEntry.score) || 0) : 0;
       leaderboardData.push({ playerId: pId, totalScore });
     });
 
@@ -73,21 +73,22 @@ export function GameScoreboard({
     return index !== -1 ? index + 1 : null;
   }, [leaderboard, selectedPlayerId]);
 
+  if (!scoreboard) return null;
 
-  const getBotDifficultyLabel = (p: any) => {
-    if (!p?.difficulty) return null;
+  const getBotDifficultyLabel = (p?: Record<string, unknown>) => {
+    if (!p?.difficulty || typeof p.name !== "string") return null;
     const isRealBot = p.name.toLowerCase().includes("bot");
     if (!isRealBot) return "BOT";
-    return p.difficulty === 'Dumb' ? 'Stupido' : p.difficulty === 'Prolog' ? 'Normale' : p.difficulty;
+    return p.difficulty === 'Dumb' ? 'Stupido' : p.difficulty === 'Prolog' ? 'Normale' : String(p.difficulty);
   };
 
-  const selectedP = Array.isArray(players) ? players.find((p: any) => p.id === selectedPlayerId) : undefined;
+  const selectedP = Array.isArray(players) ? players.find((p) => p.id === selectedPlayerId) : undefined;
   const selectedPlayerNameRaw = playersMap.get(selectedPlayerId)?.name ?? `Giocatore ${selectedPlayerId}`;
   const selectedDiff = getBotDifficultyLabel(selectedP);
   const selectedPlayerName = selectedPlayerNameRaw;
   const selectedPlayerEntries = playerEntriesMap.get(selectedPlayerId) ?? [];
   const selectedTotalScore = selectedPlayerEntries.length > 0
-    ? selectedPlayerEntries[selectedPlayerEntries.length - 1].score
+    ? Number(selectedPlayerEntries[selectedPlayerEntries.length - 1].score) || 0
     : 0;
 
   return (
@@ -116,7 +117,7 @@ export function GameScoreboard({
         <div className="flex flex-col gap-1.5 text-xs font-mono">
           {leaderboard.map((item, idx) => {
             const pId = item.playerId;
-            const p = Array.isArray(players) ? players.find((p: any) => p.id === pId) : undefined;
+            const p = Array.isArray(players) ? players.find((p) => p.id === pId) : undefined;
             const pNameRaw = playersMap.get(pId)?.name ?? `P${pId}`;
             const diffLabel = getBotDifficultyLabel(p);
             const pName = pNameRaw;

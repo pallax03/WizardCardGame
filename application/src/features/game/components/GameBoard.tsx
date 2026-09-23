@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
@@ -473,7 +473,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 z-10 p-2 mt-auto mb-auto">
           {orderedPlayers.map((player) => {
             const tableSource = revealedTrick ? revealedTrick.entries : gameState.table;
-            const played = tableSource.find((entry: any) => entry.playerId === player.id);
+            const played = tableSource.find((entry) => entry.playerId === player.id);
             if (!played) return null;
             
             const isWinning = revealedTrick ? player.id === revealedTrick.winnerId : Boolean(gameState.winningCard && cardEquals(played.card, gameState.winningCard));

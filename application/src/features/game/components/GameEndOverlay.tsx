@@ -19,7 +19,7 @@ interface GameEndOverlayProps {
   isGameEnded: boolean;
   sortedScoreboard: ScoreItem[];
   scoreboard?: Scoreboard | null;
-  players?: any[];
+  players?: Record<string, unknown>[];
   playersMap?: Map<number, { name: string; isOnline?: boolean }>;
   playerId?: number | null;
   onReturnToLobby: () => void;

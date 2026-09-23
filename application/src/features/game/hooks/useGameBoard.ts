@@ -341,8 +341,10 @@ export function useGameBoard(customPlayerId?: number) {
         if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
         revealTimeoutRef.current = null;
         revealIntervalRef.current = null;
-        setRevealedTrick(null);
-        setRevealSecondsLeft(0);
+        setTimeout(() => {
+          setRevealedTrick(null);
+          setRevealSecondsLeft(0);
+        }, 0);
       }
     }
   }, [gameState.status, gameState.table.length, revealedTrick]);
