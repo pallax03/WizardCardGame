@@ -1,3 +1,11 @@
+## [0.2.1](https://github.com/pallax03/WizardCardGame/compare/v0.2.0...v0.2.1) (2026-09-23)
+
+
+### Bug Fixes
+
+* azure deploy only on wizardEngine changes ([67ac062](https://github.com/pallax03/WizardCardGame/commit/67ac062c46548ad2ec51581185ecebffe913e396))
+* next conf ([f2590c5](https://github.com/pallax03/WizardCardGame/commit/f2590c564491d1c2382d2c4b5be75cd3865166e1))
+
 # [0.2.0](https://github.com/pallax03/WizardCardGame/compare/v0.1.1...v0.2.0) (2026-09-23)
 
 
