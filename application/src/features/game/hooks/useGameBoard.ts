@@ -64,6 +64,9 @@ export function useGameBoard(customPlayerId?: number) {
     entries: PlayedCardEntry[];
     winningCard: Card | null;
     winnerId: number;
+    bids: Record<number, number>;
+    tricksSnapshot: Record<number, number>;
+    round: number;
   } | null>(null);
   const [revealSecondsLeft, setRevealSecondsLeft] = useState(0);
   const trickWonCountRef = useRef(0);
@@ -279,63 +282,6 @@ export function useGameBoard(customPlayerId?: number) {
     return () => clearInterval(interval);
   }, [turnTimerDuration, gameState.currentTurn.playerId, gameState.currentTurn.actionType, gameState.round]);
 
-  const lastCompletedTrick = useMemo<{
-    entries: PlayedCardEntry[];
-    winningCard: Card | null;
-    winnerId: number;
-  } | null>(() => {
-    let current: PlayedCardEntry[] = [];
-    let currentWinning: Card | null = null;
-    let last: {
-      entries: PlayedCardEntry[];
-      winningCard: Card | null;
-      winnerId: number;
-    } | null = null;
-    for (const message of gameEvents) {
-      const action = message.event.action;
-      const fields = (message.event.fields ?? {}) as Record<string, unknown>;
-      if (action === "GameStarted") {
-        current = [];
-        currentWinning = null;
-        last = null;
-        continue;
-      }
-      if (action === "RoundStarted") {
-        current = [];
-        currentWinning = null;
-        continue;
-      }
-      if (action === "CardPlayed") {
-        const rawPlayerId = message.event.playerId ?? fields.playerId;
-        const cardPlayerId = Number(rawPlayerId);
-        const playedCard = fields.card as Card | undefined;
-        if (!Number.isInteger(cardPlayerId) || !playedCard) continue;
-        const alreadyOnTable = current.some(
-          (entry) => entry.playerId === cardPlayerId && cardEquals(entry.card, playedCard)
-        );
-        if (!alreadyOnTable) {
-          current = [...current, { playerId: cardPlayerId, card: playedCard }];
-        }
-        currentWinning = (fields.winningCard as Card | undefined) ?? null;
-        continue;
-      }
-      if (action === "TrickWon") {
-        const rawWinner = fields.winnerId ?? message.event.playerId;
-        const winnerId = Number(rawWinner);
-        if (Number.isInteger(winnerId) && current.length > 0) {
-          last = {
-            entries: [...current],
-            winningCard: currentWinning,
-            winnerId,
-          };
-        }
-        current = [];
-        currentWinning = null;
-      }
-    }
-    return last;
-  }, [gameEvents]);
-
   const clearRevealTimers = () => {
     if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
     if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
@@ -356,14 +302,16 @@ export function useGameBoard(customPlayerId?: number) {
       return;
     }
     trickWonCountRef.current = trickWonCount;
-    const snapshot = lastCompletedTrick;
-    if (!snapshot || snapshot.entries.length === 0) return;
+    const snapshot = gameState.lastTrick;
+    if (!snapshot || !snapshot.entries || snapshot.entries.length === 0) return;
     clearRevealTimers();
     const entries = snapshot.entries;
     const winningCard = snapshot.winningCard;
     const winnerId = snapshot.winnerId;
+    const bids = snapshot.bids;
+    const tricksSnapshot = snapshot.tricksSnapshot;
     queueMicrotask(() => {
-      setRevealedTrick({ entries, winningCard, winnerId });
+      setRevealedTrick({ entries, winningCard, winnerId, bids, tricksSnapshot, round: snapshot.round });
       setRevealSecondsLeft(TRICK_REVEAL_SECONDS);
     });
     const deadline = Date.now() + TRICK_REVEAL_SECONDS * 1000;
@@ -375,7 +323,7 @@ export function useGameBoard(customPlayerId?: number) {
       setRevealedTrick(null);
       setRevealSecondsLeft(0);
     }, TRICK_REVEAL_SECONDS * 1000);
-  }, [trickWonCount, lastCompletedTrick]);
+  }, [trickWonCount, gameState.lastTrick]);
 
   useEffect(
     () => () => {
@@ -387,7 +335,7 @@ export function useGameBoard(customPlayerId?: number) {
 
   useEffect(() => {
     if (revealedTrick) {
-      const shouldDismiss = gameState.status === 'BIDDING' || gameState.status === 'CHOOSING_TRUMP' || gameState.table.length > 0;
+      const shouldDismiss = gameState.table.length > 0;
       if (shouldDismiss) {
         if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
         if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);

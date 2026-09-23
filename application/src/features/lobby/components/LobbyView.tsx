@@ -60,6 +60,17 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
     handleRemoveBot,
   } = useLobby();
 
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<{ unreadTotal: number }>;
+      setUnreadChatCount(customEvent.detail.unreadTotal);
+    };
+    window.addEventListener('chat-unread-change', handler);
+    return () => window.removeEventListener('chat-unread-change', handler);
+  }, []);
+
   useEffect(() => {
     if (sessionError) removeSavedLobby(lobbyId);
   }, [sessionError, lobbyId]);
@@ -117,10 +128,19 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         <button
           type="button"
           onClick={openChat}
-          className="text-zinc-400 hover:text-white h-8 w-8 rounded-full bg-zinc-900/60 border border-zinc-800 flex items-center justify-center transition-colors"
+          className={`h-8 w-8 rounded-full border flex items-center justify-center transition-colors relative ${
+            unreadChatCount > 0
+              ? "bg-sky-500/10 border-sky-500/40 text-sky-400 hover:bg-sky-500/20 shadow-[0_0_15px_-3px_rgba(56,189,248,0.4)]"
+              : "bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-white"
+          }`}
           title="Apri Chat Globale"
         >
           <MessageCircle className="size-4" />
+          {unreadChatCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-zinc-950">
+              {unreadChatCount > 9 ? "9+" : unreadChatCount}
+            </span>
+          )}
         </button>
       </div>
 

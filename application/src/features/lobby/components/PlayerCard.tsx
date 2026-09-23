@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Button } from "@/ui/components/button";
-import { X, Loader2, Target, CheckSquare, ChevronDown, ChevronUp } from "lucide-react";
+import { X, Loader2, Target, CheckSquare, ChevronDown, ChevronUp, Check } from "lucide-react";
 import { t } from "@/ui/i18n/core";
 const lobbyI18n = t("lobby");
 import { PlayerCardProps } from "../types";
@@ -13,13 +13,6 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
 
   // Styling logic for bid and tricks
   const hasBid = gameData?.bid !== undefined && gameData.bid !== null;
-  const bidDisplay = hasBid ? gameData.bid : "-";
-  const tricksDisplay = hasBid ? (gameData?.tricks ?? 0) : "-";
-  
-  const bidColor = hasBid ? "text-amber-400 font-bold" : "text-zinc-500";
-  const tricksColor = !hasBid 
-    ? "text-zinc-500" 
-    : (gameData.tricks === gameData.bid ? "text-emerald-400 font-bold" : "text-red-500 font-bold");
 
   return (
     <div
@@ -61,13 +54,20 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
 
         {gameData ? (
           <div className="flex items-center gap-3 sm:gap-4 shrink-0 text-xs ml-2">
-            <div className="flex items-center gap-1 text-zinc-400" title="Bid">
-              <Target className="w-3.5 h-3.5" />
-              <span className={bidColor}>{bidDisplay}</span>
-            </div>
-            <div className="flex items-center gap-1 text-zinc-400" title="Tricks">
-              <CheckSquare className="w-3.5 h-3.5" />
-              <span className={tricksColor}>{tricksDisplay}</span>
+            <div className="flex items-center w-full text-[11px] font-mono justify-end">
+              {hasBid ? (
+                <div className="flex items-center gap-1 font-bold">
+                  {(gameData.tricks ?? 0) === gameData.bid ? (
+                    <span className="text-emerald-400 flex items-center gap-0.5">{gameData.tricks ?? 0}/{gameData.bid} <Check className="w-3.5 h-3.5" /></span>
+                  ) : (gameData.tricks ?? 0) > gameData.bid! ? (
+                    <span className="text-red-500 flex items-center gap-0.5">{gameData.tricks ?? 0}/{gameData.bid} <X className="w-3.5 h-3.5" /></span>
+                  ) : (
+                    <span><span className="text-zinc-400">{gameData.tricks ?? 0}</span><span className="text-zinc-600 mx-0.5">/</span><span className="text-amber-400">{gameData.bid}</span></span>
+                  )}
+                </div>
+              ) : (
+                <div className="text-zinc-600 font-bold">- / -</div>
+              )}
             </div>
             <div className="text-right font-black text-white whitespace-nowrap" title="Points">
               {gameData.points ?? 0} <span className="text-[9px] text-zinc-500 font-normal">Pts</span>

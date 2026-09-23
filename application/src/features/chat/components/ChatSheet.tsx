@@ -107,6 +107,10 @@ export function ChatSheet() {
   }, []);
 
   useEffect(() => {
+    window.dispatchEvent(new CustomEvent('chat-unread-change', { detail: { unreadTotal } }));
+  }, [unreadTotal]);
+
+  useEffect(() => {
     const handler = (e: Event) => {
       const customEvent = e as CustomEvent<{ playerId: number }>;
       setIsOpen(true);

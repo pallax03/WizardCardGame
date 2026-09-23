@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useGameBoard, TRICK_REVEAL_SECONDS } from "../hooks/useGameBoard";
@@ -96,7 +96,17 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const [pauseError, setPauseError] = useState<string | null>(null);
   const [showScoreboard, setShowScoreboard] = useState(false);
   const [scoreboardPlayer, setScoreboardPlayer] = useState<number | undefined>(undefined);
+  const [unreadChatCount, setUnreadChatCount] = useState(0);
   const tableRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const customEvent = e as CustomEvent<{ unreadTotal: number }>;
+      setUnreadChatCount(customEvent.detail.unreadTotal);
+    };
+    window.addEventListener('chat-unread-change', handler);
+    return () => window.removeEventListener('chat-unread-change', handler);
+  }, []);
 
   const players = lobby?.players ?? [];
   const myIndex = players.findIndex((p) => p.id === playerId);
@@ -228,7 +238,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
         <div className="flex flex-col items-center">
           <span className="text-xs font-bold text-white tracking-widest uppercase">
-            {lobbyI18n.pausedSummary.round(gameState.round)}
+            {lobbyI18n.pausedSummary.round(revealedTrick ? revealedTrick.round : gameState.round)}
           </span>
           <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">
             {phaseLabel(gameState.status)}
@@ -242,9 +252,18 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             size="icon"
             variant="ghost"
             onClick={openChat}
-            className="text-zinc-400 hover:text-white h-8 w-8 rounded-full bg-zinc-900/60 border border-zinc-800"
+            className={`h-8 w-8 rounded-full border transition-colors relative ${
+              unreadChatCount > 0
+                ? "bg-sky-500/10 border-sky-500/40 text-sky-400 hover:bg-sky-500/20 shadow-[0_0_15px_-3px_rgba(56,189,248,0.4)]"
+                : "bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-white"
+            }`}
           >
             <MessageCircle className="size-4" />
+            {unreadChatCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-zinc-950">
+                {unreadChatCount > 9 ? "9+" : unreadChatCount}
+              </span>
+            )}
           </Button>
         </div>
       </div>
@@ -254,14 +273,16 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         {orderedPlayers.map((player) => {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
           const isMe = player.id === playerId;
-          const hasBid = gameState.bids[player.id] !== undefined && gameState.bids[player.id] !== null;
-          const playerBid = hasBid ? gameState.bids[player.id] : "-";
-          const playerTricks = hasBid ? (gameState.tricksWon[player.id] ?? 0) : "-";
+          const sourceBids = revealedTrick ? revealedTrick.bids : gameState.bids;
+          const sourceTricks = revealedTrick ? revealedTrick.tricksSnapshot : gameState.tricksWon;
+          const hasBid = sourceBids[player.id] !== undefined && sourceBids[player.id] !== null;
+          const playerBid = hasBid ? sourceBids[player.id] : "-";
+          const playerTricks = hasBid ? (sourceTricks[player.id] ?? 0) : "-";
           
           const bidColor = hasBid ? "text-amber-400 font-bold" : "text-zinc-500";
           const tricksColor = !hasBid 
             ? "text-zinc-500" 
-            : (gameState.tricksWon[player.id] === gameState.bids[player.id] ? "text-emerald-400 font-bold" : "text-red-500 font-bold");
+            : ((sourceTricks[player.id] ?? 0) === sourceBids[player.id] ? "text-emerald-400 font-bold" : "text-red-500 font-bold");
           
           const lastScore = gameState.scoreboard?.[String(player.id)]?.at(-1);
           const score = lastScore ? lastScore.score : 0;
@@ -286,44 +307,44 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                     : "bg-zinc-900/60 border-zinc-800/80 hover:bg-zinc-800/80"
               }`}
             >
-              <div className="p-1.5 pb-1 w-full flex flex-col justify-between h-[58px]">
+              <div className="p-1.5 pb-1 md:p-2 md:pb-1.5 w-full flex flex-col justify-between h-[58px] md:h-[68px]">
                 <div className="flex flex-col gap-0 min-w-0 w-full">
                   <div className="flex items-center justify-between min-w-0">
-                     <span className={`flex items-center gap-1 text-[10px] font-bold truncate ${isCurrentTurn ? 'text-sky-400' : 'text-zinc-100'}`}>
+                     <span className={`flex items-center gap-1 text-[10px] md:text-[13px] font-bold truncate ${isCurrentTurn ? 'text-sky-400' : 'text-zinc-100'}`}>
                        {(() => {
                          const isAllZero = sortedScoreboard.every(s => s.score === 0);
                          if (isAllZero) return null;
                          const rank = sortedScoreboard.findIndex(s => s.score === score) + 1;
                          if (rank === 1 && score > 0) {
-                           return <Trophy className="size-3 text-amber-400 shrink-0" />;
+                           return <Trophy className="size-3 md:size-3.5 text-amber-400 shrink-0" />;
                          }
-                         return <span className="text-zinc-500 font-mono text-[9px]">{rank}#</span>;
+                         return <span className="text-zinc-500 font-mono text-[9px] md:text-[11px]">{rank}#</span>;
                        })()}
                        <span className="truncate">{player.name}</span>
                      </span>
-                     {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] h-3 bg-zinc-700">TU</Badge>}
+                     {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] md:text-[9px] h-3 md:h-4 bg-zinc-700">TU</Badge>}
                   </div>
-                  <span className="text-[8px] text-zinc-500 uppercase font-bold truncate min-h-[12px] leading-tight">
+                  <span className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-bold truncate min-h-[12px] md:min-h-[14px] leading-tight">
                     {Boolean(player.difficulty) ? (player.name.toLowerCase().includes("bot") ? (player.difficulty === "Dumb" ? "STUPIDO" : player.difficulty === "Prolog" ? "NORMALE" : player.difficulty) : "BOT") : ""}
                   </span>
                 </div>
                 
-                <div className="flex justify-between items-center w-full text-[10px] sm:text-[11px] font-mono mt-auto">
+                <div className="flex justify-between items-center w-full text-[10px] sm:text-[11px] md:text-[13px] font-mono mt-auto">
                   {hasBid ? (
                     <div className="flex items-center gap-1 font-bold">
-                      {gameState.tricksWon[player.id] === gameState.bids[player.id] ? (
-                        <span className="text-emerald-400 flex items-center gap-0.5">{gameState.tricksWon[player.id]}/{gameState.bids[player.id]} <Check className="size-3" /></span>
-                      ) : gameState.tricksWon[player.id]! > gameState.bids[player.id]! ? (
-                        <span className="text-red-500 flex items-center gap-0.5">{gameState.tricksWon[player.id]}/{gameState.bids[player.id]} <X className="size-3" /></span>
+                      {(sourceTricks[player.id] ?? 0) === sourceBids[player.id] ? (
+                        <span className="text-emerald-400 flex items-center gap-0.5">{sourceTricks[player.id] ?? 0}/{sourceBids[player.id]} <Check className="size-3 md:size-3.5" /></span>
+                      ) : (sourceTricks[player.id] ?? 0) > sourceBids[player.id]! ? (
+                        <span className="text-red-500 flex items-center gap-0.5">{sourceTricks[player.id] ?? 0}/{sourceBids[player.id]} <X className="size-3 md:size-3.5" /></span>
                       ) : (
-                        <span><span className="text-zinc-400">{gameState.tricksWon[player.id] ?? 0}</span><span className="text-zinc-600">/</span><span className="text-amber-400">{gameState.bids[player.id]}</span></span>
+                        <span><span className="text-zinc-400">{sourceTricks[player.id] ?? 0}</span><span className="text-zinc-600">/</span><span className="text-amber-400">{sourceBids[player.id]}</span></span>
                       )}
                     </div>
                   ) : (
                     <div className="text-zinc-600 font-bold">- / -</div>
                   )}
                   <div className="font-black text-white text-right shrink-0">
-                    {score} <span className="text-[8px] text-zinc-500 font-normal">Pts</span>
+                    {score} <span className="text-[8px] md:text-[10px] text-zinc-500 font-normal">Pts</span>
                   </div>
                 </div>
               </div>
@@ -473,12 +494,15 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           })}
         </div>
         
-        {/* REVEALED TRICK OVERLAY */}
-        {revealedTrick && (
-          <div className="absolute top-12 left-1/2 -translate-x-1/2 z-[80] flex flex-col items-center gap-1.5 animate-in slide-in-from-top-4 fade-in duration-300">
-            <div className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-700/80 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+      </div>
+
+      {/* REVEALED TRICK OVERLAY & BIDDING CHIPS (ABOVE HAND) */}
+      <div className="w-full flex justify-center items-end relative z-[80] mt-auto min-h-[48px]">
+        {revealedTrick ? (
+          <div className="w-full flex justify-center animate-in slide-in-from-bottom-4 fade-in duration-300 mb-2">
+            <div className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-700/80 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.6)]">
               <span className="text-xs sm:text-sm font-black tracking-widest text-white uppercase flex items-center gap-1.5 whitespace-nowrap">
-                <Trophy className="size-4 text-amber-400" /> Vinto da {(() => {
+                <Trophy className="size-4 text-amber-400" /> {(() => {
                   const wId = revealedTrick.winnerId;
                   const p = lobby?.players.find(x => x.id === wId);
                   if (!p) return playersMap.get(wId)?.name ?? `P${wId}`;
@@ -488,9 +512,22 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                 })()}
               </span>
               <div className="w-px h-4 bg-zinc-600 hidden sm:block"></div>
-              <div className="flex gap-3 text-[10px] sm:text-xs font-bold text-zinc-300 whitespace-nowrap">
-                <span className="flex items-center gap-1"><Target className="size-3 text-amber-400" /> {gameState.bids[revealedTrick.winnerId] ?? "-"}</span>
-                <span className="flex items-center gap-1"><CheckSquare className="size-3 text-emerald-400" /> {gameState.tricksWon[revealedTrick.winnerId] ?? 0}</span>
+              <div className="flex gap-3 text-[10px] sm:text-xs font-bold whitespace-nowrap items-center">
+                {(() => {
+                  const rBid = revealedTrick.bids[revealedTrick.winnerId];
+                  const rTrick = revealedTrick.tricksSnapshot[revealedTrick.winnerId] ?? 0;
+                  const hasBid = rBid !== undefined && rBid !== null;
+                  
+                  if (!hasBid) return <div className="text-zinc-600 font-bold">- / -</div>;
+                  
+                  if (rTrick === rBid) {
+                    return <span className="text-emerald-400 flex items-center gap-0.5">{rTrick}/{rBid} <Check className="size-3.5 sm:size-4" /></span>;
+                  } else if (rTrick > rBid) {
+                    return <span className="text-red-500 flex items-center gap-0.5">{rTrick}/{rBid} <X className="size-3.5 sm:size-4" /></span>;
+                  } else {
+                    return <span><span className="text-zinc-400">{rTrick}</span><span className="text-zinc-600 mx-0.5">/</span><span className="text-amber-400">{rBid}</span></span>;
+                  }
+                })()}
               </div>
               <div className="w-px h-4 bg-zinc-600"></div>
               <div className="flex items-center gap-1">
@@ -498,12 +535,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               </div>
             </div>
           </div>
-        )}
-      </div>
-
-      {/* BIDDING CHIPS (ABOVE HAND) */}
-      <div className="w-full flex justify-center items-end relative z-[70] mt-auto">
-        {isMyTurn && canBid && (
+        ) : isMyTurn && canBid && (
           <div className="w-full sm:max-w-xl animate-in slide-in-from-bottom-4 mb-2 flex flex-col gap-2">
             <div className="flex flex-wrap gap-2 justify-center px-1 pb-1">
               {Array.from({ length: gameState.round + 1 }, (_, i) => {
