@@ -83,10 +83,11 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
   override def deleteLobby(lobbyId: LobbyId): Future[Either[LobbyError, Unit]] =
-    redisClient.send(Request.cmd(Command.DEL).arg(ChannelsKeys.lobby(lobbyId)))
+    redisClient
+      .send(Request.cmd(Command.DEL).arg(ChannelsKeys.lobby(lobbyId)))
       .asScala
       .map(_ => Right(()))
-  
+
   /** @inheritdoc */
   override def addPlayer(
       lobbyId: LobbyId,
@@ -96,7 +97,16 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
   ): Future[Either[LobbyError, Player]] =
     upsertLobby(lobbyId): optLobby =>
       val lobby =
-        optLobby.getOrElse(Lobby(lobbyId, List.empty, LobbyStatus.WAITING, GameConfiguration(), 0))
+        optLobby.getOrElse(
+          Lobby(
+            lobbyId,
+            List.empty,
+            LobbyStatus.WAITING,
+            GameConfiguration(),
+            0,
+            System.currentTimeMillis()
+          )
+        )
       lobby
         .addPlayer(name, difficulty, secret)
         .map:

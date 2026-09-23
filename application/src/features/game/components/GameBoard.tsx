@@ -227,17 +227,19 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
       {/* TOP HEADER */}
       <div className="flex items-center justify-between mt-2 px-1">
-        <Button
-          type="button"
-          size="sm"
-          variant="ghost"
-          disabled={isPausing}
-          onClick={() => void handleBackToLobby()}
-          className="text-zinc-400 hover:text-white px-2 h-8"
-        >
-          <ArrowLeft className="size-4 mr-1" />
-          <span className="text-xs hidden sm:inline">Ritorna alla Lobby</span>
-        </Button>
+        <div className="flex flex-1 items-center">
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            disabled={isPausing}
+            onClick={() => void handleBackToLobby()}
+            className="text-zinc-400 hover:text-white px-2 h-8"
+          >
+            <ArrowLeft className="size-4 mr-1" />
+            <span className="text-xs hidden sm:inline">Ritorna alla Lobby</span>
+          </Button>
+        </div>
 
         <div className="flex flex-col items-center">
           <span className="text-xs font-bold text-white tracking-widest uppercase">
@@ -248,7 +250,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           </span>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-1 items-center justify-end gap-2">
           {/* Global Chat Button */}
           <Button
             type="button"
