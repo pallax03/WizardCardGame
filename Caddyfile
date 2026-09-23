@@ -1,0 +1,11 @@
+{$DOMAIN:localhost} {
+    # Inoltra le richieste WebSocket al demone wizard-engine sulla porta 5002
+    handle /lobby/* {
+        reverse_proxy wizard-engine:5002
+    }
+    
+    # Inoltra tutte le altre richieste (HTTP) sulla porta 5001
+    handle /* {
+        reverse_proxy wizard-engine:5001
+    }
+}
