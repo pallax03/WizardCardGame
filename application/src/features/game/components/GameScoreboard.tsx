@@ -1,17 +1,18 @@
-﻿"use client";
+"use client";
 
 import { useMemo, useState } from "react";
 import { Button } from "@/ui/components/button";
-import { X, Trophy, Check, X as XIcon } from "lucide-react";
+import { X, Trophy} from "lucide-react";
 import type { Scoreboard, ScoreEntry } from "../types";
 
 interface GameScoreboardProps {
-  players?: any[];
+  players?: Record<string, unknown>[];
   scoreboard: Scoreboard | null;
   playersMap: Map<number, { name: string; isOnline?: boolean }>;
   myPlayerId?: number | null;
   initialSelectedPlayerId?: number;
   onClose?: () => void;
+  isScrollable?: boolean;
 }
 
 export function GameScoreboard({
@@ -21,17 +22,18 @@ export function GameScoreboard({
   initialSelectedPlayerId,
   onClose,
   players,
+  isScrollable = true,
 }: GameScoreboardProps) {
-  if (!scoreboard) return null;
-
   // Elaborazione classifica e dati del tabellone
   const { leaderboard, playerEntriesMap } = useMemo(() => {
-    const entriesMap = new Map<number, any[]>();
+    const entriesMap = new Map<number, ScoreEntry[]>();
     const leaderboardData: { playerId: number; totalScore: number }[] = [];
 
     if (Array.isArray(players)) {
       for (const p of players) {
-        entriesMap.set(p.id, []);
+        if (typeof p.id === "number") {
+          entriesMap.set(p.id, []);
+        }
       }
     }
 
@@ -46,7 +48,7 @@ export function GameScoreboard({
 
     entriesMap.forEach((sortedEntries, pId) => {
       const lastEntry = sortedEntries.length > 0 ? sortedEntries[sortedEntries.length - 1] : null;
-      const totalScore = lastEntry ? (lastEntry.score || 0) : 0;
+      const totalScore = lastEntry ? (Number(lastEntry.score) || 0) : 0;
       leaderboardData.push({ playerId: pId, totalScore });
     });
 
@@ -65,31 +67,23 @@ export function GameScoreboard({
     return leaderboard[0]?.playerId ?? 0;
   });
 
-  // Trova il piazzamento in classifica del giocatore selezionato
-  const selectedRank = useMemo(() => {
-    const index = leaderboard.findIndex((item) => item.playerId === selectedPlayerId);
-    return index !== -1 ? index + 1 : null;
-  }, [leaderboard, selectedPlayerId]);
+  if (!scoreboard) return null;
 
-
-  const getBotDifficultyLabel = (p: any) => {
-    if (!p?.difficulty) return null;
+  const getBotDifficultyLabel = (p?: Record<string, unknown>) => {
+    if (!p?.difficulty || typeof p.name !== "string") return null;
     const isRealBot = p.name.toLowerCase().includes("bot");
     if (!isRealBot) return "BOT";
-    return p.difficulty === 'Dumb' ? 'Stupido' : p.difficulty === 'Prolog' ? 'Normale' : p.difficulty;
+    return p.difficulty === 'Dumb' ? 'Stupido' : p.difficulty === 'Prolog' ? 'Normale' : String(p.difficulty);
   };
 
-  const selectedP = Array.isArray(players) ? players.find((p: any) => p.id === selectedPlayerId) : undefined;
+  const selectedP = Array.isArray(players) ? players.find((p) => p.id === selectedPlayerId) : undefined;
   const selectedPlayerNameRaw = playersMap.get(selectedPlayerId)?.name ?? `Giocatore ${selectedPlayerId}`;
   const selectedDiff = getBotDifficultyLabel(selectedP);
   const selectedPlayerName = selectedPlayerNameRaw;
   const selectedPlayerEntries = playerEntriesMap.get(selectedPlayerId) ?? [];
-  const selectedTotalScore = selectedPlayerEntries.length > 0
-    ? selectedPlayerEntries[selectedPlayerEntries.length - 1].score
-    : 0;
 
   return (
-    <div className="relative bg-zinc-950/95 border border-zinc-700/60 backdrop-blur-md shadow-2xl rounded-2xl overflow-hidden max-h-[85vh] flex flex-col w-full max-w-md mx-auto p-3 sm:p-4 space-y-4">
+    <div className={`relative bg-zinc-950/95 border border-zinc-700/60 backdrop-blur-md shadow-2xl rounded-2xl ${isScrollable ? 'max-h-[85vh] overflow-hidden' : ''} flex flex-col w-full max-w-md mx-auto p-3 sm:p-4 space-y-4`}>
       {/* Header Classifica con pulsante di chiusura */}
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5 shrink-0">
         <div className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-1.5">
@@ -109,12 +103,12 @@ export function GameScoreboard({
         )}
       </div>
 
-      <div className="overflow-y-auto space-y-4 pr-0.5">
+      <div className={`space-y-4 ${isScrollable ? "overflow-y-auto pr-0.5" : ""}`}>
         {/* Classifica Generale (Interattiva: cliccando si seleziona il giocatore) */}
         <div className="flex flex-col gap-1.5 text-xs font-mono">
           {leaderboard.map((item, idx) => {
             const pId = item.playerId;
-            const p = Array.isArray(players) ? players.find((p: any) => p.id === pId) : undefined;
+            const p = Array.isArray(players) ? players.find((p) => p.id === pId) : undefined;
             const pNameRaw = playersMap.get(pId)?.name ?? `P${pId}`;
             const diffLabel = getBotDifficultyLabel(p);
             const pName = pNameRaw;
@@ -136,7 +130,7 @@ export function GameScoreboard({
                 }`}
               >
                 <div className="flex items-center gap-2.5 truncate mr-2">
-                  <span className={`text-[11px] font-bold min-w-[22px] ${isSelected ? "text-black" : "text-zinc-500"}`}>
+                  <span className={`text-[11px] font-bold min-w-5.5 ${isSelected ? "text-black" : "text-zinc-500"}`}>
                     {rank}°
                   </span>
                   <span className="truncate font-semibold">{pName}</span>
@@ -187,7 +181,6 @@ export function GameScoreboard({
                   const delta = entry.score - prevScore;
 
                   const bid = entry.bid;
-                  const isSuccess = delta > 0;
 
                   return (
                     <tr key={entry.round} className="hover:bg-zinc-900/40 transition-colors">

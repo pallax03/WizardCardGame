@@ -2,9 +2,12 @@
 
 import Confetti from "react-confetti";
 import { useWindowSize } from "react-use";
-import { Badge } from "@/ui/components/badge";
-import { Button } from "@/ui/components/button";
-import { Card as UiCard, CardContent, CardHeader, CardTitle, CardDescription } from "@/ui/components/card";
+import { GameScoreboard } from "./GameScoreboard";
+import { Trophy, ArrowLeft, Loader2 } from "lucide-react";
+import type { Scoreboard } from "../types";
+import { t } from "@/ui/i18n/core";
+
+const lobbyI18n = t("lobby");
 
 export interface ScoreItem {
   id: number;
@@ -15,6 +18,9 @@ export interface ScoreItem {
 interface GameEndOverlayProps {
   isGameEnded: boolean;
   sortedScoreboard: ScoreItem[];
+  scoreboard?: Scoreboard | null;
+  players?: Record<string, unknown>[];
+  playersMap?: Map<number, { name: string; isOnline?: boolean }>;
   playerId?: number | null;
   onReturnToLobby: () => void;
   isReturning?: boolean;
@@ -23,6 +29,9 @@ interface GameEndOverlayProps {
 export function GameEndOverlay({
   isGameEnded,
   sortedScoreboard,
+  scoreboard,
+  players,
+  playersMap,
   playerId,
   onReturnToLobby,
   isReturning,
@@ -31,81 +40,89 @@ export function GameEndOverlay({
 
   if (!isGameEnded) return null;
 
+  // Costruiamo una fallback map se non viene passata direttamente
+  const effectivePlayersMap =
+    playersMap ??
+    new Map(
+      sortedScoreboard.map((item) => [
+        item.id,
+        { name: item.name, isOnline: true },
+      ])
+    );
+
+  // Costruiamo un oggetto scoreboard di fallback se non presente
+  const effectiveScoreboard: Scoreboard =
+    scoreboard ??
+    Object.fromEntries(
+      sortedScoreboard.map((item) => [
+        item.id,
+        [{ round: 1, score: item.score, bid: 0, tricks: 0 }],
+      ])
+    );
+
+  const winner = sortedScoreboard[0];
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+    <div className="fixed inset-0 z-[100] grid place-items-center bg-zinc-950/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto">
       <Confetti
         width={width || 1920}
         height={height || 1080}
-        numberOfPieces={350}
+        numberOfPieces={250}
         recycle={false}
-        style={{ zIndex: 60, position: "fixed", top: 0, left: 0 }}
+        style={{ zIndex: 110, position: "fixed", top: 0, left: 0 }}
       />
-      <UiCard className="w-full max-w-lg bg-zinc-900/95 border-2 border-amber-500/80 shadow-[0_0_50px_rgba(245,158,11,0.25)] text-center overflow-hidden z-50">
-        <CardHeader className="bg-gradient-to-b from-amber-500/10 to-transparent pb-4 border-b border-zinc-800">
-          <Badge
-            variant="outline"
-            className="w-fit mx-auto mb-2 border-amber-500/50 text-amber-400 bg-amber-500/10 px-3 py-0.5 text-xs font-semibold uppercase tracking-wider"
-          >
-            Partita Conclusa
-          </Badge>
-          <CardTitle className="text-3xl font-black text-amber-400 tracking-wider uppercase">
-            🏆 Risultati Finali
-          </CardTitle>
-          <CardDescription className="text-zinc-400 text-sm mt-1">
-            Ecco la classifica finale della partita
-          </CardDescription>
-        </CardHeader>
 
-        <CardContent className="p-6 space-y-6">
-          {sortedScoreboard.length > 0 && (
-            <div className="space-y-2 bg-zinc-950/60 rounded-xl p-3 border border-zinc-800/80">
-              {sortedScoreboard.map((item, index) => {
-                const isWinner = index === 0;
-                const isMe = item.id === playerId;
+      <div className="relative w-full max-w-lg bg-zinc-900/90 border border-zinc-800 shadow-2xl rounded-2xl overflow-hidden flex flex-col z-10 my-auto">
+        {/* Intestazione stile Lobby */}
+        <div className="bg-zinc-950/60 p-5 sm:p-6 text-center border-b border-zinc-800 space-y-2">
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-zinc-700 bg-zinc-800/60 text-zinc-300 text-[11px] font-bold uppercase tracking-wider">
+            <Trophy className="size-3.5 text-zinc-200" />
+            {lobbyI18n.pausedSummary.titleEnded}
+          </div>
 
-                return (
-                  <div
-                    key={item.id}
-                    className={`flex items-center justify-between px-4 py-2.5 rounded-lg transition-all ${
-                      isWinner
-                        ? "bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold"
-                        : isMe
-                        ? "bg-zinc-800/80 text-white border border-zinc-700"
-                        : "bg-zinc-900/50 text-zinc-300"
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`w-6 h-6 flex items-center justify-center rounded-full text-xs font-black ${
-                          isWinner
-                            ? "bg-amber-400 text-zinc-950"
-                            : "bg-zinc-800 text-zinc-400"
-                        }`}
-                      >
-                        {index + 1}
-                      </span>
-                      <span className="text-sm font-semibold truncate max-w-[180px]">
-                        {item.name} {isMe && "(Tu)"}
-                      </span>
-                    </div>
-                    <span className="font-mono font-extrabold text-base">
-                      {item.score} <span className="text-xs font-normal text-zinc-500">pt</span>
-                    </span>
-                  </div>
-                );
-              })}
-            </div>
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-400 drop-shadow-sm uppercase">
+            {lobbyI18n.pausedSummary.finalScore}
+          </h2>
+
+          {winner && (
+            <p className="text-xs sm:text-sm text-zinc-400 font-medium">
+              Vincitore:{" "}
+              <span className="text-white font-bold">{winner.name}</span> con{" "}
+              <span className="font-mono font-bold text-zinc-200">
+                {winner.score} pt
+              </span>
+            </p>
           )}
+        </div>
 
-          <Button
-            onClick={onReturnToLobby}
+        {/* Scoreboard riutilizzato (non scrollabile internamente) */}
+        <div className="p-3 sm:p-4 flex-1">
+          <GameScoreboard
+            scoreboard={effectiveScoreboard}
+            playersMap={effectivePlayersMap}
+            players={players}
+            myPlayerId={playerId}
+            isScrollable={false}
+          />
+        </div>
+
+        {/* Azione principale identical alla DisconnectOverlay */}
+        <div className="p-4 sm:p-5 border-t border-zinc-800 bg-zinc-950/60 flex justify-center">
+          <button
+            type="button"
             disabled={isReturning}
-            className="w-full bg-amber-500 hover:bg-amber-600 text-zinc-950 font-black py-6 text-base tracking-wide uppercase transition-all shadow-lg hover:shadow-amber-500/25"
+            onClick={onReturnToLobby}
+            className="flex items-center gap-1.5 rounded-xl border border-zinc-600/60 bg-zinc-800/80 px-4 py-2.5 text-xs sm:text-sm font-bold text-zinc-200 transition-colors hover:bg-zinc-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isReturning ? "Uscita..." : "Torna Alla Lobby"}
-          </Button>
-        </CardContent>
-      </UiCard>
+            {isReturning ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <ArrowLeft className="size-4" />
+            )}
+            {lobbyI18n.disconnectOverlay.backToLobby}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

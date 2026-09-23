@@ -1,8 +1,7 @@
 "use client";
 
 import { Button } from "@/ui/components/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/ui/components/card";
-import { Settings2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { t } from "@/ui/i18n/core";
 
 const lobbyI18n = t("lobby");
@@ -68,7 +67,7 @@ export function LobbyConfiguration({ timer, maxStrikes, canEdit, isSaving, onSav
           ))}
         </div>
         <span className="text-[9px] text-zinc-500 leading-tight">
-          Max auto-play if you don't take any action before time runs out.
+          Max auto-play if you don&apos;t take any action before time runs out.
         </span>
       </div>
       

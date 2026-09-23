@@ -6,7 +6,6 @@ import { buildPlayersMap } from "@/features/lobby-session/presence";
 import type { EventMessage } from "@/features/chat/types";
 import { chooseTrumpColor, getBestBidHint, getBestCardHint, getBestTrumpHint, getPlayerGameSnapshot, placeBid, playCard } from "../api";
 import {
-  cardEquals,
   cardToString,
   extractApiErrorCode,
   formatGameActionError,
@@ -204,39 +203,6 @@ export function useGameBoard(customPlayerId?: number) {
     return tail.reduce((state, event) => gameReducer(state, event, reducerPlayerId), snapshotState);
   }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, reducerPlayerId]);
 
-  // Find the most recent TurnOf event for the current active player/action/round.
-  // Use its timestamp as the authoritative start time so reloads don't break the timer.
-  const latestTurnOfEvent = useMemo(() => {
-    const activeId = gameState.currentTurn.playerId;
-    const actionType = gameState.currentTurn.actionType;
-    const currentRound = gameState.round;
-    if (activeId === null || activeId === undefined || actionType === "NONE") return null;
-    const actionMap: Record<string, string> = {
-      BID: "PlaceBid",
-      PLAY_CARD: "PlayCard",
-      CHOOSE_TRUMP: "ResolveTrumpColor",
-    };
-    const requested = actionMap[actionType];
-    // Search backwards — stop as soon as we hit a RoundStarted for a different round
-    // to avoid matching TurnOf events from previous rounds for the same player.
-    for (let i = gameEvents.length - 1; i >= 0; i--) {
-      const ev = gameEvents[i];
-      if (ev.type !== "event") continue;
-      // Stop searching if we've gone past the start of the current round
-      if (ev.event.action === "RoundStarted") {
-        const evRound = Number(ev.event.fields?.round ?? ev.event.fields?.roundNumber ?? 0);
-        if (evRound < currentRound) break;
-      }
-      if (ev.event.action !== "TurnOf" && ev.event.action !== "WaitingForBid" && ev.event.action !== "WaitingForCard") continue;
-      const evPlayerId = Number(ev.event.playerId ?? ev.event.fields?.playerId ?? ev.event.fields?.destinationId ?? 0);
-      if (evPlayerId !== activeId) continue;
-      const evRequested = String(ev.event.fields?.actionRequested ?? "");
-      if (requested && evRequested && evRequested !== requested) continue;
-      return ev;
-    }
-    return null;
-  }, [gameEvents, gameState.currentTurn.playerId, gameState.currentTurn.actionType, gameState.round]);
-
   const turnTimerDuration = useMemo(() => {
     if (!lobby?.configuration) return null;
     const activePlayerId = gameState.currentTurn.playerId;
@@ -341,8 +307,10 @@ export function useGameBoard(customPlayerId?: number) {
         if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
         revealTimeoutRef.current = null;
         revealIntervalRef.current = null;
-        setRevealedTrick(null);
-        setRevealSecondsLeft(0);
+        setTimeout(() => {
+          setRevealedTrick(null);
+          setRevealSecondsLeft(0);
+        }, 0);
       }
     }
   }, [gameState.status, gameState.table.length, revealedTrick]);

@@ -1,4 +1,3 @@
-import { useMemo } from "react";
 import { Card, CardContent } from "@/ui/components/card";
 import { GameCardView } from "@/features/game/components/GameCardView";
 import type { GameBoardState } from "@/features/game/types";

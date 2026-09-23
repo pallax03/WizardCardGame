@@ -1,18 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { MessageCircle } from "lucide-react";
-import { AnimatePresence, MotionConfig, motion } from "motion/react";
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { MotionConfig } from "motion/react";
 
-import { usePathname } from "next/navigation";
 import { useChat } from "../hooks/useChat";
 import { ChatMessage } from "../types";
 import { useLobbySession } from "@/features/lobby-session";
 import { isBotPlayer } from "@/features/lobby-session/presence";
-import { t } from "@/ui/i18n/core";
-const chatI18n = t("chat");
-import { Badge } from "@/ui/components/badge";
-import { Sheet, SheetContent, SheetTrigger } from "@/ui/components/sheet";
+import { Sheet, SheetContent } from "@/ui/components/sheet";
 import { Skeleton } from "@/ui/components/skeleton";
 
 import { ChatHeader } from "./ChatHeader";
@@ -20,8 +15,6 @@ import { ChatMessageList } from "./ChatMessageList";
 import { ChatInput } from "./ChatInput";
 
 export function ChatSheet() {
-  const pathname = usePathname();
-  const isGameRoute = pathname?.endsWith("/game");
   const { playerId, lobby, connectedPlayerIds } = useLobbySession();
   const [isOpen, setIsOpen] = useState(false);
   const [activePrivateId, setActivePrivateId] = useState<number | null>(null);
@@ -82,11 +75,11 @@ export function ChatSheet() {
     const received = chatMessages.filter((message) => message.playerId === peerId && message.destinationId === playerId).length;
     return Math.max(0, received - (seenPrivateCount[peerId] ?? 0));
   };
-  const markPrivateSeen = (peerId: number) => {
+  const markPrivateSeen = useCallback((peerId: number) => {
     if (playerId === null) return;
     const received = chatMessages.filter((message) => message.playerId === peerId && message.destinationId === playerId).length;
     setSeenPrivateCount((current) => ({ ...current, [peerId]: received }));
-  };
+  }, [playerId, chatMessages]);
   const openPrivateChat = (peerId: number) => {
     setActivePrivateId(peerId);
     markPrivateSeen(peerId);
@@ -123,10 +116,10 @@ export function ChatSheet() {
     if (isOpen && activePrivateId !== null) {
       setTimeout(() => markPrivateSeen(activePrivateId), 0);
     }
-  }, [isOpen, activePrivateId, chatMessages.length]);
+  }, [isOpen, activePrivateId, chatMessages.length, markPrivateSeen]);
 
   if (playerId === null) {
-    return <Skeleton className="fixed right-4 bottom-4 z-[90] size-14 rounded-full sm:right-6 sm:bottom-6" />;
+    return <Skeleton className="fixed right-4 bottom-4 z-90 size-14 rounded-full sm:right-6 sm:bottom-6" />;
   }
 
   const privateName = activePrivateId === null ? null : playersMap[activePrivateId];
