@@ -1,4 +1,5 @@
 # Fallback + DevOps
+
 * @pallax03
 
 /.github/ @pallax03
@@ -9,5 +10,6 @@
 /.env* @pallax03
 
 # Project Owners
+
 /wizardEngine/ @pallax03
 /application/ @NicolaGraziotin
