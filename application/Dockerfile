@@ -4,6 +4,7 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY . .
+ENV STANDALONE_BUILD=true
 RUN npm run build
 
 # Stage 2: Run standalone Next.js
