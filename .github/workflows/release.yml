@@ -2,7 +2,7 @@ name: Release
 
 on:
   workflow_run:
-    workflows: ["Application CI", "Wizard-Engine CI"]
+    workflows: ["CI"]
     types:
       - completed
     branches:
