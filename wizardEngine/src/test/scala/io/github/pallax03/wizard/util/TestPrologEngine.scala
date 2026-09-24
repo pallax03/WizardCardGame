@@ -24,7 +24,7 @@ class TestPrologEngine extends AnyWordSpec with Matchers:
         val failedSolveInfo = solver.solve("fail.")
         PrologEngine.extractVars(failedSolveInfo) shouldBe Map.empty
 
-    "Resolve Backtracking" in:
+    "Resolve Backtracking, this is a test for PR" in:
       val theory = """
           color(red).
           color(blue).
