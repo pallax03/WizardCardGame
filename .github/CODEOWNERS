@@ -9,7 +9,7 @@
 /package-lock.json @pallax03
 /.env* @pallax03
 
-# Project Owners
+## Project Owners
 
 /wizardEngine/ @pallax03
-/application/ @NicolaGraziotin
+/application/ @pallax03 @NicolaGraziotin
