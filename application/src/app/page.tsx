@@ -38,16 +38,19 @@ export default function Home() {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const lobbyId = searchParams.get("lobbyId");
+    const saved = readSavedLobbies();
 
     if (lobbyId) {
+      if (saved.some((s) => s.lobbyId === lobbyId)) {
+        router.push(`/lobby/${lobbyId}`);
+        return;
+      }
       queueMicrotask(() => {
         setLobbyIdToJoin(lobbyId);
         setShowJoinInput(true);
       });
       return;
     }
-
-    const saved = readSavedLobbies();
     if (saved.length === 0) return;
     queueMicrotask(() =>
       setSavedEntries(
