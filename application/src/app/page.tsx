@@ -38,16 +38,20 @@ export default function Home() {
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const lobbyId = searchParams.get("lobbyId");
+    const saved = readSavedLobbies();
 
     if (lobbyId) {
+      const cleanLobbyId = lobbyId.trim();
+      if (saved.some((s) => s.lobbyId === cleanLobbyId)) {
+        window.location.replace(`/lobby/${cleanLobbyId}`);
+        return;
+      }
       queueMicrotask(() => {
-        setLobbyIdToJoin(lobbyId);
+        setLobbyIdToJoin(cleanLobbyId);
         setShowJoinInput(true);
       });
       return;
     }
-
-    const saved = readSavedLobbies();
     if (saved.length === 0) return;
     queueMicrotask(() =>
       setSavedEntries(
