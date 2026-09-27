@@ -18,10 +18,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
+      
+      - name: Find previous tag
+        id: prev_tag
+        run: |
+          PREV=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || git rev-list --max-parents=0 HEAD)
+          echo "prev=$PREV" >> $GITHUB_OUTPUT
+
       - uses: dorny/paths-filter@v3
         id: filter
         with:
+          base: ${{ steps.prev_tag.outputs.prev }}
           filters: |
             backend:
               - 'wizardEngine/**'
