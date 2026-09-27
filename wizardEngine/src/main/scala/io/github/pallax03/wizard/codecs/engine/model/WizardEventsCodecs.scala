@@ -63,7 +63,7 @@ object WizardEventsCodecs:
         case "WaitingForTrump" =>
           for {
             p <- ev.get[PlayerId]("destinationId")
-            c <- ev.get[List[Card.Color]]("colorOptions")
+            c = fields.get[List[Card.Color]]("colorOptions").getOrElse(Card.Color.values.toList)
           } yield InvitationEvent.WaitingForTrump(p, c)
         case "WaitingForBid" =>
           for {
@@ -79,7 +79,7 @@ object WizardEventsCodecs:
           } yield InvitationEvent.WaitingForCard(p, cards, isTableEmpty)
         case "ActionFailed" =>
           for {
-            p <- ev.get[PlayerId]("playerId")
+            p <- ev.get[PlayerId]("destinationId")
             err <- fields.get[GameActionError]("reason")
           } yield FailureEvent.ActionFailed(p, err)
         case "StateRecovered" =>
