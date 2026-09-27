@@ -18,9 +18,12 @@ import {
 } from "../state/gameReducer";
 import { mapSnapshotToBoardState } from "../state/snapshotMapper";
 import type { Card, CardColor, GameBoardState, PlayedCardEntry } from "../types";
+import { t } from "@/ui/i18n/core";
 
 /** Secondi di pausa a fine presa: il tavolo resta visibile prima di pulirsi. */
 export const TRICK_REVEAL_SECONDS = 6;
+
+const gameI18n = t("game");
 
 export function useGameBoard(customPlayerId?: number) {
   const {
@@ -384,10 +387,10 @@ export function useGameBoard(customPlayerId?: number) {
 
   const lobbyWarning = useMemo<string | null>(() => {
     if (lobby?.status === "PAUSED") {
-      return "Partita in pausa: stai tornando alla lobby, premi Riprendi Partita per continuare.";
+      return gameI18n.paused_returning;
     }
     if (lobby?.status === "DISCONNECTING") {
-      return "Un giocatore si è disconnesso: se è il tuo turno puoi comunque giocare, altrimenti attendi la riconnessione.";
+      return gameI18n.player_disconnected_play;
     }
     return null;
   }, [lobby?.status]);
@@ -406,13 +409,13 @@ export function useGameBoard(customPlayerId?: number) {
     if (isMyTurn) {
       switch (gameState.currentTurn.actionType) {
         case "CHOOSE_TRUMP":
-          return "It is your turn to choose the Trump color!";
+          return gameI18n.turn_trump;
         case "BID":
           return `It is your turn to place your bid for Round ${gameState.round}!`;
         case "PLAY_CARD":
-          return "It is your turn to play a card!";
+          return gameI18n.turn_play;
         default:
-          return "Your turn!";
+          return gameI18n.turn_your;
       }
     }
 
@@ -429,12 +432,12 @@ export function useGameBoard(customPlayerId?: number) {
       }
     }
 
-    if (gameState.status === "WAITING") return "Waiting for game to begin...";
-    if (gameState.status === "ROUND_SCORED") return "Round completed! Scoring in progress...";
-    if (gameState.status === "GAME_ENDED") return "Game finished!";
-    if (gameState.status === "ABORTED") return "Game aborted!";
+    if (gameState.status === "WAITING") return gameI18n.waiting_begin;
+    if (gameState.status === "ROUND_SCORED") return gameI18n.round_completed;
+    if (gameState.status === "GAME_ENDED") return gameI18n.game_finished;
+    if (gameState.status === "ABORTED") return gameI18n.game_aborted;
 
-    return "Waiting for server...";
+    return gameI18n.waiting_server;
   }, [gameState.currentTurn, gameState.round, gameState.status, isMyTurn, playersMap]);
 
   const handleChooseTrump = useCallback(
@@ -467,7 +470,7 @@ export function useGameBoard(customPlayerId?: number) {
       if (playerId === null) return;
       const bidToPlace = bid !== undefined ? bid : bidInput;
       if (gameState.status !== "BIDDING" || !isMyTurn) {
-        setActionStatus("Non è il tuo turno per puntare.");
+        setActionStatus(gameI18n.not_your_turn_bid);
         return;
       }
       if (gameState.bids[playerId] !== undefined || bidAckRound === gameState.round) {
@@ -518,16 +521,16 @@ export function useGameBoard(customPlayerId?: number) {
     async (card?: Card) => {
       const cardToPlay = card ?? selectedCard;
       if (!cardToPlay) {
-        setActionStatus("Seleziona una carta dalla mano prima di giocare.");
+        setActionStatus(gameI18n.select_card_first);
         return;
       }
 
       try {
         setIsSubmitting(true);
-        setActionStatus("Playing card...");
+        setActionStatus(gameI18n.playing_card);
         await playCard(lobbyId, cardToPlay);
         setActionError(null);
-        setActionStatus("Card played successfully");
+        setActionStatus(gameI18n.card_played);
         setSelectedCard(null);
         setHintedCard(null);
         setHintMeta(null);
@@ -561,7 +564,7 @@ export function useGameBoard(customPlayerId?: number) {
   const requestHint = useCallback(async () => {
     if (!lobbyId || !isMyTurn || isHintLoading) return;
     if (!canPlay && !canBid && !canChooseTrump) {
-      setHintError("Suggerimento disponibile solo durante il tuo turno.");
+      setHintError(gameI18n.hint_only_your_turn);
       return;
     }
     setIsHintLoading(true);
@@ -572,7 +575,7 @@ export function useGameBoard(customPlayerId?: number) {
         if (!isCardInList(hint, gameState.hand)) {
           setHintedCard(null);
           setHintMeta(null);
-          setHintError("Suggerimento non valido: la carta non è nella tua mano.");
+          setHintError(gameI18n.hint_invalid_card);
         } else {
           setHintedCard(hint);
           setHintMeta({

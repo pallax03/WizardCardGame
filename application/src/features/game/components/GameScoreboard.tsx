@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Button } from "@/ui/components/button";
 import { X, Trophy} from "lucide-react";
 import type { Scoreboard, ScoreEntry } from "../types";
+import { t } from "@/ui/i18n/core";
 
 interface GameScoreboardProps {
   players?: Record<string, unknown>[];
@@ -14,6 +15,9 @@ interface GameScoreboardProps {
   onClose?: () => void;
   isScrollable?: boolean;
 }
+
+const lobbyI18n = t("lobby");
+const gameI18n = t("game");
 
 export function GameScoreboard({
   scoreboard,
@@ -87,7 +91,7 @@ export function GameScoreboard({
       {/* Header Classifica con pulsante di chiusura */}
       <div className="flex items-center justify-between border-b border-zinc-800 pb-2.5 shrink-0">
         <div className="text-xs font-black uppercase tracking-widest text-white flex items-center gap-1.5">
-          <Trophy className="size-4 text-white" /> Classifica
+          <Trophy className="size-4 text-white" /> {lobbyI18n.pausedSummary.standings}
         </div>
         {onClose && (
           <Button
@@ -96,7 +100,7 @@ export function GameScoreboard({
             size="icon"
             onClick={onClose}
             className="size-7 text-zinc-400 hover:text-white hover:bg-zinc-800/80 rounded-lg transition-colors shrink-0"
-            title="Chiudi tabellone"
+            title={gameI18n.close_scoreboard}
           >
             <X className="size-4" />
           </Button>
@@ -135,7 +139,7 @@ export function GameScoreboard({
                   </span>
                   <span className="truncate font-semibold">{pName}</span>
                   {diffLabel && <span className={`text-[9px] uppercase font-bold px-1 rounded-sm ${isSelected ? "bg-black/10 text-black/60" : "bg-white/10 text-white/50"}`}>{diffLabel}</span>}
-                  {isMe && <span className="text-[10px] text-zinc-500 font-normal">(Tu)</span>}
+                  {isMe && <span className="text-[10px] text-zinc-500 font-normal">({gameI18n.you})</span>}
                 </div>
                 <span className={`font-black shrink-0 ${isSelected ? "text-black" : "text-white"}`}>
                   {item.totalScore} pt
@@ -153,7 +157,7 @@ export function GameScoreboard({
               <span>{selectedPlayerName}</span>
               {selectedDiff && <span className="text-[10px] uppercase font-bold bg-white/10 text-white/70 px-1.5 py-0.5 rounded-sm">{selectedDiff}</span>}
               {selectedPlayerId === myPlayerId && (
-                <span className="text-black text-xs font-normal">(Tu)</span>
+                <span className="text-black text-xs font-normal">({gameI18n.you})</span>
               )}
             </div>
           </div>
@@ -162,17 +166,17 @@ export function GameScoreboard({
           <table className="w-full text-center text-xs font-mono border-collapse">
             <thead>
               <tr className="border-b border-zinc-800 text-zinc-400 text-[10px] font-bold uppercase">
-                <th className="py-1.5 px-2 text-left">Round</th>
-                <th className="py-1.5 px-2 text-right">Totale</th>
-                <th className="py-1.5 px-2">Bid</th>
-                <th className="py-1.5 px-2">Delta</th>
+                <th className="py-1.5 px-2 text-left">{gameI18n.round}</th>
+                <th className="py-1.5 px-2 text-right">{gameI18n.total}</th>
+                <th className="py-1.5 px-2">{gameI18n.bid}</th>
+                <th className="py-1.5 px-2">{gameI18n.delta}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-800/50">
               {selectedPlayerEntries.length === 0 ? (
                 <tr>
                   <td colSpan={4} className="py-4 text-center text-zinc-500 italic">
-                    Nessun round giocato
+                    {gameI18n.no_rounds_played}
                   </td>
                 </tr>
               ) : (
