@@ -42,7 +42,9 @@ class TestGameActionErrorCodecs extends AnyWordSpec with Matchers:
     "encode and decode GameActionError.CardNotAllowed (MustFollowColor) correctly" in:
       import cards.Card.*
       val error: GameActionError =
-        GameActionError.CardNotAllowed(CardNotAllowedReasons.MustFollowColor(Red, List(Ten of Blue)))
+        GameActionError.CardNotAllowed(
+          CardNotAllowedReasons.MustFollowColor(Red, List(Ten of Blue))
+        )
       val jsonString = error.toJson
       jsonString shouldBe """{"error":"CardNotAllowed","reason":{"type":"MustFollowColor","requiredColor":"Red","legalCards":[{"type":"Standard","color":"Blue","rank":10}]}}"""
       jsonString.decodeAs[GameActionError].value shouldBe error

@@ -41,12 +41,13 @@ export default function Home() {
     const saved = readSavedLobbies();
 
     if (lobbyId) {
-      if (saved.some((s) => s.lobbyId === lobbyId)) {
-        router.push(`/lobby/${lobbyId}`);
+      const cleanLobbyId = lobbyId.trim();
+      if (saved.some((s) => s.lobbyId === cleanLobbyId)) {
+        window.location.replace(`/lobby/${cleanLobbyId}`);
         return;
       }
       queueMicrotask(() => {
-        setLobbyIdToJoin(lobbyId);
+        setLobbyIdToJoin(cleanLobbyId);
         setShowJoinInput(true);
       });
       return;

@@ -17,7 +17,7 @@ class TestSystemEventCodecs extends AnyWordSpec with Matchers:
       val event = SystemEvent.joined(p1)
       val jsonString = event.toJson
       jsonString shouldBe """{"type":"system","playerId":1,"action":"joined"}"""
-      
+
     "encode configUpdated correctly" in:
       val p1 = PlayerId(1)
       val event = SystemEvent.configUpdated(p1)
