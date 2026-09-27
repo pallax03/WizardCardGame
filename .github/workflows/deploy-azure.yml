@@ -40,7 +40,7 @@ jobs:
   build-and-push:
     name: Build & Push Docker Image
     needs: changes
-    if: ${{ needs.changes.outputs.backend == 'true' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || needs.changes.outputs.backend == 'true' }}
     runs-on: ubuntu-latest
     permissions:
       contents: read
