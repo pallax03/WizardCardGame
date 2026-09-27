@@ -1,3 +1,12 @@
+## [0.2.2](https://github.com/pallax03/WizardCardGame/compare/v0.2.1...v0.2.2) (2026-09-27)
+
+
+### Bug Fixes
+
+* player already in lobby re-join. ([ea1b627](https://github.com/pallax03/WizardCardGame/commit/ea1b6278d8ca1a16e8402347f7502c6f9bd2151c))
+* Prolog Choosing Trump ([75d6c75](https://github.com/pallax03/WizardCardGame/commit/75d6c759d17b0818d292e41427ca505190d5a531))
+* rollback codecs.engine tests ([604344d](https://github.com/pallax03/WizardCardGame/commit/604344d70f266a2e7e400718dc984598fc18c3e5))
+
 ## [0.2.1](https://github.com/pallax03/WizardCardGame/compare/v0.2.0...v0.2.1) (2026-09-23)
 
 
