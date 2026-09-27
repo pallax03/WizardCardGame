@@ -70,7 +70,7 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
               )}
             </div>
             <div className="text-right font-black text-white whitespace-nowrap" title="Points">
-              {gameData.points ?? 0} <span className="text-[9px] text-zinc-500 font-normal">Pts</span>
+              {gameData.points ?? 0} <span className="text-[9px] text-zinc-500 font-normal">{lobbyI18n.pausedSummary.pointsShort}</span>
             </div>
           </div>
         ) : (

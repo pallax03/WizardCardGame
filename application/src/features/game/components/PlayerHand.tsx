@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
@@ -6,6 +6,7 @@ import { animate, motion, useMotionValue, type AnimationPlaybackControls } from 
 import { GameCardView } from "./GameCardView";
 import { cardEquals, cardToString } from "../state/gameReducer";
 import type { Card } from "../types";
+import { t } from "@/ui/i18n/core";
 
 interface PlayerHandProps {
   hand: Card[];
@@ -165,7 +166,7 @@ function DraggableHandCard({
         }}
         role="button"
         tabIndex={draggable ? 0 : -1}
-        aria-label={`${cardToString(card)}${isLegal ? "" : " (non giocabile)"}${isHinted ? " (suggerita dall'AI)" : ""}. Trascina sul tavolo per giocarla.`}
+        aria-label={`${cardToString(card)}${isLegal ? "" : ` ${gameI18n.not_playable}`}${isHinted ? ` ${gameI18n.ai_hinted}` : ""}. ${gameI18n.drag_to_play}`}
         className={`relative shrink-0 transition-all duration-200 origin-bottom ${
           draggable ? "cursor-grab touch-none active:cursor-grabbing" : ""
         } ${overlayOrigin ? "opacity-0" : ""}`}
@@ -195,6 +196,8 @@ function DraggableHandCard({
     </>
   );
 }
+
+const gameI18n = t("game");
 
 export function PlayerHand({
   hand,
@@ -273,7 +276,7 @@ export function PlayerHand({
     return (
       <div className="relative w-full pt-12 pb-4 px-2 overflow-visible">
         <div className="text-center py-4 text-zinc-500 text-xs italic">
-          Mano vuota
+          {gameI18n.empty_hand}
         </div>
       </div>
     );
