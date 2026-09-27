@@ -1,6 +1,7 @@
-﻿"use client";
+"use client";
 
 import { AlertCircle, Clock, ShieldAlert, Sparkles } from "lucide-react";
+import { t } from "@/ui/i18n/core";
 
 interface GameTurnBannerProps {
   isMyTurn: boolean;
@@ -12,6 +13,8 @@ interface GameTurnBannerProps {
   turnTimerSeconds?: number | null;
   strikes?: number;
 }
+
+const gameI18n = t("game");
 
 export function GameTurnBanner({
   isMyTurn,
@@ -32,13 +35,13 @@ export function GameTurnBanner({
     <div
       className={`relative w-full overflow-hidden rounded-2xl border transition-all duration-300 shadow-2xl backdrop-blur-xl ${
         isMyTurn
-          ? "border-amber-400/80 bg-gradient-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80 ring-1 ring-amber-400/40 shadow-amber-500/10"
-          : "border-zinc-800/80 bg-gradient-to-r from-zinc-950/90 via-zinc-900/80 to-zinc-950/90 text-zinc-300"
+          ? "border-amber-400/80 bg-linear-to-r from-amber-950/80 via-amber-900/60 to-amber-950/80 ring-1 ring-amber-400/40 shadow-amber-500/10"
+          : "border-zinc-800/80 bg-linear-to-r from-zinc-950/90 via-zinc-900/80 to-zinc-950/90 text-zinc-300"
       }`}
     >
       {/* Effetto bagliore superiore quando è il proprio turno */}
       {isMyTurn && (
-        <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent animate-pulse" />
+        <div className="absolute top-0 inset-x-0 h-0.5 bg-linear-to-r from-transparent via-amber-400 to-transparent animate-pulse" />
       )}
 
       <div className="p-2.5 sm:p-3.5 space-y-2">
@@ -56,10 +59,10 @@ export function GameTurnBanner({
               {isMyTurn ? (
                 <>
                   <Sparkles className="size-3 text-amber-400" />
-                  IL TUO TURNO
+                  {gameI18n.your_turn_upper}
                 </>
               ) : (
-                "IN ATTESA"
+                gameI18n.waiting_upper
               )}
             </span>
           </div>

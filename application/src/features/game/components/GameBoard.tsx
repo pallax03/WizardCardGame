@@ -17,6 +17,7 @@ import { ArrowLeft, Lightbulb, Trophy, MessageCircle, AlertTriangle, Check, X } 
 import { t } from "@/ui/i18n/core";
 
 const lobbyI18n = t("lobby");
+const gameI18n = t("game");
 
 function phaseLabel(status: string): string {
   const s = lobbyI18n.pausedSummary;
@@ -149,7 +150,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           return;
         }
       } catch {
-        setPauseError("Impossibile mettere in pausa la partita.");
+        setPauseError(gameI18n.pause_failed);
         setIsPausing(false);
         return;
       }
@@ -176,7 +177,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   };
 
   return (
-    <div className="relative flex flex-col min-h-dvh w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-6 space-y-3 sm:space-y-4 select-none overflow-hidden">
+    <div className="relative flex flex-col min-h-svh w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-6 space-y-3 sm:space-y-4 select-none overflow-hidden">
       <GameEndOverlay
         isGameEnded={isGameEnded}
         sortedScoreboard={sortedScoreboard}
@@ -216,7 +217,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             className="text-zinc-400 hover:text-white px-2 h-8"
           >
             <ArrowLeft className="size-4 mr-1" />
-            <span className="text-xs hidden sm:inline">Ritorna alla Lobby</span>
+            <span className="text-xs hidden sm:inline">{lobbyI18n.disconnectOverlay.backToLobby}</span>
           </Button>
         </div>
 
@@ -298,10 +299,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                        })()}
                        <span className="truncate">{player.name}</span>
                      </span>
-                     {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] md:text-[9px] h-3 md:h-4 bg-zinc-700">TU</Badge>}
+                     {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] md:text-[9px] h-3 md:h-4 bg-zinc-700">{gameI18n.you.replace(/[()]/g, "").toUpperCase()}</Badge>}
                   </div>
                   <span className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-bold truncate min-h-3 md:min-h-3.5 leading-tight">
-                    {Boolean(player.difficulty) ? (player.name.toLowerCase().includes("bot") ? (player.difficulty === "Dumb" ? "STUPIDO" : player.difficulty === "Prolog" ? "NORMALE" : player.difficulty) : "BOT") : ""}
+                    {Boolean(player.difficulty) ? (player.name.toLowerCase().includes("bot") ? (player.difficulty === "Dumb" ? lobbyI18n.botSelection.dumb.toUpperCase() : player.difficulty === "Prolog" ? lobbyI18n.botSelection.prolog.toUpperCase() : player.difficulty) : "BOT") : ""}
                   </span>
                 </div>
                 
@@ -320,7 +321,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                     <div className="text-zinc-600 font-bold">- / -</div>
                   )}
                   <div className="font-black text-white text-right shrink-0">
-                    {score} <span className="text-[8px] md:text-[10px] text-zinc-500 font-normal">Pts</span>
+                    {score} <span className="text-[8px] md:text-[10px] text-zinc-500 font-normal">{lobbyI18n.pausedSummary.pointsShort}</span>
                   </div>
                 </div>
               </div>
@@ -368,20 +369,20 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         {isCardDragging && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
             <span className="text-xl sm:text-2xl font-black uppercase tracking-widest text-emerald-500/20 animate-pulse">
-              Rilascia Carta
+              {gameI18n.drop_card}
             </span>
           </div>
         )}
 
         <div className="absolute inset-2 sm:inset-4 rounded-full border border-zinc-800/20 pointer-events-none flex flex-col items-center justify-center z-0">
-          <Image src="/wizard_logo.svg" alt="Wizard Logo" width={180} height={75} className="opacity-5 grayscale" />
+          <Image src="/wizard_logo.svg" alt={gameI18n.wizard_logo} width={180} height={75} className="opacity-5 grayscale" />
         </div>
 
         {/* Trump In Table */}
         {!isGameEnded && (
           <div className="flex flex-col items-center gap-2 z-10 mb-4 bg-zinc-900/40 p-2 sm:p-3 rounded-xl backdrop-blur-sm border border-zinc-800/50 shadow-lg">
             <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">
-              Briscola
+              {lobbyI18n.pausedSummary.trump}
             </span>
             {gameState.trump && "card" in gameState.trump && gameState.trump.card ? (
               <div className="flex flex-col sm:flex-row items-center gap-2">
@@ -390,7 +391,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                 </div>
                 {/* se giocato un wizard, must decide color */}
                 {gameState.trump.card.type === "Wizard" && !gameState.effectiveTrumpColor && !canChooseTrump && (
-                  <span className="text-[10px] text-zinc-400 font-bold">Da decidere</span>
+                  <span className="text-[10px] text-zinc-400 font-bold">{lobbyI18n.pausedSummary.noTrump}</span>
                 )}
                 {/* INLINE TRUMP CHOOSER */}
                 {isMyTurn && canChooseTrump && (
@@ -415,7 +416,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <span className="text-[10px] font-bold text-zinc-400">Nessuna (No Trump)</span>
+                <span className="text-[10px] font-bold text-zinc-400">{gameI18n.no_trump}</span>
                 {/* INLINE TRUMP CHOOSER for NO TRUMP (if somehow it's a wizard played first on no trump game? Usually Wizard sets trump on its own) */}
                 {isMyTurn && canChooseTrump && (
                   <div className="flex gap-1.5">
@@ -482,7 +483,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                   const p = lobby?.players.find(x => x.id === wId);
                   if (!p) return playersMap.get(wId)?.name ?? `P${wId}`;
                   const isRealBot = p.name.toLowerCase().includes("bot");
-                  const diff2 = p.difficulty === 'Dumb' ? 'Stupido' : p.difficulty === 'Prolog' ? 'Normale' : p.difficulty;
+                  const diff2 = p.difficulty === 'Dumb' ? lobbyI18n.botSelection.dumb : p.difficulty === 'Prolog' ? lobbyI18n.botSelection.prolog : p.difficulty;
                   return p.difficulty ? `${p.name} ${isRealBot ? diff2 : 'BOT'}` : p.name;
                 })()}
               </span>
@@ -566,7 +567,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               size="icon"
               disabled={isSubmitting || isHintLoading}
               onClick={() => void requestHint()}
-              title="Suggerimento"
+              title={gameI18n.hint}
               className="size-10 sm:size-12 rounded-full bg-linear-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-xl shadow-purple-500/20 border-2 border-purple-400/50 transition-all hover:scale-105 active:scale-95"
             >
               <Lightbulb className={`size-4 sm:size-5 ${isHintLoading ? "animate-spin" : ""}`} />

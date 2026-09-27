@@ -185,7 +185,7 @@ export default function Home() {
   };
 
   return (
-    <main className="app-page min-h-[100dvh] relative flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
+    <main className="app-page min-h-[100svh] relative flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
       <div className="fixed top-4 right-4 z-50">
         <Button
           suppressHydrationWarning

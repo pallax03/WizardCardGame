@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { Card, CardColor } from "../types";
 import { cardToString } from "../state/gameReducer";
 import { CARD_COLOR_STYLES } from "./cardStyles";
+import { t } from "@/ui/i18n/core";
 
 interface GameCardViewProps {
   card: Card;
@@ -15,6 +16,8 @@ interface GameCardViewProps {
   size?: "sm" | "md" | "lg";
   effectiveColor?: string; // e.g. "RED"
 }
+
+const gameI18n = t("game");
 
 export function GameCardView({
   card,
@@ -98,8 +101,8 @@ export function GameCardView({
 
       {isHinted && (
         <span
-          aria-label="Carta suggerita"
-          title="Carta suggerita dall'AI"
+          aria-label={gameI18n.suggested_card}
+          title={gameI18n.suggested_card}
           className="absolute -top-2.5 -right-2.5 grid size-7 place-items-center rounded-full border-2 border-purple-300 bg-purple-500 text-sm shadow-lg shadow-purple-500/50"
         >
           💡
