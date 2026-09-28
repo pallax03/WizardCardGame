@@ -276,7 +276,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               type="button"
               key={player.id}
               onClick={() => { setScoreboardPlayer(player.id); setShowScoreboard(true); }}
-              className={`relative w-full sm:flex-1 sm:min-w-[140px] sm:max-w-[180px] flex flex-col rounded-xl border transition-all overflow-hidden text-left cursor-pointer active:scale-95 ${
+              className={`relative w-full sm:flex-1 sm:min-w-35 sm:max-w-45 flex flex-col rounded-xl border transition-all overflow-hidden text-left cursor-pointer active:scale-95 ${
                 isCurrentTurn 
                   ? "bg-sky-500/10 border-sky-500/40 ring-1 ring-sky-500/30 shadow-lg shadow-sky-900/20"
                   : isMe
@@ -365,7 +365,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         className={`relative flex-1 min-h-0 w-full max-w-6xl mx-auto mt-2 sm:mt-4 flex flex-col lg:flex-row items-center justify-center lg:justify-start lg:pl-8 lg:gap-8 rounded-3xl transition-all duration-300 ${isCardDragging ? "bg-emerald-950/20 border-2 border-dashed border-emerald-500/40 ring-4 ring-emerald-500/10" : "bg-transparent border-2 border-transparent"}`}
       >
         {isCardDragging && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[100] backdrop-blur-[1px]">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-100 backdrop-blur-[1px]">
             <span className="text-2xl sm:text-4xl font-black uppercase tracking-widest text-emerald-500/40 animate-pulse drop-shadow-2xl">
               {gameI18n.drop_card}
             </span>
@@ -453,7 +453,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             return (
               <div 
                 key={player.id} 
-                className="absolute lg:relative lg:!transform-none flex flex-col items-center animate-in zoom-in-95 duration-200 pointer-events-auto"
+                className="absolute lg:relative lg:transform-none! flex flex-col items-center animate-in zoom-in-95 duration-200 pointer-events-auto"
                 style={{ transform: `rotate(${angleDeg}deg) translateY(clamp(105px, min(30vw, 28cqmin), 260px)) rotate(-${angleDeg}deg)` }}
               >
                 <div className={`transition-all relative ${isWinning ? 'scale-105 shadow-xl z-10' : 'scale-95 opacity-90'}`}>
@@ -632,7 +632,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       )}
 
       {/* PHONE LANDSCAPE WARNING */}
-      <div className="hidden [@media(max-height:500px)_and_(orientation:landscape)]:flex fixed inset-0 z-[9999] bg-zinc-950 flex-col items-center justify-center p-6 text-center">
+      <div className="hidden [@media(max-height:500px)_and_(orientation:landscape)]:flex fixed inset-0 z-9999 bg-zinc-950 flex-col items-center justify-center p-6 text-center">
         <AlertTriangle className="size-16 text-amber-500 mb-6 animate-pulse" />
         <h2 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-widest">Ruota il dispositivo</h2>
         <p className="text-sm text-zinc-400 max-w-xs mx-auto">Giocando da smartphone, utilizza l&apos;orientamento verticale per un&apos;esperienza ottimale.</p>

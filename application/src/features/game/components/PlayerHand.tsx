@@ -194,7 +194,7 @@ function DraggableHandCard({
         createPortal(
           <motion.div
             aria-hidden
-            className="pointer-events-none fixed z-[100]"
+            className="pointer-events-none fixed z-100"
             style={{ left: overlayOrigin.left, top: overlayOrigin.top, x, y }}
           >
             <div className="rounded-xl ring-2 ring-white ring-offset-2 ring-offset-transparent shadow-2xl">

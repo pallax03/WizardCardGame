@@ -185,8 +185,8 @@ export default function Home() {
   };
 
   return (
-    <main className="app-page min-h-[100svh] relative flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
-      <div className="fixed top-4 right-4 z-50">
+    <main className="app-page min-h-svh relative flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
+      <div className="fixed top-4 left-4 z-50">
         <Button
           suppressHydrationWarning
           variant="outline"
@@ -211,7 +211,7 @@ export default function Home() {
           alt="Wizard" 
           width={280} 
           height={120} 
-          className="w-full max-w-[280px] drop-shadow-2xl" 
+          className="w-full max-w-70 drop-shadow-2xl" 
           priority 
         />
 
@@ -220,6 +220,8 @@ export default function Home() {
           
           <div className="space-y-1">
             <Input
+              suppressHydrationWarning
+              aria-label={homeI18n.card.label}
               placeholder={homeI18n.card.usernamePlaceholder}
               value={username}
               onChange={(e) => {
@@ -235,6 +237,7 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3">
             <Button
               type="button"
+              suppressHydrationWarning
               onClick={handleToggleJoin}
               disabled={isCreating || isJoining}
               variant={showJoinInput ? "outline" : "secondary"}
@@ -245,6 +248,7 @@ export default function Home() {
 
             <Button
               type="button"
+              suppressHydrationWarning
               onClick={handleCreateLobby}
               disabled={isCreating || isJoining}
               variant="default"
@@ -257,6 +261,8 @@ export default function Home() {
           {showJoinInput && (
             <div className="flex gap-2 animate-in fade-in-50 slide-in-from-top-2">
               <Input
+                suppressHydrationWarning
+                aria-label={homeI18n.joinSection.label}
                 placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
                 value={lobbyIdToJoin}
                 autoFocus
@@ -282,7 +288,7 @@ export default function Home() {
           {/* Saved Lobbies */}
           {savedEntries.length > 0 && (
             <div className="pt-4 border-t border-zinc-800 space-y-2">
-              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">
+              <p suppressHydrationWarning className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">
                 {homeI18n.savedLobbies.title}
               </p>
               {savedEntries.map((entry) => (
@@ -291,12 +297,12 @@ export default function Home() {
                     className="flex-1 flex flex-col cursor-pointer"
                     onClick={() => handleRejoinSaved(entry.lobbyId)}
                   >
-                    <span className="text-sm font-medium text-zinc-200">
+                    <span suppressHydrationWarning className="text-sm font-medium text-zinc-200">
                       {entry.playerName ?? homeI18n.savedLobbies.unknownPlayer}
                     </span>
                     {entry.createdAt ? (
-                      <span className="text-[10px] text-zinc-500">
-                        {homeI18n.savedLobbies.createdAt(formatLobbyDate(entry.createdAt))}
+                      <span suppressHydrationWarning className="text-[10px] text-zinc-500">
+                      {homeI18n.savedLobbies.createdAt(formatLobbyDate(entry.createdAt))}
                       </span>
                     ) : null}
                     <span className="text-[10px] text-zinc-500">
