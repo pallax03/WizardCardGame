@@ -212,6 +212,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             type="button"
             size="sm"
             variant="ghost"
+            aria-label={lobbyI18n.disconnectOverlay.backToLobby}
             disabled={isPausing}
             onClick={() => void handleBackToLobby()}
             className="text-zinc-400 hover:text-white px-2 h-8"

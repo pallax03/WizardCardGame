@@ -15,6 +15,11 @@ import { Input } from "@/ui/components/input";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [lobbyIdToJoin, setLobbyIdToJoin] = useState("");
@@ -221,7 +226,8 @@ export default function Home() {
           width={280} 
           height={120} 
           className="w-full max-w-70 drop-shadow-2xl" 
-          priority 
+          priority
+          fetchPriority="high"
         />
 
         {/* Unified Card for everything */}
@@ -229,9 +235,7 @@ export default function Home() {
           
           <div className="space-y-1">
             <Input
-              suppressHydrationWarning
-              aria-label={homeI18n.card.label}
-              placeholder={homeI18n.card.usernamePlaceholder}
+              placeholder={mounted ? homeI18n.card.usernamePlaceholder : ""}
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
@@ -246,33 +250,29 @@ export default function Home() {
           <div className="grid grid-cols-2 gap-3">
             <Button
               type="button"
-              suppressHydrationWarning
               onClick={handleToggleJoin}
               disabled={isCreating || isJoining}
               variant={showJoinInput ? "outline" : "secondary"}
               className="h-12 rounded-xl font-bold cursor-pointer transition-colors"
             >
-              {showJoinInput ? <X className="w-5 h-5" /> : homeI18n.buttons.join}
+              {showJoinInput ? <X className="w-5 h-5" /> : (mounted ? homeI18n.buttons.join : "")}
             </Button>
 
             <Button
               type="button"
-              suppressHydrationWarning
               onClick={handleCreateLobby}
               disabled={isCreating || isJoining}
               variant="default"
               className="h-12 rounded-xl font-bold cursor-pointer transition-colors"
             >
-              {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : homeI18n.buttons.createLobby}
+              {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : (mounted ? homeI18n.buttons.createLobby : "")}
             </Button>
           </div>
 
           {showJoinInput && (
             <div className="flex gap-2 animate-in fade-in-50 slide-in-from-top-2">
               <Input
-                suppressHydrationWarning
-                aria-label={homeI18n.joinSection.label}
-                placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
+                placeholder={mounted ? homeI18n.joinSection.lobbyCodePlaceholder : ""}
                 value={lobbyIdToJoin}
                 autoFocus
                 onChange={(e) => {
@@ -295,10 +295,10 @@ export default function Home() {
           )}
           
           {/* Saved Lobbies */}
-          {savedEntries.length > 0 && (
+          {mounted && savedEntries.length > 0 && (
             <div className="pt-4 border-t border-zinc-800 space-y-2">
-              <p suppressHydrationWarning className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">
-                {homeI18n.savedLobbies.title}
+              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">
+                {mounted ? homeI18n.savedLobbies.title : ""}
               </p>
               {savedEntries.map((entry) => (
                 <div key={entry.lobbyId} className="flex items-center gap-2 p-2 rounded-xl bg-zinc-950/50 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
@@ -306,11 +306,11 @@ export default function Home() {
                     className="flex-1 flex flex-col cursor-pointer"
                     onClick={() => handleRejoinSaved(entry.lobbyId)}
                   >
-                    <span suppressHydrationWarning className="text-sm font-medium text-zinc-200">
-                      {entry.playerName ?? homeI18n.savedLobbies.unknownPlayer}
+                    <span className="text-sm font-medium text-zinc-200">
+                      {entry.playerName ?? (mounted ? homeI18n.savedLobbies.unknownPlayer : "")}
                     </span>
                     {entry.createdAt ? (
-                      <span suppressHydrationWarning className="text-[10px] text-zinc-500">
+                      <span className="text-[10px] text-zinc-500">
                       {homeI18n.savedLobbies.createdAt(formatLobbyDate(entry.createdAt))}
                       </span>
                     ) : null}
