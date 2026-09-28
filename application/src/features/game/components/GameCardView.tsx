@@ -14,7 +14,7 @@ interface GameCardViewProps {
   isHinted?: boolean;
   onClick?: () => void;
   size?: "sm" | "md" | "lg";
-  effectiveColor?: string; // e.g. "RED"
+  effectiveColor?: string;
 }
 
 const gameI18n = t("game");
@@ -30,9 +30,9 @@ export function GameCardView({
   effectiveColor,
 }: GameCardViewProps) {
   const sizeClasses = {
-    sm: "h-[min(4.5rem,12svh)] w-auto aspect-[2/3] text-[clamp(10px,1.5svh,12px)] p-1.5 rounded-lg",
-    md: "h-[min(7rem,16svh)] w-auto aspect-[2/3] text-[clamp(12px,2svh,14px)] p-1.5 sm:p-2 rounded-xl",
-    lg: "h-[min(6rem,14svh)] w-auto aspect-[2/3] text-[clamp(12px,2svh,14px)] p-1.5 sm:p-2 rounded-xl sm:h-[min(7.5rem,16svh)]",
+    sm: "h-[min(4.5rem,12svh)] sm:h-[min(7rem,15svh)] lg:h-[min(9rem,18svh)] w-auto aspect-[2/3] text-[clamp(10px,1.5svh,12px)] sm:text-[clamp(12px,2svh,14px)] p-1.5 sm:p-2 rounded-lg sm:rounded-xl",
+    md: "h-[min(7rem,16svh)] sm:h-[min(10rem,22svh)] lg:h-[min(12rem,25svh)] w-auto aspect-[2/3] text-[clamp(12px,2svh,14px)] sm:text-[clamp(14px,2.5svh,16px)] p-1.5 sm:p-2 rounded-xl",
+    lg: "h-[min(6rem,14svh)] sm:h-[min(12rem,26svh)] lg:h-[min(15rem,32svh)] w-auto aspect-[2/3] text-[clamp(12px,2svh,14px)] sm:text-[clamp(16px,3svh,20px)] p-1.5 sm:p-3 rounded-xl",
   }[size];
 
   let cardStyle = "border-zinc-700 bg-zinc-900 text-zinc-300 shadow-black/60";

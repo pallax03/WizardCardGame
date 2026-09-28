@@ -137,7 +137,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
         >
           <MessageCircle className="size-4" />
           {unreadChatCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-3.5 min-w-[14px] items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-zinc-950">
+            <span className="absolute -top-1 -right-1 flex h-3.5 min-w-3.5 items-center justify-center rounded-full bg-sky-500 px-1 text-[8px] font-bold text-white shadow-sm ring-2 ring-zinc-950">
               {unreadChatCount > 9 ? "9+" : unreadChatCount}
             </span>
           )}

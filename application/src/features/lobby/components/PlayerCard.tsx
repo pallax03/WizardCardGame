@@ -102,9 +102,9 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
           </button>
           
           {showHand && (
-            <div className="p-3 pt-0 flex flex-wrap gap-2 justify-center">
+            <div className="p-3 pt-0 grid grid-rows-2 grid-flow-col gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory justify-start">
               {gameData.hand.map((card, index) => (
-                <div key={index} className="shrink-0">
+                <div key={index} className="shrink-0 snap-center">
                   <GameCardView card={card} size="sm" isClickable={false} />
                 </div>
               ))}
