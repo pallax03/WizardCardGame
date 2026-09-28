@@ -177,7 +177,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   };
 
   return (
-    <div className="relative flex flex-col min-h-svh w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-6 space-y-3 sm:space-y-4 select-none overflow-hidden">
+    <div className="@container relative flex flex-col h-full w-full max-w-md sm:max-w-4xl lg:max-w-6xl mx-auto px-2 pb-2 sm:pb-4 space-y-2 sm:space-y-3 select-none overflow-hidden">
       <GameEndOverlay
         isGameEnded={isGameEnded}
         sortedScoreboard={sortedScoreboard}
@@ -362,13 +362,13 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       {/* PLAY AREA (THE TABLE) */}
       <div 
         ref={tableRef}
-        className={`relative flex-1 min-h-55 w-full max-w-3xl mx-auto flex flex-col items-center justify-start pt-2 rounded-3xl transition-all duration-300 ${
+        className={`relative flex-1 min-h-0 w-full max-w-3xl mx-auto mt-8 sm:mt-12 flex items-center justify-center rounded-3xl transition-all duration-300 ${orderedPlayers.length > 3 ? "translate-y-8 sm:translate-y-0" : ""} ${
           isCardDragging ? "bg-emerald-950/20 border-2 border-dashed border-emerald-500/40 ring-4 ring-emerald-500/10" : "bg-transparent border-2 border-transparent"
         }`}
       >
         {isCardDragging && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-0">
-            <span className="text-xl sm:text-2xl font-black uppercase tracking-widest text-emerald-500/20 animate-pulse">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[100] backdrop-blur-[1px]">
+            <span className="text-2xl sm:text-4xl font-black uppercase tracking-widest text-emerald-500/40 animate-pulse drop-shadow-2xl">
               {gameI18n.drop_card}
             </span>
           </div>
@@ -380,7 +380,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
         {/* Trump In Table */}
         {!isGameEnded && (
-          <div className="flex flex-col items-center gap-2 z-10 mb-4 bg-zinc-900/40 p-2 sm:p-3 rounded-xl backdrop-blur-sm border border-zinc-800/50 shadow-lg">
+          <div className="flex flex-col items-center gap-2 z-10 bg-zinc-900/40 p-2 sm:p-3 rounded-xl backdrop-blur-sm border border-zinc-800/50 shadow-lg">
             <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">
               {lobbyI18n.pausedSummary.trump}
             </span>
@@ -442,28 +442,30 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           </div>
         )}
 
-        <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4 z-10 p-2 mt-auto mb-auto">
-          {orderedPlayers.map((player) => {
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+          {orderedPlayers.map((player, index) => {
             const tableSource = revealedTrick ? revealedTrick.entries : gameState.table;
             const played = tableSource.find((entry) => entry.playerId === player.id);
             if (!played) return null;
             
             const isWinning = revealedTrick ? player.id === revealedTrick.winnerId : Boolean(gameState.winningCard && cardEquals(played.card, gameState.winningCard));
             
+            const total = orderedPlayers.length;
+            const angleDeg = (index * 360) / total;
             return (
-              <div key={player.id} className="relative flex flex-col items-center animate-in zoom-in-95 duration-200">
+              <div 
+                key={player.id} 
+                className="absolute flex flex-col items-center animate-in zoom-in-95 duration-200 pointer-events-auto"
+                style={{ transform: `rotate(${angleDeg}deg) translateY(clamp(95px, 26vw, 140px)) rotate(-${angleDeg}deg)` }}
+              >
                 <div className={`transition-all relative ${isWinning ? 'scale-105 shadow-xl z-10' : 'scale-95 opacity-90'}`}>
                   <GameCardView card={played.card} size="sm" isClickable={false} />
-                  {isWinning && (
-                    <div className="absolute -top-3 -right-3 z-30 bg-amber-500 rounded-full p-1 shadow-lg shadow-amber-500/50 border border-amber-300 animate-bounce">
-                      <Trophy className="size-3.5 text-zinc-950" />
-                    </div>
-                  )}
                 </div>
-                <div className={`absolute -bottom-2 sm:-bottom-3 px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider border shadow-md z-20 ${
+                <div className={`absolute -bottom-2 sm:-bottom-3 px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider border shadow-md z-20 whitespace-nowrap flex items-center gap-1 ${
                   isWinning ? "bg-white text-black border-zinc-300" : "bg-zinc-800 text-zinc-300 border-zinc-600"
                 }`}>
-                  {player.name.length > 6 ? player.name.substring(0, 6) + '.' : player.name}
+                  {isWinning && <Trophy className="size-2.5 text-amber-500" />}
+                  {player.name.length > 8 ? player.name.substring(0, 8) : player.name}
                 </div>
               </div>
             );
@@ -473,9 +475,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       </div>
 
       {/* REVEALED TRICK OVERLAY & BIDDING CHIPS (ABOVE HAND) */}
-      <div className="w-full flex justify-center items-end relative z-80 mt-auto min-h-12">
+      <div className={`w-full flex justify-center relative z-80 transition-all duration-500 ${(!canPlay && !canBid) || !!revealedTrick ? "translate-y-24 sm:translate-y-28" : "translate-y-0"} ${(!canPlay && !canBid) && !revealedTrick ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+        <div className="w-full flex justify-center flex-col items-center gap-2 pb-2 sm:pb-4">
         {revealedTrick ? (
-          <div className="w-full flex justify-center animate-in slide-in-from-bottom-4 fade-in duration-300 mb-2">
+          <div className="w-full flex justify-center animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-700/80 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.6)]">
               <span className="text-xs sm:text-sm font-black tracking-widest text-white uppercase flex items-center gap-1.5 whitespace-nowrap">
                 <Trophy className="size-4 text-amber-400" /> {(() => {
@@ -513,50 +516,69 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           </div>
         ) : isMyTurn && canBid && (
           <div className="w-full sm:max-w-xl animate-in slide-in-from-bottom-4 mb-2 flex flex-col gap-2">
-            <div className="flex flex-wrap gap-2 justify-center px-1 pb-1">
-              {Array.from({ length: gameState.round + 1 }, (_, i) => {
-                const isForbidden = forbiddenBid !== null && forbiddenBid !== undefined && i === forbiddenBid;
-                const isHinted = hintedBid === i;
-                const isSelected = bidInput === i;
+            <div className="flex flex-col gap-1.5 sm:gap-2 items-center px-1 pb-1 w-full max-w-sm sm:max-w-xl mx-auto">
+              {(() => {
+                const total = gameState.round + 1;
+                const sizeClass = "w-10 h-10 text-base";
+                const rowsCount = total > 14 ? 3 : total > 7 ? 2 : 1;
+                const rows = [];
+                let remaining = total;
+                let startIndex = 0;
+                for (let r = rowsCount; r > 0; r--) {
+                  const rowSize = Math.ceil(remaining / r);
+                  rows.push(Array.from({ length: rowSize }, (_, idx) => startIndex + idx));
+                  remaining -= rowSize;
+                  startIndex += rowSize;
+                }
                 
-                return (
-                  <button
-                    type="button"
-                    key={i}
-                    disabled={isSubmitting || isForbidden}
-                    onClick={() => {
-                      if (isSelected) {
-                        handlePlaceBid(i);
-                      } else {
-                        setBidInput(i);
-                      }
-                    }}
-                    className={`relative flex items-center justify-center w-10 h-10 rounded-full font-black text-sm transition-all active:scale-90 border-2 ${
-                      isForbidden ? "opacity-30 bg-zinc-900 border-rose-900 text-rose-500 cursor-not-allowed" 
-                      : isSelected ? (isHinted ? "bg-white text-black border-purple-500 shadow-lg shadow-purple-500/40 scale-110 z-10" : "bg-white text-black border-white shadow-lg shadow-white/20 scale-110 z-10")
-                      : isHinted ? "bg-purple-500/20 text-purple-300 border-purple-500 hover:bg-purple-500/40"
-                      : "bg-zinc-800 text-zinc-300 border-zinc-600 hover:bg-zinc-700 hover:text-white"
-                    }`}
-                  >
-                    {i}
-                    {isHinted && (
-                      <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-purple-500 text-white shadow-md">
-                        <Lightbulb className="size-2.5 fill-current" />
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+                return rows.map((row, rowIdx) => (
+                  <div key={rowIdx} className="flex gap-1.5 sm:gap-2 justify-center">
+                    {row.map((i) => {
+                      const isForbidden = forbiddenBid !== null && forbiddenBid !== undefined && i === forbiddenBid;
+                      const isHinted = hintedBid === i;
+                      const isSelected = bidInput === i;
+                      return (
+                        <button
+                          type="button"
+                          key={i}
+                          disabled={isSubmitting || isForbidden}
+                          onClick={() => {
+                            if (isSelected) {
+                              handlePlaceBid(i);
+                            } else {
+                              setBidInput(i);
+                            }
+                          }}
+                          className={`relative flex items-center justify-center rounded-full font-black transition-all active:scale-90 border-2 ${sizeClass} ${
+                            isForbidden ? "opacity-30 bg-zinc-900 border-rose-900 text-rose-500 cursor-not-allowed" 
+                            : isSelected ? (isHinted ? "bg-white text-black border-purple-500 shadow-lg shadow-purple-500/40 scale-110 z-10" : "bg-white text-black border-white shadow-lg shadow-white/20 scale-110 z-10")
+                            : isHinted ? "bg-purple-500/20 text-purple-300 border-purple-500 hover:bg-purple-500/40"
+                            : "bg-zinc-800 text-zinc-300 border-zinc-600 hover:bg-zinc-700 hover:text-white"
+                          }`}
+                        >
+                          {i}
+                          {isHinted && (
+                            <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-purple-500 text-white shadow-md">
+                              <Lightbulb className="size-2.5 fill-current" />
+                            </span>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* PLAYER HAND & HINT BUTTON */}
-      <div className="w-full relative z-20 pb-4 flex justify-center items-end">
+      <div className={`w-full relative z-20 pb-4 flex justify-center items-end transition-all duration-500 ${(!canPlay && !canBid) || !!revealedTrick ? "translate-y-20 sm:translate-y-20" : "translate-y-0 opacity-100"}`}>
         {/* HINT BUTTON BOTTOM LEFT */}
         {canRequestHint && (
-          <div className="absolute right-2 sm:right-4 bottom-4 z-40 flex flex-col items-start gap-1">
+          <div className="fixed right-4 sm:right-6 bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-6 z-50 flex flex-col items-end gap-1">
             {hintError && (
               <div className="text-[10px] font-semibold text-purple-200 bg-purple-950/90 border border-purple-500/60 rounded-xl px-2.5 py-1 shadow-lg">
                 ⚠️ {hintError}
