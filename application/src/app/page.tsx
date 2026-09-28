@@ -123,10 +123,19 @@ export default function Home() {
   };
 
   const handleJoinLobby = async () => {
+    const targetLobbyId = lobbyIdToJoin.trim().toLowerCase();
+    if (!targetLobbyId) return;
+
+    const alreadySaved = savedEntries.find((e) => e.lobbyId.toLowerCase() === targetLobbyId);
+    if (alreadySaved) {
+      router.push(`/lobby/${alreadySaved.lobbyId}`);
+      return;
+    }
+
     setIsJoining(true);
     setError(null);
 
-    const result = await joinLobbyAction(username, lobbyIdToJoin);
+    const result = await joinLobbyAction(username, targetLobbyId);
 
     if (result?.error) {
       setError(getErrorMessage(result.error));
