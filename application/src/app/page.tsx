@@ -265,7 +265,7 @@ export default function Home() {
                   if (error) setError(null);
                 }}
                 onKeyDown={handleEnterKey}
-                className="bg-zinc-950 border-zinc-800 text-center text-lg h-12 rounded-xl font-mono uppercase"
+                className="bg-zinc-950 border-zinc-800 text-center text-lg h-12 rounded-xl font-mono"
               />
               <Button
                 type="button"
