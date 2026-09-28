@@ -3,11 +3,14 @@
 import { GameCardView } from "./GameCardView";
 import { CARD_COLOR_BADGE_STYLES } from "./cardStyles";
 import type { CardColor, Trump } from "../types";
+import { t } from "@/ui/i18n/core";
 
 interface TrumpAreaProps {
   trump: Trump | null;
   effectiveTrumpColor: CardColor | null;
 }
+
+const gameI18n = t("game");
 
 export function TrumpArea({ trump, effectiveTrumpColor }: TrumpAreaProps) {
   const hasCard = trump && "card" in trump && trump.card;
@@ -18,7 +21,7 @@ export function TrumpArea({ trump, effectiveTrumpColor }: TrumpAreaProps) {
         <GameCardView card={trump.card} size="sm" isClickable={false} />
       ) : (
         <div className="grid h-20 w-14 place-items-center rounded-lg border border-dashed border-white/20 bg-black/20">
-          <span className="text-[10px] text-zinc-400 italic">In attesa…</span>
+          <span className="text-[10px] text-zinc-400 italic">{gameI18n.waiting}</span>
         </div>
       )}
       {effectiveTrumpColor && (

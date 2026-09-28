@@ -133,7 +133,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
               ? "bg-sky-500/10 border-sky-500/40 text-sky-400 hover:bg-sky-500/20 shadow-[0_0_15px_-3px_rgba(56,189,248,0.4)]"
               : "bg-zinc-900/60 border-zinc-800 text-zinc-400 hover:text-white"
           }`}
-          title="Apri Chat Globale"
+          title={lobbyI18n.open_global_chat}
         >
           <MessageCircle className="size-4" />
           {unreadChatCount > 0 && (

@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils";
 import type { Card, CardColor } from "../types";
 import { cardToString } from "../state/gameReducer";
 import { CARD_COLOR_STYLES } from "./cardStyles";
+import { t } from "@/ui/i18n/core";
 
 interface GameCardViewProps {
   card: Card;
@@ -16,6 +17,8 @@ interface GameCardViewProps {
   effectiveColor?: string; // e.g. "RED"
 }
 
+const gameI18n = t("game");
+
 export function GameCardView({
   card,
   isSelected = false,
@@ -27,9 +30,9 @@ export function GameCardView({
   effectiveColor,
 }: GameCardViewProps) {
   const sizeClasses = {
-    sm: "w-14 h-20 text-xs p-1.5 rounded-lg",
-    md: "w-20 h-28 text-sm p-2 rounded-xl",
-    lg: "w-24 h-36 text-base p-2.5 rounded-xl sm:w-28 sm:h-40",
+    sm: "h-[min(4.5rem,12svh)] w-auto aspect-[2/3] text-[clamp(10px,1.5svh,12px)] p-1.5 rounded-lg",
+    md: "h-[min(7rem,16svh)] w-auto aspect-[2/3] text-[clamp(12px,2svh,14px)] p-1.5 sm:p-2 rounded-xl",
+    lg: "h-[min(6rem,14svh)] w-auto aspect-[2/3] text-[clamp(12px,2svh,14px)] p-1.5 sm:p-2 rounded-xl sm:h-[min(7.5rem,16svh)]",
   }[size];
 
   let cardStyle = "border-zinc-700 bg-zinc-900 text-zinc-300 shadow-black/60";
@@ -74,14 +77,15 @@ export function GameCardView({
         "relative flex flex-col justify-between border-2 font-mono font-bold shadow-xl transition-all duration-200 select-none text-left backdrop-blur-md transform-gpu",
         sizeClasses,
         cardStyle,
-        isClickable && "cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:brightness-110",
+        isClickable && !isSelected && "cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:brightness-110",
+        isClickable && isSelected && "cursor-pointer",
         !isClickable && "cursor-default",
-        !isLegal && "opacity-35 grayscale-[60%] hover:translate-y-0",
+        !isLegal && "opacity-35 grayscale-60 hover:translate-y-0",
         isSelected &&
-          "ring-4 ring-sky-400 -translate-y-4 shadow-2xl shadow-sky-500/50 scale-105 z-20",
+          "ring-4 ring-white -translate-y-4 shadow-2xl shadow-white/50 scale-105 z-20",
         isHinted &&
           !isSelected &&
-          "ring-4 ring-purple-400 -translate-y-2 shadow-2xl shadow-purple-500/50 scale-105 animate-pulse"
+          "ring-4 ring-purple-400 -translate-y-2 shadow-2xl shadow-purple-500/50 scale-105"
       )}
     >
       <div className="flex justify-between items-start">
@@ -98,8 +102,8 @@ export function GameCardView({
 
       {isHinted && (
         <span
-          aria-label="Carta suggerita"
-          title="Carta suggerita dall'AI"
+          aria-label={gameI18n.suggested_card}
+          title={gameI18n.suggested_card}
           className="absolute -top-2.5 -right-2.5 grid size-7 place-items-center rounded-full border-2 border-purple-300 bg-purple-500 text-sm shadow-lg shadow-purple-500/50"
         >
           💡

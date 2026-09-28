@@ -26,6 +26,8 @@ interface GameEndOverlayProps {
   isReturning?: boolean;
 }
 
+const gameI18n = t("game");
+
 export function GameEndOverlay({
   isGameEnded,
   sortedScoreboard,
@@ -86,10 +88,10 @@ export function GameEndOverlay({
 
           {winner && (
             <p className="text-xs sm:text-sm text-zinc-400 font-medium">
-              Vincitore:{" "}
-              <span className="text-white font-bold">{winner.name}</span> con{" "}
+              {gameI18n.winner}{" "}
+              <span className="text-white font-bold">{winner.name}</span> {gameI18n.winner_with}{" "}
               <span className="font-mono font-bold text-zinc-200">
-                {winner.score} pt
+                {winner.score} {gameI18n.points}
               </span>
             </p>
           )}
