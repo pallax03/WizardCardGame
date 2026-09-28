@@ -1,4 +1,5 @@
 # Fallback + DevOps
+
 * @pallax03
 
 /.github/ @pallax03
@@ -8,6 +9,6 @@
 /package-lock.json @pallax03
 /.env* @pallax03
 
-# Project Owners
+## Project Owners
+
 /wizardEngine/ @pallax03
-/application/ @NicolaGraziotin

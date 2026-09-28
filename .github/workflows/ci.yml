@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+    branches:
+      - master
+      - develop
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.filter.outputs.app }}
+      engine: ${{ steps.filter.outputs.engine }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            app:
+              - 'application/**'
+              - '.github/workflows/ci.yml'
+            engine:
+              - 'wizardEngine/**'
+              - '.github/workflows/ci.yml'
+
+  application-test:
+    needs: changes
+    if: ${{ needs.changes.outputs.app == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+          cache-dependency-path: application/package-lock.json
+
+      - name: Install dependencies
+        working-directory: ./application
+        run: npm ci
+
+      - name: Lint
+        working-directory: ./application
+        run: npm run lint
+
+      - name: Build Next.js
+        working-directory: ./application
+        run: npm run build
+
+  wizard-engine-test:
+    needs: changes
+    if: ${{ needs.changes.outputs.engine == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'sbt'
+      
+      - name: Install SBT
+        uses: sbt/setup-sbt@v1
+
+      - name: SBT Format & Fix Check
+        if: github.base_ref == 'master' || github.ref == 'refs/heads/master'
+        working-directory: ./wizardEngine
+        run: sbt "; scalafmtCheckAll; scalafixAll --check"
+
+      - name: SBT Compile, Test & Coverage
+        working-directory: ./wizardEngine
+        run: sbt "; coverage; test; coverageReport"

@@ -2,13 +2,15 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Sparkles, PlusCircle, LogIn, Loader2, ArrowRight, X, Users, Globe } from "lucide-react";
+import Image from "next/image";
+import { Loader2, ArrowRight, X, Globe } from "lucide-react";
 import { createLobbyAction, joinLobbyAction } from "@/features/lobby/api";
-import { readStoredSession } from "@/features/lobby-session/storage";
+import { getLobbyState } from "@/features/lobby-session/api";
+import { readSavedLobbies, removeSavedLobby } from "@/features/lobby-session/storage";
+import { ApiError } from "@/lib/api/api";
 import { t } from "@/ui/i18n/core";
 const homeI18n = t("home");
 import { Button } from "@/ui/components/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/ui/components/card";
 import { Input } from "@/ui/components/input";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
@@ -20,27 +22,88 @@ export default function Home() {
   const [isCreating, setIsCreating] = useState(false);
   const [isJoining, setIsJoining] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [savedEntries, setSavedEntries] = useState<
+    {
+      lobbyId: string;
+      playerId: number;
+      savedAt: number;
+      status?: string;
+      playersCount?: number;
+      playerName?: string;
+      createdAt?: number;
+      failed?: boolean;
+    }[]
+  >([]);
 
   useEffect(() => {
     const searchParams = new URLSearchParams(window.location.search);
     const lobbyId = searchParams.get("lobbyId");
-    
-    const stored = readStoredSession();
-    const storedLobbyId = stored.lobbyId;
-    const storedPlayerId = stored.playerId !== null ? String(stored.playerId) : null;
-    
-    if (storedLobbyId && storedPlayerId && !lobbyId) {
-      router.push(`/lobby/${storedLobbyId}`);
-      return;
-    }
+    const saved = readSavedLobbies();
 
     if (lobbyId) {
-      setTimeout(() => {
-        setLobbyIdToJoin(lobbyId);
+      const cleanLobbyId = lobbyId.trim();
+      if (saved.some((s) => s.lobbyId === cleanLobbyId)) {
+        window.location.replace(`/lobby/${cleanLobbyId}`);
+        return;
+      }
+      queueMicrotask(() => {
+        setLobbyIdToJoin(cleanLobbyId);
         setShowJoinInput(true);
-      }, 0);
+      });
+      return;
     }
-  }, [router]);
+    if (saved.length === 0) return;
+    queueMicrotask(() =>
+      setSavedEntries(
+        saved.map((entry) => ({
+          lobbyId: entry.lobbyId,
+          playerId: entry.playerId,
+          savedAt: entry.savedAt,
+          createdAt: entry.savedAt,
+        }))
+      )
+    );
+    let cancelled = false;
+    void (async () => {
+      for (const entry of saved) {
+        try {
+          const state = await getLobbyState(entry.lobbyId);
+          if (cancelled) return;
+          setSavedEntries((prev) =>
+            prev.map((item) =>
+              item.lobbyId === entry.lobbyId
+                ? {
+                    ...item,
+                    status: state.status,
+                    playersCount: state.players.length,
+                    playerName: state.players.find((p) => p.id === entry.playerId)?.name,
+                    createdAt:
+                      typeof state.createdAt === "number" && state.createdAt > 0
+                        ? state.createdAt
+                        : entry.savedAt,
+                  }
+                : item
+            )
+          );
+        } catch (reason) {
+          if (cancelled) return;
+          if (reason instanceof ApiError && reason.status === 404) {
+            removeSavedLobby(entry.lobbyId);
+            setSavedEntries((prev) => prev.filter((item) => item.lobbyId !== entry.lobbyId));
+          } else {
+            setSavedEntries((prev) =>
+              prev.map((item) =>
+                item.lobbyId === entry.lobbyId ? { ...item, failed: true } : item
+              )
+            );
+          }
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleToggleJoin = () => {
     setError(null);
@@ -71,18 +134,64 @@ export default function Home() {
     }
   };
 
-  return (
-    <main className="app-page relative flex flex-col items-center justify-center p-4 selection:bg-purple-500/30 overflow-hidden">
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_-15%,rgba(99,102,241,0.28),transparent_42%)]" />
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,var(--tw-gradient-stops))] from-indigo-900/20 via-zinc-950 to-zinc-950 pointer-events-none" />
+  const handleEnterKey = (e: React.KeyboardEvent) => {
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    if (isCreating || isJoining) return;
+    if (lobbyIdToJoin.trim()) {
+      void handleJoinLobby();
+    } else {
+      void handleCreateLobby();
+    }
+  };
 
-      {/* Language Switcher */}
-      <div className="absolute top-4 right-4 z-20">
+  const handleRejoinSaved = (lobbyId: string) => {
+    router.push(`/lobby/${lobbyId}`);
+  };
+
+  const handleRemoveSaved = (lobbyId: string) => {
+    removeSavedLobby(lobbyId);
+    setSavedEntries((prev) => prev.filter((item) => item.lobbyId !== lobbyId));
+  };
+
+  const formatLobbyDate = (timestamp: number) => {
+    const date = new Date(timestamp);
+    if (Number.isNaN(date.getTime())) return "";
+    return date.toLocaleString(undefined, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const savedStatusLabel = (status?: string, failed?: boolean) => {
+    if (failed) return homeI18n.savedLobbies.unavailable;
+    switch (status) {
+      case "WAITING":
+        return homeI18n.savedLobbies.statusWaiting;
+      case "IN_GAME":
+        return homeI18n.savedLobbies.statusInGame;
+      case "DISCONNECTING":
+        return homeI18n.savedLobbies.statusDisconnecting;
+      case "PAUSED":
+        return homeI18n.savedLobbies.statusPaused;
+      case "FINISHED":
+        return homeI18n.savedLobbies.statusFinished;
+      default:
+        return homeI18n.savedLobbies.loading;
+    }
+  };
+
+  return (
+    <main className="app-page min-h-[100dvh] relative flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
+      <div className="fixed top-4 right-4 z-50">
         <Button
           suppressHydrationWarning
           variant="outline"
           size="sm"
-          className="gap-2 border-zinc-200 text-zinc-300"
+          className="gap-2 border-zinc-800 bg-zinc-900/50 backdrop-blur text-zinc-300 rounded-full cursor-pointer"
           onClick={() => {
             const isEn = document.cookie.includes('wizard_lang=en');
             document.cookie = `wizard_lang=${isEn ? 'it' : 'en'}; path=/; max-age=31536000`;
@@ -94,118 +203,123 @@ export default function Home() {
         </Button>
       </div>
 
-      <div className="relative z-10 w-full max-w-md space-y-8">
+      <div className="relative z-10 w-full max-w-sm flex flex-col items-center gap-8">
+        
+        {/* Logo only, no duplicate text */}
+        <Image 
+          src="/wizard_logo.svg" 
+          alt="Wizard" 
+          width={280} 
+          height={120} 
+          className="w-full max-w-[280px] drop-shadow-2xl" 
+          priority 
+        />
 
-        <div className="flex flex-col items-center gap-3 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs font-medium backdrop-blur-md">
-            <Sparkles className="w-3.5 h-3.5" /> {homeI18n.badge}
+        {/* Unified Card for everything */}
+        <div className="w-full bg-zinc-900 border border-zinc-800 rounded-3xl p-5 shadow-2xl space-y-5 relative">
+          
+          <div className="space-y-1">
+            <Input
+              placeholder={homeI18n.card.usernamePlaceholder}
+              value={username}
+              onChange={(e) => {
+                setUsername(e.target.value);
+                if (error) setError(null);
+              }}
+              onKeyDown={handleEnterKey}
+              className="bg-zinc-950/80 border-zinc-800 text-center text-lg h-14 rounded-2xl focus-visible:ring-zinc-600"
+            />
+            {error && <p className="text-xs text-red-400 font-medium text-center">{error}</p>}
           </div>
-          <h1 suppressHydrationWarning className="text-6xl md:text-7xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-indigo-200 via-purple-300 to-pink-300 drop-shadow-sm">
-            {homeI18n.title}
-          </h1>
-          <p suppressHydrationWarning className="text-zinc-400 text-sm font-light">
-            {homeI18n.subtitle}
-          </p>
-        </div>
 
-        <Card className="bg-zinc-900/80 border-zinc-800 backdrop-blur-md shadow-2xl">
-          <CardHeader>
-            <div className="mb-2 grid size-10 place-items-center rounded-2xl bg-indigo-500/15 text-indigo-300"><Users className="size-5" /></div>
-            <CardTitle className="text-lg text-zinc-100 font-semibold">{homeI18n.card.title}</CardTitle>
-            <CardDescription className="text-zinc-400 text-sm">{homeI18n.card.description}</CardDescription>
-          </CardHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              onClick={handleToggleJoin}
+              disabled={isCreating || isJoining}
+              variant={showJoinInput ? "outline" : "secondary"}
+              className="h-12 rounded-xl font-bold cursor-pointer transition-colors"
+            >
+              {showJoinInput ? <X className="w-5 h-5" /> : homeI18n.buttons.join}
+            </Button>
 
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
+            <Button
+              type="button"
+              onClick={handleCreateLobby}
+              disabled={isCreating || isJoining}
+              variant="default"
+              className="h-12 rounded-xl font-bold cursor-pointer transition-colors"
+            >
+              {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : homeI18n.buttons.createLobby}
+            </Button>
+          </div>
+
+          {showJoinInput && (
+            <div className="flex gap-2 animate-in fade-in-50 slide-in-from-top-2">
               <Input
-                placeholder={homeI18n.card.usernamePlaceholder}
-                value={username}
+                placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
+                value={lobbyIdToJoin}
+                autoFocus
                 onChange={(e) => {
-                  setUsername(e.target.value);
+                  setLobbyIdToJoin(e.target.value);
                   if (error) setError(null);
                 }}
-                className="bg-zinc-950/60 border-zinc-800 text-zinc-100 focus-visible:ring-indigo-500 h-11"
+                onKeyDown={handleEnterKey}
+                className="bg-zinc-950 border-zinc-800 text-center text-lg h-12 rounded-xl font-mono uppercase"
               />
-              {error && <p className="text-xs text-red-400 font-medium pl-1">{error}</p>}
+              <Button
+                type="button"
+                onClick={handleJoinLobby}
+                disabled={isJoining || !lobbyIdToJoin.trim()}
+                variant="default"
+                className="w-12 h-12 p-0 shrink-0 rounded-xl cursor-pointer"
+              >
+                {isJoining ? <Loader2 className="w-5 h-5 animate-spin" /> : <ArrowRight className="w-5 h-5" />}
+              </Button>
             </div>
-
-            <div className="space-y-3 pt-2">
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  type="button"
-                  onClick={handleToggleJoin}
-                  disabled={isCreating || isJoining}
-                  variant={showJoinInput ? "outline" : "secondary"}
-                  size="lg"
-                  className="gap-2 transition-all cursor-pointer"
-                >
-                  {showJoinInput ? (
-                    <>
-                      <X className="w-4 h-4" /> {homeI18n.buttons.close}
-                    </>
-                  ) : (
-                    <>
-                      <LogIn className="w-4 h-4" /> {homeI18n.buttons.join}
-                    </>
-                  )}
-                </Button>
-
-                <Button
-                  type="button"
-                  onClick={handleCreateLobby}
-                  disabled={isCreating || isJoining}
-                  size="lg"
-                  className="gap-2 font-medium transition-all cursor-pointer"
-                >
-                  {isCreating ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                  ) : (
-                    <>
-                      <PlusCircle className="w-4 h-4" /> {homeI18n.buttons.createLobby}
-                    </>
-                  )}
-                </Button>
-              </div>
-
-              {showJoinInput && (
-                <div className="p-3 rounded-lg bg-zinc-950/80 border border-zinc-800 space-y-3 animate-in fade-in-50 slide-in-from-top-2 duration-200">
-                  <label className="text-xs font-medium text-zinc-400 block">
-                    {homeI18n.joinSection.label}
-                  </label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
-                      value={lobbyIdToJoin}
-                      autoFocus
-                      onChange={(e) => {
-                        setLobbyIdToJoin(e.target.value);
-                        if (error) setError(null);
-                      }}
-                      className="bg-zinc-900 border-zinc-800 text-zinc-100 focus-visible:ring-primary h-11 font-mono uppercase text-sm"
-                    />
-                    <Button
-                      type="button"
-                      onClick={handleJoinLobby}
-                      disabled={isJoining || !lobbyIdToJoin.trim()}
-                      size="lg"
-                      className="px-4 font-medium gap-1 shrink-0 cursor-pointer"
-                    >
-                      {isJoining ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <>
-                          {homeI18n.buttons.enter} <ArrowRight className="w-4 h-4" />
-                        </>
-                      )}
-                    </Button>
+          )}
+          
+          {/* Saved Lobbies */}
+          {savedEntries.length > 0 && (
+            <div className="pt-4 border-t border-zinc-800 space-y-2">
+              <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">
+                {homeI18n.savedLobbies.title}
+              </p>
+              {savedEntries.map((entry) => (
+                <div key={entry.lobbyId} className="flex items-center gap-2 p-2 rounded-xl bg-zinc-950/50 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+                  <div 
+                    className="flex-1 flex flex-col cursor-pointer"
+                    onClick={() => handleRejoinSaved(entry.lobbyId)}
+                  >
+                    <span className="text-sm font-medium text-zinc-200">
+                      {entry.playerName ?? homeI18n.savedLobbies.unknownPlayer}
+                    </span>
+                    {entry.createdAt ? (
+                      <span className="text-[10px] text-zinc-500">
+                        {homeI18n.savedLobbies.createdAt(formatLobbyDate(entry.createdAt))}
+                      </span>
+                    ) : null}
+                    <span className="text-[10px] text-zinc-500">
+                      {savedStatusLabel(entry.status, entry.failed)}
+                      {typeof entry.playersCount === "number"
+                        ? ` • ${homeI18n.savedLobbies.players(entry.playersCount)}`
+                        : null}
+                    </span>
                   </div>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={(e) => { e.stopPropagation(); handleRemoveSaved(entry.lobbyId); }}
+                    className="h-8 w-8 text-zinc-600 hover:text-red-400 cursor-pointer"
+                  >
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
-              )}
-
+              ))}
             </div>
-          </CardContent>
-        </Card>
-
+          )}
+        </div>
       </div>
     </main>
   );

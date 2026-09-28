@@ -1,6 +1,5 @@
 "use client";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/ui/components/card";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
 import { Users, UserPlus, Plus, X } from "lucide-react";
@@ -26,19 +25,18 @@ export function PlayerList({
   const emptySlotsCount = canManagePlayers ? Math.max(0, maxPlayers - players.length) : 0;
 
   return (
-    <Card className="surface-card text-zinc-100">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg font-semibold text-white flex items-center justify-between">
-          <span className="flex items-center gap-2">
-            <Users className="w-5 h-5 text-zinc-400" />
-            {lobbyI18n.playersCard.title}
-          </span>
-          <Badge variant="secondary" className="bg-zinc-800 text-zinc-300 border border-zinc-700">
-            {players.length} / {maxPlayers}
-          </Badge>
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center justify-between px-1">
+        <span className="flex items-center gap-2 text-lg font-semibold text-white">
+          <Users className="w-5 h-5 text-zinc-400" />
+          {lobbyI18n.playersCard.title}
+        </span>
+        <Badge variant="secondary" className="bg-zinc-800 text-zinc-300 border border-zinc-700">
+          {players.length} / {maxPlayers}
+        </Badge>
+      </div>
+      
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {players.map((player) => {
           const isMe = currentUserId !== null && player.id === currentUserId;
           const isBot = isBotPlayer(player);
@@ -71,8 +69,8 @@ export function PlayerList({
             }}
           />
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 

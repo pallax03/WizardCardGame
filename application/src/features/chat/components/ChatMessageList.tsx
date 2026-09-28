@@ -81,7 +81,7 @@ export function ChatMessageList({
                 <div className={`flex min-w-0 max-w-full flex-col ${isMe ? "items-end" : "flex-1 items-start"}`}>
                   <span className="mb-1 px-1 text-[10px] font-medium text-zinc-500">{name}</span>
                   <Bubble align={isMe ? "end" : "start"} variant={isMe ? "default" : "secondary"} className="max-w-full">
-                    <BubbleContent className={isMe ? "bg-indigo-500 text-white" : "bg-zinc-800/90 text-zinc-100"}>{message.text}</BubbleContent>
+                    <BubbleContent className={isMe ? "bg-zinc-200 text-zinc-900" : "bg-zinc-800/90 text-zinc-100"}>{message.text}</BubbleContent>
                   </Bubble>
                   {isMe && <span className="mt-1 flex items-center gap-0.5 px-1 text-[9px] text-zinc-600"><Check className="size-2.5" /> {chatI18n.sent}</span>}
                 </div>

@@ -60,6 +60,9 @@ trait LobbyStatePort:
     updateLobby(lobbyId): lobby =>
       lobby.authenticate(secret).flatMap(player => f(player, lobby))
 
+  /** Deletes the specified lobby. */
+  def deleteLobby(lobbyId: LobbyId): Future[Either[LobbyError, Unit]]
+
   /**
    * Atomically adds a player to the lobby, returning the assigned Player if successful.
    * Fails (returns None) if the lobby is full (max 6 players).

@@ -35,7 +35,8 @@ case class Lobby(
     players: List[Player],
     status: LobbyStatus,
     configuration: GameConfiguration,
-    version: Int = 1
+    version: Int = 1,
+    createdAt: Long = System.currentTimeMillis()
 ):
 
   def authenticate(secret: String): Either[LobbyError, Player] =
@@ -54,17 +55,17 @@ case class Lobby(
       difficulty: Option[BotsDifficulty],
       secret: Option[String]
   ): Either[LobbyError, (Player, Lobby)] =
-    if status != LobbyStatus.WAITING then Left(LobbyError.GameInProgress)
-    else if players.size >= GameConfiguration.MAX_PLAYERS then Left(LobbyError.Full)
-    else
-      val existing = secret.flatMap(s => players.find(_.secret.contains(s)))
-      if existing.isDefined then Right(existing.get -> this)
-      else
-        val newId = PlayerId(if players.isEmpty then 0 else players.map(_.id.toInt).max + 1)
-        val newPlayer = difficulty match
-          case None    => Player.human(newId, name, secret)
-          case Some(d) => Player.bot(newId, d)
-        Right(newPlayer -> copy(players = players :+ newPlayer, version = version + 1))
+    secret.flatMap(s => players.find(_.secret.contains(s))) match
+      case Some(existing) => Right(existing -> this)
+      case None =>
+        if status != LobbyStatus.WAITING then Left(LobbyError.GameInProgress)
+        else if players.size >= GameConfiguration.MAX_PLAYERS then Left(LobbyError.Full)
+        else
+          val newId = PlayerId(if players.isEmpty then 0 else players.map(_.id.toInt).max + 1)
+          val newPlayer = difficulty match
+            case None    => Player.human(newId, name, secret)
+            case Some(d) => Player.bot(newId, d)
+          Right(newPlayer -> copy(players = players :+ newPlayer, version = version + 1))
 
   def removePlayer(playerId: PlayerId): Either[LobbyError, Lobby] =
     val newPlayers = players.filterNot(_.id == playerId)
@@ -93,10 +94,8 @@ case class Lobby(
 
   def handleOnlineStatusChange(playerId: PlayerId, isOnline: Boolean): Either[LobbyError, Lobby] =
     modifyPlayer(playerId, updateStatus = true): player =>
-      if isOnline && player.isBot && player.isHuman then
-        player.returnHuman.copy(strikes = math.max(0, player.strikes - 1))
-      else if isOnline then
-        player.copy(isOnline = isOnline, strikes = math.max(0, player.strikes - 1))
+      if isOnline && player.isHuman then player.returnHuman.copy(strikes = 0)
+      else if isOnline then player.copy(isOnline = isOnline, strikes = 0)
       else player.copy(isOnline = isOnline)
 
   def updateStrikes(playerId: PlayerId, diff: Int): Either[LobbyError, (Int, Lobby)] =

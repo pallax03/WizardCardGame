@@ -39,7 +39,7 @@ export function ChatHeader({
             <ArrowLeft />
           </Button>
         ) : (
-          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-indigo-500/15 text-indigo-300"><Users className="size-4" /></span>
+          <span className="grid size-8 shrink-0 place-items-center rounded-full bg-zinc-800/50 text-zinc-300"><Users className="size-4" /></span>
         )}
         <div className="min-w-0 flex-1">
           <AnimatePresence mode="wait" initial={false}>
@@ -53,7 +53,7 @@ export function ChatHeader({
             {activePrivateId === null ? `${chatI18n.playersOnline(connectedPlayerIds.length)} · ${connectionState === "open" ? chatI18n.connected : chatI18n.connecting}` : `${chatI18n.privateWith} ${privateName ?? chatI18n.fallbackPlayer}`}
           </SheetDescription>
         </div>
-        <SheetClose aria-label={chatI18n.close} className="grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 transition hover:bg-white/8 hover:text-white focus-visible:ring-2 focus-visible:ring-indigo-400 focus-visible:outline-none"><X className="size-4" /></SheetClose>
+        <SheetClose aria-label={chatI18n.close} className="grid size-8 shrink-0 place-items-center rounded-full text-zinc-500 transition hover:bg-white/8 hover:text-white focus-visible:ring-2 focus-visible:ring-zinc-400 focus-visible:outline-none"><X className="size-4" /></SheetClose>
       </div>
 
       {activePrivateId === null && privatePeers.length > 0 && (

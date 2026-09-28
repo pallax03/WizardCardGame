@@ -10,6 +10,7 @@ services:
     restart: always
 
   wizard-engine:
+    image: ${ENGINE_IMAGE:-wizard-engine:local}
     build:
       context: ./wizardEngine
     container_name: ${PROJECT_NAME}-wizard-engine
@@ -29,6 +30,7 @@ services:
     restart: on-failure
 
   wizard-bot-worker:
+    image: ${ENGINE_IMAGE:-wizard-engine:local}
     build:
       context: ./wizardEngine
     environment:
@@ -48,6 +50,7 @@ services:
     build:
       context: ./application
     container_name: ${PROJECT_NAME}-application
+    profiles: ["frontend"]
     ports:
       - "${APPLICATION_PORT}:${APPLICATION_PORT}"
     environment:
@@ -58,5 +61,23 @@ services:
       - wizard-engine
     restart: always
 
+  caddy:
+    image: caddy:2-alpine
+    container_name: ${PROJECT_NAME}-caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - wizard-engine
+
 volumes:
   redis-data:
+  caddy_data:
+  caddy_config:

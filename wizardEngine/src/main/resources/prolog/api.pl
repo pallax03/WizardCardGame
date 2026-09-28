@@ -1,8 +1,8 @@
 % WIZARD API
 
 % choose_trump(+Hand, -TrumpColor) -> return the best trump to choose based on dominant_color (see STRATEGY.dominant_color)
+choose_trump(Hand, TrumpColor) :- dominant_color(Hand, TrumpColor), is_valid_color(TrumpColor), !.
 choose_trump(_, TrumpColor) :- is_valid_color(TrumpColor).
-choose_trump(Hand, TrumpColor) :- dominant_color(Hand, TrumpColor), is_valid_color(TrumpColor).
 
 % choose_trump([card(1, yellow), card(1, red), wizard], TrumpColor). -> TrumpColor / yellow.
 % choose_trump([wizard, jester, wizard], TrumpColor). -> TrumpColor \ ? (just pick it in order of is_valid_color)

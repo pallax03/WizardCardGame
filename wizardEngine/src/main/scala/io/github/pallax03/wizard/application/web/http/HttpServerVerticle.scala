@@ -35,6 +35,7 @@ class HttpServerVerticle(
     val prometheusMetrics = PrometheusMetrics.default[Future]()
 
     val serverOptions = VertxFutureServerOptions.customiseInterceptors
+      .corsInterceptor(sttp.tapir.server.interceptor.cors.CORSInterceptor.default[Future])
       .serverLog(serverLog)
       .exceptionHandler(exceptionHandler)
       .metricsInterceptor(prometheusMetrics.metricsInterceptor())
