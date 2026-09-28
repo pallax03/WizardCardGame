@@ -118,7 +118,7 @@ export function formatGameActionError(
   if (inner.includes("GamePaused")) {
     return (
       "Partita in pausa: un giocatore è offline o la partita è stata messa in pausa. " +
-      "Attendi la riconnessione oppure torna alla lobby e premi Riprendi Partita."
+      errorsI18n.wait_reconnect
     );
   }
   if (inner.includes("InvalidBid")) {
@@ -134,27 +134,27 @@ export function formatGameActionError(
     );
   }
   if (inner.includes("CardNotAllowed") || inner.includes("MustFollowColor")) {
-    return "Carta non consentita: devi seguire il seme di mano se hai una carta di quel seme.";
+    return errorsI18n.card_not_allowed_suit;
   }
   if (inner.includes("CardNotInHand")) {
-    return "Carta non consentita: la carta non è più nella tua mano (stato già aggiornato?).";
+    return errorsI18n.card_not_in_hand;
   }
   if (inner.includes("NotYourTurn")) {
-    return "Non è il tuo turno: attendi che tocchi a te.";
+    return errorsI18n.not_your_turn;
   }
   if (inner.includes("InvalidAction")) {
-    return "Azione non valida in questa fase della partita.";
+    return errorsI18n.invalid_action;
   }
   if (inner.includes("PlayersOffline")) {
-    return "Impossibile avviare: alcuni giocatori sono offline.";
+    return errorsI18n.start_offline;
   }
   if (inner.includes("NotAuthenticated")) {
-    return "Sessione non riconosciuta: rientra nella lobby dalla home.";
+    return errorsI18n.session_unknown;
   }
   if (code && code !== "SERVER_ERROR") {
     return `Azione rifiutata dal server (${code}). Riprova tra poco.`;
   }
-  return "Azione rifiutata dal server. Riprova tra poco.";
+  return errorsI18n.server_rejected;
 }
 
 export function extractApiErrorCode(error: unknown): string {
@@ -192,6 +192,10 @@ const PHASE_ORDER: Record<GameBoardState["status"], number> = {  WAITING: 0,
  * Designed to be lean, predictable, and fully testable:
  * Given a history of EventMessages and myPlayerId, it constructs the current game state.
  */
+import { t } from "@/ui/i18n/core";
+
+const errorsI18n = t("errors");
+
 export function gameReducer(
   state: GameBoardState,
   eventMessage: EventMessage,
@@ -523,7 +527,7 @@ export function gameReducer(
       } else if (errorTag) {
         errorMsg = `Azione non valida: ${errorTag}`;
       } else {
-        errorMsg = "Azione non valida.";
+        errorMsg = errorsI18n.UNKNOWN_ERROR;
       }
 
       return {
@@ -534,7 +538,7 @@ export function gameReducer(
     }
 
     case "GameAborted": {
-      const reason = String(fields.reason ?? "Game aborted by server");
+      const reason = String(fields.reason ?? errorsI18n.game_aborted_server);
       return {
         ...state,
         status: "ABORTED",

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
@@ -6,6 +6,7 @@ import { animate, motion, useMotionValue, type AnimationPlaybackControls } from 
 import { GameCardView } from "./GameCardView";
 import { cardEquals, cardToString } from "../state/gameReducer";
 import type { Card } from "../types";
+import { t } from "@/ui/i18n/core";
 
 interface PlayerHandProps {
   hand: Card[];
@@ -23,6 +24,7 @@ interface PlayerHandProps {
 type OverlayOrigin = { left: number; top: number };
 
 interface DraggableHandCardProps {
+  hasSelectedCard: boolean;
   card: Card;
   isSelected: boolean;
   isHinted: boolean;
@@ -38,6 +40,7 @@ interface DraggableHandCardProps {
 }
 
 function DraggableHandCard({
+  hasSelectedCard,
   card,
   isSelected,
   isHinted,
@@ -114,7 +117,11 @@ function DraggableHandCard({
     gestureRef.current = null;
     if (!gesture) return;
     if (!gesture.dragging) {
-      onToggleSelect();
+      if (isSelected) {
+        onDropCard?.(card);
+      } else {
+        onToggleSelect();
+      }
       return;
     }
     onDragStateChange?.(false);
@@ -145,10 +152,10 @@ function DraggableHandCard({
         ref={slotRef}
         style={{
           rotate: isSelected ? 0 : rotation,
-          y: isSelected ? -28 : offsetY,
+          y: isSelected ? 10 : offsetY,
           zIndex: isSelected ? 50 : 10,
         }}
-        whileHover={draggable ? { y: -28, rotate: 0, zIndex: 40, scale: 1.08 } : undefined}
+        whileHover={draggable && !hasSelectedCard ? { y: -12, rotate: 0, zIndex: 40, scale: 1.05 } : undefined}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={(event) => finishGesture(event.clientX, event.clientY, false)}
@@ -160,12 +167,16 @@ function DraggableHandCard({
           if (!draggable) return;
           if (event.key === "Enter" || event.key === " ") {
             event.preventDefault();
-            onToggleSelect();
+            if (isSelected) {
+              onDropCard?.(card);
+            } else {
+              onToggleSelect();
+            }
           }
         }}
         role="button"
         tabIndex={draggable ? 0 : -1}
-        aria-label={`${cardToString(card)}${isLegal ? "" : " (non giocabile)"}${isHinted ? " (suggerita dall'AI)" : ""}. Trascina sul tavolo per giocarla.`}
+        aria-label={`${cardToString(card)}${isLegal ? "" : ` ${gameI18n.not_playable}`}${isHinted ? ` ${gameI18n.ai_hinted}` : ""}. ${gameI18n.drag_to_play}`}
         className={`relative shrink-0 transition-all duration-200 origin-bottom ${
           draggable ? "cursor-grab touch-none active:cursor-grabbing" : ""
         } ${overlayOrigin ? "opacity-0" : ""}`}
@@ -186,7 +197,7 @@ function DraggableHandCard({
             className="pointer-events-none fixed z-[100]"
             style={{ left: overlayOrigin.left, top: overlayOrigin.top, x, y }}
           >
-            <div className="rounded-xl ring-2 ring-amber-300 ring-offset-2 ring-offset-transparent shadow-2xl">
+            <div className="rounded-xl ring-2 ring-white ring-offset-2 ring-offset-transparent shadow-2xl">
               <GameCardView card={card} size={size} isClickable={false} />
             </div>
           </motion.div>,
@@ -195,6 +206,8 @@ function DraggableHandCard({
     </>
   );
 }
+
+const gameI18n = t("game");
 
 export function PlayerHand({
   hand,
@@ -232,10 +245,10 @@ export function PlayerHand({
         : "-space-x-8 sm:-space-x-10";
 
     return (
-      <div className={`flex items-end justify-center w-full max-w-full ${spacingClass} min-h-[120px] sm:min-h-[140px] py-2 px-0.5 overflow-visible`}>
+      <div className={`flex items-end justify-center w-full max-w-full ${spacingClass}  py-2 px-0.5 overflow-visible`}>
         {cardsRow.map((card, i) => {
           const index = startIndex + i;
-          const isSelected = cardEquals(card, selectedCard);
+          const isSelected = canPlay && cardEquals(card, selectedCard);
           const isHinted = cardEquals(card, hintedCard);
           const isLegal = isCardPlayable(card);
           const draggable = canPlay && isLegal && !isSubmitting;
@@ -252,6 +265,7 @@ export function PlayerHand({
               isSelected={isSelected}
               isHinted={isHinted}
               isLegal={canPlay ? isLegal : true}
+              hasSelectedCard={selectedCard !== null}
               draggable={draggable}
               rotation={rotation}
               offsetY={offsetY}
@@ -273,7 +287,7 @@ export function PlayerHand({
     return (
       <div className="relative w-full pt-12 pb-4 px-2 overflow-visible">
         <div className="text-center py-4 text-zinc-500 text-xs italic">
-          Mano vuota
+          {gameI18n.empty_hand}
         </div>
       </div>
     );
