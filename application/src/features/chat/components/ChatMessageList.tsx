@@ -32,9 +32,6 @@ export function ChatMessageList({
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
   }, [messages.length, activePrivateId]);
 
-  // "L'idea e' quello di togliere i messaggi di Entrato e abbandonato in lobby per i giocatore corrente."
-  // I bot non devono mai apparire come giocatori che si connettono (joined/online/left/offline).
-  // Gli eventi backend (type === "event") non vanno mai mostrati in chat.
   const filteredMessages = messages.filter(
     (message): message is ChatMessage | SystemMessage => {
       if (message.type === "event") return false;

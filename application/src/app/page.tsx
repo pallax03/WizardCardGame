@@ -15,6 +15,11 @@ import { Input } from "@/ui/components/input";
 import { getErrorMessage } from "@/ui/i18n/errors";
 
 export default function Home() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setMounted(true);
+  }, []);
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [lobbyIdToJoin, setLobbyIdToJoin] = useState("");
@@ -123,10 +128,19 @@ export default function Home() {
   };
 
   const handleJoinLobby = async () => {
+    const targetLobbyId = lobbyIdToJoin.trim().toLowerCase();
+    if (!targetLobbyId) return;
+
+    const alreadySaved = savedEntries.find((e) => e.lobbyId.toLowerCase() === targetLobbyId);
+    if (alreadySaved) {
+      router.push(`/lobby/${alreadySaved.lobbyId}`);
+      return;
+    }
+
     setIsJoining(true);
     setError(null);
 
-    const result = await joinLobbyAction(username, lobbyIdToJoin);
+    const result = await joinLobbyAction(username, targetLobbyId);
 
     if (result?.error) {
       setError(getErrorMessage(result.error));
@@ -185,8 +199,8 @@ export default function Home() {
   };
 
   return (
-    <main className="app-page min-h-[100svh] relative flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
-      <div className="fixed top-4 right-4 z-50">
+    <main className="app-page min-h-svh relative flex flex-col items-center justify-center p-4 bg-zinc-950 overflow-hidden">
+      <div className="fixed top-4 left-4 z-50">
         <Button
           suppressHydrationWarning
           variant="outline"
@@ -211,8 +225,9 @@ export default function Home() {
           alt="Wizard" 
           width={280} 
           height={120} 
-          className="w-full max-w-[280px] drop-shadow-2xl" 
-          priority 
+          className="w-full max-w-70 drop-shadow-2xl" 
+          priority
+          fetchPriority="high"
         />
 
         {/* Unified Card for everything */}
@@ -220,7 +235,7 @@ export default function Home() {
           
           <div className="space-y-1">
             <Input
-              placeholder={homeI18n.card.usernamePlaceholder}
+              placeholder={mounted ? homeI18n.card.usernamePlaceholder : ""}
               value={username}
               onChange={(e) => {
                 setUsername(e.target.value);
@@ -240,7 +255,7 @@ export default function Home() {
               variant={showJoinInput ? "outline" : "secondary"}
               className="h-12 rounded-xl font-bold cursor-pointer transition-colors"
             >
-              {showJoinInput ? <X className="w-5 h-5" /> : homeI18n.buttons.join}
+              {showJoinInput ? <X className="w-5 h-5" /> : (mounted ? homeI18n.buttons.join : "")}
             </Button>
 
             <Button
@@ -250,14 +265,14 @@ export default function Home() {
               variant="default"
               className="h-12 rounded-xl font-bold cursor-pointer transition-colors"
             >
-              {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : homeI18n.buttons.createLobby}
+              {isCreating ? <Loader2 className="w-5 h-5 animate-spin" /> : (mounted ? homeI18n.buttons.createLobby : "")}
             </Button>
           </div>
 
           {showJoinInput && (
             <div className="flex gap-2 animate-in fade-in-50 slide-in-from-top-2">
               <Input
-                placeholder={homeI18n.joinSection.lobbyCodePlaceholder}
+                placeholder={mounted ? homeI18n.joinSection.lobbyCodePlaceholder : ""}
                 value={lobbyIdToJoin}
                 autoFocus
                 onChange={(e) => {
@@ -265,7 +280,7 @@ export default function Home() {
                   if (error) setError(null);
                 }}
                 onKeyDown={handleEnterKey}
-                className="bg-zinc-950 border-zinc-800 text-center text-lg h-12 rounded-xl font-mono uppercase"
+                className="bg-zinc-950 border-zinc-800 text-center text-lg h-12 rounded-xl font-mono"
               />
               <Button
                 type="button"
@@ -280,10 +295,10 @@ export default function Home() {
           )}
           
           {/* Saved Lobbies */}
-          {savedEntries.length > 0 && (
+          {mounted && savedEntries.length > 0 && (
             <div className="pt-4 border-t border-zinc-800 space-y-2">
               <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider px-1">
-                {homeI18n.savedLobbies.title}
+                {mounted ? homeI18n.savedLobbies.title : ""}
               </p>
               {savedEntries.map((entry) => (
                 <div key={entry.lobbyId} className="flex items-center gap-2 p-2 rounded-xl bg-zinc-950/50 border border-zinc-800/50 hover:border-zinc-700 transition-colors">
@@ -292,11 +307,11 @@ export default function Home() {
                     onClick={() => handleRejoinSaved(entry.lobbyId)}
                   >
                     <span className="text-sm font-medium text-zinc-200">
-                      {entry.playerName ?? homeI18n.savedLobbies.unknownPlayer}
+                      {entry.playerName ?? (mounted ? homeI18n.savedLobbies.unknownPlayer : "")}
                     </span>
                     {entry.createdAt ? (
                       <span className="text-[10px] text-zinc-500">
-                        {homeI18n.savedLobbies.createdAt(formatLobbyDate(entry.createdAt))}
+                      {homeI18n.savedLobbies.createdAt(formatLobbyDate(entry.createdAt))}
                       </span>
                     ) : null}
                     <span className="text-[10px] text-zinc-500">
