@@ -189,7 +189,7 @@ export function GameScoreboard({
                   return (
                     <tr key={entry.round} className="hover:bg-zinc-900/40 transition-colors">
                       <td className="py-1.5 px-2 text-left font-bold text-zinc-400">
-                        R{entry.round}
+                        {entry.round}
                       </td>
                       <td className="py-1.5 px-2 text-right font-black text-white">
                         {entry.score}
