@@ -213,7 +213,7 @@ export default function Home() {
           }}
         >
           <Globe className="w-4 h-4" />
-          {typeof document !== 'undefined' && document.cookie.includes('wizard_lang=en') ? 'IT' : 'EN'}
+          {mounted ? (document.cookie.includes('wizard_lang=en') ? 'IT' : 'EN') : 'EN'}
         </Button>
       </div>
 
