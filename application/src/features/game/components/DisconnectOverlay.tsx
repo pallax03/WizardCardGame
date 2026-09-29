@@ -50,13 +50,13 @@ export function DisconnectOverlay({
       role="alertdialog"
       aria-modal="true"
       aria-label={lobbyI18n.disconnectOverlay.title}
-      className="fixed inset-0 z-[100] grid place-items-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
+      className="fixed inset-0 z100 grid place-items-center overflow-y-auto bg-black/70 p-4 backdrop-blur-sm"
     >
     <div className="flex w-full max-w-[92vw] sm:max-w-md flex-col items-center gap-3 rounded-3xl border border-rose-500/60 bg-zinc-950/95 p-4 shadow-2xl sm:p-5">
       <span className="rounded-full border border-rose-500/50 bg-rose-500/15 px-3 py-0.5 text-[11px] font-black tracking-wider text-rose-300 uppercase">
         ⚠ {lobbyI18n.disconnectOverlay.title}
       </span>
-      <p className="w-full text-center text-sm sm:text-base text-zinc-200 font-semibold break-words whitespace-normal">
+      <p className="w-full text-center text-sm sm:text-base text-zinc-200 font-semibold wrap-break-word whitespace-normal">
         {lobbyI18n.disconnectOverlay.description(offlineNames)}
       </p>
       <div className="relative grid size-32 sm:size-40 place-items-center mt-2">

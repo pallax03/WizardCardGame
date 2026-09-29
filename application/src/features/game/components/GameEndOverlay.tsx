@@ -65,7 +65,7 @@ export function GameEndOverlay({
   const winner = sortedScoreboard[0];
 
   return (
-    <div className="fixed inset-0 z-[100] grid place-items-center bg-zinc-950/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto">
+    <div className="fixed inset-0 z-100 grid place-items-center bg-zinc-950/80 backdrop-blur-md p-3 sm:p-6 overflow-y-auto">
       <Confetti
         width={width || 1920}
         height={height || 1080}
@@ -82,7 +82,7 @@ export function GameEndOverlay({
             {lobbyI18n.pausedSummary.titleEnded}
           </div>
 
-          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-white via-zinc-200 to-zinc-400 drop-shadow-sm uppercase">
+          <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-linear-to-br from-white via-zinc-200 to-zinc-400 drop-shadow-sm uppercase">
             {lobbyI18n.pausedSummary.finalScore}
           </h2>
 

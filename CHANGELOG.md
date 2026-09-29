@@ -1,3 +1,12 @@
+## [0.2.3](https://github.com/pallax03/WizardCardGame/compare/v0.2.2...v0.2.3) (2026-09-28)
+
+
+### Bug Fixes
+
+* desktop redesign ([a71f54d](https://github.com/pallax03/WizardCardGame/commit/a71f54d176cbc11fcf0f75cc8ed2bf6e225e447e))
+* fallback strategy on bid ([fbc0e5e](https://github.com/pallax03/WizardCardGame/commit/fbc0e5e65092116ab8b376055e1cf396d2ff44b4))
+* frontend rejoin ([13e6b31](https://github.com/pallax03/WizardCardGame/commit/13e6b31b341dac598888ff6e91daa675a84cbd46))
+
 ## [0.2.2](https://github.com/pallax03/WizardCardGame/compare/v0.2.1...v0.2.2) (2026-09-27)
 
 

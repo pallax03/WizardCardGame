@@ -212,6 +212,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             type="button"
             size="sm"
             variant="ghost"
+            aria-label={lobbyI18n.disconnectOverlay.backToLobby}
             disabled={isPausing}
             onClick={() => void handleBackToLobby()}
             className="text-zinc-400 hover:text-white px-2 h-8"
@@ -254,7 +255,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       </div>
 
       {/* PLAYER MATRIX TABLE */}
-      <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 w-full">
+      <div className="grid grid-cols-3 sm:flex sm:flex-wrap sm:justify-center gap-2 sm:gap-3 w-full">
         {orderedPlayers.map((player) => {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
           const isMe = player.id === playerId;
@@ -276,7 +277,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               type="button"
               key={player.id}
               onClick={() => { setScoreboardPlayer(player.id); setShowScoreboard(true); }}
-              className={`relative flex flex-col rounded-xl border transition-all overflow-hidden text-left cursor-pointer active:scale-95 ${
+              className={`relative w-full sm:flex-1 sm:min-w-35 sm:max-w-45 flex flex-col rounded-xl border transition-all overflow-hidden text-left cursor-pointer active:scale-95 ${
                 isCurrentTurn 
                   ? "bg-sky-500/10 border-sky-500/40 ring-1 ring-sky-500/30 shadow-lg shadow-sky-900/20"
                   : isMe
@@ -362,12 +363,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       {/* PLAY AREA (THE TABLE) */}
       <div 
         ref={tableRef}
-        className={`relative flex-1 min-h-0 w-full max-w-3xl mx-auto mt-8 sm:mt-12 flex items-center justify-center rounded-3xl transition-all duration-300 ${orderedPlayers.length > 3 ? "translate-y-8 sm:translate-y-0" : ""} ${
-          isCardDragging ? "bg-emerald-950/20 border-2 border-dashed border-emerald-500/40 ring-4 ring-emerald-500/10" : "bg-transparent border-2 border-transparent"
-        }`}
+        className={`relative flex-1 min-h-0 w-full max-w-6xl mx-auto mt-2 sm:mt-4 flex flex-col lg:flex-row items-center justify-center lg:justify-start lg:pl-8 lg:gap-8 rounded-3xl transition-all duration-300 ${isCardDragging ? "bg-emerald-950/20 border-2 border-dashed border-emerald-500/40 ring-4 ring-emerald-500/10" : "bg-transparent border-2 border-transparent"}`}
       >
         {isCardDragging && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-[100] backdrop-blur-[1px]">
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-100 backdrop-blur-[1px]">
             <span className="text-2xl sm:text-4xl font-black uppercase tracking-widest text-emerald-500/40 animate-pulse drop-shadow-2xl">
               {gameI18n.drop_card}
             </span>
@@ -380,7 +379,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
         {/* Trump In Table */}
         {!isGameEnded && (
-          <div className="flex flex-col items-center gap-2 z-10 bg-zinc-900/40 p-2 sm:p-3 rounded-xl backdrop-blur-sm border border-zinc-800/50 shadow-lg">
+          <div className="flex flex-col items-center gap-2 z-10 bg-zinc-900/40 p-2 sm:p-3 rounded-xl backdrop-blur-sm border border-zinc-800/50 shadow-lg lg:scale-110 lg:mb-0 lg:shrink-0 lg:ml-4">
             <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">
               {lobbyI18n.pausedSummary.trump}
             </span>
@@ -442,7 +441,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           </div>
         )}
 
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
+        <div className="absolute inset-0 lg:static lg:inset-auto lg:flex-1 lg:w-auto flex items-center justify-center lg:flex-row lg:flex-wrap lg:gap-6 pointer-events-none z-20">
           {orderedPlayers.map((player, index) => {
             const tableSource = revealedTrick ? revealedTrick.entries : gameState.table;
             const played = tableSource.find((entry) => entry.playerId === player.id);
@@ -455,8 +454,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             return (
               <div 
                 key={player.id} 
-                className="absolute flex flex-col items-center animate-in zoom-in-95 duration-200 pointer-events-auto"
-                style={{ transform: `rotate(${angleDeg}deg) translateY(clamp(95px, 26vw, 140px)) rotate(-${angleDeg}deg)` }}
+                className="absolute lg:relative lg:transform-none! flex flex-col items-center animate-in zoom-in-95 duration-200 pointer-events-auto"
+                style={{ transform: `rotate(${angleDeg}deg) translateY(clamp(105px, min(30vw, 28cqmin), 260px)) rotate(-${angleDeg}deg)` }}
               >
                 <div className={`transition-all relative ${isWinning ? 'scale-105 shadow-xl z-10' : 'scale-95 opacity-90'}`}>
                   <GameCardView card={played.card} size="sm" isClickable={false} />
@@ -474,10 +473,14 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         
       </div>
 
-      {/* REVEALED TRICK OVERLAY & BIDDING CHIPS (ABOVE HAND) */}
-      <div className={`w-full flex justify-center relative z-80 transition-all duration-500 ${(!canPlay && !canBid) || !!revealedTrick ? "translate-y-24 sm:translate-y-28" : "translate-y-0"} ${(!canPlay && !canBid) && !revealedTrick ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
-        <div className="w-full flex justify-center flex-col items-center gap-2 pb-2 sm:pb-4">
-        {revealedTrick ? (
+      
+      {/* PLAYER HAND & HINT BUTTON */}
+      <div className={`w-full relative z-20 pb-4 flex justify-center items-end transition-all duration-500 ${(!canPlay && !canBid) || !!revealedTrick ? "translate-y-24 sm:translate-y-32 lg:translate-y-42" : "translate-y-0 opacity-100"}`}>
+
+        {/* REVEALED TRICK OVERLAY & BIDDING CHIPS (ABOVE HAND) */}
+        <div className={`absolute bottom-full left-0 w-full flex justify-center z-80 pb-2 sm:pb-4 transition-all duration-500 ${(!canPlay && !canBid) && !revealedTrick ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+          <div className="w-full flex justify-center flex-col items-center gap-1.5 z-80">
+{revealedTrick ? (
           <div className="w-full flex justify-center animate-in slide-in-from-bottom-4 fade-in duration-300">
             <div className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-700/80 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.6)]">
               <span className="text-xs sm:text-sm font-black tracking-widest text-white uppercase flex items-center gap-1.5 whitespace-nowrap">
@@ -571,11 +574,11 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             </div>
           </div>
         )}
-        </div>
-      </div>
+        
 
-      {/* PLAYER HAND & HINT BUTTON */}
-      <div className={`w-full relative z-20 pb-4 flex justify-center items-end transition-all duration-500 ${(!canPlay && !canBid) || !!revealedTrick ? "translate-y-20 sm:translate-y-20" : "translate-y-0 opacity-100"}`}>
+          </div>
+        </div>
+
         {/* HINT BUTTON BOTTOM LEFT */}
         {canRequestHint && (
           <div className="fixed right-4 sm:right-6 bottom-[calc(1rem+env(safe-area-inset-bottom))] sm:bottom-6 z-50 flex flex-col items-end gap-1">
@@ -628,6 +631,13 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           </div>
         </div>
       )}
+
+      {/* PHONE LANDSCAPE WARNING */}
+      <div className="hidden [@media(max-height:500px)_and_(orientation:landscape)]:flex fixed inset-0 z-9999 bg-zinc-950 flex-col items-center justify-center p-6 text-center">
+        <AlertTriangle className="size-16 text-amber-500 mb-6 animate-pulse" />
+        <h2 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-widest">Ruota il dispositivo</h2>
+        <p className="text-sm text-zinc-400 max-w-xs mx-auto">Giocando da smartphone, utilizza l&apos;orientamento verticale per un&apos;esperienza ottimale.</p>
+      </div>
     </div>
   );
 }
