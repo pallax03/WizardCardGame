@@ -1,9 +1,9 @@
 services:
   redis:
     image: redis:7-alpine
-    container_name: ${PROJECT_NAME}-redis
+    container_name: wizard-card-game-redis
     ports:
-      - "${REDIS_PORT}:6379"
+      - "${REDIS_PORT:-6379}:6379"
     volumes:
       - redis-data:/data
     command: redis-server --save 60 1 --loglevel warning
@@ -13,15 +13,15 @@ services:
     image: ${ENGINE_IMAGE:-wizard-engine:local}
     build:
       context: ./wizardEngine
-    container_name: ${PROJECT_NAME}-wizard-engine
+    container_name: wizard-card-game-wizard-engine
     ports:
-      - "${HTTP_PORT}:${HTTP_PORT}"
-      - "${WS_PORT}:${WS_PORT}"
+      - "${HTTP_PORT:-5001}:${HTTP_PORT:-5001}"
+      - "${WS_PORT:-5002}:${WS_PORT:-5002}"
     environment:
       - ROLE=engine
-      - APP_ENV=${APP_ENV}
-      - HTTP_PORT=${HTTP_PORT}
-      - WS_PORT=${WS_PORT}
+      - APP_ENV=${APP_ENV:-development}
+      - HTTP_PORT=${HTTP_PORT:-5001}
+      - WS_PORT=${WS_PORT:-5002}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
@@ -35,7 +35,7 @@ services:
       context: ./wizardEngine
     environment:
       - ROLE=bot_worker
-      - APP_ENV=${APP_ENV}
+      - APP_ENV=${APP_ENV:-development}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}
@@ -49,21 +49,21 @@ services:
   application:
     build:
       context: ./application
-    container_name: ${PROJECT_NAME}-application
+    container_name: wizard-card-game-application
     profiles: ["frontend"]
     ports:
-      - "${APPLICATION_PORT}:${APPLICATION_PORT}"
+      - "${APPLICATION_PORT:-3000}:${APPLICATION_PORT:-3000}"
     environment:
-      - PORT=${APPLICATION_PORT}
-      - BACKEND_INTERNAL_URL=http://wizard-engine:${HTTP_PORT}
-      - NEXT_PUBLIC_WS_PORT=${WS_PORT}
+      - PORT=${APPLICATION_PORT:-3000}
+      - BACKEND_INTERNAL_URL=http://wizard-engine:${HTTP_PORT:-5001}
+      - NEXT_PUBLIC_WS_PORT=${WS_PORT:-5002}
     depends_on:
       - wizard-engine
     restart: always
 
   caddy:
     image: caddy:2-alpine
-    container_name: ${PROJECT_NAME}-caddy
+    container_name: wizard-card-game-caddy
     restart: always
     ports:
       - "80:80"

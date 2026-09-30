@@ -58,3 +58,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
         run: npx semantic-release
+
+      - name: Open PR to sync develop
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh pr create \
+            --base develop \
+            --head master \
+            --title "chore: sync master to develop" \
+            --body "Automated PR by palla-x to sync release changes back to develop." || echo "PR already exists or no changes to sync."

@@ -1,3 +1,10 @@
+## [0.2.4](https://github.com/pallax03/WizardCardGame/compare/v0.2.3...v0.2.4) (2026-09-29)
+
+
+### Bug Fixes
+
+* frontend change language ([70a2233](https://github.com/pallax03/WizardCardGame/commit/70a22330d3bc6a7d6207165c91f8c1feab69fed5))
+
 ## [0.2.3](https://github.com/pallax03/WizardCardGame/compare/v0.2.2...v0.2.3) (2026-09-28)
 
 
