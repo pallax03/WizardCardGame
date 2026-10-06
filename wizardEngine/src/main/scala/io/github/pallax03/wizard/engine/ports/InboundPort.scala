@@ -8,52 +8,44 @@ import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
 import io.github.pallax03.wizard.engine.model.core.{GameAction, GameActionError}
 
 /**
- * Inbound port for the Wizard game engine.
- * This trait defines the methods that can be called by external components to interact with the game engine.
+ * Primary driving port in the hexagonal architecture for the Wizard game engine.
+ *
+ * Exposes command and query operations invoked by driving adapters (HTTP endpoints,
+ * WebSocket handlers, bot workers, AFK turn timers) to control active game sessions.
  */
 trait InboundPort:
 
   /**
-   * Retrieves the current state of the game.
+   * Retrieves the current game state scoped to the perspective of the requesting player.
    *
-   * @return a Future containing the current GameState for the given player
-   * @throws GameException if the state cannot be retrieved because it's corrupted or inconsistent.
+   * Opponent cards remain hidden within [[PlayerGameState]], ensuring information hiding invariants.
+   *
+   * @return future containing [[PlayerGameState]], or failing with [[io.github.pallax03.wizard.engine.model.core.GameException]] if not found or corrupted.
    */
   def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState]
 
   /**
-   * Starts a new game with the specified players and configuration.
+   * Initializes and starts a new game session with the given participants and configuration.
    *
-   * @param lobbyId the identifier of the lobby
-   * @param players the players participating in the game
-   * @param config the configuration for the game
-   * @return a Future indicating the completion of the game start process
-   * @throws GameException if the initialization logic fails due to an inconsistent state.
+   * Deals round 1 cards, determines initial trump, and broadcasts initial lifecycle events.
    */
   def startGame(lobbyId: LobbyId, players: List[PlayerId], config: GameConfiguration): Future[Unit]
 
-  /**
-   * Resumes a paused game for the specified lobby.
-   *
-   * @param lobbyId the identifier of the lobby
-   * @return a Future indicating the completion of the game resume process
-   */
+  /** Resumes a paused game session, re-enabling turn timers and event dispatch. */
   def resumeGame(lobbyId: LobbyId): Future[Unit]
 
-  /** Deletes the game for the specified lobby. */
+  /** Evicts active game state and checkpoint records for the specified lobby. */
   def deleteGame(lobbyId: LobbyId): Future[Unit]
 
   /**
-   * Submits a game action for processing.
+   * Submits a player move for validation and execution by the game engine.
    *
-   * @param lobbyId the identifier of the lobby
-   * @param action the game action to submit
-   * @return a Future indicating the completion of the action submission, or the domain GameActionError if invalid
+   * @return `Right(())` if the action is applied, or `Left(GameActionError)` if rejected by domain rules.
    */
   def submitAction(lobbyId: LobbyId, action: GameAction): Future[Either[GameActionError, Unit]]
 
   /**
-   * Forces the game engine to play a fallback move on behalf of the player.
-   * Used when a player's turn timer expires, but they haven't reached the strike limit.
+   * Forces the game engine to execute an automated fallback move on behalf of an AFK player
+   * whose turn timer has expired.
    */
   def forceFallbackAction(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]

@@ -7,17 +7,18 @@ import io.vertx.core.http.ServerWebSocket
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
+/**
+ * Outbound delivery port bridging distributed broker events to connected WebSocket clients.
+ *
+ * Manages WebSocket event streaming for connected players, forwarding real-time lobby updates
+ * and private player notifications directly over Vert.x [[ServerWebSocket]] sessions.
+ */
 trait WebSocketsPort:
 
   /**
-   * Connects the WebSocket client to the real-time event stream of a specific lobby.
-   * The adapter relies on the `RedisPubSubPort` to achieve this.
+   * Binds the client's WebSocket connection to the real-time event stream for the specified lobby.
    *
-   * @param lobbyId       the unique identifier of the lobby.
-   * @param playerId      the unique identifier of the player.
-   * @param ws            the WebSocket connection.
-   *
-   * @return a Future completing when the subscription is successfully established.
+   * Pipes both broadcast and player-scoped unicast events from [[PubSubPort]] to the socket.
    */
   def subscribeToLobbyEvents(
       lobbyId: LobbyId,
@@ -25,11 +26,5 @@ trait WebSocketsPort:
       ws: ServerWebSocket
   ): Future[Unit]
 
-  /**
-   * Close socket.
-   *
-   * @param lobbyId       the unique identifier of the lobby.
-   * @param playerId      the unique identifier of the player.
-   * @return a Future completing when the socket is successfully closed.
-   */
+  /** Terminates the active WebSocket connection for a player and cancels associated subscriptions. */
   def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]

@@ -15,19 +15,23 @@ import io.github.pallax03.wizard.engine.model.core.{
   RecoveredGameException
 }
 
+/** Failure modes encountered during AI decision inference. */
 enum AIError:
+  /** The requested action cannot be evaluated because the game is in an unexpected phase. */
   case InvalidPhase(actualGameState: PlayerGameState)
+
+  /** Target lobby or player was not found in the game engine. */
   case GameException(entityNotFound: EntityNotFound)
+
+  /** The AI reasoning engine could not produce a valid move recommendation. */
   case NoHintFound
 
 /**
- * Defines the interface for an AI component capable of making decisions within the Wizard game.
+ * Service port for AI decision-making and bot strategy evaluation.
  *
- * Implementations of this port are responsible for querying game logic
- * to provide valid actions based on the current [[GameState]].
- *
- * Each method is asynchronous, returning a [[Future]] to ensure the game engine
- * remains responsive while the AI computes its strategy.
+ * Employs a template pattern: queries [[PlayerGameState]] through [[InboundPort]], verifies
+ * that the game is in the appropriate phase, and delegates strategic inference to concrete
+ * engine implementations (such as the Prolog rule engine).
  */
 trait AIPort(inboundPort: InboundPort):
 
@@ -58,11 +62,9 @@ trait AIPort(inboundPort: InboundPort):
   protected def bestCardLogic(playerId: PlayerId): PartialFunction[PlayerGameState, Option[Card]]
 
   /**
-   * Selects the best trump color to resolve a Wizard card.
+   * Evaluates the optimal trump color when a Wizard card is revealed as the trump at round start.
    *
-   * @param lobbyId the ID of the lobby.
-   * @param playerId the ID of the dealer who needs to resolve the trump.
-   * @return A [[Future]] containing the chosen [[Card.Color]].
+   * @param playerId dealer responsible for selecting the trump color.
    */
   final def resolvedTrumpColor(
       lobbyId: LobbyId,
@@ -70,22 +72,10 @@ trait AIPort(inboundPort: InboundPort):
   ): Future[Either[AIError, Option[Card.Color]]] =
     onRunningPhase(lobbyId)(playerId)(resolveTrumpColorLogic(playerId))
 
-  /**
-   * Determines the bid for the current round.
-   *
-   * @param lobbyId the ID of the lobby.
-   * @param playerId the ID of the player placing the bid.
-   * @return A [[Future]] containing the suggested [[Bid]].
-   */
+  /** Evaluates the optimal bid for the current round given the player's dealt hand and trump suit. */
   final def placeBid(lobbyId: LobbyId, playerId: PlayerId): Future[Either[AIError, Option[Bid]]] =
     onRunningPhase(lobbyId)(playerId)(placeBidLogic(playerId))
 
-  /**
-   * Selects the optimal card to play from the player's hand given the current table state.
-   *
-   * @param lobbyId the ID of the lobby.
-   * @param playerId the ID of the player whose turn it is.
-   * @return A [[Future]] containing the selected [[Card]].
-   */
+  /** Selects the optimal legal card to play given current table plays, trick history, and trump suit. */
   final def bestCard(lobbyId: LobbyId, playerId: PlayerId): Future[Either[AIError, Option[Card]]] =
     onRunningPhase(lobbyId)(playerId)(bestCardLogic(playerId))
