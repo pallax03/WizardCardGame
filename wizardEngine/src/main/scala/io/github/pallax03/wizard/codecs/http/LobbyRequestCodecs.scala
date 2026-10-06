@@ -15,14 +15,10 @@ import sttp.tapir.Schema
 import sttp.tapir.generic.auto.*
 
 /**
- * Circe codecs and Tapir schemas for the lobby-specific HTTP request/response types.
- *
- * [[JoinLobbyRequest]], [[LobbyStateResponse]] and [[GameStartedResponse]] are
- * defined in the web layer but their serialization contract belongs here,
- * mirroring the engine codec structure.
- *
- * Depends on [[LobbyCodecs]] and [[PlayerIdCodecs]] for the engine sub-types
- * (Player, LobbyId, BotsDifficulty, PlayerId) they reference.
+ * Circe codecs and Tapir schemas for lobby-specific HTTP request and response DTOs:
+ *  - [[JoinLobbyRequest]]: player matchmaking payload.
+ *  - [[PublicPlayerInfo]]: sanitized player representation for waiting rooms.
+ *  - [[LobbyStateResponse]]: full public lobby overview.
  */
 object LobbyRequestCodecs:
   given Encoder[JoinLobbyRequest] = deriveEncoder

@@ -6,6 +6,9 @@ import io.github.pallax03.wizard.engine.model.basic.*
 
 import sttp.tapir.Schema
 
+/**
+ * Circe codecs and Tapir schemas for individual player hands and the round hands collection.
+ */
 object HandsCodecs:
   import CardCodecs.given
   import PlayerIdCodecs.given

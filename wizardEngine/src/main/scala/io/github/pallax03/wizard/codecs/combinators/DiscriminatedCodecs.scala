@@ -2,6 +2,12 @@ package io.github.pallax03.wizard.codecs.combinators
 
 import io.circe.*
 
+/**
+ * Combinators for tagged JSON serialization and deserialization of sealed hierarchies.
+ *
+ * Provides helper functions to inject a discriminator field into encoded JSON objects
+ * and selectively dispatch decoders based on discriminator field values.
+ */
 object DiscriminatedCodecs:
 
   extension (json: Json)

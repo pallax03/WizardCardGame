@@ -11,6 +11,12 @@ import io.github.pallax03.wizard.engine.lobby.*
 import sttp.tapir.Schema
 import sttp.tapir.generic.auto.*
 
+/**
+ * Circe codecs and Tapir schemas for the Lobby domain model.
+ *
+ * Provides serialization for lobby identifiers, status enums, player records, game configurations,
+ * lobby snapshots, and client error responses ([[io.github.pallax03.wizard.engine.lobby.LobbyError]]).
+ */
 object LobbyCodecs:
 
   given Encoder[LobbyId] = Encoder.encodeString.contramap(_.toString)
