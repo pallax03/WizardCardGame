@@ -5,9 +5,16 @@ import scala.util.Random
 import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 
+/**
+ * Provides automated legal fallback actions when a player disconnects, times out (AFK),
+ * or when a basic default move is needed.
+ *
+ * Guarantees that the generated [[io.github.pallax03.wizard.engine.model.core.GameAction]]
+ * strictly adheres to the game rules for the pending [[InvitationEvent]].
+ */
 object FallbackStrategy:
 
-  /** Returns a valid fallback [[GameAction]] (the simplest legal move) for the given invitation event. */
+  /** Generates a legal fallback [[GameAction]] for the given invitation event. */
   def fallbackMove(invitationEvent: InvitationEvent): GameAction = invitationEvent match
     case InvitationEvent.WaitingForTrump(playerId, colorOptions) =>
       GameAction.ResolveTrumpColor(playerId, colorOptions(Random.nextInt(colorOptions.length)))

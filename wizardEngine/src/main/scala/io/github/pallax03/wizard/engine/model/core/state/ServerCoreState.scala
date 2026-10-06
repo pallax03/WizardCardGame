@@ -5,6 +5,9 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Hands
 import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Trump}
 import io.github.pallax03.wizard.engine.model.rules.RoundManager.firstPlayer
 
+/**
+ * Authoritative server-side core state holding complete match context, including all players' private hands.
+ */
 final case class ServerCoreState(
     playersIds: List[PlayerId],
     hands: Hands,

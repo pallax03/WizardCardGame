@@ -5,6 +5,7 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 import org.slf4j.{LoggerFactory, MDC}
 
+/** Context carrier holding distributed tracing identifiers (`lobbyId`, `playerId`) for logging. */
 case class LogContext(lobbyId: Option[String] = None, playerId: Option[String] = None)
 
 object LogContext:
@@ -12,6 +13,12 @@ object LogContext:
   def apply(lobbyId: LobbyId, playerId: PlayerId): LogContext =
     new LogContext(Some(lobbyId.toString), Some(playerId.toString))
 
+/**
+ * Structured logging utility with automated Mapped Diagnostic Context (MDC) enrichment.
+ *
+ * Injects `lobbyId` and `playerId` into MDC for log correlation and guarantees thread-local
+ * cleanup in `finally` blocks to prevent context leakage across Vert.x event loop threads.
+ */
 object WizardLogger:
   private val logger = LoggerFactory.getLogger("WizardApp")
 

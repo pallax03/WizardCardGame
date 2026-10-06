@@ -5,7 +5,19 @@ import io.github.pallax03.wizard.engine.model.basic.gameplay.*
 import io.github.pallax03.wizard.engine.model.core.CardNotAllowedReasons.*
 import io.github.pallax03.wizard.engine.model.core.GameActionError
 
-/** Defines the rules for card validation and trick evaluation. */
+/**
+ * Defines the core rules for card play validity and trick evaluation in Wizard.
+ *
+ * Rule highlights:
+ *   - **Following Suit**: Players must play a card matching the [[Table.followingColor]] if they hold one in hand.
+ *   - **Special Cards Exemption**: A [[SpecialCard]] ([[Card.Wizard]] or [[Card.Jester]]) can always be played legally,
+ *     regardless of the lead suit and regardless of what cards the player holds in hand.
+ *   - **Trick Resolution**:
+ *     1. The first [[Card.Wizard]] played wins the trick.
+ *     2. Otherwise, the highest [[Card.Standard]] of the trump suit wins.
+ *     3. Otherwise, the highest [[Card.Standard]] of the lead suit wins.
+ *     4. Otherwise (e.g. If only Jesters were played), the first card played wins.
+ */
 object TableRules:
 
   extension (h: Hand)
@@ -13,21 +25,16 @@ object TableRules:
       case Card.Standard(c, _) => c == color
       case _                   => false
 
-    /** Determines which cards are legally playable based on the current table state. */
+    /** Returns all cards in hand that are legally playable given the current table state. */
     def legalCards(table: Table): List[Card] = h.toList.filter:
       case _: SpecialCard      => true
       case Card.Standard(c, _) => table.followingColor.fold(true)(fc => c == fc || !h.hasColor(fc))
 
   extension (cardPlayed: Card)
     /**
-     * Validates if a card can be played according to the current game rules.
+     * Validates whether a card can be legally played from hand onto the table.
      *
-     * @param table the current state of the table to check the following color.
-     * @param hand the hand of the player attempting the move.
-     * @return Right if the move is valid, else: Left([[GameActionError]]) if the move violates game rules:
-     *         - [[CardNotInHand]]: if the card is not present in the player's hand.
-     *         - [[MustFollowColor]]: if a color must be followed but a different
-     *           standard card is played.
+     * Fails with [[GameActionError.CardNotAllowed]] if the card is not in hand or violates the following color.
      */
     def validateAgainst(table: Table, hand: Hand): Either[GameActionError, Unit] =
       if !hand.contains(cardPlayed) then
@@ -48,13 +55,16 @@ object TableRules:
 
   extension (table: Table)
     /**
-     * Evaluates the winner of the trick based on the trump card.
+     * Evaluates the winning card of the current trick based on the active trump.
      *
-     * Trick logic:
-     * 1. The first Wizard played wins the trick.
-     * 2. Otherwise, the highest Trump card wins.
-     * 3. Otherwise, the highest card of the following color wins.
-     * 4. Otherwise, the first card played wins (Jesters only).
+     * Trick resolution order:
+     *   1. The first [[Card.Wizard]] played wins the trick.
+     *   2. Otherwise, the highest [[Card.Standard]] of the trump suit wins.
+     *   3. Otherwise, the highest [[Card.Standard]] of the lead/following suit wins.
+     *   4. Otherwise (e.g. only Jesters were played), the first card played wins.
+     *
+     * @param trump the active [[Trump]] state of the round.
+     * @return `Some(winningCard)` representing the winning card, or `None` if the table is empty.
      */
     def evaluateTrick(trump: Trump): Option[Card] =
       val cards = table.playedCards

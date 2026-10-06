@@ -11,6 +11,14 @@ import io.github.pallax03.wizard.engine.model.basic.gameplay.*
 import io.github.pallax03.wizard.engine.model.core.state.*
 import io.github.pallax03.wizard.engine.model.rules.TableRules.*
 
+/**
+ * Circe codecs and Tapir schemas for [[GameState]] state-machine representations.
+ *
+ * Supports serialization for:
+ *  - [[ServerGameState]]: complete snapshot persisted to Redis for distributed crash recovery.
+ *  - [[PlayerGameState]]: sanitized, player-specific projection delivered via REST and WebSockets.
+ *    In the trick playing phase, dynamically computes and injects `currentWinner` into the JSON payload.
+ */
 object GameStateCodecs:
   import basic.BiddingCodecs.given
   import basic.PlayerIdCodecs.given

@@ -11,17 +11,11 @@ import io.github.pallax03.wizard.util.PrologEngine
 import alice.tuprolog.{Term, Theory}
 
 /**
- * An adapter engine that delegates AI decision-making to a Prolog-based knowledge base.
+ * Low-level Prolog integration engine delegating bot reasoning to a 2P-Kt knowledge base.
  *
- * Every api is built to give always a correct and a valid value,
- * but prolog theory can be overwritten, so Option act as a fallback.
- *
- * Fallback need to be handled.
- *
- * This component acts as a bridge:
- * 1. Serializes Scala domain models into Prolog terms using [[WizardTermMapper]].
- * 2. Executes queries against the loaded `prolog/all.pl` theory.
- * 3. Deserializes the resulting Prolog terms back into Scala types (e.g., [[Bid]], [[Card]]).
+ * Loads modular Prolog theories (`domain.pl`, `rules.pl`, `strategy.pl`, `api.pl`)
+ * and executes declarative queries, mapping solutions back into typed domain models.
+ * Returns `Option` to enable robust fallback handling when Prolog queries fail.
  */
 class WizardPrologEngine:
   private val prologEngine = PrologEngine.buildEngine(defineTheory)
@@ -36,38 +30,21 @@ class WizardPrologEngine:
       "prolog/api.pl"
     ).map(f => Using.resource(scala.io.Source.fromResource(f))(_.mkString)).mkString("\n")
 
-  /**
-   * Uses Prolog logic to determine the best trump color to choose.
-   *
-   * @param hand The player's current hand.
-   *
-   * @return The chosen [[Card.Color]] if the Prolog engine succeeds.
-   */
+  /** Queries Prolog goal `choose_trump/2` to select the color maximizing hand potential. */
   def chooseTrumpColor(hand: Hand): Option[Card.Color] =
     query(s"choose_trump(${cardsTerm(hand.toList)}, TrumpColor)", "TrumpColor").flatMap(term =>
       Card.Color.values.find(colorTerm(_) == term.toString)
     )
 
-  /**
-   * Queries Prolog to determine the initial bid based on hand strength and trump.
-   *
-   * @param hand    The player's current hand.
-   * @param trump   The current Trump of the round.
-   *
-   * @return A [[Bid]] instance representing the suggested bid.
-   */
+  /** Queries Prolog goal `place_bid/3` to estimate trick potential from hand strength and trump. */
   def placeBid(hand: Hand, trump: Trump): Option[Bid] =
     query(s"place_bid(${cardsTerm(hand.toList)}, ${trumpColorTerm(trump)}, Bid)", "Bid").map(term =>
       term.toString.toInt
     )
 
   /**
-   * Queries Prolog to adjust a previously rejected bid.
-   *
-   * @param hand           The player's current hand.
-   * @param rejectedBid    player's rejectedBid (if is not a real rejected won the new Bid can be not right).
-   *
-   * @return A suggested [[Bid]] that conforms to game constraints.
+   * Queries Prolog goal `adjust_bid/3` to compute a strategic alternative when a bid
+   * violates dealer Hook Rule constraints.
    */
   def adjustBid(hand: Hand, rejectedBid: Bid): Option[Bid] =
     query(s"adjust_bid(${cardsTerm(hand.toList)}, $rejectedBid, FinalBid)", "FinalBid").map(term =>
@@ -75,15 +52,9 @@ class WizardPrologEngine:
     )
 
   /**
-   * Evaluates the best playable card from the hand according to Prolog's strategy rules.
+   * Queries Prolog goal `best_playable_card/7` to evaluate the optimal legal card.
    *
-   * @param hand           The player's current hand.
-   * @param winningCard    The current strongest card on the table, if any.
-   * @param followingColor The color currently required by the trick, if any.
-   * @param trump          The current trump for the round.
-   * @param playerBid      The player's bid.
-   * @param playerTrick    The number of tricks already won by the player.
-   * @return The best card to play.
+   * Analyzes trick deficit vs target bid to decide between winning or dodging the trick.
    */
   def bestPlayableCard(
       hand: Hand,

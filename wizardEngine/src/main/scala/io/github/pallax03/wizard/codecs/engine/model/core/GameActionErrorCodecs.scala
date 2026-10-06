@@ -11,6 +11,10 @@ import io.github.pallax03.wizard.engine.model.events.{InvitationEvent, WizardEve
 
 import sttp.tapir.Schema
 
+/**
+ * Circe codecs and Tapir schemas for domain rule rejections ([[GameActionError]])
+ * and legality violations ([[CardNotAllowedReasons]]).
+ */
 object GameActionErrorCodecs:
   import basic.CardCodecs.given
   import basic.PlayerIdCodecs.given

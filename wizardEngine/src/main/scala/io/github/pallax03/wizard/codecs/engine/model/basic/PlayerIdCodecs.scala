@@ -6,6 +6,9 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 import sttp.tapir.Schema
 
+/**
+ * Circe codecs, map key codecs, and Tapir schema for [[PlayerId]] numeric identifiers.
+ */
 object PlayerIdCodecs:
 
   given Encoder[PlayerId] = Encoder.encodeInt.contramap(_.toInt)

@@ -11,7 +11,24 @@ import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
 
 import sttp.tapir.server.ServerEndpoint
 
-/** HTTP routes for the Lobby domain. */
+/**
+ * Tapir HTTP server routes orchestrating the lobby lifecycle, player matchmaking, and game session state.
+ *
+ * Coordinates REST interactions between distributed lobby storage ([[LobbyStatePort]]) and active game
+ * engine execution ([[InboundPort]]). Enforces the following operational invariants:
+ *  - Player onboarding: human participants receive a unique secret token for authentication; automated bot
+ *    participants omit secrets.
+ *  - Lifecycle state machine: validates state transitions between [[LobbyStatus.WAITING]],
+ *    [[LobbyStatus.IN_GAME]], [[LobbyStatus.PAUSED]], and [[LobbyStatus.FINISHED]].
+ *  - Lifecycle orchestration: starts or resumes games via [[InboundPort]], broadcasting system events
+ *    to connected clients.
+ *  - Automatic cleanup: deletes the lobby from distributed storage when all human players disconnect or leave
+ *    during the waiting phase.
+ *  - State reconciliation: gracefully recovers desynchronized lobbies by reverting status to `WAITING` if the
+ *    engine cannot locate the running game instance.
+ *
+ * Exposes all compiled routes through [[all]] for registration into [[HttpServerVerticle]].
+ */
 class LobbyRoutes(
     lobbyStatePort: LobbyStatePort,
     gameEngine: InboundPort

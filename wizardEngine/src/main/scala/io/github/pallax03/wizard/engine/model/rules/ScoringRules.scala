@@ -4,21 +4,28 @@ import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bids, Tricks}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
 
-/** Rules and calculations governing the scoring phase at the end of a round. */
+/**
+ * Rules and calculations governing the scoring phase at the end of each round.
+ *
+ * Official Wizard scoring formulas:
+ *   - **Correct Bid** (`bid == tricksWon`): The player is awarded 20 base points plus 10 points
+ *     for each trick won:
+ *     {{{
+ *       points = 20 + (10 * tricksWon)
+ *     }}}
+ *   - **Incorrect Bid** (`bid != tricksWon`): The player loses 10 points for each trick above or below
+ *     their prediction:
+ *     {{{
+ *       points = -10 * |bid - tricksWon|
+ *     }}}
+ *
+ * Each round's score is added to the player's cumulative total on the [[Scoreboard]].
+ */
 object ScoringRules:
   private final val BASE_WIN_POINTS = 20
   private final val POINTS_PER_TRICK = 10
 
-  /**
-   * Calculates the cumulative scores for all players at the end of a round and updates the scoreboard.
-   *
-   * @param playersIds the list of players ids.
-   * @param bids       the bids placed for this round.
-   * @param tricks     the tricks won by each player in this round.
-   * @param round      the current game round.
-   * @param scoreboard the current scoreboard before adding this round's points.
-   * @return the updated [[Scoreboard]] containing the new cumulative scores.
-   */
+  /** Computes cumulative scores for all players at round end and updates the scoreboard. */
   def compute(
       playersIds: List[PlayerId],
       bids: Bids,

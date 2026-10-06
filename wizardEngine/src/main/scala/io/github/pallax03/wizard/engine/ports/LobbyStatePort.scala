@@ -7,70 +7,44 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 
 /**
- * Internal port to manage the persistent state of a Lobby before the game starts.
+ * Distributed persistence port managing lobby room states across the cluster.
  *
- * This port is designed to interact with a Key-Value store (e.g., Redis Key-Value).
- * It acts as the single source of truth for the lobby composition across the distributed system.
- *
- * Flow for HTTP API (Verticle):
- * 1. An HTTP request arrives to create a lobby or join an existing one.
- * 2. The HTTP Verticle uses this port (`saveLobby`) to store or update the lobby state.
- *
- * Flow for WebSockets (Verticle):
- * 1. A client attempts to open a WebSocket connection for a specific lobbyId and playerId.
- * 2. The WebSocket Verticle uses this port (`getLobby`) to fetch the current state.
- * 3. It validates if the playerId is actually part of the lobby.
- * 4. If valid, the connection is accepted; otherwise, it is rejected.
+ * Serves as the single source of truth in the distributed key-value store (e.g., Redis)
+ * for pre-game player registration, authentication tokens, and connectivity tracking.
  */
 trait LobbyStatePort:
 
-  /**
-   * Retrieves the current state of the lobby.
-   *
-   * @param lobbyId the UUID of the lobby.
-   * @return a Future containing the Lobby object if found, or LobbyError.LobbyNotFound.
-   */
+  /** Retrieves the current state of the lobby from the distributed store. */
   def getLobby(lobbyId: LobbyId): Future[Either[LobbyError, Lobby]]
 
-  /**
-   * Retrieves the lobby and authenticates the player using the provided secret.
-   *
-   * @param lobbyId the UUID of the lobby.
-   * @param secret the secret of the player.
-   * @return a Future containing the Player and Lobby if successful, or a LobbyError.
-   */
+  /** Retrieves the lobby state and verifies the player's private session secret. */
   def getAuthLobby(lobbyId: LobbyId, secret: String): Future[Either[LobbyError, (Player, Lobby)]]
 
   /**
-   * Atomically updates an existing lobby state using CAS.
+   * Atomically mutates lobby state using optimistic concurrency control or Lua scripting.
    *
-   * @param lobbyId the UUID of the lobby.
-   * @param f function to apply the update. It receives the current lobby.
-   *          It must return an Either containing a LobbyError, or a tuple:
-   *          (Return value of type A, The updated Lobby, An optional SystemEvent to publish).
+   * @param lobbyId target lobby identifier.
+   * @param f transformation function returning `(result, newLobby, optionalSystemEvent)`.
+   *          If successful, `newLobby` is persisted and the optional [[SystemEvent]] is broadcast.
    */
   def updateLobby[A](lobbyId: LobbyId)(
       f: Lobby => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]]
 
-  /** Updates an existing lobby state atomically, after authenticating the player. */
+  /** Authenticates the player via session secret prior to executing an atomic lobby mutation. */
   def updateAuthLobby[A](lobbyId: LobbyId, secret: String)(
       f: (Player, Lobby) => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]] =
     updateLobby(lobbyId): lobby =>
       lobby.authenticate(secret).flatMap(player => f(player, lobby))
 
-  /** Deletes the specified lobby. */
+  /** Evicts the specified lobby room from the distributed store. */
   def deleteLobby(lobbyId: LobbyId): Future[Either[LobbyError, Unit]]
 
   /**
-   * Atomically adds a player to the lobby, returning the assigned Player if successful.
-   * Fails (returns None) if the lobby is full (max 6 players).
+   * Atomically adds a participant to the lobby, initializing the room if it does not exist.
    *
-   * @param lobbyId the UUID of the lobby if retrieve fail automatically create a new lobby.
-   * @param name the player's name
-   * @param difficulty the bot difficulty, if any
-   * @return a Future containing the assigned Player, or None if the lobby is full.
+   * Rejects with [[LobbyError.Full]] if the room has reached [[GameConfiguration.MAX_PLAYERS]] (6).
    */
   def addPlayer(
       lobbyId: LobbyId,
@@ -80,12 +54,9 @@ trait LobbyStatePort:
   ): Future[Either[LobbyError, Player]]
 
   /**
-   * Updates the online status of a specific player in the lobby.
+   * Updates player connection status and recalculates the dynamic [[LobbyStatus]].
    *
-   * @param lobbyId the UUID of the lobby.
-   * @param playerId the ID of the player.
-   * @param isOnline the new online status.
-   * @return a Future containing the new LobbyStatus if updated, or a failed Future.
+   * @return future containing the newly evaluated [[LobbyStatus]], or `None` if the player/lobby was not found.
    */
   def setPlayerOnlineStatus(
       lobbyId: LobbyId,
@@ -93,20 +64,8 @@ trait LobbyStatePort:
       isOnline: Boolean
   ): Future[Option[LobbyStatus]]
 
-  /**
-   * Clears the AFK strikes for a specific player.
-   *
-   * @param lobbyId the UUID of the lobby.
-   * @param playerId the ID of the player.
-   * @return a Future indicating success.
-   */
+  /** Resets AFK timeout strikes to zero for a player upon activity. */
   def clearPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Unit]
 
-  /**
-   * Increments the AFK strikes for a specific player and returns the new strikes count.
-   *
-   * @param lobbyId the UUID of the lobby.
-   * @param playerId the ID of the player.
-   * @return a Future containing the new strikes count.
-   */
+  /** Increments the AFK timeout strike counter for a player, returning the new count. */
   def incrementPlayerStrikes(lobbyId: LobbyId, playerId: PlayerId): Future[Int]
