@@ -19,16 +19,25 @@ import io.github.pallax03.wizard.engine.ports.*
 import sttp.tapir.swagger.bundle.SwaggerInterpreter
 
 /**
- * Application entry point.
+ * Application entry point and hexagonal runtime assembler.
  *
- * The process role is controlled by the `ROLE` environment variable:
+ * Configures the Vert.x runtime and connects Redis-backed adapter implementations to domain ports.
+ * The deployment profile is selected at startup via the `ROLE` environment variable:
+ *  - `engine` (default): full game node hosting [[TurnTimerVerticle]] (keyspace-based turn timers),
+ *    [[HttpServerVerticle]] (Tapir REST routes + Swagger UI in development), and [[WebSocketsVerticle]]
+ *    (realtime client event streaming).
+ *  - `bot_worker`: dedicated AI worker node hosting [[BotManagerVerticle]], which consumes turn execution
+ *    tasks from Redis Streams without opening public HTTP/WebSocket listeners.
  *
- *  - `engine`     (default) → deploys HTTP, WebSocket, TurnTimer and Logger verticles.
- *  - `bot_worker`           → deploys only the BotManagerVerticle.
- *                             Useful to run bot workers as independent Docker replicas
- *                             or locally from a terminal while the engine runs in IntelliJ.
- *
- * Both roles share the same JAR; Docker simply passes a different `ROLE` env var.
+ * Configured via environment variables:
+ *  - `ROLE`: process profile (`engine` or `bot_worker`, defaults to `engine`).
+ *  - `HTTP_PORT`: REST API server port (default: 5001).
+ *  - `WS_PORT`: WebSocket server port (default: 5002).
+ *  - `REDIS_HOST`: Redis instance hostname (default: `localhost`).
+ *  - `REDIS_PORT`: Redis instance port (default: 6379).
+ *  - `REDIS_PASSWORD`: optional Redis authentication credential.
+ *  - `REDIS_POOL_SIZE`: Redis client connection pool capacity (default: 6).
+ *  - `APP_ENV`: environment mode (`development` exposes Swagger documentation, `production` disables it).
  */
 object Main:
   private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "5001").toInt

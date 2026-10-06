@@ -12,6 +12,17 @@ import io.github.pallax03.wizard.engine.ports.{AIError, AIPort, LobbyStatePort}
 
 import sttp.tapir.server.ServerEndpoint
 
+/**
+ * Tapir HTTP server routes connecting AI advisor endpoints ([[AIEndpoints]]) to the underlying [[AIPort]].
+ *
+ * Implements authentication validation against [[LobbyStatePort]] prior to querying the Prolog rule engine
+ * for optimal game moves. Translates internal [[AIError]] states into client-facing [[LobbyError]] responses:
+ *  - Missing games or missing player states are mapped to [[LobbyError.NotFound]].
+ *  - Uncomputable moves or solver failures are mapped to [[LobbyError.IAHintError]].
+ *  - Empty hint results are rejected with [[AIError.NoHintFound]].
+ *
+ * Exposes all endpoints via [[all]] for registration into [[HttpServerVerticle]].
+ */
 class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: ExecutionContext):
 
   private def handleHint[A](

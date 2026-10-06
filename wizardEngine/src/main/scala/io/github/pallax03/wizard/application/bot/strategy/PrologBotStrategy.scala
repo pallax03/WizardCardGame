@@ -9,6 +9,12 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.ports.AIPort
 
+/**
+ * Advanced bot strategy that delegates game move inference to the [[io.github.pallax03.wizard.engine.ports.AIPort]].
+ *
+ * Unwraps AI recommendation results: if the AI engine produces no hint or returns an error,
+ * fails the future to trigger automated recovery via [[FallbackStrategy]].
+ */
 class PrologBotStrategy(port: AIPort) extends BotStrategy:
 
   private def unwrap[T](f: Future[Either[?, Option[T]]]): Future[T] =

@@ -6,39 +6,35 @@ import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.util.ChannelsKeys
 
+/** Handle representing an active topic subscription that can be canceled. */
 trait Subscription:
-  /** Cancels this specific subscription. */
   def cancel(): Future[Unit]
 
+/**
+ * Distributed messaging port providing publish/subscribe capabilities across cluster nodes.
+ *
+ * Implemented via message brokers (such as Redis Pub/Sub) to route game events to
+ * interested WebSocket sessions, regardless of which node hosts the client connection.
+ */
 trait PubSubPort:
 
-  /**
-   * Publishes a message to a specific channel.
-   *
-   * @param channel     the channel name (e.g., "channel:lobby:UUID").
-   * @param jsonMessage the serialized event or state to broadcast.
-   * @return a Future completing when the message is successfully published.
-   */
+  /** Publishes a serialized JSON payload to the specified broker channel. */
   def publish(channel: String, jsonMessage: String): Future[Unit]
 
-  /**
-   * Subscribes to a specific channel to receive real-time messages.
-   *
-   * @param channel   the channel name to listen to.
-   * @param onMessage the callback invoked whenever a new message is received.
-   * @return a Future completing with a Subscription to cancel it later.
-   */
+  /** Subscribes an event callback to a broker channel, returning a cancellable [[Subscription]]. */
   def subscribe(channel: String, onMessage: String => Unit): Future[Subscription]
 
   /**
-   * Subscribes a player to both the global lobby channel and their specific player channel.
-   * Returns a single Subscription that, when closed, unsubscribes from both channels.
+   * Establishes a composite subscription covering both lobby broadcast events
+   * and private unicast player events.
+   *
+   * Canceling the returned [[Subscription]] unsubscribes from both channels simultaneously.
    */
   def subscribePlayer(
       lobbyId: LobbyId,
       playerId: PlayerId,
       onMessage: String => Unit
-  )(using scala.concurrent.ExecutionContext): Future[Subscription] =
+  )(using ExecutionContext): Future[Subscription] =
     for
       lobbySub <- subscribe(ChannelsKeys.pubSubLobbyChannel(lobbyId), onMessage)
       playerSub <- subscribe(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, playerId), onMessage)

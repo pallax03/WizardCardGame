@@ -13,8 +13,6 @@ opaque type Hand = List[Card]
 object Hand:
   def empty: Hand = List.empty
   def apply(cards: List[Card]): Hand = cards
-
-  /** Removes a specific card from the hand, if present. */
   def without(hand: Hand, card: Card): Hand = hand.filterNot(_ == card)
 
   extension (h: Hand)
@@ -24,7 +22,8 @@ object Hand:
 
 /**
  * Represents the state of all players' hands in the game.
- * Maps each PlayerId to their respective Hand.
+ *
+ * Maps each [[PlayerId]] to their respective [[Hand]]. Implemented as an opaque type over `Map[PlayerId, Hand]`.
  */
 opaque type Hands = Map[PlayerId, Hand]
 
@@ -34,11 +33,9 @@ object Hands:
 
   extension (hands: Hands)
     /**
-     * Retrieves the Hand of a specific player.
+     * Retrieves the [[Hand]] of a specific player.
      *
-     * @param player The ID of the player.
-     * @return The player's Hand.
-     * @throws GameException if the player is not found, indicating a corrupted system state.
+     * @throws GameException.CorruptedHand if the player is not found in the hands map.
      */
     def getHand(player: PlayerId): Hand =
       hands.getOrElse(player, throw GameException.CorruptedHand(player))
@@ -46,10 +43,7 @@ object Hands:
     /**
      * Removes a specific card from a player's hand.
      *
-     * @param player The ID of the player.
-     * @param card The card to remove.
-     * @return A new Hands instance with the card removed.
-     * @throws GameException if the player is not found, indicating a corrupted system state.
+     * @throws GameException.CorruptedHand if the player is not found in the hands map.
      */
     def remove(player: PlayerId, card: Card): Hands =
       val hand = hands.getHand(player)

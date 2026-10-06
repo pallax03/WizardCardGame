@@ -26,12 +26,23 @@ import io.github.pallax03.wizard.engine.ports.{
 }
 import io.github.pallax03.wizard.util.ChannelsKeys
 
+/** Internal container tracking an active WebSocket client session and its associated resources. */
 case class ClientSession(ws: ServerWebSocket, sub: Subscription, pingTimerId: Long)
 
 object VertxWebSocketsAdapter:
   private val PING_INTERVAL_MS: Long = 20000
   private val PONG_TIMEOUT_MS: Long = 60000
 
+/**
+ * Vert.x WebSocket adapter implementing [[io.github.pallax03.wizard.engine.ports.WebSocketsPort]].
+ *
+ * Bridges client [[ServerWebSocket]] sessions with distributed Redis Pub/Sub channels:
+ *  - Event Streaming: Subscribes clients to both broadcast and unicast game events via [[PubSubPort]].
+ *  - Heartbeat & Liveness: Runs a periodic 20-second ping timer with a 60-second pong timeout to detect dead sockets.
+ *  - Presence Tracking: Marks players online on connect, broadcasts [[SystemEvent.online]],
+ *    and resumes paused games when applicable.
+ *  - Resource Cleanup: Cancels heartbeat timers, closes subscriptions, and broadcasts [[SystemEvent.offline]] on disconnect.
+ */
 class VertxWebSocketsAdapter(
     val vertx: Vertx,
     val pubSubPort: PubSubPort,

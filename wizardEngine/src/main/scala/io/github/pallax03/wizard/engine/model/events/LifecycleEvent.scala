@@ -2,7 +2,9 @@ package io.github.pallax03.wizard.engine.model.events
 
 import io.github.pallax03.wizard.engine.model.basic.{PlayerId, Scoreboard}
 
-/** Represents high-level game lifecycle transitions. */
+/**
+ * Represents high-level match lifecycle transitions (session startup, recovery, completion, or cancellation).
+ */
 sealed trait LifecycleEvent extends WizardEvent
 
 object LifecycleEvent:

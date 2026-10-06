@@ -4,40 +4,30 @@ import io.github.pallax03.wizard.engine.model.basic.cards.*
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 
 /**
- * Provides utility methods to map Scala game domain models into Prolog terms.
+ * Translates Scala card domain entities into Prolog term representations for the 2P-Kt engine.
  *
- * This object is responsible for the serialization of [[Card]], [[Color]], and [[Trump]]
- * types into strings compatible with the Prolog syntax expected by [[WizardPrologEngine]].
+ * Serialization format expected by `wizard_strategy.pl`:
+ *  - Standard cards: compound term `card(Rank, Color)` (e.g. `card(13,red)`).
+ *  - Special cards: atomic terms `'wizard'` and `'jester'`.
+ *  - Lists: Prolog list syntax `[Term1, Term2, ...]`.
+ *  - Absent values (e.g. no trump color): atomic string [[NO_VALUE]] (`"none"`).
  */
 object WizardTermMapper:
 
-  /**
-   * Constant used to represent an empty or non-existent value in Prolog terms.
-   * Necessary for the wizard theory.
-   */
+  /** Constant representing an empty or undefined term in the Wizard Prolog theory. */
   final val NO_VALUE: String = "none"
 
-  /** Serializes a list of cards into a Prolog list string representation. */
   def cardsTerm(cards: List[Card]): String = cards.map(cardTerm).mkString("[", ",", "]")
 
-  /** Serializes an optional card, mapping [[None]] to [[NO_VALUE]]. */
   def cardTerm(card: Option[Card]): String = card.map(cardTerm).getOrElse(NO_VALUE)
 
-  /**
-   * Serializes a single [[Card]] into a Prolog term.
-   *
-   * Special cards are mapped to their simple name (e.g., 'wizard', 'jester'),
-   * while standard cards are mapped to the functor 'card(rank, color)'.
-   */
+  /** Maps [[Card.Standard]] to `card(Rank, Color)` and [[SpecialCard]] to `'wizard'` / `'jester'`. */
   def cardTerm(card: Card): String = card match
     case card: SpecialCard          => card.getClass.getSimpleName.toLowerCase
     case Card.Standard(color, rank) => s"card(${rank.value},${colorTerm(color)})"
 
-  /** Extracts the trump color term from the current [[Trump]] state. */
   def trumpColorTerm(trump: Trump): String = colorTerm(trump.effectiveColor)
 
-  /** Serializes a [[Card.Color]] into a lowercase Prolog-compatible string. */
   def colorTerm(color: Card.Color): String = color.toString.toLowerCase
 
-  /** Serializes an optional color, mapping [[None]] to [[NO_VALUE]]. */
   def colorTerm(color: Option[Card.Color]): String = color.map(colorTerm).getOrElse(NO_VALUE)

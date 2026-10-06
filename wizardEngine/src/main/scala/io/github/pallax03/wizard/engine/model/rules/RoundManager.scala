@@ -15,10 +15,9 @@ object RoundManager:
 
   extension (playersIds: List[PlayerId])
     /**
-     * Determines the next player in the turn order following the current player.
+     * Returns the next player in clockwise cyclic turn order.
      *
-     * @param current the ID of the current player.
-     * @return the next [[PlayerId]], throws a [[GameException]] if the player is not found.
+     * @throws GameException.PlayerNotFound if the player is not in the list.
      */
     def nextAfter(current: PlayerId): PlayerId =
       playersIds.indexWhere(_ == current) match
@@ -27,28 +26,36 @@ object RoundManager:
 
   extension (round: Round)
     /**
-     * Determines the first player of the given round based on a shifting rotation.
+     * Determines the starting player (leader) of the given round based on clockwise rotation.
      *
-     * @param playersIds the list of players Ids.
-     * @return the [[PlayerId]] of the dealer's successor who starts the round.
+     * In Wizard, the dealer role rotates each round. The round index directly offsets
+     * the starting player: Round 1 starts with player 0, Round 2 with player 1, etc.
+     *
+     * @param playersIds the ordered list of player IDs.
+     * @return the [[PlayerId]] who starts the bidding and the first trick of the round.
      */
     def firstPlayer(playersIds: List[PlayerId]): PlayerId =
       playersIds((round - 1) % playersIds.size)
 
     /**
-     * Checks if this round is the final round of the game based on the player count.
+     * Checks whether this round is the final round of the match.
      *
-     * @param playersIds the list of players Ids.
-     * @return true if all cards in the deck are distributed evenly, false otherwise.
+     * Wizard matches end when the entire 60-card deck is distributed as evenly as possible:
+     * `Deck.TOTAL_SIZE / playerCount` (e.g. 20 rounds for 3 players, 15 for 4, 12 for 5, 10 for 6).
+     *
+     * @param playersIds the list of participating player IDs.
+     * @return `true` if this is the final round of the game, `false` otherwise.
      */
     def isLastRound(playersIds: List[PlayerId]): Boolean =
       round == (Deck.TOTAL_SIZE / playersIds.size)
 
     /**
-     * State action that deals cards to players and reveals the trump card.
+     * Purely functional state action that deals hands to all players and cuts the trump card from the deck.
      *
-     * @param playersIds the list of players Ids.
-     * @return a state transition resulting in a tuple of [[Hands]] and a [[Trump]].
+     * Uses `cats.data.State[Deck, _]` to thread the remaining cards immutably.
+     *
+     * @param playersIds the list of players to deal cards to.
+     * @return a state transition computing a tuple of dealt [[Hands]] and the revealed [[Trump]].
      */
     def deal(playersIds: List[PlayerId]): State[Deck, (Hands, Trump)] =
       val cardsPerPlayer = round
@@ -58,11 +65,13 @@ object RoundManager:
       yield (Hands(handsList.toMap), trump.asTrump)
 
     /**
-     * State action that initializes a new round, dealing cards and determining the next phase.
-     * Transitions to either choosing a trump or the bidding phase.
+     * Purely functional state action that initializes a new round within the [[ServerCoreState]].
      *
-     * @param deck the current [[Deck]] to draw from.
-     * @return a state transition resulting in the initial [[GameState]] for the round.
+     * Deals cards from the given deck, updates server hands and trump, and decides the next
+     * phase: [[GameState.ChoosingTrump]] if a Wizard was turned up as trump, or [[GameState.Bidding]] otherwise.
+     *
+     * @param deck the shuffled [[Deck]] to draw from for this round.
+     * @return a state transition yielding the initial [[GameState]] for the round.
      */
     def initialize(deck: Deck): State[ServerCoreState, GameState[ServerCoreState]] =
       for
@@ -86,12 +95,7 @@ object RoundManager:
           )
 
   extension (expectedPlayer: PlayerId)
-    /**
-     * Validates if the action is being performed by the player whose turn it currently is.
-     *
-     * @param actionPlayer the ID of the player attempting to make a move.
-     * @return Right(()) if the turn is valid, Left with [[GameActionError.NotYourTurn]] otherwise.
-     */
+    /** Validates whether an incoming action is performed by the expected active player. */
     def validateTurnOf(actionPlayer: PlayerId): Either[GameActionError, Unit] =
       Either.cond(actionPlayer == expectedPlayer, (), GameActionError.NotYourTurn(expectedPlayer))
 

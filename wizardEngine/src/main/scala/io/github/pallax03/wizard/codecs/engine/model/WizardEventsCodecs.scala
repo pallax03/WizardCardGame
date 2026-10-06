@@ -7,6 +7,22 @@ import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.GameActionError
 import io.github.pallax03.wizard.engine.model.events.*
 
+/**
+ * Circe codecs for [[WizardEvent]] polymorphic hierarchy.
+ *
+ * Encodes domain events into the envelope wire format consumed by frontend WebSocket clients
+ * and Redis stream consumers:
+ * {{{
+ *   {
+ *     "event": {
+ *       "type": "<CategoryEvent>",
+ *       "action": "<EventName>",
+ *       "destinationId": 1, // optional scope
+ *       "fields": { ... }
+ *     }
+ *   }
+ * }}}
+ */
 object WizardEventsCodecs:
 
   import gameplay.Round

@@ -20,19 +20,7 @@ object Deck:
   final val TOTAL_SIZE: Int =
     TOTAL_JESTER + TOTAL_WIZARD + (Card.Rank.values.length * Card.Color.values.length)
 
-  /**
-   * Creates a custom deck from a provided list of cards.
-   *
-   * @param cards the list of cards used to compose the deck. Duplicates are removed.
-   * @return a custom [[Deck]].
-   */
   def create(cards: List[Card]): Deck = cards.distinct
-
-  /**
-   * Creates a newly initialized and shuffled standard Wizard deck.
-   *
-   * @return a shuffled 60-card [[Deck]].
-   */
   def create: Deck = DeckFactory.create()
 
   extension (d: Deck)

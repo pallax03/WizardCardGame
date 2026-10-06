@@ -2,6 +2,12 @@ package io.github.pallax03.wizard.engine.model.events
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
+/**
+ * Represents infrastructure, connection presence, or administrative events concerning a specific player.
+ *
+ * @param playerId the player associated with this system notification.
+ * @param action   the action or status tag (e.g. `"online"`, `"offline"`, `"afk_replaced"`).
+ */
 case class SystemEvent(playerId: PlayerId, action: String) extends PlayerScoped
 
 object SystemEvent:

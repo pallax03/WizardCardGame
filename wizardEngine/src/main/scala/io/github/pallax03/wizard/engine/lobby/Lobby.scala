@@ -4,10 +4,11 @@ import java.util.UUID
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
-/** Represents the status of a Lobby. */
+/** Lifecycle status of a game lobby session. */
 enum LobbyStatus:
   case WAITING, IN_GAME, DISCONNECTING, PAUSED, FINISHED
 
+  /** Returns `true` if an active game state exists on the engine (in progress, disconnecting, or paused). */
   def existGame: Boolean = this match
     case IN_GAME | DISCONNECTING | PAUSED => true
     case WAITING | FINISHED               => false
@@ -21,6 +22,7 @@ object LobbyId:
 import io.github.pallax03.wizard.engine.model.core.{GameActionError, EntityNotFound, GameException}
 import io.github.pallax03.wizard.engine.ports.AIError
 
+/** Domain errors returned by lobby lifecycle and player management operations. */
 enum LobbyError:
   case Full, GameInProgress, GamePaused, NotEnoughPlayers, PlayersOffline,
     LobbyNotFound, NotAuthenticated
@@ -30,6 +32,20 @@ enum LobbyError:
   case ConfigurationInvalid(err: ConfigurationErrors)
   case InternalServerError(code: String)
 
+/**
+ * Aggregate root managing game room lifecycle, player registration, and distributed session recovery.
+ *
+ * Enforces room capacity boundaries ([[GameConfiguration.MIN_PLAYERS]] to [[GameConfiguration.MAX_PLAYERS]]),
+ * manages secret-based authentication for seat re-attachment, and handles automatic failover to bots
+ * when human players disconnect.
+ *
+ * @param uuid unique identifier for this lobby room.
+ * @param players participants currently registered in the lobby.
+ * @param status current lifecycle phase of the lobby.
+ * @param configuration timing tolerances and strike thresholds.
+ * @param version monotonically increasing revision counter for optimistic concurrency control.
+ * @param createdAt epoch timestamp when the lobby was initialized.
+ */
 case class Lobby(
     uuid: LobbyId,
     players: List[Player],
@@ -42,6 +58,12 @@ case class Lobby(
   def authenticate(secret: String): Either[LobbyError, Player] =
     players.find(_.secret.contains(secret)).toRight(LobbyError.NotAuthenticated)
 
+  /**
+   * Validates whether the lobby can start or resume game execution.
+   *
+   * Requires status to be `WAITING` or `PAUSED`, at least [[GameConfiguration.MIN_PLAYERS]] (3),
+   * and all active human participants to be online.
+   */
   def validateStartOrResume: Either[LobbyError, Unit] = status match
     case LobbyStatus.WAITING | LobbyStatus.PAUSED =>
       if players.size < GameConfiguration.MIN_PLAYERS then Left(LobbyError.NotEnoughPlayers)
@@ -50,6 +72,12 @@ case class Lobby(
       else Right(())
     case _ => Left(LobbyError.GameInProgress)
 
+  /**
+   * Registers a new player or returns the existing player if the secret matches.
+   *
+   * If `secret` matches an existing player, operation is idempotent and returns the player unchanged.
+   * Otherwise, rejects if the lobby is already in progress or at maximum capacity.
+   */
   def addPlayer(
       name: String,
       difficulty: Option[BotsDifficulty],
@@ -106,7 +134,11 @@ case class Lobby(
   def resetStrikes(playerId: PlayerId): Either[LobbyError, Lobby] =
     modifyPlayer(playerId)(_.copy(strikes = 0))
 
-  /** Replaces all offline human players with bots and updates the lobby status. */
+  /**
+   * Replaces all currently disconnected human players with automated bots to unblock the game.
+   *
+   * @return pair containing the list of replaced [[PlayerId]]s and the updated lobby.
+   */
   def replaceOfflinePlayersWithBots(): (List[PlayerId], Lobby) =
     val offlineIds = players.filter(p => p.isHumanPlaying && !p.isOnline).map(_.id)
     if offlineIds.isEmpty then (Nil, this)

@@ -21,6 +21,18 @@ import io.github.pallax03.wizard.engine.ports.*
 import io.github.pallax03.wizard.util.FutureSyntax.*
 import io.github.pallax03.wizard.util.{ChannelsKeys, WizardLogger}
 
+/**
+ * Vert.x worker verticle executing automated AI bot turns.
+ *
+ * Distributed Processing Model:
+ *  - Joins the Redis consumer group `bot_workers` on the `bot:tasks` stream.
+ *  - Competes with peer worker instances to poll incoming [[BotTask]] entries.
+ *  - Periodically executes `XAUTOCLAIM` to reclaim abandoned tasks from failed worker nodes.
+ *  - Resolves player difficulty ([[io.github.pallax03.wizard.engine.lobby.BotsDifficulty]]) and invokes [[BotStrategy]].
+ *  - Injects a realistic delay (800ms–2000ms, +5s on lead cards) to simulate human think time.
+ *  - Submits the chosen action to [[InboundPort]] with guaranteed fallback to [[FallbackStrategy]] on rejection.
+ *  - Acknowledges stream entries via `XACK` upon completion.
+ */
 class BotManagerVerticle(
     prologPort: AIPort,
     lobbyStatePort: LobbyStatePort,

@@ -10,6 +10,13 @@ import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.model.rules.FallbackStrategy
 import io.github.pallax03.wizard.engine.ports.AIPort
 
+/**
+ * Strategy interface abstracting decision-making algorithms for automated bot players.
+ *
+ * Implements a template method in [[resolveInvitation]]: delegates individual move selections
+ * (`chooseCard`, `chooseBid`, `chooseTrump`) to concrete difficulty strategies and automatically
+ * falls back to [[FallbackStrategy]] if the strategy computation fails.
+ */
 trait BotStrategy:
   protected def chooseCard(lobbyId: LobbyId, event: InvitationEvent.WaitingForCard): Future[Card]
   protected def chooseBid(lobbyId: LobbyId, event: InvitationEvent.WaitingForBid): Future[Bid]
