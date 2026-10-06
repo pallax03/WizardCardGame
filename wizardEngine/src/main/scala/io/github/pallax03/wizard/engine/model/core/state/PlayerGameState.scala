@@ -2,19 +2,24 @@ package io.github.pallax03.wizard.engine.model.core.state
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
+/**
+ * Client-facing game state projection wrapping a [[PlayerCoreState]].
+ *
+ * Guarantees that only the targeted player's hand is visible, preserving match privacy.
+ */
 type PlayerGameState = GameState[PlayerCoreState]
 
 object PlayerGameState:
   /**
-   * Translates a ServerGameState into a PlayerGameState.
-   * This limits the state visibility to only what the specified player is allowed to see
-   * (e.g., hiding other players' hands).
+   * Projects a complete [[ServerGameState]] into a sanitized [[PlayerGameState]] for the given player.
    *
-   * @param serverGameState The complete server-side game state.
-   * @param playerId The ID of the player requesting the state.
-   * @return A restricted PlayerGameState tailored for the specified player.
+   * Strips out other players' private hands while retaining all publicly visible game state
+   * (bids, table, tricks won, scoreboard, and trump).
    *
-   * @throws GameException [[GameException.PlayerNotFound]]
+   * @param serverGameState the complete authoritative server-side match state.
+   * @param playerId        the ID of the player requesting the state projection.
+   * @return a [[PlayerGameState]] containing only the cards visible to that player.
+   * @throws GameException.CorruptedHand if the player's hand is missing from the server state.
    */
   def from(
       serverGameState: ServerGameState,

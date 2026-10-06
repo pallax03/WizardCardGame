@@ -15,15 +15,13 @@ object Table:
   def empty: Table = List.empty
 
   extension (t: Table)
-    /** Checks if all players have played their card for the current trick. */
     def isTrickComplete(totalPlayers: Int): Boolean = t.size == totalPlayers
-
     def playedCards: List[Card] = t.map(_._2)
 
     /**
      * Returns the [[PlayerId]] of the player who played the given card.
      *
-     * @throws GameException if the card is not found on the table.
+     * @throws GameException.TableNoWinner if the card was not found on the table.
      */
     def playerOf(card: Card): PlayerId =
       t.find(_._2 == card)
@@ -31,10 +29,15 @@ object Table:
         .getOrElse(throw GameException.TableNoWinner)
 
     /**
-     * Determines the color that players must follow in the current trick.
+     * Determines the suit that following players are required to follow in the current trick.
      *
-     * @return Some(Color) if a standard card determines the color,
-     *         None if the trick contains a Wizard or only Jesters have been played.
+     * According to Wizard rules:
+     *   - If a [[Card.Wizard]] was played, there is no required following color.
+     *   - If the trick starts with one or more [[Card.Jester]]s, the following color is set
+     *     by the first [[Card.Standard]] card played after them.
+     *   - If no standard cards have been played yet (e.g. only Jesters), no following color is set.
+     *
+     * @return `Some(Color)` if a standard card determines the lead suit, `None` otherwise.
      */
     def followingColor: Option[Card.Color] = t.playedCards match
       case cards if cards.exists(_.isWizard) => None
@@ -44,5 +47,4 @@ object Table:
           .headOption
           .collect { case s: Card.Standard => s.color }
 
-    /** Adds a card played by a player to the table. */
     infix def +(play: (PlayerId, Card)): Table = t :+ play
