@@ -10,6 +10,18 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
+/**
+ * Declarative Tapir endpoint contracts for the AI Advisor subsystem (`/api/lobby/{lobbyId}/hint/...`).
+ *
+ * Exposes advisory endpoints enabling human players to request optimal game moves computed
+ * by the underlying Prolog logic engine for each active phase:
+ *  - Choosing trump color ([[bestTrump]])
+ *  - Placing bids ([[bestBid]])
+ *  - Selecting playable cards ([[bestCard]])
+ *
+ * All endpoints require Bearer token authentication matching an active player's secret in the lobby
+ * and return typed domain representations or mapped [[LobbyError]] responses via [[HttpSupport.errorOutput]].
+ */
 object AIEndpoints:
 
   /** Shared base for all AI hint endpoints: typed lobby + Bearer token + hint prefix. */

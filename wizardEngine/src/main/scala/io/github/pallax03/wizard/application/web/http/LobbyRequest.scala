@@ -8,12 +8,14 @@ import io.github.pallax03.wizard.engine.lobby.{
 }
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
+/** Request payload to create or join a lobby as a human or automated bot. */
 case class JoinLobbyRequest(
     name: String,
     difficulty: Option[BotsDifficulty],
     secret: Option[String] = None
 )
 
+/** Public player information sanitized of private authentication secrets. */
 case class PublicPlayerInfo(
     id: PlayerId,
     name: String,
@@ -22,6 +24,7 @@ case class PublicPlayerInfo(
     strikes: Int = 0
 )
 
+/** Public snapshot of lobby session composition and lifecycle status. */
 case class LobbyStateResponse(
     lobbyId: LobbyId,
     status: LobbyStatus,
@@ -30,4 +33,5 @@ case class LobbyStateResponse(
     createdAt: Long
 )
 
+/** Registration payload returned upon joining, containing the player's private session secret. */
 case class AuthLobbyPlayer(lobbyId: LobbyId, playerId: PlayerId, secret: Option[String] = None)

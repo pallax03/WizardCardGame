@@ -12,6 +12,15 @@ import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, WebSocketsPort}
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
+/**
+ * Vert.x HTTP server verticle hosting the real-time WebSocket gateway.
+ *
+ * Route: `GET /lobby/:lobbyId?secret=<player_secret>`
+ *  - Authenticates the player against [[LobbyStatePort.getAuthLobby]].
+ *  - On success: Upgrades connection to WebSocket and invokes [[WebSocketsPort.subscribeToLobbyEvents]].
+ *  - On failure: Closes socket with 401 (Unauthorized), 404 (Lobby Not Found), or 500 (Internal Error).
+ *  - Enforces a 60-second idle timeout.
+ */
 class WebSocketsVerticle(
     wsPortAdapter: WebSocketsPort,
     lobbyStatePort: LobbyStatePort,
@@ -29,7 +38,6 @@ class WebSocketsVerticle(
         val lobbyIdStr = req.getParam("lobbyId")
         val secret = req.getParam("secret")
         if lobbyIdStr == null || secret == null then {
-          // todo: development / production
           req
             .response()
             .setStatusCode(400)

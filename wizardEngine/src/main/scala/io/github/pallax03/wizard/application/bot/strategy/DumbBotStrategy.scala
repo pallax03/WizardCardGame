@@ -9,10 +9,10 @@ import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent.{WaitingForBid, WaitingForCard}
 
 /**
- * A simple, randomized implementation of [[BotStrategy]].
+ * Baseline bot strategy that delegates all move decisions to [[FallbackStrategy]].
  *
- * This strategy provides basic behavior suitable for testing or low-difficulty settings.
- * Actions are chosen randomly from valid possibilities.
+ * Fails individual strategy choices to allow the template method in [[BotStrategy]]
+ * to invoke deterministic, rule-compliant fallback moves ([[engine.model.rules.FallbackStrategy]]).
  */
 class DumbBotStrategy extends BotStrategy:
   private val recoveredByBotStrategy = Future.failed(Exception("recovered with FallbackStrategy"))
