@@ -11,6 +11,15 @@ import io.vertx.redis.client.{Command, Redis, RedisConnection, Request}
 import io.github.pallax03.wizard.engine.ports.{PubSubPort, Subscription}
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
+/**
+ * Redis Pub/Sub adapter implementing [[io.github.pallax03.wizard.engine.ports.PubSubPort]].
+ *
+ * Multiplexes multiple channel subscriptions onto a single dedicated [[RedisConnection]]:
+ *  - Demultiplexes incoming Redis 3-element message frames `["message", channel, payload]`
+ *    to registered in-memory callbacks.
+ *  - Reference-Counts Subscriptions: Issues Redis `UNSUBSCRIBE` only when all local callbacks
+ *    for a specific channel have been canceled.
+ */
 class RedisPubSubAdapter(redis: Redis) extends PubSubPort:
   private val handlers = mutable.Map.empty[String, mutable.Set[String => Unit]]
 

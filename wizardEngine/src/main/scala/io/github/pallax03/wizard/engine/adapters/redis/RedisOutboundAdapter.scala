@@ -23,11 +23,15 @@ import io.github.pallax03.wizard.util.FutureSyntax.*
 import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, WizardLogger}
 
 /**
- * Redis implementation of [[OutboundPort]].
+ * Redis implementation of [[io.github.pallax03.wizard.engine.ports.OutboundPort]].
  *
- * For [[InvitationEvent]]s targeting a bot, pushes a [[BotTask]] (serialized as JSON)
- * into a single `data` field on the Redis Stream `bot:tasks`.
- * The consumer reads one string, decodes it with Circe.
+ * Implements a 4-stage event dispatch pipeline for each outgoing [[WizardEvent]]:
+ *  1. Client Streaming: Publishes JSON events over Redis Pub/Sub, separating broadcast
+ *     (`pubSubLobbyChannel`) from player unicast (`pubSubLobbyPlayerChannel`).
+ *  2. Bot Delegation: If an [[InvitationEvent]] targets an AI bot seat, enqueues a [[BotTask]]
+ *     into the Redis Stream `bot:tasks` via `XADD`.
+ *  3. Turn Timer Trigger: Emits turn events on `TURN_EVENTS_CHANNEL` to arm or reset player turn deadlines.
+ *  4. Lobby Lifecycle Sync: Updates persistent [[LobbyStatus]] upon game termination or cancellation.
  */
 class RedisOutboundAdapter(
     val pubSubPort: PubSubPort,

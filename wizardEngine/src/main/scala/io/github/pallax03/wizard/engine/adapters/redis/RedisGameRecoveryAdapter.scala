@@ -19,6 +19,16 @@ import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, OutboundPort}
 import io.github.pallax03.wizard.util.FutureSyntax.*
 import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, RedisUtil, WizardLogger}
 
+/**
+ * Redis adapter for [[io.github.pallax03.wizard.engine.ports.GameRecoveryPort]].
+ *
+ * Implements checkpoint-based fault recovery:
+ *  - Checkpoint Rollback: Retrieves `game:checkpoint:<lobbyId>` saved at the beginning of the round.
+ *    If present and valid, invokes [[GameEngine.recoverRound]], writes the reconstructed state to Redis,
+ *    and broadcasts [[LifecycleEvent.StateRecovered]] to allow gameplay to resume.
+ *  - Unrecoverable Abort: If checkpoints are absent, unparseable, or already ended, purges
+ *    all Redis game keys and broadcasts [[LifecycleEvent.GameCancelled]], returning `false`.
+ */
 class RedisGameRecoveryAdapter(
     private val redisClient: Redis,
     private val outboundPort: OutboundPort

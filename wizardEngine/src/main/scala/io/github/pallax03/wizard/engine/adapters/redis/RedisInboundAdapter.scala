@@ -19,6 +19,17 @@ import io.github.pallax03.wizard.engine.ports.{GameRecoveryPort, InboundPort, Ou
 import io.github.pallax03.wizard.util.FutureSyntax.*
 import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 
+/**
+ * Redis adapter for [[io.github.pallax03.wizard.engine.ports.InboundPort]].
+ *
+ * Persists active game sessions in Redis Key-Value and coordinates state transitions:
+ *  - Round Checkpointing: Persists stable checkpoints upon [[io.github.pallax03.wizard.engine.model.events.ProgressEvent.RoundScored]]
+ *    and deletes them on [[io.github.pallax03.wizard.engine.model.core.state.GameState.Ended]].
+ *  - Fault Escalation: Intercepts [[GameException]] with `withRecovery`, delegating to [[GameRecoveryPort]]
+ *    to roll back to the latest checkpoint or abort the game.
+ *  - Turn Timer Eviction: Automatically clears the player's Redis turn deadline key upon valid move submission.
+ *  - Fallback Execution: Maps expired turn timeouts to valid fallback moves via [[FallbackStrategy]].
+ */
 class RedisInboundAdapter(
     private val redisClient: Redis,
     private val outboundPort: OutboundPort,

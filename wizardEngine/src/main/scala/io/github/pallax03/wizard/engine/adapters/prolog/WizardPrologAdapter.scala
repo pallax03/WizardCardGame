@@ -11,14 +11,14 @@ import io.github.pallax03.wizard.engine.model.rules.TableRules.*
 import io.github.pallax03.wizard.engine.ports.{AIPort, InboundPort}
 
 /**
- * Adapter that connects the game engine's AI requirements with the Prolog knowledge base.
+ * AI adapter connecting the [[io.github.pallax03.wizard.engine.ports.AIPort]] contract to the Prolog knowledge base.
  *
- * This Adapter work with [[GameEngineInboundAdapter]] as every api need to get actual state to respond with the correct data for the correct playerId request.
- *
- * This component acts as a safety layer:
- * 1. Validates that the AI requests are performed during the correct game phases.
- * 2. Manages interactions with the [[WizardPrologEngine]].
- * 3. Provides robust fallbacks: if Prolog fails to return a valid move, this adapter ensures the game continues by providing a valid default move.
+ * Implements a defensive safety pipeline over raw Prolog responses:
+ *  1. Phase Verification: Ensures queries only execute within matching [[PlayerGameState]] phases.
+ *  2. Hook Rule Compliance: If Prolog's initial bid violates dealer constraints ([[BiddingRules.validateBid]]),
+ *     queries `adjustBid` to guarantee a rule-compliant bid.
+ *  3. Move Legality Filtering: Filters Prolog card recommendations against [[Hand.legalCards]] to
+ *     prevent illegal table plays.
  */
 class WizardPrologAdapter(inboundPort: InboundPort) extends AIPort(inboundPort):
 

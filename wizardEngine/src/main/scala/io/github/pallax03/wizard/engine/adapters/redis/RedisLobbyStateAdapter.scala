@@ -17,6 +17,18 @@ import io.github.pallax03.wizard.engine.ports.LobbyStatePort
 import io.github.pallax03.wizard.util.FutureSyntax.*
 import io.github.pallax03.wizard.util.{ChannelsKeys, RedisUtil}
 
+/**
+ * Redis adapter for [[io.github.pallax03.wizard.engine.ports.LobbyStatePort]].
+ *
+ * Implements distributed lobby storage using Redis Key-Value and atomic Compare-And-Swap (CAS)
+ * mutations via [[RedisLobbyScripts.casLobbyScript]].
+ *
+ * Concurrency Model:
+ *  - On mutation (`updateLobby`, `addPlayer`, `setPlayerOnlineStatus`), reads current version.
+ *  - Submits Lua script to update the record only if the version matches.
+ *  - If a concurrent write modified the version, recursively retries the mutation.
+ *  - Atomically broadcasts any resulting [[SystemEvent]] on `pubSubLobbyChannel` upon successful write.
+ */
 class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
 
   /** @inheritdoc */
