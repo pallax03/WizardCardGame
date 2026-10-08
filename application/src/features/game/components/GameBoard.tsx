@@ -100,6 +100,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const isGameEnded = gameState.status === "GAME_ENDED";
   const isDisconnecting = lobby?.status === "DISCONNECTING";
 
+  const totalPlayersCount = lobby?.players?.length || players.length || 0;
+  const maxRound = totalPlayersCount > 0 ? Math.floor(60 / totalPlayersCount) : 0;
+
   const sortedScoreboard = useMemo(() => {
     if (!gameState.scoreboard) return [];
     return Object.entries(gameState.scoreboard)
@@ -224,7 +227,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
         <div className="flex flex-col items-center">
           <span className="text-xs font-bold text-white tracking-widest uppercase">
-            {lobbyI18n.pausedSummary.round(revealedTrick ? revealedTrick.round : gameState.round)}
+            {lobbyI18n.pausedSummary.round(revealedTrick ? revealedTrick.round : gameState.round, maxRound || undefined)}
           </span>
           <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">
             {phaseLabel(gameState.status)}

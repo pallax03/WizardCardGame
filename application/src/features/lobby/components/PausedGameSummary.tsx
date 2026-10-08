@@ -77,6 +77,8 @@ export function PausedGameSummary({ board, isLoading, loadFailed, playerId, play
   };
   
   const effectiveTrumpColorClass = board.effectiveTrumpColor ? getEffectiveColorCircle(board.effectiveTrumpColor) : "";
+  const totalPlayersCount = players.length;
+  const maxRound = totalPlayersCount > 0 ? Math.floor(60 / totalPlayersCount) : 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -84,7 +86,7 @@ export function PausedGameSummary({ board, isLoading, loadFailed, playerId, play
       {/* Game State Header */}
       <div className="flex items-center justify-between px-1">
         <span className="text-lg font-semibold text-white">
-          {lobbyI18n.pausedSummary.round(board.round)} - {phaseLabel(board.status)}
+          {lobbyI18n.pausedSummary.round(board.round, maxRound || undefined)} - {phaseLabel(board.status)}
         </span>
         
         {/* Trump */}
