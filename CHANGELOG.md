@@ -1,3 +1,10 @@
+# [0.3.0](https://github.com/pallax03/WizardCardGame/compare/v0.2.4...v0.3.0) (2026-10-08)
+
+
+### Features
+
+* **frontend:** add maxRound ([ec451cc](https://github.com/pallax03/WizardCardGame/commit/ec451cce2f46b55b1ef4f4edc35746dd6381eb9e))
+
 ## [0.2.4](https://github.com/pallax03/WizardCardGame/compare/v0.2.3...v0.2.4) (2026-09-29)
 
 
