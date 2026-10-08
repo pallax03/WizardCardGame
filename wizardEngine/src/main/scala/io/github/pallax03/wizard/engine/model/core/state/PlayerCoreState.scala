@@ -3,6 +3,7 @@ package io.github.pallax03.wizard.engine.model.core.state
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.cards.Hand
 import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Trump}
+
 /**
  * Client-facing core state projection filtered for a specific player.
  *

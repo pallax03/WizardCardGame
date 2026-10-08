@@ -5,9 +5,7 @@ import scala.concurrent.{Future, Promise}
 
 import io.vertx.ext.web.RoutingContext
 
-/**
- * Extension methods for interoperability between Vert.x async futures and Scala concurrency.
- */
+/** Extension methods for interoperability between Vert.x async futures and Scala concurrency. */
 object FutureSyntax:
   extension [T](vFuture: io.vertx.core.Future[T])
     /** Converts a Vert.x asynchronous [[io.vertx.core.Future]] to a standard Scala [[scala.concurrent.Future]]. */

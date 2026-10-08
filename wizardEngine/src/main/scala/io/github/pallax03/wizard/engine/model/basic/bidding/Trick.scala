@@ -2,9 +2,7 @@ package io.github.pallax03.wizard.engine.model.basic.bidding
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
-/**
- * Represents the count of tricks (prese) won by a player during a round.
- */
+/** Represents the count of tricks (prese) won by a player during a round. */
 type Trick = Int
 
 /**

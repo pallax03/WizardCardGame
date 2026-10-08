@@ -24,9 +24,7 @@ import io.github.pallax03.wizard.engine.model.rules.*
  */
 opaque type GameEngine = (ServerGameState, List[WizardEvent])
 
-/**
- * Companion object and state transition entry points for [[GameEngine]].
- */
+/** Companion object and state transition entry points for [[GameEngine]]. */
 object GameEngine:
   extension (state: ServerGameState)
     private def toGameEngine(event: WizardEvent): GameEngine = (state, List(event))

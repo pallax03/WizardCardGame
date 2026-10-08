@@ -6,9 +6,7 @@ import io.github.pallax03.wizard.engine.model.basic.*
 
 import sttp.tapir.Schema
 
-/**
- * Circe codecs and Tapir schema for [[Scoreboard]] history, normalizing round entries to ordered arrays.
- */
+/** Circe codecs and Tapir schema for [[Scoreboard]] history, normalizing round entries to ordered arrays. */
 object ScoreboardCodecs:
   import gameplay.Round
   import bidding.Bid

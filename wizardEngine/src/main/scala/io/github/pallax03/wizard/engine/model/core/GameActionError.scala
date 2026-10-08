@@ -16,9 +16,7 @@ enum CardNotAllowedReasons(val legitCards: List[Card]):
   case MustFollowColor(requiredColor: Card.Color, cards: List[Card])
       extends CardNotAllowedReasons(cards)
 
-/**
- * Domain errors produced when a player's action cannot be legally executed in the current game state.
- */
+/** Domain errors produced when a player's action cannot be legally executed in the current game state. */
 enum GameActionError:
   case NotYourTurn(turnOf: PlayerId)
   case InvalidBid(round: Round, invalidBid: Bid)

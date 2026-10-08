@@ -1,8 +1,6 @@
 package io.github.pallax03.wizard.engine.model.events
 
-/**
- * Root marker trait for all domain events emitted by the Wizard game engine.
- */
+/** Root marker trait for all domain events emitted by the Wizard game engine. */
 trait WizardEvent
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId

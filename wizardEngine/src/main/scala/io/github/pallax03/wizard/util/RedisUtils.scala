@@ -13,9 +13,7 @@ object RedisUtil:
   def setWithDefaultTTL(key: String, value: String, ttl: String = DEFAULT_TTL): Request =
     Request.cmd(Command.SET).arg(key).arg(value).arg("EX").arg(ttl)
 
-/**
- * Central registry of Redis key namespaces, stream names, and Pub/Sub channel schemas.
- */
+/** Central registry of Redis key namespaces, stream names, and Pub/Sub channel schemas. */
 object ChannelsKeys:
   /** Redis Stream where the engine publishes bot tasks (one entry per [[io.github.pallax03.wizard.engine.model.events.InvitationEvent]]). */
   val BOT_TASKS_STREAM: String = "bot:tasks"

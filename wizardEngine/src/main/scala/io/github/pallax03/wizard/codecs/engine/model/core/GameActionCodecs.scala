@@ -8,9 +8,7 @@ import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import io.github.pallax03.wizard.engine.model.core.GameAction
 
-/**
- * Circe codecs for sealed [[GameAction]] instances, discriminated by the `"action"` field.
- */
+/** Circe codecs for sealed [[GameAction]] instances, discriminated by the `"action"` field. */
 object GameActionCodecs:
   given Encoder[GameAction] = Encoder.instance: a =>
     val fields = a match

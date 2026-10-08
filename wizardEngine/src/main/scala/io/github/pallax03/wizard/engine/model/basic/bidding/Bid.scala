@@ -13,8 +13,7 @@ import io.github.pallax03.wizard.engine.model.basic.gameplay.Round
 type Bid = Int
 
 object Bid:
-  extension (b: Bid)
-    def isValid(round: Round): Boolean = b <= round
+  extension (b: Bid) def isValid(round: Round): Boolean = b <= round
 
 /**
  * Represents the collection of bids placed by all players in a round.

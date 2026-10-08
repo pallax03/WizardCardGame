@@ -5,9 +5,7 @@ import io.github.pallax03.wizard.engine.model.basic.bidding.Trick
 import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
 import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Trump}
 
-/**
- * Represents match progression updates, such as phase shifts, dealing cards, winning tricks, or scoring rounds.
- */
+/** Represents match progression updates, such as phase shifts, dealing cards, winning tricks, or scoring rounds. */
 sealed trait ProgressEvent extends WizardEvent
 
 object ProgressEvent:

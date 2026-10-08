@@ -1,6 +1,5 @@
 package io.github.pallax03.wizard.engine.model.basic.gameplay
 
-
 /**
  * Represents the round index (1-based) of an active Wizard match.
  *
@@ -14,7 +13,6 @@ type Round = Int
 object Round:
   def start: Round = 1
 
-  extension (r: Round)
-    def next: Round = r + 1
+  extension (r: Round) def next: Round = r + 1
 
 export Round._
