@@ -7,5 +7,6 @@ import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyPlayer
 
+/** Circe codec for [[LobbyPlayer]] entities stored in distributed lobby state. */
 object LobbyPlayerCodecs:
   given Codec[LobbyPlayer] = deriveCodec[LobbyPlayer]

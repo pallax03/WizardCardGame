@@ -6,6 +6,7 @@ import io.github.pallax03.wizard.engine.model.basic.*
 
 import sttp.tapir.Schema
 
+/** Circe codecs and Tapir schemas for player bids and trick counts per round. */
 object BiddingCodecs:
   import bidding._
   import PlayerIdCodecs.given

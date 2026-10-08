@@ -11,6 +11,18 @@ import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
+/**
+ * Declarative Tapir endpoint contracts for player game actions (`/api/lobby/{lobbyId}/...`).
+ *
+ * Defines mutating HTTP endpoints for player moves during active game phases:
+ *  - Resolving trump color ([[chooseAction]]) during the trump selection phase.
+ *  - Submitting round trick bids ([[placeAction]]) during the bidding phase.
+ *  - Playing cards to the trick table ([[playAction]]) during the trick playing phase.
+ *
+ * All endpoints require Bearer authentication containing the acting player's secret token,
+ * return HTTP 200 OK on successful state advancement, or propagate domain validation errors
+ * through [[HttpSupport.errorOutput]].
+ */
 object ActionEndpoints:
 
   /** Shared base: typed lobby + Bearer token. */

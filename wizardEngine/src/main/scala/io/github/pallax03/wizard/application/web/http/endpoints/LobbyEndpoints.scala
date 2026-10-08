@@ -14,6 +14,7 @@ import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
+/** Tapir endpoint definitions for lobby room lifecycle, membership, and configuration. */
 object LobbyEndpoints:
 
   /** Shared base for all lobby endpoints: prefix + tag + error mapping. */

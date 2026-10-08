@@ -10,6 +10,7 @@ import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import sttp.tapir.Schema
 import sttp.tapir.generic.auto.*
 
+/** Circe codecs and Tapir schema for authenticated lobby player responses ([[AuthLobbyPlayer]]). */
 object HttpCodecs:
 
   given Encoder[AuthLobbyPlayer] = deriveEncoder

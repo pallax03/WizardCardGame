@@ -9,6 +9,7 @@ import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
 
 import sttp.tapir.Schema
 
+/** Circe codecs and Tapir schema for [[Table]] trick state, containing played cards and lead color. */
 object TableCodecs:
   import CardCodecs.given
   import PlayerIdCodecs.given

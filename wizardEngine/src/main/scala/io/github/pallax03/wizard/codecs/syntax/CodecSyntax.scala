@@ -4,6 +4,7 @@ import io.circe.*
 import io.circe.parser.*
 import io.circe.syntax.*
 
+/** Extension methods providing fluent JSON encoding (`.toJson`) and decoding (`.decodeAs[A]`). */
 object CodecSyntax:
   extension [A: Encoder](a: A) def toJson: String = a.asJson.noSpaces
 

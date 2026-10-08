@@ -18,6 +18,21 @@ import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort, PubS
 import io.github.pallax03.wizard.util.FutureSyntax.*
 import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, RedisUtil, WizardLogger}
 
+/**
+ * Vert.x worker verticle managing player turn deadlines and AFK disconnections.
+ *
+ * Utilizes Redis Keyspace Notifications (`notify-keyspace-events Ex`) to trigger action
+ * timeouts without in-memory stateful timers:
+ *  - Turn Arming (`handleTurnEvent`): Sets `timer:<lobbyId>:<playerId>` with decaying TTL
+ *    computed by [[io.github.pallax03.wizard.engine.lobby.GameConfiguration.calculateTTL]].
+ *  - Turn Expiration (`handleExpiredKey`):
+ *     - Increments player AFK strikes.
+ *     - If strikes reach [[io.github.pallax03.wizard.engine.lobby.GameConfiguration.maxStrikes]],
+ *       marks the player offline and emits [[SystemEvent.offline]].
+ *     - Otherwise, invokes [[InboundPort.forceFallbackAction]] to make a legal fallback move.
+ *  - Disconnect Grace Expiration: Replaces lingering offline players with automated bots
+ *    via [[io.github.pallax03.wizard.engine.lobby.Lobby.replaceOfflinePlayersWithBots]] and resumes play.
+ */
 class TurnTimerVerticle(
     pubSubPort: PubSubPort,
     redisClient: Redis,

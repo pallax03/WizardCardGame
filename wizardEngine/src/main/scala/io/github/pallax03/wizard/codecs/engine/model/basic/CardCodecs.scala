@@ -9,6 +9,7 @@ import io.github.pallax03.wizard.engine.model.basic.cards.{Card, SpecialCard}
 import sttp.tapir.Schema
 import sttp.tapir.generic.Configuration
 
+/** Circe codecs and Tapir schemas for card suits, numeric ranks, and polymorphic [[Card]] models. */
 object CardCodecs:
 
   given Encoder[Card.Color] = Encoder.encodeString.contramap(_.toString)

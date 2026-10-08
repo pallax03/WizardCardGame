@@ -7,26 +7,29 @@ import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 /**
  * Represents a card in the Wizard game.
  *
- * A card can be either a standard card with a color and rank, or a special card (Wizard or Jester).
+ * In the Wizard deck of 60 cards, a card is either a [[Card.Standard]] suited card
+ * with a color and rank (52 cards total), or a [[SpecialCard]] ([[Card.Wizard]] or [[Card.Jester]]).
+ *
+ * @see [[Deck]] for deck composition.
  */
 sealed trait Card
 
 /**
  * A special card in the Wizard game (Wizard or Jester).
  *
- * Each special card has a unique ID to distinguish between multiple instances of the same type.
+ * Each special card carries a unique numeric ID (0 to 3) to distinguish between the four
+ * physical copies of the same special card type in the deck.
  */
 sealed trait SpecialCard extends Card:
+  /** Unique instance identifier among duplicate special cards in the deck. */
   def id: Int
 
 object Card:
 
-  /** Color of a standard card. */
   enum Color:
     case Blue, Green, Red, Yellow
   export Color.*
 
-  /** Rank in the standard color cards. Values 1..13 (1 is low, 13 is high). */
   enum Rank(val value: Int):
     case One extends Rank(1)
     case Two extends Rank(2)
@@ -43,17 +46,13 @@ object Card:
     case Thirteen extends Rank(13)
   export Rank.*
 
-  /** A standard card with a color and rank. */
   final case class Standard(color: Color, rank: Rank) extends Card
-
-  /** A special Wizard card with a unique ID. */
   final case class Wizard(id: Int) extends SpecialCard
-
-  /** A special Jester card with a unique ID. */
   final case class Jester(id: Int) extends SpecialCard
 
   private val specialIdGenWizard = new AtomicInteger(0)
   def wizard: Wizard = Wizard(specialIdGenWizard.incrementAndGet() % Deck.TOTAL_WIZARD)
+
   private val specialIdGenJester = new AtomicInteger(0)
   def jester: Jester = Jester(specialIdGenJester.incrementAndGet() % Deck.TOTAL_JESTER)
 
@@ -68,6 +67,7 @@ object Card:
     def isWizard: Boolean = c match
       case _: Wizard => true
       case _         => false
+
     def isJester: Boolean = c match
       case _: Jester => true
       case _         => false

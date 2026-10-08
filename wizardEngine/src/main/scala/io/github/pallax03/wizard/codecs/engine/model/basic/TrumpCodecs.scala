@@ -9,6 +9,7 @@ import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 
 import sttp.tapir.Schema
 
+/** Circe codecs and Tapir schema for [[Trump]] round states, discriminated by type name. */
 object TrumpCodecs:
   import CardCodecs.given
 

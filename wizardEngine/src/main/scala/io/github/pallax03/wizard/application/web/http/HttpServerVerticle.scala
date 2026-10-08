@@ -24,6 +24,16 @@ import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
 import sttp.tapir.server.model.ValuedEndpointOutput
 import sttp.tapir.server.vertx.{VertxFutureServerInterpreter, VertxFutureServerOptions}
 
+/**
+ * Vert.x HTTP server verticle mounting Tapir REST endpoints.
+ *
+ * Configures the HTTP server pipeline:
+ *  - Routes: Binds declared Tapir domain endpoints, serves interactive Swagger UI documentation
+ *    at `/docs` (in non-production environments), and exposes the `/metrics` Prometheus scraping endpoint.
+ *  - Interceptors: Injects CORS, contextual SLF4J request logging, and metrics collectors.
+ *  - Centralized Exception Handling: Maps unhandled [[GameException]]s, [[RecoveredGameException]]s,
+ *    and [[AbortedGameException]]s to structured JSON error responses with HTTP 500 status.
+ */
 class HttpServerVerticle(
     serverEndpoints: List[ServerEndpoint[Any, Future]],
     port: Int
