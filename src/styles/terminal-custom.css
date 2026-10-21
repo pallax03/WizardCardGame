@@ -1,0 +1,137 @@
+/* terminal-custom.css: Clean Monochrome/White Terminal Palette */
+
+:root,
+::backdrop {
+  /* White primary palette */
+  --brand-primary: #ffffff;
+  --brand-secondary: #e4e4e7;
+
+  /* Accent tokens */
+  --sl-color-accent: #ffffff;
+  --sl-color-accent-high: #ffffff;
+  --sl-color-accent-low: rgba(255, 255, 255, 0.1);
+  --sl-color-text-accent: #ffffff;
+  --sl-color-text-invert: #09090b;
+
+  /* Tab indicator tokens */
+  --terminal-tab-border-active: #ffffff;
+  --terminal-tab-text-active: #ffffff;
+  --terminal-tabs-accent-line: transparent;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-bg: #09090b;
+  --sl-color-bg-nav: #09090b;
+  --sl-color-bg-sidebar: #09090b;
+  --sl-color-text-accent: #ffffff;
+  --sl-color-text-invert: #09090b;
+}
+
+:root[data-theme='light'] {
+  --brand-primary: #09090b;
+  --brand-secondary: #27272a;
+  --sl-color-accent: #09090b;
+  --sl-color-accent-high: #000000;
+  --sl-color-accent-low: rgba(0, 0, 0, 0.05);
+  --sl-color-text-accent: #09090b;
+  --sl-color-text-invert: #ffffff;
+  --terminal-tab-border-active: #09090b;
+  --terminal-tab-text-active: #000000;
+}
+
+/* Fix 1: Active item in sidebar / navigation - high text contrast, dark subtle background (never white-on-white) */
+nav.sidebar [aria-current='page'],
+nav.sidebar [aria-current='page']:hover,
+nav.sidebar [aria-current='page']:focus,
+.sidebar-pane [aria-current='page'],
+.sidebar-pane [aria-current='page']:hover,
+.sidebar-pane [aria-current='page']:focus,
+.sidebar-content [aria-current='page'],
+.sidebar-content [aria-current='page']:hover,
+.sidebar-content [aria-current='page']:focus,
+a[aria-current='page'],
+a[aria-current='page']:hover,
+a[aria-current='page']:focus {
+  background-color: rgba(255, 255, 255, 0.08) !important;
+  color: #ffffff !important;
+  font-weight: 600 !important;
+  border-inline-start: 3px solid #ffffff !important;
+}
+
+nav.sidebar [aria-current='page'] span,
+.sidebar-pane [aria-current='page'] span,
+.sidebar-content [aria-current='page'] span,
+a[aria-current='page'] span {
+  color: #ffffff !important;
+}
+
+:root[data-theme='light'] nav.sidebar [aria-current='page'],
+:root[data-theme='light'] nav.sidebar [aria-current='page']:hover,
+:root[data-theme='light'] nav.sidebar [aria-current='page']:focus,
+:root[data-theme='light'] .sidebar-pane [aria-current='page'],
+:root[data-theme='light'] .sidebar-content [aria-current='page'],
+:root[data-theme='light'] a[aria-current='page'] {
+  background-color: rgba(0, 0, 0, 0.06) !important;
+  color: #09090b !important;
+  border-inline-start: 3px solid #09090b !important;
+}
+
+:root[data-theme='light'] nav.sidebar [aria-current='page'] span,
+:root[data-theme='light'] .sidebar-pane [aria-current='page'] span,
+:root[data-theme='light'] .sidebar-content [aria-current='page'] span,
+:root[data-theme='light'] a[aria-current='page'] span {
+  color: #09090b !important;
+}
+
+/* Fix 2: Remove Starlight's duplicate border on active tab to prevent two conflicting colors */
+.tablist-wrapper .tab > [role='tab'],
+.tablist-wrapper .tab [role='tab'][aria-selected='true'] {
+  border-bottom: none !important;
+}
+
+/* Fix 3: Proper padding for tab panel content so it is never squished */
+starlight-tabs > *:not(.tablist-wrapper) {
+  padding: 1.25rem !important;
+  box-sizing: border-box !important;
+}
+
+/* Fix 4: Restore expressive-code frame inside tabs */
+starlight-tabs > *:not(.tablist-wrapper) .expressive-code {
+  margin: 0.75rem 0 0 0 !important;
+  width: 100% !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  border-radius: 0.5rem !important;
+}
+
+:root[data-theme='light'] starlight-tabs > *:not(.tablist-wrapper) .expressive-code {
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Fix 5: Clean Hero logo link without purple drop-shadow or background on hover */
+.hero .hero-html,
+.hero > img,
+[data-has-hero] .hero > img {
+  filter: none !important;
+}
+
+.hero-html a {
+  display: inline-block;
+  background: transparent !important;
+  text-decoration: none !important;
+  border: none !important;
+  outline: none !important;
+}
+
+.hero-html a:hover {
+  background: transparent !important;
+}
+
+.hero-html a img {
+  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.15)) !important;
+  transition: transform 0.25s ease, filter 0.25s ease !important;
+}
+
+.hero-html a:hover img {
+  transform: translateY(-3px) scale(1.02) !important;
+  filter: drop-shadow(0 0 35px rgba(255, 255, 255, 0.35)) !important;
+}

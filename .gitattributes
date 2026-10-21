@@ -1,0 +1,7 @@
+# Enforce Unix line endings (LF) by default for cross-platform consistency
+* text=auto eol=lf
+
+# Enforce Windows line endings (CRLF) for Windows-specific scripts
+*.[cC][mM][dD] text eol=crlf
+*.[bB][aA][tT] text eol=crlf
+*.[pP][sS]1 text eol=crlf

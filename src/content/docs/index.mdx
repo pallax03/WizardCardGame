@@ -1,0 +1,53 @@
+---
+title: Wizard Card Game
+description: Software Process Engineering (SPE / DevOps) Technical Report
+template: splash
+hero:
+  tagline: Distributed multiplayer card game engineered with Scala 3, tuProlog, Redis, and automated DevOps pipelines.
+  image:
+    html: '<a href="https://wizard-card-game-psi.vercel.app/" target="_blank" rel="noopener noreferrer" title="Play Wizard Online on Vercel"><img src="https://raw.githubusercontent.com/pallax03/WizardCardGame/master/application/public/wizard_logo.svg" alt="Wizard Card Game Logo" width="380" /></a>'
+  actions:
+    - text: Read Report
+      link: /WizardCardGame/report/01-introduction/
+      icon: right-arrow
+      variant: primary
+    - text: DVCS & Git Governance
+      link: /WizardCardGame/report/04-process-dvcs/
+      icon: github
+      variant: secondary
+---
+
+import { Card, LinkCard } from '@astrojs/starlight/components';
+import FeatureGrid from 'starlight-theme-terminal/components/FeatureGrid.astro';
+
+## Architectural Pillars
+
+<FeatureGrid columns={2}>
+  <Card title="Hexagonal Architecture & DDD" icon="puzzle">
+    Pure functional core in **Scala 3** isolated from distributed infrastructure via ports, adapters, and domain boundaries.
+  </Card>
+  <Card title="Distributed State & Symbolic AI" icon="laptop">
+    Concurrency handled via **Redis CAS Lua scripts**, Pub/Sub event bus, and declarative **tuProlog** bot solvers.
+  </Card>
+  <Card title="DVCS Governance & Least Privilege" icon="github">
+    **Trunk-based development** sealed with annotated tag `v1.0.0`, GitHub Rulesets, and bot-delegated releases.
+  </Card>
+  <Card title="Multi-Platform CI/CD" icon="rocket">
+    Automated multi-OS test matrices (`Linux`, `macOS`, `Windows`), Docker orchestration, and semantic releases.
+  </Card>
+</FeatureGrid>
+
+## Report Chapters
+
+<FeatureGrid columns={2}>
+  <LinkCard
+    title="1. Introduction & Evolution"
+    description="Domain mechanics, 4-act multi-course evolution, and baseline problem diagnosis."
+    href="/WizardCardGame/report/01-introduction/"
+  />
+  <LinkCard
+    title="4. Development Process & DVCS"
+    description="496-commit historical audit, bisectable v1.0.0 reconstruction, and Conventional Commits taxonomy."
+    href="/WizardCardGame/report/04-process-dvcs/"
+  />
+</FeatureGrid>
