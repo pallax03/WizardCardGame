@@ -1,0 +1,71 @@
+name: Release
+
+on:
+  workflow_run:
+    workflows: ["CI"]
+    types:
+      - completed
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Semantic Release
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Generate Bot Token
+        id: generate-token
+        uses: actions/create-github-app-token@v3
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          token: ${{ steps.generate-token.outputs.token }}
+
+      - name: Setup Java
+        uses: actions/setup-java@v6
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'sbt'
+      
+      - name: Install SBT
+        uses: sbt/setup-sbt@v1
+
+      - name: Build Wizard-Engine JAR
+        working-directory: ./wizardEngine
+        run: sbt assembly
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Semantic Release
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: npx semantic-release
+
+      - name: Open PR to sync develop
+        env:
+          GITHUB_TOKEN: ${{ steps.generate-token.outputs.token }}
+        run: |
+          gh pr create \
+            --base develop \
+            --head master \
+            --title "chore: sync master to develop" \
+            --body "Automated PR by palla-x to sync release changes back to develop." || echo "PR already exists or no changes to sync."

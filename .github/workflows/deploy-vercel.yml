@@ -1,0 +1,19 @@
+name: Deploy to Vercel
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Trigger Vercel Production Deployment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Vercel Deploy Hook
+        if: ${{ env.VERCEL_DEPLOY_HOOK != '' }}
+        env:
+          VERCEL_DEPLOY_HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
+        run: |
+          echo "Triggering Vercel deployment hook..."
+          curl -s -X POST "$VERCEL_DEPLOY_HOOK"

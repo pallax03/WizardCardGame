@@ -1,0 +1,48 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/application"
+    schedule:
+      interval: "monthly"
+    target-branch: "develop"
+
+    labels:
+      - "dependencies"
+      - "application"
+    groups:
+      npm-safe-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+    commit-message:
+      prefix: "chore(npm deps)"
+
+  - package-ecosystem: "sbt"
+    directory: "/wizardEngine"
+    schedule:
+      interval: "monthly"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+      - "wizardEngine"
+    groups:
+      sbt-safe-updates:
+        patterns:
+          - "*"
+        update-types:
+          - "patch"
+          - "minor"
+    commit-message:
+      prefix: "chore(sbt deps)"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    target-branch: "develop"
+    labels:
+      - "dependencies"
+    commit-message:
+      prefix: "chore(ci)"
