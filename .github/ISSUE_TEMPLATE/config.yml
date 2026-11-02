@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: "Conventional Commits & Scope Taxonomy"
+    url: https://pallax03.github.io/WizardCardGame/report/04-process-dvcs/#43-conventional-commits--scope-taxonomy
+    about: "Read permitted types, scopes, and architectural boundaries before opening a task or bug report."
+  - name: "SPE Technical Report"
+    url: https://pallax03.github.io/WizardCardGame/report/
+    about: "Read the Domain-Driven Design, DVCS, and CI/CD documentation for WizardCardGame."
