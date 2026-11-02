@@ -1,0 +1,59 @@
+name: "Bug Report"
+description: "Report a defect in game rules, distributed state, bot dialogue, or CI/CD."
+title: "fix(<scope>): <short description of the bug>"
+labels: ["bug"]
+body:
+  - type: dropdown
+    id: area
+    attributes:
+      label: "1. Architectural Area & Scope"
+      description: "Select the affected architectural area (see Scope Taxonomy in report):"
+      options:
+        - "area:engine (domain, ai, bot, codecs, lobby, redis, http)"
+        - "area:dialogue (dialogue-db, dialogue-api)"
+        - "area:client (ui)"
+        - "area:devops (ci, docker, release, deps)"
+        - "area:docs (docs, chore)"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: environment
+    attributes:
+      label: "2. Environment / OS"
+      multiple: true
+      options:
+        - "Ubuntu / Linux (Local or CI)"
+        - "macOS (Local or CI)"
+        - "Windows (Local or CI)"
+        - "Docker Compose Stack"
+        - "Cloud Production (Azure / Vercel / Supabase)"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: reproducibility
+    attributes:
+      label: "3. Bug Characteristics"
+      options:
+        - label: "Deterministic (always reproducible with the same steps)"
+        - label: "Concurrency / Race condition (intermittent)"
+        - label: "Cross-platform issue (fails only on a specific OS/runtime)"
+        - label: "Breaks existing test suite or CI workflow"
+
+  - type: textarea
+    id: description
+    attributes:
+      label: "4. Description & Reproduction"
+      description: "Describe the defect, actual vs expected behavior, and steps to reproduce."
+      placeholder: "Describe what happened, what was expected, and minimal steps to reproduce..."
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: bug_dod
+    attributes:
+      label: "5. Resolution Requirement (Regression Test)"
+      options:
+        - label: "A regression test reproducing this bug must be added before closing."
+          required: true

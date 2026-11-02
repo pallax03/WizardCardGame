@@ -33,7 +33,6 @@ out/
 
 ### Environment Secrets ###
 .env*
-!application/.env.local
-**/CLAUDE.md
-**/AGENTS.md
+!.env.example
+!application/.env.example
 wizardEngine/logs
