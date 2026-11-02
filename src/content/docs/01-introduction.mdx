@@ -1,0 +1,123 @@
+---
+title: 1. Introduction & Evolution
+description: Context of the Wizard card game, evolutionary history across courses, baseline problem diagnosis, and goals of the Software Process Engineering intervention.
+---
+
+import { Badge, Card, CardGrid, Steps, TabItem, Tabs } from '@astrojs/starlight/components';
+
+## 1.1 The Domain: The *Wizard* Card Game
+
+**Wizard** is an exact-prediction trick-taking card game for 3 to 6 players played with a 60-card deck. The core domain is implemented in Scala 3 inside [`engine/model/`](https://github.com/pallax03/WizardCardGame/tree/master/wizardEngine/src/main/scala/io/github/pallax03/wizard/engine/model) and tested using our domain DSL ([`BasicTestDSL.scala`](https://github.com/pallax03/WizardCardGame/blob/master/wizardEngine/src/test/scala/io/github/pallax03/wizard/engine/model/basic/BasicTestDSL.scala)).
+
+<Tabs>
+  <TabItem label="Cards & Deck">
+    - **Standard**: 52 cards across 4 colors <Badge text="Red" variant="danger"></Badge>
+      <Badge text="Yellow" variant="caution"></Badge>
+      <Badge text="Green" variant="success"></Badge>
+      <Badge text="Blue" variant="note"></Badge>, ranked `1` to `13`.
+    - **Wizard**: 4 cards. Highest rank, wins unconditionally.
+    - **Jester**: 4 cards. Lowest rank, zero trick-taking power.
+
+    > In round `r`, each player is dealt exactly `r` cards.
+    
+    <details>
+    <summary>Cards DSL</summary>
+    ```scala title="BasicTestDSL.scala"
+    // Card creation and hand composition
+    val myCards = (Five of Red) - (Ten of Green) - wizard - jester
+    val hand = myCards.asHand
+    ```
+    </details>
+  </TabItem>
+
+  <TabItem label="Trump">
+    After dealing hands, one card is turned face-up from the remaining deck to determine trump for that round:
+
+    <CardGrid>
+      <Card title="Trump.Standard">
+        A standard card is drawn. Its color sets the round's **`effectiveColor`**.
+      </Card>
+      <Card title="Trump.WizardResolved">
+        A Wizard is drawn. The dealer selects any of the 4 colors to become trump before bidding phase begins.
+      </Card>
+      <Card title="Trump.Jester">
+        A Jester is drawn. There is **no trump color** for the round (`effectiveColor = None`); only the following color wins tricks.
+      </Card>
+      <Card title="Trump.Absent">
+        In the final round, all cards are dealt and none remain in the deck. Played strictly **without trump**.
+      </Card>
+    </CardGrid>
+  </TabItem>
+
+  <TabItem label="Table Rules">
+    1. First `wizard` played in the trick wins.
+    2. Highest `Card.Standard` of active `Trump.effectiveColor`.
+    3. Highest `Card.Standard` of `Table.followingColor`.
+    4. First `jester` played (only if all played cards are Jesters).
+  </TabItem>
+
+  <TabItem label="Bidding & Scoring">
+    Each round `r`, players predict how many tricks they will take (`0 <= bid <= r`).
+
+    <CardGrid>
+      <Card icon='approve-check' title="Exact Bid Match">
+        `+20 + (10 * bid)`
+
+        Fixed bonus of +20 points plus 10 points for every trick won.
+      </Card>
+      <Card icon='close' title="Missed Bid">
+        `-10 * |bid - tricksWon|`
+        
+        Penalty of 10 points subtracted for each trick above or below the prediction.
+      </Card>
+    </CardGrid>
+
+    > **Last-Bidder Rule**: The last player to bid cannot choose a bid such that the sum of all bids equals the current round number (`totalBids != round`). This guarantees that at least one player fails their prediction!
+
+  </TabItem>
+</Tabs>
+
+---
+
+## 1.2 Continuous Evolution: A Four-Act Project History
+
+**WizardCardGame** follows a **Continuous Evolution** lifecycle across four university courses, preserving domain invariants while evolving architecture and DevOps processes:
+
+<Steps>
+  1. **Act I: Paradigmi di Programmazione e Sviluppo - PPS (Genesis & Core Domain)**
+     - Pure functional game engine in Scala 3 (`wizardEngine`).
+     - Symbolic AI bot solvers using **tuProlog** theories.
+     - Strict Hexagonal Architecture (`engine/model`, `engine/ports`, `engine/adapters`).
+
+  2. **Act II: Distributed Systems - DS (Distribution, Redis & Web Scaffolding)**
+     - Distributed **Redis adapters** (CAS Lua scripts, Pub/Sub, crash recovery).
+     - Vert.x REST endpoints (`HttpServerVerticle`, OpenAPI) and WebSockets (`WebSocketsVerticle`).
+     - Prototypal Next.js client (`application/`) for browser multiplayer sessions.
+
+  3. **Act III: Software Process Engineering - SPE (Current Iteration)**
+     - Restructured 496 historical commits into 8 bisectable commits sealed with tag `v1.0.0`.
+     - Trunk-Based Development with GitHub Rulesets and Bot App automation.
+     - Multi-platform CI/CD (DRY Composite Actions, Ubuntu/macOS/Windows matrices).
+     - **`humanize-bot`** Bounded Context in TypeScript on Supabase (PostgreSQL).
+
+  4. **Act IV: Web Technologies (Future Horizon)**
+     - Complete rewrite of `application/` client with persistent authentication and match history.
+     - *Database per Bounded Context*: Schema isolation on Supabase (`bot_dialogue` vs. `public`/`auth`).
+</Steps>
+
+---
+
+## 1.3 Diagnosis of Repo Problems
+
+An audit of the repository at the end of *Act II* (`v0.3.0`, 496 commits) revealed two critical areas of process debt:
+
+### Problem 1: DVCS Entropy and Unstructured Git History
+During the first two courses, Git was used primarily as a backup mechanism:
+- **496 Unstructured Commits**: Commits mixed unrelated changes or used non-standard messages (`wip`, `fix`).
+- **Inconsistent Branching**: 127 redundant merge commits between `master` and `develop`.
+
+### Problem 2: CI/CD Fragility, Redundancy, and Missing QA Metrics
+GitHub Actions workflows suffered from maintenance and portability shortcomings:
+- **Violation of DRY**: Copy-pasted setup steps across multiple workflows instead of Composite Actions.
+- **Single-Runner Fragility**: Pipelines ran exclusively on `ubuntu-latest`, missing macOS and Windows validation.
+- **Missing QA Metrics**: No automated test coverage reports or explicit API versioning (`/api/v1/...`).
