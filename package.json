@@ -3,9 +3,35 @@
   "version": "0.0.0",
   "private": true,
   "description": "Wizard Card Game",
+  "scripts": {
+    "prepare": "husky",
+    "check": "npm run check:engine && npm run check:client",
+    "check:engine": "cd wizardEngine && sbt --batch check",
+    "check:client": "npm --prefix application run check",
+    "format:engine": "cd wizardEngine && sbt --batch format",
+    "build:engine": "cd wizardEngine && sbt --batch stage",
+    "build:client": "npm --prefix application run build"
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  },
+  "lint-staged": {
+    "application/src/**/*.{ts,tsx}": [
+      "npm --prefix application exec -- eslint --fix"
+    ],
+    "wizardEngine/**/*.{scala,sbt}": [
+      "sh -c 'cd wizardEngine && sbt --batch scalafmtAll scalafmtSbt'"
+    ]
+  },
   "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
     "semantic-release": "^24.2.3"
   }
 }
