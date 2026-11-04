@@ -1,0 +1,30 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: wizard-bot-worker
+  labels:
+    app: wizard-bot-worker
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: wizard-bot-worker
+  template:
+    metadata:
+      labels:
+        app: wizard-bot-worker
+    spec:
+      containers:
+      - name: wizard-bot-worker
+        image: wizardcardgame-wizard-engine:latest
+        envFrom:
+        - configMapRef:
+            name: wizard-config
+        env:
+        - name: ROLE
+          value: "bot_worker"
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: wizard-secrets
+              key: REDIS_PASSWORD
