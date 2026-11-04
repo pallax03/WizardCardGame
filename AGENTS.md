@@ -21,10 +21,11 @@
    - **Non-blocker**: Open a separate Issue via `bug_report.yml` and leave the unrelated code untouched.
 
 ## 4. Verification Commands (Mandatory Before Every Commit)
+- **Unified Multi-Platform Check (Root)**: `npm run check`
 - **JVM Backend (`wizardEngine/`)**:
-  - Format & static analysis: `cd wizardEngine && sbt "; scalafmtCheckAll; scalafixAll --check"`
-  - Run tests with coverage: `cd wizardEngine && sbt "; coverage; test; coverageReport"`
-  - Build fat JAR: `cd wizardEngine && sbt assembly`
+  - Format & static analysis + tests + coverage: `cd wizardEngine && sbt check`
+  - Auto-format & autofix: `cd wizardEngine && sbt format`
+  - Stage runtime binary & dependencies: `cd wizardEngine && sbt stage`
 - **Web Client (`application/`)**:
-  - Install & lint: `cd application && npm ci && npm run lint`
+  - Lint & typecheck: `cd application && npm run check`
   - Production build: `cd application && npm run build`
