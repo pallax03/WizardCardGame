@@ -3,24 +3,10 @@ description: "Plan a new domain feature, architectural refactor, CI/CD pipeline 
 title: "<type>(<scope>): <short imperative summary>"
 labels: ["triage"]
 body:
-  - type: dropdown
-    id: area
-    attributes:
-      label: "1. Architectural Area & Scope"
-      description: "Select the primary architectural area for this task (see Scope Taxonomy in report):"
-      options:
-        - "area:engine (domain, ai, bot, codecs, lobby, redis, http)"
-        - "area:dialogue (dialogue-db, dialogue-api)"
-        - "area:client (ui)"
-        - "area:devops (ci, docker, release, deps)"
-        - "area:docs (docs, chore)"
-    validations:
-      required: true
-
   - type: textarea
     id: description
     attributes:
-      label: "2. Description"
+      label: "Description"
       description: "Describe what needs to be implemented or improved, and the motivation behind it."
       placeholder: "Briefly explain the goal, expected changes, or context..."
     validations:
@@ -29,7 +15,7 @@ body:
   - type: checkboxes
     id: dod
     attributes:
-      label: "3. Definition of Done (DoD)"
+      label: "Definition of Done (DoD)"
       description: "Criteria required to merge the Pull Request and close this issue:"
       options:
         - label: "Code compiles and passes static analysis (`scalafmt`/`scalafix` or `eslint`/`tsc`)."
