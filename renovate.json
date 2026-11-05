@@ -1,0 +1,15 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(build)",
+    ":semanticCommitScope(deps)",
+    ":automergeMinor",
+    ":dependencyDashboard"
+  ],
+  "minimumReleaseAge": "7 days",
+  "labels": [
+    "dependencies",
+    "area:devops"
+  ]
+}

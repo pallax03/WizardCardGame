@@ -1,0 +1,23 @@
+name: 'Setup Node.js & Install Dependencies'
+description: 'Provisions Node.js with npm lockfile cache and runs clean install'
+
+inputs:
+  working-directory:
+    description: 'Directory containing package.json and package-lock.json'
+    required: false
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v7
+      with:
+        node-version: '24'
+        cache: 'npm'
+        cache-dependency-path: ${{ inputs.working-directory }}/package-lock.json
+
+    - name: Install dependencies
+      working-directory: ${{ inputs.working-directory }}
+      shell: bash
+      run: npm ci

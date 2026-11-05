@@ -7,79 +7,51 @@ on:
   pull_request:
     branches:
       - master
-      - develop
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
-  changes:
-    runs-on: ubuntu-latest
-    outputs:
-      app: ${{ steps.filter.outputs.app }}
-      engine: ${{ steps.filter.outputs.engine }}
-    steps:
-      - uses: actions/checkout@v7
-      - uses: dorny/paths-filter@v3
-        id: filter
-        with:
-          filters: |
-            app:
-              - 'application/**'
-              - '.github/workflows/ci.yml'
-            engine:
-              - 'wizardEngine/**'
-              - '.github/workflows/ci.yml'
-
   application-test:
-    needs: changes
-    if: ${{ needs.changes.outputs.app == 'true' }}
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v4
+        uses: ./.github/actions/setup-node
         with:
-          node-version: 24
-          cache: 'npm'
-          cache-dependency-path: application/package-lock.json
+          working-directory: ./application
 
-      - name: Install dependencies
+      - name: Check & Build Application
         working-directory: ./application
-        run: npm ci
-
-      - name: Lint
-        working-directory: ./application
-        run: npm run lint
-
-      - name: Build Next.js
-        working-directory: ./application
-        run: npm run build
+        run: |
+          npm run check
+          npm run build
 
   wizard-engine-test:
-    needs: changes
-    if: ${{ needs.changes.outputs.engine == 'true' }}
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v7
 
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-          cache: 'sbt'
-      
-      - name: Install SBT
-        uses: sbt/setup-sbt@v1
+      - name: Setup JVM & sbt
+        uses: ./.github/actions/setup-jvm
 
-      - name: SBT Format & Fix Check
-        if: github.base_ref == 'master' || github.ref == 'refs/heads/master'
+      - name: Check Engine (Format, Lint, Test & Coverage)
         working-directory: ./wizardEngine
-        run: sbt "; scalafmtCheckAll; scalafixAll --check"
-
-      - name: SBT Compile, Test & Coverage
-        working-directory: ./wizardEngine
-        run: sbt "; coverage; test; coverageReport"
+        run: sbt --batch check
