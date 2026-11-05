@@ -1,0 +1,15 @@
+name: 'Setup JVM & sbt'
+description: 'Provisions Temurin JDK with sbt cache and runner'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Java
+      uses: actions/setup-java@v6
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+        cache: 'sbt'
+
+    - name: Install sbt
+      uses: sbt/setup-sbt@v1

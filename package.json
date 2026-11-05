@@ -5,7 +5,8 @@
   "description": "Wizard Card Game",
   "scripts": {
     "prepare": "husky",
-    "check": "npm run check:engine && npm run check:client",
+    "check": "npm run check:ci && npm run check:engine && npm run check:client",
+    "check:ci": "actionlint",
     "check:engine": "cd wizardEngine && sbt --batch check",
     "check:client": "npm --prefix application run check",
     "format:engine": "cd wizardEngine && sbt --batch format",
@@ -18,6 +19,9 @@
     ]
   },
   "lint-staged": {
+    ".github/{workflows,actions}/**/*.{yml,yaml}": [
+      "sh -c 'actionlint'"
+    ],
     "application/src/**/*.{ts,tsx}": [
       "npm --prefix application exec -- eslint --fix"
     ],
