@@ -7,7 +7,7 @@
 - `wizardEngine/`: Scala 3 Hexagonal core engine (`engine/model/`, `engine/ports/`, `engine/adapters/`), `tuProlog` AI (`src/main/resources/prolog/`), Redis adapters, and Vert.x HTTP/WebSocket verticles.
   Managed via `sbt`.
 - `application/`: TypeScript/React web client, managed via `npm`.
-- `.github/`: GitHub Actions CI/CD workflows, Dependabot config, and structured Issue/PR templates.
+- `.github/`: GitHub Actions CI/CD workflows, composite actions, and structured Issue/PR templates.
 
 ## 2. Architecture & DDD Rules
 - **Domain Isolation**: `engine/model/` must contain only pure domain logic (Entities, Value Objects, Aggregates, Domain Events). No I/O, HTTP, or DB libraries allowed.
