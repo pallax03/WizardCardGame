@@ -24,6 +24,7 @@ object Dependencies {
     "ch.qos.logback" % "logback-classic" % "1.6.6",
     "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
     "org.codehaus.janino" % "janino" % "3.1.12",
-    "org.scalatest" %% "scalatest" % "3.2.20" % Test
+    "org.scalatest" %% "scalatest" % "3.2.20" % Test,
+    "com.tngtech.archunit" % "archunit" % "1.5.1" % Test
   )
 }
