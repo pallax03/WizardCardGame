@@ -37,7 +37,6 @@ object QualityPlugin extends AutoPlugin {
       s"$BasePkg.engine.adapters.*",
       s"$BasePkg.engine.ports.*",
       s"$BasePkg.engine.configuration.*",
-      s"$BasePkg.engine.lobby.*",
       s"$BasePkg.util.*"
     ).mkString(";")
   )
