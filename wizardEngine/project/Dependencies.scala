@@ -4,7 +4,7 @@ object Dependencies {
   val scala3 = "3.8.3"
 
   private val vertx = "5.1.8"
-  private val circe = "0.14.16"
+  private val circe = "0.14.17"
   private val tapir = "1.13.31"
 
   val libraries: Seq[ModuleID] = Seq(
