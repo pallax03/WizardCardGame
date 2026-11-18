@@ -11,7 +11,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestTableRules extends AnyWordSpec with Matchers:
 
-  import BasicTestDSL._
+  import BasicTestDSL.*
   import cards.Card
   import gameplay.{Table, Trump}
   "TableRules Validation" when:

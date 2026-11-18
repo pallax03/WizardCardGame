@@ -7,7 +7,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestGameState extends AnyWordSpec with Matchers:
-  import BasicTestDSL._
+  import BasicTestDSL.*
   import bidding.{Bids, Tricks}
   import cards.Card
   import gameplay.Table

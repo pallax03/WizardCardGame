@@ -7,7 +7,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestScoringRules extends AnyWordSpec with Matchers:
 
-  import bidding._
+  import bidding.*
   import gameplay.Round
   "ScoringRules integration" when:
     val p0: PlayerId = PlayerId(0)

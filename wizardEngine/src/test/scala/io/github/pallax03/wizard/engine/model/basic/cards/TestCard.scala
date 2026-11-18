@@ -4,7 +4,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestCard extends AnyWordSpec with Matchers:
-  import io.github.pallax03.wizard.engine.model.basic.BasicTestDSL._
+  import io.github.pallax03.wizard.engine.model.basic.BasicTestDSL.*
 
   "A card" should:
     "Create a Standard" in:

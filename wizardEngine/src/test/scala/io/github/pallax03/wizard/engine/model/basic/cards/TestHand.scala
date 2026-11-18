@@ -9,7 +9,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
 class TestHand extends AnyWordSpec with Matchers:
-  import BasicTestDSL._
+  import BasicTestDSL.*
 
   "A Hand" when:
     "created empty" should:
