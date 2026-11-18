@@ -21,7 +21,7 @@ object Dependencies {
     "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapir,
     "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapir,
     "com.softwaremill.sttp.tapir" %% "tapir-prometheus-metrics" % tapir,
-    "ch.qos.logback" % "logback-classic" % "1.6.4",
+    "ch.qos.logback" % "logback-classic" % "1.6.6",
     "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
     "org.codehaus.janino" % "janino" % "3.1.12",
     "org.scalatest" %% "scalatest" % "3.2.20" % Test
