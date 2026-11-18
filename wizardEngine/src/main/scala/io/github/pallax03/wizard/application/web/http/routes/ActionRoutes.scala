@@ -2,6 +2,9 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.data.EitherT
+import cats.implicits.*
+
 import io.github.pallax03.wizard.application.web.http.endpoints.ActionEndpoints
 import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
@@ -34,21 +37,13 @@ class ActionRoutes(lobbyStatePort: LobbyStatePort, gameEnginePort: InboundPort)(
       lobbyId: LobbyId,
       actionBuilder: PlayerId => GameAction
   ): Future[Either[LobbyError, Unit]] =
-    lobbyStatePort
-      .getAuthLobby(lobbyId, secret)
-      .flatMap:
-        case Right((player, lobby)) =>
-          if lobby.status != LobbyStatus.IN_GAME then Future.successful(Left(LobbyError.GamePaused))
-          else
-            gameEnginePort
-              .submitAction(lobbyId, actionBuilder(player.id))
-              .flatMap:
-                case Left(gameError) =>
-                  Future.successful(Left(LobbyError.GameActionRejected(gameError)))
-                case Right(_) =>
-                  lobbyStatePort.clearPlayerStrikes(lobbyId, player.id).map(_ => Right(()))
-        case Left(err) =>
-          Future.successful(Left(err))
+    (for
+      (player, lobby) <- EitherT(lobbyStatePort.getAuthLobby(lobbyId, secret))
+      _ <- EitherT.cond[Future](lobby.status == LobbyStatus.IN_GAME, (), LobbyError.GamePaused)
+      _ <- EitherT(gameEnginePort.submitAction(lobbyId, actionBuilder(player.id)))
+        .leftMap(LobbyError.GameActionRejected.apply)
+      _ <- EitherT.right[LobbyError](lobbyStatePort.clearPlayerStrikes(lobbyId, player.id))
+    yield ()).value
 
   private val chooseEndpoint: ServerEndpoint[Any, Future] =
     ActionEndpoints.chooseAction
