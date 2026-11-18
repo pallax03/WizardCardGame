@@ -41,20 +41,18 @@ class RedisOutboundAdapter(
 
   /** @inheritdoc */
   override def publish(lobbyId: LobbyId, events: WizardEvent*): Future[Unit] =
-    events.toList
-      .foldLeft(Future.unit): (acc, ev) =>
-        acc.flatMap: _ =>
-          given LogContext = LogContext(lobbyId)
-          val jsonMsg = ev.toJson
-          WizardLogger.info(s"Outbound event: $jsonMsg")
+    events.toList.traverse_ { ev =>
+      given LogContext = LogContext(lobbyId)
+      val jsonMsg = ev.toJson
+      WizardLogger.info(s"Outbound event: $jsonMsg")
 
-          for
-            _ <- publishToClients(lobbyId, ev, jsonMsg)
-            _ <- maybeDispatchBotTask(lobbyId, ev)
-            _ <- maybeStartTurnTimer(lobbyId, ev)
-            _ <- maybeUpdateLobbyStatus(lobbyId, ev)
-          yield ()
-      .void
+      for
+        _ <- publishToClients(lobbyId, ev, jsonMsg)
+        _ <- maybeDispatchBotTask(lobbyId, ev)
+        _ <- maybeStartTurnTimer(lobbyId, ev)
+        _ <- maybeUpdateLobbyStatus(lobbyId, ev)
+      yield ()
+    }
 
   private def publishToClients(lobbyId: LobbyId, ev: WizardEvent, jsonMsg: String): Future[Unit] =
     ev match

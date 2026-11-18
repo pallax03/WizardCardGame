@@ -75,26 +75,15 @@ class RedisGameRecoveryAdapter(
   ): Future[Boolean] =
     given LogContext = LogContext(lobbyId)
     WizardLogger.info("Restoring checkpoint")
-    redisClient
-      .send(
-        Request
-          .cmd(Command.DEL)
-          .arg(ChannelsKeys.gameCheckpoint(lobbyId))
-      )
-      .asScala
-      .map: _ =>
-        WizardLogger.info("Removing checkpoint")
-        true
-      .flatMap: _ =>
-        val engine = GameEngine.recoverRound(core)
-        redisClient
-          .send(
-            RedisUtil.setWithDefaultTTL(ChannelsKeys.game(lobbyId), engine.state.toJson)
-          )
-          .asScala
-          .map: _ =>
-            outboundPort.publish(lobbyId, LifecycleEvent.StateRecovered +: engine.events*)
-            true
+    val deleteCheckpoint = Request.cmd(Command.DEL).arg(ChannelsKeys.gameCheckpoint(lobbyId))
+    val engine = GameEngine.recoverRound(core)
+    val saveRecovered = RedisUtil.setWithDefaultTTL(ChannelsKeys.game(lobbyId), engine.state.toJson)
+    for
+      _ <- redisClient.send(deleteCheckpoint).asScala
+      _ = WizardLogger.info("Removing checkpoint")
+      _ <- redisClient.send(saveRecovered).asScala
+      _ <- outboundPort.publish(lobbyId, LifecycleEvent.StateRecovered +: engine.events*)
+    yield true
 
   private def abortGame(
       lobbyId: LobbyId,
