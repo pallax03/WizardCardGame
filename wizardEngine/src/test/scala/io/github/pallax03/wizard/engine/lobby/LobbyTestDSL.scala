@@ -3,6 +3,8 @@ package io.github.pallax03.wizard.engine.lobby
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 
 object LobbyTestDSL:
+  val defaultLobbyId: LobbyId = LobbyId("lobby-test")
+
   def human(id: PlayerId, secret: String = "default-secret"): Player =
     Player.human(id, s"Player-${id.toInt}", Some(secret)).copy(isOnline = true)
 
@@ -18,7 +20,7 @@ object LobbyTestDSL:
   extension (players: List[Player])
     infix def -(other: Player): List[Player] = players :+ other
     def asLobby(status: LobbyStatus = LobbyStatus.WAITING): Lobby =
-      Lobby(LobbyId("lobby-test"), players, status, GameConfiguration())
+      Lobby(defaultLobbyId, players, status, GameConfiguration())
 
   def emptyLobby: Lobby = List.empty[Player].asLobby()
 
