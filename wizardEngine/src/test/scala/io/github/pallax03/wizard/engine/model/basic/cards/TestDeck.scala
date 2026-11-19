@@ -12,8 +12,11 @@ class TestDeck extends AnyWordSpec with Matchers:
 
   "A new randomized Deck" should:
     val d = Deck.create
-    "have a size of 60 cards" in:
+    "have a size of 60 distinct cards with canonical special card IDs" in:
       d.length shouldBe TOTAL_SIZE
+      d.cards.distinct should have size TOTAL_SIZE
+      d.cards.collect { case Card.Wizard(id) => id }.sorted shouldBe (0 until Deck.TOTAL_WIZARD)
+      d.cards.collect { case Card.Jester(id) => id }.sorted shouldBe (0 until Deck.TOTAL_JESTER)
 
   "A custom Deck" should:
     val c1: Card = One of Red

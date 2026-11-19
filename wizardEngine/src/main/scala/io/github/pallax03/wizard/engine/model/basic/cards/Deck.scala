@@ -52,7 +52,7 @@ object Deck:
         rank <- Card.Rank.values.toList
       yield rank of color
 
-      val wizards = List.fill(TOTAL_WIZARD)(wizard)
-      val jesters = List.fill(TOTAL_JESTER)(jester)
+      val wizards = (0 until TOTAL_WIZARD).map(Card.Wizard.apply)
+      val jesters = (0 until TOTAL_JESTER).map(Card.Jester.apply)
 
       Random.shuffle(standards ++ wizards ++ jesters)

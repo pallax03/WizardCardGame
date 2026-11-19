@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/pallax03/WizardCardGame/compare/v1.0.0...v1.0.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* **model:** make SpecialCard ID generation deterministic in Deck and tests ([#186](https://github.com/pallax03/WizardCardGame/issues/186)) ([3769c6b](https://github.com/pallax03/WizardCardGame/commit/3769c6b41ffb2b16d4b8fba30fe456dba54caab7)), closes [#179](https://github.com/pallax03/WizardCardGame/issues/179) [#161](https://github.com/pallax03/WizardCardGame/issues/161) [#160](https://github.com/pallax03/WizardCardGame/issues/160) [#176](https://github.com/pallax03/WizardCardGame/issues/176)
+
 # Changelog
 
 All notable changes to this project will be documented in this file. See [Conventional Commits](https://conventionalcommits.org) for commit guidelines.
