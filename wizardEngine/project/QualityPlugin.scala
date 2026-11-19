@@ -33,10 +33,13 @@ object QualityPlugin extends AutoPlugin {
     coverageFailOnMinimum := true,
     coverageExcludedPackages := Seq(
       s"$BasePkg.Main",
-      s"$BasePkg.application.*",
-      s"$BasePkg.engine.adapters.*",
-      s"$BasePkg.engine.ports.*",
-      s"$BasePkg.engine.configuration.*",
+      s"$BasePkg.application.bot.BotManagerVerticle.*",
+      s"$BasePkg.application.timer.*",
+      s"$BasePkg.application.web.ws.*",
+      s"$BasePkg.application.web.http.(HttpServerVerticle|HttpSupport|JoinLobbyRequest|PublicPlayerInfo|LobbyStateResponse|AuthLobbyPlayer).*",
+      s"$BasePkg.engine.adapters.redis.*",
+      s"$BasePkg.engine.adapters.VertxWebSocketsAdapter.*",
+      s"$BasePkg.engine.ports.PubSubPort.*",
       s"$BasePkg.util.*"
     ).mkString(";")
   )
