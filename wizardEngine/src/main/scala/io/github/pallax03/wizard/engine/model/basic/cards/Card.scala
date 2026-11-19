@@ -1,7 +1,5 @@
 package io.github.pallax03.wizard.engine.model.basic.cards
 
-import java.util.concurrent.atomic.AtomicInteger
-
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 
 /**
@@ -50,11 +48,11 @@ object Card:
   final case class Wizard(id: Int) extends SpecialCard
   final case class Jester(id: Int) extends SpecialCard
 
-  private val specialIdGenWizard = new AtomicInteger(0)
-  def wizard: Wizard = Wizard(specialIdGenWizard.incrementAndGet() % Deck.TOTAL_WIZARD)
+  def wizard: Wizard = Wizard(0)
+  def wizard(id: Int): Wizard = Wizard(id)
 
-  private val specialIdGenJester = new AtomicInteger(0)
-  def jester: Jester = Jester(specialIdGenJester.incrementAndGet() % Deck.TOTAL_JESTER)
+  def jester: Jester = Jester(0)
+  def jester(id: Int): Jester = Jester(id)
 
   extension (rank: Rank) infix def of(color: Color): Card = Standard(color, rank)
 

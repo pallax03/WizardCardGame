@@ -56,8 +56,8 @@ class TestTableRules extends AnyWordSpec with Matchers:
     val p2 = PlayerId(2)
     val p3 = PlayerId(3)
     "award the trick to the first Wizard played" in:
-      val winningTrick = p2 plays wizard
-      val table = Table.empty + (p1 plays (Ten of Red)) + winningTrick + (p3 plays wizard)
+      val winningTrick = p2 plays wizard(1)
+      val table = Table.empty + (p1 plays (Ten of Red)) + winningTrick + (p3 plays wizard(2))
       val winner = table.evaluateTrick(Trump.Absent).map(c => (table.playerOf(c), c))
       winner shouldBe Some(winningTrick)
 
@@ -77,7 +77,7 @@ class TestTableRules extends AnyWordSpec with Matchers:
       winner shouldBe Some(winningTrick)
 
     "award the trick to the first played Jester if ONLY Jesters are on table" in:
-      val winningTrick = p1 plays jester
-      val table = Table.empty + winningTrick + (p2 plays jester) + (p3 plays jester)
+      val winningTrick = p1 plays jester(1)
+      val table = Table.empty + winningTrick + (p2 plays jester(2)) + (p3 plays jester(3))
       val winner = table.evaluateTrick(Trump.Absent).map(c => (table.playerOf(c), c))
       winner shouldBe Some(winningTrick)

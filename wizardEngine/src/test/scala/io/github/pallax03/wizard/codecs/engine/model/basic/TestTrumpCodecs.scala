@@ -23,7 +23,7 @@ class TestTrumpCodecs extends AnyWordSpec with Matchers:
     "encode and decode Trump.Jester correctly" in:
       val trump: Trump = Trump(jester)
       val jsonString = trump.toJson
-      jsonString should fullyMatch regex """\{"type":"Jester","card":\{"type":"Jester","id":[0-3]\}\}"""
+      jsonString shouldBe """{"type":"Jester","card":{"type":"Jester","id":0}}"""
       jsonString.decodeAs[Trump].value shouldBe trump
 
     "encode and decode Trump.Standard correctly" in:
@@ -35,11 +35,11 @@ class TestTrumpCodecs extends AnyWordSpec with Matchers:
     "encode and decode Trump.WizardUnresolved correctly" in:
       val trump: Trump = Trump(wizard)
       val jsonString = trump.toJson
-      jsonString should fullyMatch regex """\{"type":"WizardUnresolved","card":\{"type":"Wizard","id":[0-3]\}\}"""
+      jsonString shouldBe """{"type":"WizardUnresolved","card":{"type":"Wizard","id":0}}"""
       jsonString.decodeAs[Trump].value shouldBe trump
 
     "encode and decode Trump.WizardResolved correctly" in:
       val trump = (Trump(wizard) resolveWizard Color.Green).value
       val jsonString = trump.toJson
-      jsonString should fullyMatch regex """\{"type":"WizardResolved","card":\{"type":"Wizard","id":[0-3]\},"color":"Green"\}"""
+      jsonString shouldBe """{"type":"WizardResolved","card":{"type":"Wizard","id":0},"color":"Green"}"""
       jsonString.decodeAs[Trump].value shouldBe trump

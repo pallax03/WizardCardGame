@@ -33,11 +33,11 @@ class TestCardCodecs extends AnyWordSpec with Matchers:
     "encode and decode Card.Wizard correctly" in:
       val card: Card = wizard
       val jsonString = card.toJson
-      jsonString should fullyMatch regex """\{"type":"Wizard","id":[0-3]\}"""
+      jsonString shouldBe """{"type":"Wizard","id":0}"""
       jsonString.decodeAs[Card] shouldBe Right(card)
 
     "encode and decode Card.Jester correctly" in:
       val card: Card = jester
       val jsonString = card.toJson
-      jsonString should fullyMatch regex """\{"type":"Jester","id":[0-3]\}"""
+      jsonString shouldBe """{"type":"Jester","id":0}"""
       jsonString.decodeAs[Card] shouldBe Right(card)

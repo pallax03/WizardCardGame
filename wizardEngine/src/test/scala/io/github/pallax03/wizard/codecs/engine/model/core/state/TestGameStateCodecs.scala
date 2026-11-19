@@ -38,7 +38,7 @@ class TestGameStateCodecs extends AnyWordSpec with Matchers:
     "encode and decode GameState.ChoosingTrump correctly" in:
       val serverState = GameState.ChoosingTrump(core.updateTrump(WizardUnresolved(Card.wizard)))
       val serverStateJsonString = serverState.toJson
-      serverStateJsonString should fullyMatch regex """\{"core":\{"playersIds":\[1,2\],"hands":\{\},"trump":\{"type":"WizardUnresolved","card":\{"type":"Wizard","id":[0-3]\}\},"round":1,"dealerId":1,"scoreboard":\{\}\}\}"""
+      serverStateJsonString shouldBe """{"core":{"playersIds":[1,2],"hands":{},"trump":{"type":"WizardUnresolved","card":{"type":"Wizard","id":0}},"round":1,"dealerId":1,"scoreboard":{}}}"""
       serverStateJsonString
         .decodeAs[GameState.ChoosingTrump[ServerCoreState]]
         .value shouldBe serverState
