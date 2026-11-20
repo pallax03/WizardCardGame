@@ -19,7 +19,7 @@
   },
   "lint-staged": {
     "application/src/**/*.{ts,tsx}": [
-      "npm --prefix application exec -- eslint --fix"
+      "npm --prefix application run lint -- --fix"
     ],
     "wizardEngine/**/*.{scala,sbt}": [
       "sh -c 'cd wizardEngine && sbt --batch scalafmtAll scalafmtSbt'"
