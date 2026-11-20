@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/pallax03/WizardCardGame/compare/v1.0.1...v1.0.2) (2026-11-20)
+
+
+### Bug Fixes
+
+* **repo:** run lint-staged ESLint inside application directory ([#193](https://github.com/pallax03/WizardCardGame/issues/193)) ([1baaf4e](https://github.com/pallax03/WizardCardGame/commit/1baaf4e20e86c36ca5b58e17fcb074a963dfd050)), closes [#192](https://github.com/pallax03/WizardCardGame/issues/192)
+
 ## [1.0.1](https://github.com/pallax03/WizardCardGame/compare/v1.0.0...v1.0.1) (2026-11-19)
 
 
