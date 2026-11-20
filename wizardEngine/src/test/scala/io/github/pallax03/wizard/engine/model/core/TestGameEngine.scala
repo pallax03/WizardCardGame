@@ -13,8 +13,8 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestGameEngine extends AnyWordSpec with Matchers:
 
-  import BasicTestDSL._
-  import bidding._
+  import BasicTestDSL.*
+  import bidding.*
   import gameplay.Round
   import gameplay.Table
 

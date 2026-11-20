@@ -5,6 +5,7 @@ import scala.concurrent.Future
 import scala.jdk.CollectionConverters.*
 import scala.util.{Failure, Random, Success}
 
+import cats.data.OptionT
 import cats.syntax.all.*
 
 import io.vertx.core.AbstractVerticle
@@ -116,33 +117,40 @@ class BotManagerVerticle(
         case Left(_)     => ackEntry(entryId)
     catch case e: Exception => logError(s"Entry parse failed: ${e.getMessage}")
 
+  private def computeDelay(inv: InvitationEvent): Int = inv match
+    case c: InvitationEvent.WaitingForCard if c.isTableEmpty =>
+      DEFAULT_BOT_DELAY_MS + FIRST_CARD_DELAY_MS
+    case _ => DEFAULT_BOT_DELAY_MS
+
   private def processTask(entryId: String, task: BotTask): Unit =
     task.invitation match
-      case inv: InvitationEvent =>
-        lobbyStatePort
-          .getLobby(task.lobbyId)
-          .onComplete:
-            case Success(Right(lobby)) =>
-              lobby.players.find(_.id == inv.destinationId).flatMap(_.difficulty) match
-                case Some(diff) =>
-                  val strat = BotStrategy(diff, prologPort)
-                  strat
-                    .resolveInvitation(task.lobbyId, inv)
-                    .onComplete:
-                      case Success(action) =>
-                        val delay = inv match
-                          case c: InvitationEvent.WaitingForCard if c.isTableEmpty =>
-                            DEFAULT_BOT_DELAY_MS + FIRST_CARD_DELAY_MS
-                          case _ => DEFAULT_BOT_DELAY_MS
-                        vertx.setTimer(
-                          delay,
-                          _ => submitAndAck(task.lobbyId, inv, action, entryId)
-                        )
-                      case Failure(e) =>
-                        logError(s"Strategy failed: ${e.getMessage}"); ackEntry(entryId)
-                case None => ackEntry(entryId)
-            case _ => ackEntry(entryId)
-      case _ => ackEntry(entryId)
+      case inv: InvitationEvent => dispatchBotInvitation(entryId, task.lobbyId, inv)
+      case _                    => ackEntry(entryId)
+
+  private def dispatchBotInvitation(
+      entryId: String,
+      lobbyId: LobbyId,
+      inv: InvitationEvent
+  ): Unit =
+    val actionFut =
+      (for
+        lobby <- OptionT(lobbyStatePort.getLobby(lobbyId).map(_.toOption))
+        player <- OptionT.fromOption[Future](lobby.players.find(_.id == inv.destinationId))
+        diff <- OptionT.fromOption[Future](player.difficulty)
+        action <- OptionT.liftF(BotStrategy(diff, prologPort).resolveInvitation(lobbyId, inv))
+      yield action).value
+
+    actionFut.onComplete:
+      case Success(Some(action)) =>
+        vertx.setTimer(
+          computeDelay(inv),
+          _ => submitAndAck(lobbyId, inv, action, entryId)
+        )
+      case Success(None) =>
+        ackEntry(entryId)
+      case Failure(e) =>
+        logError(s"Strategy failed: ${e.getMessage}")
+        ackEntry(entryId)
 
   private def submitAndAck(
       lobbyId: LobbyId,
@@ -150,20 +158,31 @@ class BotManagerVerticle(
       action: GameAction,
       entryId: String
   ): Unit =
-    lobbyStatePort
-      .getLobby(lobbyId)
-      .onComplete:
-        case Success(Right(lobby))
-            if lobby.players.find(_.id == inv.destinationId).exists(_.isBot) =>
-          gameInboundPort
-            .submitAction(lobbyId, action)
-            .flatMap:
-              case Right(_) => Future.unit
-              case Left(err) =>
-                logWarn(s"Action failed for bot ${inv.destinationId} ($err). Forcing fallback.")
-                gameInboundPort.submitAction(lobbyId, FallbackStrategy.fallbackMove(inv)).void
-            .onComplete(_ => ackEntry(entryId))
-        case _ => ackEntry(entryId)
+    val submissionFut =
+      for
+        lobbyEither <- lobbyStatePort.getLobby(lobbyId)
+        isBot = lobbyEither.toOption
+          .flatMap(_.players.find(_.id == inv.destinationId))
+          .exists(_.isBot)
+        _ <-
+          if isBot then submitWithFallback(lobbyId, inv, action)
+          else Future.unit
+      yield ()
+
+    submissionFut.onComplete(_ => ackEntry(entryId))
+
+  private def submitWithFallback(
+      lobbyId: LobbyId,
+      inv: InvitationEvent,
+      action: GameAction
+  ): Future[Unit] =
+    gameInboundPort
+      .submitAction(lobbyId, action)
+      .flatMap:
+        case Right(_) => Future.unit
+        case Left(err) =>
+          logWarn(s"Action failed for bot ${inv.destinationId} ($err). Forcing fallback.")
+          gameInboundPort.submitAction(lobbyId, FallbackStrategy.fallbackMove(inv)).void
 
   private def ackEntry(entryId: String): Unit =
     redisClient

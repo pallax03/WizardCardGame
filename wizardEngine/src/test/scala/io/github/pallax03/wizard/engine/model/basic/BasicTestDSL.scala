@@ -16,4 +16,4 @@ object BasicTestDSL:
 
   def handsOf(entries: (PlayerId, Hand)*): Hands = Hands(entries.toMap)
 
-export BasicTestDSL._
+export BasicTestDSL.*

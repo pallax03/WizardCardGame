@@ -77,27 +77,27 @@ object WizardEventsCodecs:
         case "GameResumed" =>
           fields.get[List[PlayerId]]("playersIds").map(LifecycleEvent.GameResumed.apply)
         case "WaitingForTrump" =>
-          for {
+          for
             p <- ev.get[PlayerId]("destinationId")
             c = fields.get[List[Card.Color]]("colorOptions").getOrElse(Card.Color.values.toList)
-          } yield InvitationEvent.WaitingForTrump(p, c)
+          yield InvitationEvent.WaitingForTrump(p, c)
         case "WaitingForBid" =>
-          for {
+          for
             p <- ev.get[PlayerId]("destinationId")
             r <- fields.get[Round]("round")
             i <- fields.get[Option[Bid]]("invalidBid")
-          } yield InvitationEvent.WaitingForBid(p, r, i)
+          yield InvitationEvent.WaitingForBid(p, r, i)
         case "WaitingForCard" =>
-          for {
+          for
             p <- ev.get[PlayerId]("destinationId")
             cards <- fields.get[List[Card]]("legalCards")
             isTableEmpty <- fields.get[Boolean]("isTableEmpty")
-          } yield InvitationEvent.WaitingForCard(p, cards, isTableEmpty)
+          yield InvitationEvent.WaitingForCard(p, cards, isTableEmpty)
         case "ActionFailed" =>
-          for {
+          for
             p <- ev.get[PlayerId]("destinationId")
             err <- fields.get[GameActionError]("reason")
-          } yield FailureEvent.ActionFailed(p, err)
+          yield FailureEvent.ActionFailed(p, err)
         case "StateRecovered" =>
           Right(LifecycleEvent.StateRecovered)
         case "GameCancelled" =>

@@ -11,7 +11,7 @@ class TestWizardEventsCodecs extends AnyWordSpec with Matchers:
 
   import basic.{PlayerId, Scoreboard}
   import basic.cards.Card.*
-  import events._
+  import events.*
   import core.GameActionError
   import basic.BasicTestDSL.*
   import WizardEventsCodecs.given

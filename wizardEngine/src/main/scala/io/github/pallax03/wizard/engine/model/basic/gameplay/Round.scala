@@ -15,4 +15,4 @@ object Round:
 
   extension (r: Round) def next: Round = r + 1
 
-export Round._
+export Round.*

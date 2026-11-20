@@ -50,6 +50,33 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       case Right(lobby) => lobby.authenticate(secret).map(player => (player, lobby))
       case Left(err)    => Left(err)
 
+  private def publishEventIfPresent(
+      lobbyId: LobbyId,
+      eventOpt: Option[SystemEvent]
+  ): Future[Unit] =
+    eventOpt match
+      case Some(ev) =>
+        val req = Request
+          .cmd(Command.PUBLISH)
+          .arg(ChannelsKeys.pubSubLobbyChannel(lobbyId))
+          .arg(ev.toJson)
+        redisClient.send(req).asScala.void
+      case None => Future.unit
+
+  private def tryCasWrite(
+      lobbyId: LobbyId,
+      expectedVersion: Int,
+      newLobby: Lobby
+  ): Future[Boolean] =
+    val req = Request
+      .cmd(Command.EVAL)
+      .arg(RedisLobbyScripts.casLobbyScript)
+      .arg("1")
+      .arg(ChannelsKeys.lobby(lobbyId))
+      .arg(expectedVersion.toString)
+      .arg(newLobby.toJson)
+    redisClient.send(req).asScala.map(_.toBoolean)
+
   private def upsertLobby[A](lobbyId: LobbyId)(
       f: Option[Lobby] => Either[LobbyError, (A, Lobby, Option[SystemEvent])]
   ): Future[Either[LobbyError, A]] =
@@ -59,31 +86,9 @@ class RedisLobbyStateAdapter(redisClient: Redis) extends LobbyStatePort:
       f(optLobby) match
         case Left(err) => Future.successful(Left(err))
         case Right((res, newLobby, eventOpt)) =>
-          val req = Request
-            .cmd(Command.EVAL)
-            .arg(RedisLobbyScripts.casLobbyScript)
-            .arg("1")
-            .arg(ChannelsKeys.lobby(lobbyId))
-            .arg(expectedVersion.toString)
-            .arg(newLobby.toJson)
-          redisClient
-            .send(req)
-            .asScala
-            .flatMap: resp =>
-              if resp.toBoolean then
-                eventOpt match
-                  case Some(ev) =>
-                    redisClient
-                      .send(
-                        Request
-                          .cmd(Command.PUBLISH)
-                          .arg(ChannelsKeys.pubSubLobbyChannel(lobbyId))
-                          .arg(ev.toJson)
-                      )
-                      .asScala
-                      .map(_ => Right(res))
-                  case None => Future.successful(Right(res))
-              else upsertLobby(lobbyId)(f)
+          tryCasWrite(lobbyId, expectedVersion, newLobby).flatMap: updated =>
+            if updated then publishEventIfPresent(lobbyId, eventOpt).as(Right(res))
+            else upsertLobby(lobbyId)(f)
 
   /** @inheritdoc */
   override def updateLobby[A](lobbyId: LobbyId)(

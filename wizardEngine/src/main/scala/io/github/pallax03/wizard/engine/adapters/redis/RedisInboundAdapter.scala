@@ -3,6 +3,7 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+import cats.data.EitherT
 import cats.syntax.all.*
 
 import io.vertx.redis.client.{Command, Redis, Request}
@@ -65,7 +66,7 @@ class RedisInboundAdapter(
       case _ if newState.events.exists(_.isInstanceOf[ProgressEvent.RoundScored]) =>
         List(RedisUtil.setWithDefaultTTL(checkpointKey, newState.state.toJson))
       case _ => List.empty
-    Future.sequence((mainSave +: checkpointSave).map(r => redisClient.send(r).asScala)).void
+    (mainSave +: checkpointSave).traverse_(r => redisClient.send(r).asScala)
 
   /** @inheritdoc */
   override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState] =
@@ -104,11 +105,23 @@ class RedisInboundAdapter(
   override def deleteGame(lobbyId: LobbyId): Future[Unit] =
     val key = ChannelsKeys.game(lobbyId)
     val checkpointKey = ChannelsKeys.gameCheckpoint(lobbyId)
-    Future
-      .sequence(
-        List(key, checkpointKey).map(k => redisClient.send(Request.cmd(Command.DEL).arg(k)).asScala)
-      )
+    List(key, checkpointKey)
+      .traverse_(k => redisClient.send(Request.cmd(Command.DEL).arg(k)).asScala)
       .flatMap(_ => outboundPort.publish(lobbyId, LifecycleEvent.GameCancelled(None)))
+
+  private def applyAndPersistAction(
+      lobbyId: LobbyId,
+      state: ServerGameState,
+      action: GameAction
+  ): Future[Either[GameActionError, Unit]] =
+    (for
+      newState <- EitherT.fromEither[Future](GameEngine.processAction(state, action))
+      clearTimer = redisClient
+        .send(Request.cmd(Command.DEL).arg(ChannelsKeys.turnTimer(lobbyId, action.playerId)))
+        .asScala
+      _ <- EitherT.right[GameActionError](saveState(lobbyId, newState).zip(clearTimer))
+      _ <- EitherT.right[GameActionError](outboundPort.publish(lobbyId, newState.events*))
+    yield ()).value
 
   /** @inheritdoc */
   override def submitAction(
@@ -117,21 +130,8 @@ class RedisInboundAdapter(
   ): Future[Either[GameActionError, Unit]] =
     withRecovery(lobbyId):
       fetchGameState(lobbyId).flatMap:
-        case None => Future.successful(Right(()))
-        case Some(state) =>
-          GameEngine.processAction(state, action) match
-            case Left(error) => Future.successful(Left(error))
-            case Right(newState) =>
-              val playerId = action.playerId
-              val clearTimer = redisClient
-                .send(Request.cmd(Command.DEL).arg(ChannelsKeys.turnTimer(lobbyId, playerId)))
-                .asScala
-
-              saveState(lobbyId, newState)
-                .zip(clearTimer)
-                .map: _ =>
-                  outboundPort.publish(lobbyId, newState.events*)
-                  Right(())
+        case None        => Future.successful(Right(()))
+        case Some(state) => applyAndPersistAction(lobbyId, state, action)
 
   /** @inheritdoc */
   override def forceFallbackAction(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =

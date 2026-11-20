@@ -93,11 +93,10 @@ class VertxWebSocketsAdapter(
 
     vertx.setPeriodic(
       VertxWebSocketsAdapter.PING_INTERVAL_MS,
-      _ => {
+      _ =>
         if System.currentTimeMillis() - lastPong > VertxWebSocketsAdapter.PONG_TIMEOUT_MS then
           if !ws.isClosed then ws.close()
         else if !ws.isClosed then ws.writePing(Buffer.buffer("ping"))
-      }
     )
 
   /** @inheritdoc */

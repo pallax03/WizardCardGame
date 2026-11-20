@@ -70,60 +70,63 @@ class TurnTimerVerticle(
   private def handleExpiredKey(expiredKey: String): Unit =
     expiredKey.split(':') match
       case Array("timer", lobbyIdStr, playerIdStr) =>
-        val lobbyId = LobbyId(lobbyIdStr)
-        val playerId = PlayerId(playerIdStr.toInt)
-        (for
-          case Right(lobby) <- lobbyStatePort.getLobby(lobbyId)
-          if lobby.status == LobbyStatus.IN_GAME
-          player = lobby.players.find(_.id == playerId).get
-          _ <-
-            if player.isBot then inboundPort.forceFallbackAction(lobbyId, playerId)
-            else
-              for
-                strikes <- lobbyStatePort.incrementPlayerStrikes(lobbyId, playerId)
-                _ <-
-                  if strikes >= lobby.configuration.maxStrikes then
-                    lobbyStatePort
-                      .setPlayerOnlineStatus(lobbyId, playerId, false)
-                      .flatMap: _ =>
-                        pubSubPort
-                          .publish(
-                            ChannelsKeys.pubSubLobbyChannel(lobbyId),
-                            SystemEvent.offline(playerId).toJson
-                          )
-                          .void
-                  else inboundPort.forceFallbackAction(lobbyId, playerId)
-              yield ()
-        yield ()).recover: ex =>
-          given LogContext = LogContext(lobbyId, playerId)
-          WizardLogger.error(s"Timer action failed: ${ex.getMessage}")
-
+        handleTurnTimeout(LobbyId(lobbyIdStr), PlayerId(playerIdStr.toInt))
       case Array("disconnect", lobbyIdStr) =>
-        val lobbyId = LobbyId(lobbyIdStr)
-        lobbyStatePort
-          .updateLobby[(List[PlayerId], LobbyStatus)](lobbyId): lobby =>
-            if lobby.status == LobbyStatus.DISCONNECTING then
-              val (offlineIds, newLobby) = lobby.replaceOfflinePlayersWithBots()
-              Right(((offlineIds, newLobby.status), newLobby, None))
-            else Right(((Nil, lobby.status), lobby, None))
-          .flatMap:
-            case Right((offlineIds, newStatus)) if offlineIds.nonEmpty =>
-              for
-                _ <- Future.sequence(
-                  offlineIds.map(pid =>
-                    pubSubPort.publish(
-                      ChannelsKeys.pubSubLobbyChannel(lobbyId),
-                      SystemEvent.afkReplaced(pid).toJson
-                    )
-                  )
-                )
-                _ <-
-                  if newStatus == LobbyStatus.IN_GAME then inboundPort.resumeGame(lobbyId)
-                  else Future.unit
-              yield ()
-            case _ => Future.unit
-          .recover: ex =>
-            given LogContext = LogContext(lobbyId)
-            WizardLogger.error(s"Disconnect timer failed: ${ex.getMessage}")
-
+        handleDisconnectTimeout(LobbyId(lobbyIdStr))
       case _ => ()
+
+  private def handleHumanStrike(
+      lobbyId: LobbyId,
+      playerId: PlayerId,
+      maxStrikes: Int
+  ): Future[Unit] =
+    for
+      strikes <- lobbyStatePort.incrementPlayerStrikes(lobbyId, playerId)
+      _ <-
+        if strikes >= maxStrikes then
+          for
+            _ <- lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, false)
+            _ <- pubSubPort.publish(
+              ChannelsKeys.pubSubLobbyChannel(lobbyId),
+              SystemEvent.offline(playerId).toJson
+            )
+          yield ()
+        else inboundPort.forceFallbackAction(lobbyId, playerId)
+    yield ()
+
+  private def handleTurnTimeout(lobbyId: LobbyId, playerId: PlayerId): Unit =
+    (for
+      case Right(lobby) <- lobbyStatePort.getLobby(lobbyId)
+      if lobby.status == LobbyStatus.IN_GAME
+      player = lobby.players.find(_.id == playerId).get
+      _ <-
+        if player.isBot then inboundPort.forceFallbackAction(lobbyId, playerId)
+        else handleHumanStrike(lobbyId, playerId, lobby.configuration.maxStrikes)
+    yield ()).recover: ex =>
+      given LogContext = LogContext(lobbyId, playerId)
+      WizardLogger.error(s"Timer action failed: ${ex.getMessage}")
+
+  private def handleDisconnectTimeout(lobbyId: LobbyId): Unit =
+    lobbyStatePort
+      .updateLobby[(List[PlayerId], LobbyStatus)](lobbyId): lobby =>
+        if lobby.status == LobbyStatus.DISCONNECTING then
+          val (offlineIds, newLobby) = lobby.replaceOfflinePlayersWithBots()
+          Right(((offlineIds, newLobby.status), newLobby, None))
+        else Right(((Nil, lobby.status), lobby, None))
+      .flatMap:
+        case Right((offlineIds, newStatus)) if offlineIds.nonEmpty =>
+          for
+            _ <- offlineIds.traverse_(pid =>
+              pubSubPort.publish(
+                ChannelsKeys.pubSubLobbyChannel(lobbyId),
+                SystemEvent.afkReplaced(pid).toJson
+              )
+            )
+            _ <-
+              if newStatus == LobbyStatus.IN_GAME then inboundPort.resumeGame(lobbyId)
+              else Future.unit
+          yield ()
+        case _ => Future.unit
+      .recover: ex =>
+        given LogContext = LogContext(lobbyId)
+        WizardLogger.error(s"Disconnect timer failed: ${ex.getMessage}")

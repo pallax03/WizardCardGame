@@ -4,7 +4,7 @@ import scala.util.Success
 
 import io.vertx.core.AbstractVerticle
 import io.vertx.core.http.HttpServerOptions
-import io.vertx.ext.web.Router
+import io.vertx.ext.web.{Router, RoutingContext}
 
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.toJson
@@ -37,25 +37,35 @@ class WebSocketsVerticle(
         val req = ctx.request()
         val lobbyIdStr = req.getParam("lobbyId")
         val secret = req.getParam("secret")
-        if lobbyIdStr == null || secret == null then {
+        if lobbyIdStr == null || secret == null then
           req
             .response()
             .setStatusCode(400)
             .end("try with <url>/lobby/<lobbyId>?secret=<player_secret>")
-        } else
-          req.toWebSocket.onComplete: res =>
-            if res.succeeded() then
-              val ws = res.result()
-              lobbyStatePort
-                .getAuthLobby(LobbyId(lobbyIdStr), secret)
-                .onVertxComplete(ctx):
-                  case Success(Right((player, _))) =>
-                    wsPortAdapter.subscribeToLobbyEvents(LobbyId(lobbyIdStr), player.id, ws)
-                  case Success(Left(LobbyError.LobbyNotFound)) =>
-                    ws.close(404, LobbyError.LobbyNotFound.toJson)
-                  case Success(Left(err: LobbyError)) =>
-                    ws.close(401, err.toJson)
-                  case _ =>
-                    ws.close(500, "Internal Server Error")
+        else upgradeAndSubscribe(ctx, LobbyId(lobbyIdStr), secret)
+
     val options = HttpServerOptions().setIdleTimeout(WS_IDLE_TIMEOUT_SECONDS)
     vertx.createHttpServer(options).requestHandler(router).listen(port)
+
+  private def upgradeAndSubscribe(
+      ctx: RoutingContext,
+      lobbyId: LobbyId,
+      secret: String
+  ): Unit =
+    ctx
+      .request()
+      .toWebSocket
+      .onComplete: res =>
+        if res.succeeded() then
+          val ws = res.result()
+          lobbyStatePort
+            .getAuthLobby(lobbyId, secret)
+            .onVertxComplete(ctx):
+              case Success(Right((player, _))) =>
+                wsPortAdapter.subscribeToLobbyEvents(lobbyId, player.id, ws)
+              case Success(Left(LobbyError.LobbyNotFound)) =>
+                ws.close(404, LobbyError.LobbyNotFound.toJson)
+              case Success(Left(err: LobbyError)) =>
+                ws.close(401, err.toJson)
+              case _ =>
+                ws.close(500, "Internal Server Error")

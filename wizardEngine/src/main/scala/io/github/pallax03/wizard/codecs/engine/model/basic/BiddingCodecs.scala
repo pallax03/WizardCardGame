@@ -8,7 +8,7 @@ import sttp.tapir.Schema
 
 /** Circe codecs and Tapir schemas for player bids and trick counts per round. */
 object BiddingCodecs:
-  import bidding._
+  import bidding.*
   import PlayerIdCodecs.given
 
   given Encoder[Bids] = Encoder.encodeMap[PlayerId, Bid].asInstanceOf[Encoder[Bids]]
