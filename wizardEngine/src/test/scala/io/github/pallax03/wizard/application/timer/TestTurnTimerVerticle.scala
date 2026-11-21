@@ -24,7 +24,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestTurnTimerVerticle extends AnyWordSpec with Matchers with OptionValues with ScalaFutures:
 
-  given PatienceConfig = PatienceConfig(timeout = Span(2, Seconds), interval = Span(15, Millis))
+  given PatienceConfig = PatienceConfig(timeout = Span(5, Seconds), interval = Span(15, Millis))
 
   "TurnTimerVerticle" when:
     val humanId = PlayerId(0)

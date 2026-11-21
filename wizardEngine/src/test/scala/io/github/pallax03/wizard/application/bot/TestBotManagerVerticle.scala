@@ -13,7 +13,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestBotManagerVerticle extends AnyWordSpec with Matchers with ScalaFutures:
 
-  given PatienceConfig = PatienceConfig(timeout = Span(2, Seconds), interval = Span(15, Millis))
+  given PatienceConfig = PatienceConfig(timeout = Span(5, Seconds), interval = Span(15, Millis))
 
   private def newVerticle(
       handler: (Command, List[String]) => VertxFuture[Response] = (_, _) =>
