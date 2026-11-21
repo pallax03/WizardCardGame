@@ -1,3 +1,10 @@
+## [1.0.3](https://github.com/pallax03/WizardCardGame/compare/v1.0.2...v1.0.3) (2026-11-21)
+
+
+### Bug Fixes
+
+* **bot:** recover bot stream consumers and handle worker node outages ([#195](https://github.com/pallax03/WizardCardGame/issues/195)) ([e0c6e36](https://github.com/pallax03/WizardCardGame/commit/e0c6e361755b6714297b0a88ff19edc4fab56d12)), closes [#117](https://github.com/pallax03/WizardCardGame/issues/117) [#193](https://github.com/pallax03/WizardCardGame/issues/193)
+
 ## [1.0.2](https://github.com/pallax03/WizardCardGame/compare/v1.0.1...v1.0.2) (2026-11-20)
 
 
