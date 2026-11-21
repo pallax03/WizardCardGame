@@ -76,10 +76,17 @@ GitFlow (`master`, `develop`, `releases/*`) proved excessive for a 1-2 person te
 - Work happens on short-lived branches: `<type>/<issue-id>-<description>` (e.g. `chore/153-repo-governance`, `ci/154-dry-matrix-pipelines`).
 
 ### Security & Least Privilege: GitHub Rulesets and Dedicated Bot App
-To prevent human error (accidental force pushes, committing directly to `master` when tired), access to `master` is locked down using **GitHub Rulesets**:
+To prevent human error (accidental force pushes, committing directly to `master` when tired), access to `master` is locked down using **GitHub Rulesets** and `.github/CODEOWNERS`:
 1. **Direct Pushes Blocked**: Even repository administrators cannot push directly to `master`.
 2. **Mandatory Pull Requests & Status Checks**: All CI matrix jobs must pass before merging.
 3. **Dedicated GitHub App (Bot Actor)**: Automated releases and version tagging are delegated to a GitHub App with restricted permissions, separating routine human coding from privileged release workflows.
+
+### Orphan `docs` Branch Workflow & Trade-Offs
+- **Isolation**: The technical report lives on an isolated orphan branch (`docs`) built with Astro Starlight and deployed to GitHub Pages via `.github/workflows/pages.yml`, keeping `master` history and `git bisect` free of documentation-only noise and allowing the report to evolve independently across courses.
+- **Pragmatic Contribution Flow**: Dedicated Issues/PRs (with `area:docs`) are used when report updates are tied to project milestones or structural chapters; quick edits and fixes are pushed **directly to `docs`** without PR ceremony.
+- **Accepted Trade-Offs**:
+  1. Unlike `master`, `docs` does not enforce PR squash/rebase, so its history will grow less linear over time — acceptable since `docs` is never merged into `master`.
+  2. **Zero-Bot Dependency Policy (KISS)**: `docs` build-time dependencies are locked via `package-lock.json` and updated manually on demand rather than adding a second bot (Dependabot) or noisy PRs on a static site with no server runtime.
 
 ---
 
@@ -91,6 +98,7 @@ Commits follow the **Conventional Commits** specification:
 ```
 
 - **Type Semantics**: `feat` triggers a `MINOR` release, `fix` triggers a `PATCH` release, and the `!` suffix (or `BREAKING CHANGE` footer) triggers a `MAJOR` release. Non-releasing types (`ci`, `build`, `refactor`, `test`, `docs`, `chore`) skip version bumps.
+- **Client-Side Enforcement**: Local Git hooks managed by **Husky** enforce commit quality before push — `.husky/commit-msg` validates Conventional Commits via `@commitlint/config-conventional`, and `.husky/pre-commit` runs `lint-staged` for ESLint and `scalafmt` — explicitly bypassed in CI releases via `HUSKY=0` in `release.yml`.
 - **Bounded Scopes**: Scopes are partitioned across our Bounded Contexts and GitHub `area:*` labels, establishing clear architectural boundaries on which files a commit is allowed to touch:
 
 <Tabs>
@@ -103,13 +111,22 @@ Commits follow the **Conventional Commits** specification:
       - wizardEngine/
         - src/main/scala/io/github/pallax03/wizard/engine/
           - model/ (pure game rules, entities, state)
+          - lobby/ (lobby lifecycle domain)
           - ports/ (hexagonal inbound/outbound ports)
           - adapters/ (Redis, Vert.x, tuProlog)
+          - codecs/ (JSON wire codecs)
+          - application/
+            - bot/ (BotManagerVerticle, strategy/)
+            - timer/ (turn timer verticles)
+            - web/
+              - http/ (REST routes & OpenAPI)
+              - ws/ (WebSocket verticles)
     </FileTree>
 
+    - `engine`: Cross-cutting engine tests, architecture checks, and refactors.
     - `domain`: Pure game entities, value objects, rules, and turn states.
     - `ai`: `tuProlog` theories and symbolic bot solver.
-    - `bot`: Bot orchestration and `GameSituationAnalyzer`.
+    - `bot`: Bot orchestration and `GameSituationAnalyzer` *(planned)*.
     - `codecs`: JSON serialization codecs for domain state and events.
     - `lobby`: Lobby lifecycle and match coordination verticles.
     - `redis`: Redis state, CAS Lua scripts, Pub/Sub, and recovery adapters.
@@ -133,7 +150,9 @@ Commits follow the **Conventional Commits** specification:
     <FileTree>
       - application/
         - src/
+          - app/ (Next.js App Router pages)
           - features/ (game board, lobby session, chat hook)
+          - lib/ (API clients & shared utilities)
           - ui/ (reusable presentation components)
     </FileTree>
 
@@ -147,11 +166,13 @@ Commits follow the **Conventional Commits** specification:
 
     <FileTree>
       - .github/
-        - workflows/ (ci.yml, release.yml)
+        - workflows/ (ci.yml, release.yml, deploy.yml)
         - actions/ (composite setup actions)
-      - Dockerfile, compose.yml, Caddyfile
+      - wizardEngine/Dockerfile, application/Dockerfile
+      - compose.yml, Caddyfile
     </FileTree>
 
+    - `repo`: Repository governance, root scripts, and local Git hooks.
     - `ci`: GitHub Actions workflows, multi-OS matrices, and composite actions.
     - `docker`: Dockerfiles, Caddy reverse proxy, and container compose stack.
     - `release`: Semantic release configuration and automated tag publishing.
@@ -161,14 +182,15 @@ Commits follow the **Conventional Commits** specification:
   <TabItem label="area:docs">
     <Badge text="Documentation & Governance (Report & Manifests)" variant="note" />
 
-    **Allowed Types**: `docs`, `chore`
+    **Allowed Types**: `docs`, `chore`, `ci`
 
     <FileTree>
       - report/ (Astro Starlight technical report on docs branch)
       - AGENTS.md, AI-DECLARATION.md, README.md
     </FileTree>
 
-    - `docs`: Technical report chapters, architectural decision logs, and governance manifests (`AGENTS.md`, `AI-DECLARATION.md`, `README.md`).
+    - `docs(<section>)`: Technical report chapters (e.g., `docs(dvcs)`, `docs(intro)`), architectural decision logs, and governance manifests (`AGENTS.md`, `AI-DECLARATION.md`, `README.md`).
+    - `ci(report)`: GitHub Pages deployment workflow on the `docs` branch.
   </TabItem>
 </Tabs>
 
@@ -188,7 +210,7 @@ Following the principle that *"only what logically belongs together should be co
 
 ## 4.5 Issue-Driven Workflow & Repository Hygiene
 
-Every change starts from a **GitHub Issue**:
+Every change on `master` starts from a **GitHub Issue** (with the pragmatic `docs` direct-push exception documented in [Section 4.2](#orphan-docs-branch-workflow--trade-offs)):
 
 ```mermaid
 flowchart LR
@@ -198,7 +220,7 @@ flowchart LR
     D --> E["Master Trunk"]
 ```
 
-1. **Structured Issue Forms (`.github/ISSUE_TEMPLATE/`)**: Rather than unstructured free text, issues use YAML forms requiring a clear objective, architectural boundaries (*what not to touch*), and a **Definition of Done (DoD)** checklist, linking directly to [Section 4.3](#43-conventional-commits--scope-taxonomy) as the Single Source of Truth (DRY).
+1. **Structured Issue Forms (`.github/ISSUE_TEMPLATE/`)**: Rather than unstructured free text, issues use YAML forms requiring a clear objective/description, environment and reproducibility details for bugs, and a **Definition of Done (DoD)** checklist, linking directly to [Section 4.3](#43-conventional-commits--scope-taxonomy) as the Single Source of Truth (DRY).
 2. **Traceability without Friction**: Branch names reference the issue (`chore/153-repo-governance`), and PRs link it via `Closes #153`.
 3. **Repository Hygiene**:
    - **`.gitattributes`**: Normalizes text files to LF (`* text=auto eol=lf`) while preserving CRLF for Windows scripts (`.bat`, `.cmd`, `.ps1`), preventing cross-OS line-ending diffs in CI.
@@ -213,6 +235,6 @@ To prevent integration hell, scope creep, and broken bisections in Trunk-Based D
    - **Blocker**: Pause the feature branch, mark the issue as `blocked by`, fix and test the bug in a dedicated `fix/<id>-<slug>` PR merged to `master`, then rebase.
    - **Non-blocker**: Log a new issue via `bug_report.yml`, link it as a sub-issue or follow-up, and continue the feature without scope expansion.
 3. **Single-Concern PRs & Architectural Slicing**: Rather than enforcing rigid line-count thresholds, every commit must be a self-contained, compilable, and testable unit, and every PR must resolve a single issue (`Closes #<id>`). Cross-cutting features are sliced across architectural boundaries (Domain $\rightarrow$ Adapters $\rightarrow$ UI).
-4. **Declarative Labeling & AI Agent Guardrails (`AGENTS.md` / `AI-DECLARATION.md`)**:
-   - **Zero-Bot Labeling**: Static labels (`bug`, `triage`, `dependencies`) are assigned natively via YAML issue forms and `renovate.json`, while `area:*` labels are selected directly in GitHub's native sidebar without third-party labeler bots.
+4. **Declarative Labeling, Native Issue Types & AI Agent Guardrails (`AGENTS.md` / `AI-DECLARATION.md`)**:
+   - **Native Issue Types & Zero-Bot Labeling**: Classification uses **GitHub Native Issue Types** (`Bug`, `Task`, `Feature`) instead of legacy type labels (`bug`, `enhancement`). Static labels are assigned natively: `triage` (`task.yml`), `dependencies` + `area:devops` (`renovate.json`), `released` (release automation), while `area:*` domain labels are selected directly in GitHub's native sidebar without third-party labeler bots.
    - **AI Anti-Over-Engineering & Commit Discipline**: Compliant with [`AI-DECLARATION.md`](https://ai-declaration.md/) and [`AGENTS.md`](https://agents.md/), repository manifests transparently declare GenAI usage levels and instruct coding agents to avoid speculative abstractions, never run monolithic `git add .` mega-commits, and strictly respect bounded scopes.
