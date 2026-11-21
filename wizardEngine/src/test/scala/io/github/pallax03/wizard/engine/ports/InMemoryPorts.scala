@@ -177,3 +177,24 @@ class StubAIPort(
       playerId: PlayerId
   ): PartialFunction[PlayerGameState, Option[Card]] =
     case _: GameState.Playing[?] => card
+
+/** In-memory [[PubSubPort]] test double recording published messages and supporting local subscriptions. */
+class InMemoryPubSubPort extends PubSubPort:
+  private val _published = mutable.ListBuffer.empty[(String, String)]
+  private val subscribers = mutable.Map.empty[String, mutable.ListBuffer[String => Unit]]
+
+  def published: List[(String, String)] = _published.toList
+
+  override def publish(channel: String, jsonMessage: String): Future[Unit] =
+    _published.addOne((channel, jsonMessage))
+    subscribers.get(channel).foreach(_.foreach(_(jsonMessage)))
+    Future.unit
+
+  override def subscribe(channel: String, onMessage: String => Unit): Future[Subscription] =
+    val list = subscribers.getOrElseUpdate(channel, mutable.ListBuffer.empty)
+    list.addOne(onMessage)
+    Future.successful:
+      new Subscription:
+        override def cancel(): Future[Unit] =
+          list -= onMessage
+          Future.unit

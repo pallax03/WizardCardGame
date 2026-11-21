@@ -1,5 +1,7 @@
 package io.github.pallax03.wizard.engine.lobby
 
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
+
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 
@@ -34,3 +36,23 @@ class TestGameConfiguration extends AnyWordSpec with Matchers:
         config.calculateTTL(1) shouldBe 16
         config.calculateTTL(2) shouldBe 8
         config.calculateTTL(10) shouldBe 1
+
+    "calculating player turn TTL" should:
+      val defaultConfig = GameConfiguration(timer = 30)
+      val slowConfig = GameConfiguration(timer = 90)
+      val human = Player.human(PlayerId(0), "Alice", Some("secret"))
+      val nativeBot = Player.bot(PlayerId(1), BotsDifficulty.Prolog)
+      val replacedHuman = human.replaceWithABot()
+
+      "apply strike decay for active human players" in:
+        defaultConfig.calculateTTL(human) shouldBe 33
+        defaultConfig.calculateTTL(human.copy(strikes = 1)) shouldBe 16
+        defaultConfig.calculateTTL(human.copy(strikes = 2)) shouldBe 8
+
+      "use dedicated bot timeout for native bots and AFK-replaced humans" in:
+        defaultConfig.calculateTTL(nativeBot) shouldBe GameConfiguration.BOT_TURN_TIMEOUT_SECONDS
+        slowConfig.calculateTTL(nativeBot) shouldBe GameConfiguration.BOT_TURN_TIMEOUT_SECONDS
+        slowConfig.calculateTTL(replacedHuman) shouldBe GameConfiguration.BOT_TURN_TIMEOUT_SECONDS
+
+      "cap bot timeout at the baseline human TTL when configured timer is lower" in:
+        GameConfiguration(timer = 5).calculateTTL(nativeBot) shouldBe 8

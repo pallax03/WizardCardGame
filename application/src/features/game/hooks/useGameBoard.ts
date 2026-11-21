@@ -23,6 +23,9 @@ import { t } from "@/ui/i18n/core";
 /** Secondi di pausa a fine presa: il tavolo resta visibile prima di pulirsi. */
 export const TRICK_REVEAL_SECONDS = 6;
 
+/** Dedicated timeout matching engine GameConfiguration.BOT_TURN_TIMEOUT_SECONDS. */
+const BOT_TURN_TIMEOUT_SECONDS = 12;
+
 const gameI18n = t("game");
 
 export function useGameBoard(customPlayerId?: number) {
@@ -222,6 +225,7 @@ export function useGameBoard(customPlayerId?: number) {
     const timer = Number(lobby.configuration.timer);
     const player = lobby.players.find((candidate) => candidate.id === activePlayerId);
     if (!Number.isFinite(timer) || timer <= 0 || !player) return null;
+    if (player.difficulty) return Math.min(BOT_TURN_TIMEOUT_SECONDS, timer);
     const strikes = Math.max(0, Number(player.strikes ?? 0));
     return Math.max(1, timer / 2 ** strikes);
   }, [gameState.currentTurn.playerId, lobby]);

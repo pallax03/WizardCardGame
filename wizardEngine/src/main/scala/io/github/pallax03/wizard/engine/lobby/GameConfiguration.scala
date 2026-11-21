@@ -10,6 +10,9 @@ object GameConfiguration:
   val MAX_PLAYERS: Int = 6
   private val gracePeriodSeconds: Int = 3
 
+  /** Dedicated turn timeout in seconds for bot turns, keeping games moving during worker outages. */
+  val BOT_TURN_TIMEOUT_SECONDS: Int = 12
+
 /** Validation errors for configuration parameters outside acceptable limits. */
 enum ConfigurationErrors(val min: Int, val max: Int):
   /** Turn timer outside the allowed range of `[15, 90]` seconds. */
@@ -58,3 +61,13 @@ case class GameConfiguration(
    */
   def calculateTTL(strikes: Int): Int =
     Math.max(1, (timer + GameConfiguration.gracePeriodSeconds) / Math.pow(2, strikes).toInt)
+
+  /**
+   * Calculates the effective turn TTL in seconds for a specific player.
+   *
+   * Bot-controlled seats use a short dedicated timeout ([[GameConfiguration.BOT_TURN_TIMEOUT_SECONDS]],
+   * capped at the baseline human TTL) so games do not stall when all bot workers are unavailable.
+   */
+  def calculateTTL(player: Player): Int =
+    if player.isBot then Math.min(GameConfiguration.BOT_TURN_TIMEOUT_SECONDS, calculateTTL(0))
+    else calculateTTL(player.strikes)

@@ -23,8 +23,9 @@ import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, RedisUtil, Wiza
  *
  * Utilizes Redis Keyspace Notifications (`notify-keyspace-events Ex`) to trigger action
  * timeouts without in-memory stateful timers:
- *  - Turn Arming (`handleTurnEvent`): Sets `timer:<lobbyId>:<playerId>` with decaying TTL
- *    computed by [[io.github.pallax03.wizard.engine.lobby.GameConfiguration.calculateTTL]].
+ *  - Turn Arming (`handleTurnEvent`): Sets `timer:<lobbyId>:<playerId>` with player-specific TTL
+ *    computed by [[io.github.pallax03.wizard.engine.lobby.GameConfiguration.calculateTTL]]
+ *    (dedicated short timeout for bot turns, decaying TTL for humans).
  *  - Turn Expiration (`handleExpiredKey`):
  *     - Increments player AFK strikes.
  *     - If strikes reach [[io.github.pallax03.wizard.engine.lobby.GameConfiguration.maxStrikes]],
@@ -48,23 +49,28 @@ class TurnTimerVerticle(
       .onComplete(_ => ())
 
     pubSubPort.subscribe(ChannelsKeys.TURN_TIMER_KEYSPACE, handleExpiredKey)
-    pubSubPort.subscribe(ChannelsKeys.TURN_EVENTS_CHANNEL, handleTurnEvent)
+    pubSubPort.subscribe(ChannelsKeys.TURN_EVENTS_CHANNEL, msg => handleTurnEvent(msg))
 
-  private def handleTurnEvent(jsonStr: String): Unit =
+  private[timer] def handleTurnEvent(jsonStr: String): Future[Unit] =
     (for
       payload <- Future.fromTry(jsonStr.decodeAs[LobbyPlayer].toTry)
-      case Right(lobby) <- lobbyStatePort.getLobby(payload.lobbyId)
-      if lobby.status == LobbyStatus.IN_GAME
-      strikes = lobby.players.find(_.id == payload.playerId).map(_.strikes).getOrElse(0)
-      _ <- redisClient
-        .send(
-          RedisUtil.setWithDefaultTTL(
-            ChannelsKeys.turnTimer(payload.lobbyId, payload.playerId),
-            "1",
-            lobby.configuration.calculateTTL(strikes).toString
-          )
-        )
-        .asScala
+      lobbyResult <- lobbyStatePort.getLobby(payload.lobbyId)
+      _ <- lobbyResult match
+        case Right(lobby) if lobby.status == LobbyStatus.IN_GAME =>
+          lobby.players.find(_.id == payload.playerId) match
+            case Some(player) =>
+              redisClient
+                .send(
+                  RedisUtil.setWithDefaultTTL(
+                    ChannelsKeys.turnTimer(payload.lobbyId, payload.playerId),
+                    "1",
+                    lobby.configuration.calculateTTL(player).toString
+                  )
+                )
+                .asScala
+                .void
+            case None => Future.unit
+        case _ => Future.unit
     yield ()).recover(_ => ())
 
   private def handleExpiredKey(expiredKey: String): Unit =
@@ -94,17 +100,21 @@ class TurnTimerVerticle(
         else inboundPort.forceFallbackAction(lobbyId, playerId)
     yield ()
 
-  private def handleTurnTimeout(lobbyId: LobbyId, playerId: PlayerId): Unit =
-    (for
-      case Right(lobby) <- lobbyStatePort.getLobby(lobbyId)
-      if lobby.status == LobbyStatus.IN_GAME
-      player = lobby.players.find(_.id == playerId).get
-      _ <-
-        if player.isBot then inboundPort.forceFallbackAction(lobbyId, playerId)
-        else handleHumanStrike(lobbyId, playerId, lobby.configuration.maxStrikes)
-    yield ()).recover: ex =>
-      given LogContext = LogContext(lobbyId, playerId)
-      WizardLogger.error(s"Timer action failed: ${ex.getMessage}")
+  private[timer] def handleTurnTimeout(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    lobbyStatePort
+      .getLobby(lobbyId)
+      .flatMap:
+        case Right(lobby) if lobby.status == LobbyStatus.IN_GAME =>
+          lobby.players.find(_.id == playerId) match
+            case Some(player) if player.isBot =>
+              inboundPort.forceFallbackAction(lobbyId, playerId)
+            case Some(_) =>
+              handleHumanStrike(lobbyId, playerId, lobby.configuration.maxStrikes)
+            case None => Future.unit
+        case _ => Future.unit
+      .recover: ex =>
+        given LogContext = LogContext(lobbyId, playerId)
+        WizardLogger.error(s"Timer action failed: ${ex.getMessage}")
 
   private def handleDisconnectTimeout(lobbyId: LobbyId): Unit =
     lobbyStatePort
