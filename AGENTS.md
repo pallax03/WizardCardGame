@@ -1,5 +1,5 @@
 # AGENTS Guide (Technical Report - `docs` Branch)
-This orphan branch (`docs`) hosts the **Software Process Engineering (SPE) Technical Report** built with **Astro Starlight** (`@astrojs/starlight` + `starlight-theme-terminal`), deployed to `https://pallax03.github.io/WizardCardGame/report/`.
+This orphan branch (`docs`) hosts the **Software Process Engineering (SPE) Technical Report** built with **Astro Starlight** (`@astrojs/starlight` + `starlight-theme-terminal`), deployed to `https://pallax03.github.io/WizardCardGame/`.
 
 > **Role**: Technical writer and documentation maintainer for the WizardCardGame SPE report.
 
@@ -27,4 +27,4 @@ Ensure the report clearly covers and motivates:
 - Follow Conventional Commits with `docs` type: `docs(<section>): <imperative summary>`.
 - Install dependencies: `npm ci`
 - Local dev server: `npm run dev`
-- Production static build (outputs to `./dist/report`): `npm run build`
+- Production static build (outputs to `./dist`): `npm run build`

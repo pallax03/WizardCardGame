@@ -7,8 +7,8 @@ import rehypeKatex from 'rehype-katex';
 
 export default defineConfig({
   site: 'https://pallax03.github.io',
-  base: '/WizardCardGame/report',
-  outDir: './dist/report',
+  base: '/WizardCardGame',
+  outDir: './dist',
   markdown: {
     remarkPlugins: [remarkMath],
     rehypePlugins: [rehypeKatex],
