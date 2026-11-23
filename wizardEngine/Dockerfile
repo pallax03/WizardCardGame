@@ -16,5 +16,5 @@ RUN sbt stage
 FROM eclipse-temurin:17-jre-jammy
 WORKDIR /app
 COPY --from=builder /app/target/universal/stage /app
-EXPOSE 8080
+EXPOSE 5001 5002
 ENTRYPOINT ["/app/bin/wizardcardgame"]
