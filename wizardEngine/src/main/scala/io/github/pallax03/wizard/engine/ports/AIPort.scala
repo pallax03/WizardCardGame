@@ -10,7 +10,6 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.core.state.PlayerGameState
 import io.github.pallax03.wizard.engine.model.core.{
   AbortedGameException,
-  EntityNotFound,
   GameException,
   RecoveredGameException
 }
@@ -20,8 +19,8 @@ enum AIError:
   /** The requested action cannot be evaluated because the game is in an unexpected phase. */
   case InvalidPhase(actualGameState: PlayerGameState)
 
-  /** Target lobby or player was not found in the game engine. */
-  case GameException(entityNotFound: EntityNotFound)
+  /** Target game session was not found in the game engine. */
+  case GameNotFound
 
   /** The AI reasoning engine could not produce a valid move recommendation. */
   case NoHintFound
@@ -40,20 +39,18 @@ trait AIPort(inboundPort: InboundPort):
   ): Future[Either[AIError, T]] =
     inboundPort
       .getState(lobbyId, playerId)
-      .map: state =>
-        phaseLogic
-          .andThen(Right(_))
-          .applyOrElse(
-            state,
-            _ => Left(AIError.InvalidPhase(state))
-          )
-      .recover {
-        case e: EntityNotFound                         => Left(AIError.GameException(e))
-        case AbortedGameException(e: EntityNotFound)   => Left(AIError.GameException(e))
-        case RecoveredGameException(e: EntityNotFound) => Left(AIError.GameException(e))
+      .map:
+        case Some(state) =>
+          phaseLogic
+            .andThen(Right(_))
+            .applyOrElse(
+              state,
+              _ => Left(AIError.InvalidPhase(state))
+            )
+        case None => Left(AIError.GameNotFound)
+      .recover:
         case _: GameException | _: AbortedGameException | _: RecoveredGameException =>
           Left(AIError.NoHintFound)
-      }
 
   protected def resolveTrumpColorLogic(
       playerId: PlayerId

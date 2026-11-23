@@ -17,12 +17,12 @@ object RoundManager:
     /**
      * Returns the next player in clockwise cyclic turn order.
      *
-     * @throws GameException.PlayerNotFound if the player is not in the list.
+     * @throws GameException.CorruptedState if the current player is not in the round's player list.
      */
     def nextAfter(current: PlayerId): PlayerId =
       playersIds.indexWhere(_ == current) match
         case id if id >= 0 => playersIds((id + 1) % playersIds.size)
-        case _             => throw GameException.PlayerNotFound(current)
+        case _ => throw GameException.CorruptedState(s"Player not found in round: $current")
 
   extension (round: Round)
     /**

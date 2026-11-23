@@ -18,7 +18,7 @@ class TestBotStrategy extends AnyWordSpec with Matchers with ScalaFutures:
   import model.basic.bidding.{Bid, Bids, Tricks}
   import model.basic.cards.Card
   import model.basic.gameplay.{Round, Table}
-  import model.core.{GameAction, GameException}
+  import model.core.GameAction
   import model.core.state.{GameState, PlayerCoreState, ServerCoreState}
   import model.events.InvitationEvent.*
   import ports.{StubAIPort, StubInboundPort}
@@ -101,7 +101,7 @@ class TestBotStrategy extends AnyWordSpec with Matchers with ScalaFutures:
           StubInboundPort.returning(
             GameState.Playing(core, Bids.empty, Table.empty, botId, Tricks.empty)
           ),
-          StubInboundPort.failing(GameException.GameNotFound),
+          StubInboundPort(),
           StubInboundPort.failing(new RuntimeException("boom"))
         ).foreach: inbound =>
           prologStrategy(inbound).resolveInvitation(defaultLobbyId, cardInv).futureValue shouldBe

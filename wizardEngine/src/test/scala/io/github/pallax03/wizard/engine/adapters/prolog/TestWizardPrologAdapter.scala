@@ -76,19 +76,16 @@ class TestWizardPrologAdapter extends AnyWordSpec with Matchers with ScalaFuture
         )
 
     "handling engine failures" should:
-      "map entity lookup exceptions to AIError.GameException" in:
-        List(
-          (GameException.GameNotFound, GameException.GameNotFound),
-          (AbortedGameException(GameException.GameNotFound), GameException.GameNotFound),
-          (
-            RecoveredGameException(GameException.PlayerNotFound(p1)),
-            GameException.PlayerNotFound(p1)
-          )
-        ).foreach: (thrown, expected) =>
-          failingAdapter(thrown).bestCard(defaultLobbyId, p1).futureValue shouldBe
-            Left(AIError.GameException(expected))
+      "map missing game state to AIError.GameNotFound" in:
+        WizardPrologAdapter(StubInboundPort()).bestCard(defaultLobbyId, p1).futureValue shouldBe
+          Left(AIError.GameNotFound)
 
-      "map corrupted engine state errors to AIError.NoHintFound" in:
-        failingAdapter(GameException.CorruptedState("bad"))
-          .bestCard(defaultLobbyId, p1)
-          .futureValue shouldBe Left(AIError.NoHintFound)
+      "map corrupted engine state and recovery errors to AIError.NoHintFound" in:
+        List(
+          GameException.CorruptedState("bad"),
+          RecoveredGameException(GameException.TableNoWinner),
+          AbortedGameException(GameException.CorruptedHand(p1))
+        ).foreach: thrown =>
+          failingAdapter(thrown)
+            .bestCard(defaultLobbyId, p1)
+            .futureValue shouldBe Left(AIError.NoHintFound)

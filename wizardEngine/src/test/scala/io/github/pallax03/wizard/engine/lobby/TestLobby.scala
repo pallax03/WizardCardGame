@@ -1,7 +1,6 @@
 package io.github.pallax03.wizard.engine.lobby
 
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
-import io.github.pallax03.wizard.engine.model.core.GameException
 
 import org.scalatest.EitherValues
 import org.scalatest.matchers.should.Matchers
@@ -70,7 +69,7 @@ class TestLobby extends AnyWordSpec with Matchers with EitherValues:
         val lobby = (alice - bob).asLobby()
         lobby.removePlayer(p1).value.players shouldBe List(bob)
         lobby.removePlayer(PlayerId(99)) shouldBe Left(
-          LobbyError.NotFound(GameException.PlayerNotFound(PlayerId(99)))
+          LobbyError.PlayerNotFound(PlayerId(99))
         )
 
     "handling online status changes" should:

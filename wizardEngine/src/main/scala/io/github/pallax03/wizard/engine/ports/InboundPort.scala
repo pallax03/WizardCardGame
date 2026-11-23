@@ -20,9 +20,10 @@ trait InboundPort:
    *
    * Opponent cards remain hidden within [[PlayerGameState]], ensuring information hiding invariants.
    *
-   * @return future containing [[PlayerGameState]], or failing with [[io.github.pallax03.wizard.engine.model.core.GameException]] if not found or corrupted.
+   * @return future containing `Some(PlayerGameState)` if the game exists, `None` otherwise,
+   *         or failing with [[io.github.pallax03.wizard.engine.model.core.GameException]] (or recovery wrappers) if corrupted.
    */
-  def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState]
+  def getState(lobbyId: LobbyId, playerId: PlayerId): Future[Option[PlayerGameState]]
 
   /**
    * Initializes and starts a new game session with the given participants and configuration.

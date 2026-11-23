@@ -12,7 +12,7 @@ class TestLobbyCodecs extends AnyWordSpec with Matchers:
   import LobbyCodecs.given
   import lobby.*
   import model.basic.PlayerId
-  import model.core.{GameActionError, GameException}
+  import model.core.GameActionError
   import ports.AIError
 
   "LobbyCodecs" should:
@@ -41,7 +41,7 @@ class TestLobbyCodecs extends AnyWordSpec with Matchers:
       val p1 = PlayerId(1)
       val actionErr: LobbyError = LobbyError.GameActionRejected(GameActionError.NotYourTurn(p1))
       val aiErr: LobbyError = LobbyError.IAHintError(AIError.NoHintFound)
-      val notFoundErr: LobbyError = LobbyError.NotFound(GameException.PlayerNotFound(p1))
+      val notFoundErr: LobbyError = LobbyError.PlayerNotFound(p1)
       val internalErr: LobbyError = LobbyError.InternalServerError("REDIS_DOWN")
       actionErr.toJson shouldBe """{"code":"NotYourTurn"}"""
       aiErr.toJson shouldBe """{"code":"NoHintFound"}"""
