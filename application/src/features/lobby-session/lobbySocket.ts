@@ -79,7 +79,7 @@ export function connectLobbySocket({
   const wsPort = process.env.NEXT_PUBLIC_WS_PORT || process.env.WS_PORT || "5002";
   const baseUrl = process.env.NEXT_PUBLIC_WS_URL || `${wsProtocol}//${wsHost}:${wsPort}`;
   const socket = new WebSocket(
-    `${baseUrl}/lobby/${encodeURIComponent(lobbyId)}?secret=${encodeURIComponent(secret)}`
+    `${baseUrl}/ws/v1/lobbies/${encodeURIComponent(lobbyId)}?secret=${encodeURIComponent(secret)}`
   );
 
   socket.onopen = () => onConnectionChange("open");

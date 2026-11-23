@@ -11,7 +11,7 @@ import type {
 } from "../types";
 
 /**
- * Raw shape of `GET /api/lobby/{lobbyId}/game` (backend `PlayerGameState`).
+ * Raw shape of `GET /api/v1/lobbies/{lobbyId}/game` (backend `PlayerGameState`).
  * Circe encodes the sealed trait as a single-key object naming the variant,
  * e.g. `{ "Playing": { "core": {...}, "bids": {...}, ... } }`.
  */
