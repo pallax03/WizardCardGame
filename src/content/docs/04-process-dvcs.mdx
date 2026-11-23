@@ -76,14 +76,15 @@ GitFlow (`master`, `develop`, `releases/*`) proved excessive for a 1-2 person te
 - Work happens on short-lived branches: `<type>/<issue-id>-<description>` (e.g. `chore/153-repo-governance`, `ci/154-dry-matrix-pipelines`).
 
 ### Security & Least Privilege: GitHub Rulesets and Dedicated Bot App
-To prevent human error (accidental force pushes, committing directly to `master` when tired), access to `master` is locked down using **GitHub Rulesets** and `.github/CODEOWNERS`:
+To prevent human error (accidental force pushes, committing directly to `master` when tired), access to `master` is locked down using **GitHub Rulesets**:
 1. **Direct Pushes Blocked**: Even repository administrators cannot push directly to `master`.
 2. **Mandatory Pull Requests & Status Checks**: All CI matrix jobs must pass before merging.
 3. **Dedicated GitHub App (Bot Actor)**: Automated releases and version tagging are delegated to a GitHub App with restricted permissions, separating routine human coding from privileged release workflows.
+4. **Deferred `CODEOWNERS` Enforcement**: `.github/CODEOWNERS` is defined to prepare for future contributors, but *Require review from Code Owners* is **intentionally disabled** in the Ruleset for a solo maintainer (enforcing it would block self-PRs and Renovate automerge unless paired with an auto-approve bot).
 
 ### Orphan `docs` Branch Workflow & Trade-Offs
 - **Isolation**: The technical report lives on an isolated orphan branch (`docs`) built with Astro Starlight and deployed to GitHub Pages via `.github/workflows/pages.yml`, keeping `master` history and `git bisect` free of documentation-only noise and allowing the report to evolve independently across courses.
-- **Pragmatic Contribution Flow**: Dedicated Issues/PRs (with `area:docs`) are used when report updates are tied to project milestones or structural chapters; quick edits and fixes are pushed **directly to `docs`** without PR ceremony.
+- **Pragmatic Contribution Flow**: `area:docs` **Issues** serve as a structured backlog alongside code development, while **Pull Requests are omitted on `docs`** in favor of **direct pushes** (relying on local pre-push review/cleanup rather than solo-maintainer PR ceremony).
 - **Accepted Trade-Offs**:
   1. Unlike `master`, `docs` does not enforce PR squash/rebase, so its history will grow less linear over time — acceptable since `docs` is never merged into `master`.
   2. **Zero-Bot Dependency Policy (KISS)**: `docs` build-time dependencies are locked via `package-lock.json` and updated manually on demand rather than adding a second bot (Dependabot) or noisy PRs on a static site with no server runtime.
