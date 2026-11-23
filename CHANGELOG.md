@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/pallax03/WizardCardGame/compare/v1.1.0...v1.2.0) (2026-11-23)
+
+
+### Features
+
+* **http:** version REST and WebSocket routes under v1 with API specifications ([#199](https://github.com/pallax03/WizardCardGame/issues/199)) ([28823c8](https://github.com/pallax03/WizardCardGame/commit/28823c88864a6a4c8a9a05582619389db7bd5970)), closes [#159](https://github.com/pallax03/WizardCardGame/issues/159)
+
 # [1.1.0](https://github.com/pallax03/WizardCardGame/compare/v1.0.3...v1.1.0) (2026-11-23)
 
 
