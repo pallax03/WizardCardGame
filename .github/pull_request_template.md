@@ -1,7 +1,7 @@
 ## Linked Issues
 - Closes #issue_id (Only 1 per PR)
 
-> See [Report](https://pallax03.github.io/WizardCardGame/report/04-process-dvcs/#451-managing-complex-issues-pr-slicing--ai-governance) for complex issues and PR slicing.
+> See [Report](https://pallax03.github.io/WizardCardGame/04-process-dvcs/#451-managing-complex-issues-pr-slicing--ai-governance) for complex issues and PR slicing.
 
 ### Related Issues:
 - if any, and why they were isolated
@@ -15,6 +15,6 @@
 
 
 ## Definition of Done (DoD)
-- [ ] **Atomic Commits:** Each commit is self-contained, compiles, and follows `<type>(<scope>): <summary>` (see [Scope Taxonomy](https://pallax03.github.io/WizardCardGame/report/04-process-dvcs/#43-conventional-commits--scope-taxonomy)).
+- [ ] **Atomic Commits:** Each commit is self-contained, compiles, and follows `<type>(<scope>): <summary>` (see [Scope Taxonomy](https://pallax03.github.io/WizardCardGame/04-process-dvcs/#43-conventional-commits--scope-taxonomy)).
 - [ ] **QA & Tests:** Static analysis (`scalafmt`/`scalafix` or `eslint`/`tsc`) and automated tests pass.
 - [ ] **Docs & Contracts:** Relevant OpenAPI specs, `AGENTS.md`, or report chapters updated (if applicable).
