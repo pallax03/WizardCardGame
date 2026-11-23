@@ -5,14 +5,14 @@ template: splash
 hero:
   tagline: Distributed multiplayer card game engineered with Scala 3, tuProlog, Redis, and automated DevOps pipelines.
   image:
-    html: '<a href="https://wizard-card-game-psi.vercel.app/" target="_blank" rel="noopener noreferrer" title="Play Wizard Online on Vercel"><img src="https://raw.githubusercontent.com/pallax03/WizardCardGame/master/application/public/wizard_logo.svg" alt="Wizard Card Game Logo" width="380" /></a>'
+    html: '<a href="https://wizardcardgame.vercel.app/" target="_blank" rel="noopener noreferrer" title="Play Wizard Online on Vercel"><img src="https://raw.githubusercontent.com/pallax03/WizardCardGame/master/application/public/wizard_logo.svg" alt="Wizard Card Game Logo" width="380" /></a>'
   actions:
     - text: Read Report
-      link: /WizardCardGame/report/01-introduction/
+      link: /WizardCardGame/01-introduction/
       icon: right-arrow
       variant: primary
     - text: DVCS & Git Governance
-      link: /WizardCardGame/report/04-process-dvcs/
+      link: /WizardCardGame/04-process-dvcs/
       icon: github
       variant: secondary
 ---
@@ -43,11 +43,11 @@ import FeatureGrid from 'starlight-theme-terminal/components/FeatureGrid.astro';
   <LinkCard
     title="1. Introduction & Evolution"
     description="Domain mechanics, 4-act multi-course evolution, and baseline problem diagnosis."
-    href="/WizardCardGame/report/01-introduction/"
+    href="/WizardCardGame/01-introduction/"
   />
   <LinkCard
     title="4. Development Process & DVCS"
     description="496-commit historical audit, bisectable v1.0.0 reconstruction, and Conventional Commits taxonomy."
-    href="/WizardCardGame/report/04-process-dvcs/"
+    href="/WizardCardGame/04-process-dvcs/"
   />
 </FeatureGrid>

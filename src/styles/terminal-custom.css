@@ -87,33 +87,19 @@ a[aria-current='page'] span {
 .tablist-wrapper .tab > [role='tab'],
 .tablist-wrapper .tab [role='tab'][aria-selected='true'] {
   border-bottom: none !important;
+  padding: .8rem;
 }
 
-/* Fix 3: Proper padding for tab panel content so it is never squished */
+/* Proper padding for tab panel content so it is never squished */
 starlight-tabs > *:not(.tablist-wrapper) {
   padding: 1.25rem !important;
-  box-sizing: border-box !important;
-}
-
-/* Fix 4: Restore expressive-code frame inside tabs */
-starlight-tabs > *:not(.tablist-wrapper) .expressive-code {
-  margin: 0.75rem 0 0 0 !important;
-  width: 100% !important;
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
-  border-radius: 0.5rem !important;
 }
 
 :root[data-theme='light'] starlight-tabs > *:not(.tablist-wrapper) .expressive-code {
   border: 1px solid rgba(0, 0, 0, 0.1) !important;
 }
 
-/* Fix 5: Clean Hero logo link without purple drop-shadow or background on hover */
-.hero .hero-html,
-.hero > img,
-[data-has-hero] .hero > img {
-  filter: none !important;
-}
-
+/* Fix 5: Hero logo - override theme purple filter via @layer terminal */
 .hero-html a {
   display: inline-block;
   background: transparent !important;
@@ -127,11 +113,35 @@ starlight-tabs > *:not(.tablist-wrapper) .expressive-code {
 }
 
 .hero-html a img {
-  filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.15)) !important;
-  transition: transform 0.25s ease, filter 0.25s ease !important;
+  border-radius: 0.75rem;
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1), filter 0.25s ease !important;
 }
 
-.hero-html a:hover img {
-  transform: translateY(-3px) scale(1.02) !important;
-  filter: drop-shadow(0 0 35px rgba(255, 255, 255, 0.35)) !important;
+/* Dark mode (white subtle contrast and glow) */
+:root[data-theme='dark'] .hero-html a img,
+:root:not([data-theme='light']) .hero-html a img {
+  filter: drop-shadow(0 0 16px rgba(255, 255, 255, 0.15)) !important;
+}
+
+:root[data-theme='dark'] .hero-html a:hover img,
+:root:not([data-theme='light']) .hero-html a:hover img {
+  transform: scale(1.03) !important;
+  filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.32)) !important;
+}
+
+/* Light mode: override theme @layer, white letters + black drop-shadow */
+@layer terminal {
+  :root[data-theme='light'] .hero .hero-html,
+  :root[data-theme='light'] .hero > img {
+    filter: none !important;
+  }
+
+  :root[data-theme='light'] .hero-html a img {
+    filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.4)) drop-shadow(0 8px 24px rgba(0, 0, 0, 0.3)) !important;
+  }
+
+  :root[data-theme='light'] .hero-html a:hover img {
+    transform: scale(1.03) !important;
+    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.55)) drop-shadow(0 12px 32px rgba(0, 0, 0, 0.45)) !important;
+  }
 }
