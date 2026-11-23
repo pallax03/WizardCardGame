@@ -1,7 +1,7 @@
 # AGENTS Guide
 **WizardCardGame** is a distributed multiplayer implementation of the *Wizard* trick-taking card game.
 
-> **BIBLE**: Refer to the [SPE Technical Report](https://pallax03.github.io/WizardCardGame/report/04-process-dvcs/#43-conventional-commits--scope-taxonomy) for Bounded Contexts, Hexagonal boundaries, and Conventional Commits scopes.
+> **BIBLE**: Refer to the [SPE Technical Report](https://pallax03.github.io/WizardCardGame/04-process-dvcs/#43-conventional-commits--scope-taxonomy) for Bounded Contexts, Hexagonal boundaries, and Conventional Commits scopes.
 
 ## 1. Repository Structure
 - `wizardEngine/`: Scala 3 Hexagonal core engine (`engine/model/`, `engine/ports/`, `engine/adapters/`), `tuProlog` AI (`src/main/resources/prolog/`), Redis adapters, and Vert.x HTTP/WebSocket verticles.
