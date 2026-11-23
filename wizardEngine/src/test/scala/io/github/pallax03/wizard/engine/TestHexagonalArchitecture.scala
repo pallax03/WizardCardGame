@@ -13,6 +13,7 @@ class TestHexagonalArchitecture extends AnyWordSpec with Matchers:
     "io.vertx..",
     "io.circe..",
     "sttp.tapir..",
+    "sttp.apispec..",
     "alice.tuprolog.."
   )
 
@@ -49,12 +50,12 @@ class TestHexagonalArchitecture extends AnyWordSpec with Matchers:
       "remain decoupled from adapters, codecs, and I/O frameworks" in:
         assertNoDependenciesOn(
           s"$basePkg.engine.lobby..",
-          (Seq(
+          Seq(
             s"$basePkg.engine.adapters..",
             s"$basePkg.application..",
             s"$basePkg.codecs..",
             s"$basePkg.util.."
-          ) ++ ioPackages)*
+          ) ++ ioPackages*
         )
 
     "checking engine.ports" should:
