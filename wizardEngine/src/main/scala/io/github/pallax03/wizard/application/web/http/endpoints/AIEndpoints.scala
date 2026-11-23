@@ -1,17 +1,17 @@
 package io.github.pallax03.wizard.application.web.http.endpoints
 
-import io.github.pallax03.wizard.application.web.http.HttpSupport
 import io.github.pallax03.wizard.codecs.engine.model.basic.BiddingCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.basic.CardCodecs.given
 import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
+import io.github.pallax03.wizard.util.ApiSupport
 
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
 
 /**
- * Declarative Tapir endpoint contracts for the AI Advisor subsystem (`/api/lobby/{lobbyId}/hint/...`).
+ * Declarative Tapir endpoint contracts for the AI Advisor subsystem.
  *
  * Exposes advisory endpoints enabling human players to request optimal game moves computed
  * by the underlying Prolog logic engine for each active phase:
@@ -20,19 +20,17 @@ import sttp.tapir.json.circe.*
  *  - Selecting playable cards ([[bestCard]])
  *
  * All endpoints require Bearer token authentication matching an active player's secret in the lobby
- * and return typed domain representations or mapped [[LobbyError]] responses via [[HttpSupport.errorOutput]].
+ * and return typed domain representations or mapped [[LobbyError]] responses via [[ApiSupport.errorOutput]].
  */
 object AIEndpoints:
 
   /** Shared base for all AI hint endpoints: typed lobby + Bearer token + hint prefix. */
   private val base =
-    endpoint.get
-      .in("api" / "lobby" / HttpSupport.lobbyIdPath / "hint")
+    ApiSupport.secureLobbyEndpoint.get
+      .in("hint")
       .tag("AI Hint")
-      .securityIn(auth.bearer[String]())
-      .errorOut(HttpSupport.errorOutput)
 
-  /** GET /api/lobby/{lobbyId}/hint/choose - best trump color. */
+  /** GET /{lobbyId}/hint/choose - best trump color. */
   val bestTrump: Endpoint[String, LobbyId, LobbyError, Card.Color, Any] =
     base
       .out(jsonBody[Card.Color])
@@ -40,7 +38,7 @@ object AIEndpoints:
       .description("Returns the AI-suggested trump color for the dealer in ChoosingTrump phase.")
       .in("choose")
 
-  /** GET /api/lobby/{lobbyId}/hint/bid - best bid. */
+  /** GET /{lobbyId}/hint/bid - best bid. */
   val bestBid: Endpoint[String, LobbyId, LobbyError, Bid, Any] =
     base
       .out(jsonBody[Bid])
@@ -48,7 +46,7 @@ object AIEndpoints:
       .description("Returns the AI-suggested bid for the current Bidding phase.")
       .in("bid")
 
-  /** GET /api/lobby/{lobbyId}/hint/card - best card. */
+  /** GET /{lobbyId}/hint/card - best card. */
   val bestCard: Endpoint[String, LobbyId, LobbyError, Card, Any] =
     base
       .out(jsonBody[Card])

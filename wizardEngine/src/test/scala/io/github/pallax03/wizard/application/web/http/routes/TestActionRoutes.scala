@@ -21,11 +21,12 @@ class TestActionRoutes extends AnyWordSpec with Matchers with OptionValues with 
   import engine.model.basic.cards.Card
   import engine.model.core.{GameAction, GameActionError}
   import engine.ports.{InMemoryLobbyStatePort, StubInboundPort}
+  import util.ApiSupport
 
   "ActionRoutes" when:
     val p1 = PlayerId(1)
     val secret = "p1-secret"
-    val lobbyPath = s"/api/lobby/$defaultLobbyId"
+    val lobbyPath = ApiSupport.lobbyPath(defaultLobbyId)
     val activeLobby = (human(p1, secret).withStrikes(2) - bot(PlayerId(2)) - bot(PlayerId(3)))
       .asLobby(LobbyStatus.IN_GAME)
 

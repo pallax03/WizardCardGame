@@ -24,11 +24,12 @@ class TestAIRoutes extends AnyWordSpec with Matchers with HttpTestDSL:
   import engine.model.core.GameException
   import engine.model.core.state.{GameState, PlayerCoreState, ServerCoreState}
   import engine.ports.{AIError, InMemoryLobbyStatePort, InboundPort, StubAIPort, StubInboundPort}
+  import util.ApiSupport
 
   "AIRoutes" when:
     val p1 = PlayerId(1)
     val secret = "p1-secret"
-    val hintPath = s"/api/lobby/$defaultLobbyId/hint"
+    val hintPath = ApiSupport.lobbyHintPath(defaultLobbyId)
     val core = PlayerCoreState.from(
       ServerCoreState
         .initialize(List(p1, PlayerId(2), PlayerId(3)), Round.start)

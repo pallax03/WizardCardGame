@@ -1,11 +1,12 @@
 import sbt.*
 
 object Dependencies {
-  val scala3 = "3.8.3"
+  val scala3 = "3.9.0"
 
   private val vertx = "5.1.8"
   private val circe = "0.14.17"
-  private val tapir = "1.13.31"
+  private val tapir = "1.14.1"
+  private val apispec = "0.12.1"
 
   val libraries: Seq[ModuleID] = Seq(
     "org.typelevel" %% "cats-core" % "2.13.0",
@@ -20,6 +21,8 @@ object Dependencies {
     "com.softwaremill.sttp.tapir" %% "tapir-vertx-server" % tapir,
     "com.softwaremill.sttp.tapir" %% "tapir-json-circe" % tapir,
     "com.softwaremill.sttp.tapir" %% "tapir-swagger-ui-bundle" % tapir,
+    "com.softwaremill.sttp.tapir" %% "tapir-asyncapi-docs" % tapir,
+    "com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % apispec,
     "com.softwaremill.sttp.tapir" %% "tapir-prometheus-metrics" % tapir,
     "ch.qos.logback" % "logback-classic" % "1.6.6",
     "net.logstash.logback" % "logstash-logback-encoder" % "9.0",

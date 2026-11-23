@@ -9,7 +9,7 @@ export async function getPlayerGameSnapshot(
   lobbyId: string
 ): Promise<PlayerGameSnapshot | null> {
   try {
-    return await apiFetch<PlayerGameSnapshot>(`/api/lobby/${lobbyId}/game`, {
+    return await apiFetch<PlayerGameSnapshot>(`/api/v1/lobbies/${lobbyId}/game`, {
       cache: "no-store",
       headers: await authHeadersForLobby(lobbyId),
     });
@@ -20,7 +20,7 @@ export async function getPlayerGameSnapshot(
 }
 
 export async function chooseTrumpColor(lobbyId: string, color: CardColor): Promise<void> {
-  await apiFetch(`/api/lobby/${lobbyId}/choose`, {
+  await apiFetch(`/api/v1/lobbies/${lobbyId}/choose`, {
     method: "POST",
     headers: await authHeadersForLobby(lobbyId),
     body: color,
@@ -28,7 +28,7 @@ export async function chooseTrumpColor(lobbyId: string, color: CardColor): Promi
 }
 
 export async function playCard(lobbyId: string, card: Card): Promise<void> {
-  await apiFetch(`/api/lobby/${lobbyId}/play`, {
+  await apiFetch(`/api/v1/lobbies/${lobbyId}/play`, {
     method: "POST",
     headers: await authHeadersForLobby(lobbyId),
     body: card,
@@ -36,7 +36,7 @@ export async function playCard(lobbyId: string, card: Card): Promise<void> {
 }
 
 export async function placeBid(lobbyId: string, bid: number): Promise<void> {
-  await apiFetch(`/api/lobby/${lobbyId}/place`, {
+  await apiFetch(`/api/v1/lobbies/${lobbyId}/place`, {
     method: "POST",
     headers: await authHeadersForLobby(lobbyId),
     body: bid,
@@ -44,21 +44,21 @@ export async function placeBid(lobbyId: string, bid: number): Promise<void> {
 }
 
 export async function getBestCardHint(lobbyId: string): Promise<Card> {
-  return await apiFetch<Card>(`/api/lobby/${lobbyId}/hint/card`, {
+  return await apiFetch<Card>(`/api/v1/lobbies/${lobbyId}/hint/card`, {
     cache: "no-store",
     headers: await authHeadersForLobby(lobbyId),
   });
 }
 
 export async function getBestBidHint(lobbyId: string): Promise<number> {
-  return await apiFetch<number>(`/api/lobby/${lobbyId}/hint/bid`, {
+  return await apiFetch<number>(`/api/v1/lobbies/${lobbyId}/hint/bid`, {
     cache: "no-store",
     headers: await authHeadersForLobby(lobbyId),
   });
 }
 
 export async function getBestTrumpHint(lobbyId: string): Promise<CardColor> {
-  return await apiFetch<CardColor>(`/api/lobby/${lobbyId}/hint/choose`, {
+  return await apiFetch<CardColor>(`/api/v1/lobbies/${lobbyId}/hint/choose`, {
     cache: "no-store",
     headers: await authHeadersForLobby(lobbyId),
   });

@@ -22,5 +22,6 @@ object HandsCodecs:
     Encoder[Map[PlayerId, Hand]].contramap(_.toMap)
   )
 
-  given Schema[Hand] = Schema.anyObject[Hand].name(Schema.SName("Hand"))
-  given Schema[Hands] = Schema.anyObject[Hands].name(Schema.SName("Hands"))
+  given Schema[Hand] = summon[Schema[List[Card]]].as[Hand].name(Schema.SName("Hand"))
+  given Schema[Hands] =
+    Schema.schemaForMap[PlayerId, Hand](_.toString).as[Hands].name(Schema.SName("Hands"))

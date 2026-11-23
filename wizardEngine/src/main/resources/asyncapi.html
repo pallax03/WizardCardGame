@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <title>Wizard Game Engine - AsyncAPI WebSocket Docs</title>
+  <link rel="stylesheet" href="https://unpkg.com/@asyncapi/react-component@latest/styles/default.min.css" />
+  <style>
+    html[data-theme="dark"] { filter: invert(0.92) hue-rotate(180deg); background: #111; }
+  </style>
+</head>
+<body>
+  <div id="asyncapi"></div>
+  <script src="https://unpkg.com/@asyncapi/react-component@latest/browser/standalone/index.js"></script>
+  <script>
+    AsyncApiStandalone.render({
+      schema: { url: '/docs/asyncapi.yaml' },
+      config: { show: { sidebar: true } }
+    }, document.getElementById('asyncapi'));
+  </script>
+</body>
+</html>

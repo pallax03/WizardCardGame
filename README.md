@@ -65,4 +65,5 @@ npm run dev
 ### Accessing the application
 Once started, you can access the services at:
 - **Game (Frontend)**: [http://localhost:3000](http://localhost:3000)
-- **API Docs (Swagger)**: [http://localhost:5001/docs](http://localhost:5001/docs)
+- **REST API Docs (Swagger / OpenAPI v1)**: [http://localhost:5001/docs](http://localhost:5001/docs)
+- **WebSocket API Docs (AsyncAPI v1)**: [http://localhost:5001/docs/asyncapi](http://localhost:5001/docs/asyncapi) ([YAML](http://localhost:5001/docs/asyncapi.yaml))

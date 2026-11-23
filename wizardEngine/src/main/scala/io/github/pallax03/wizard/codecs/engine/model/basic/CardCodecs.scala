@@ -31,7 +31,7 @@ object CardCodecs:
     case "Wizard"   => Decoder.forProduct1("id")(Card.Wizard.apply)
     case "Jester"   => Decoder.forProduct1("id")(Card.Jester.apply)
 
-  given Schema[Card.Color] = Schema.string
+  given Schema[Card.Color] = Schema.derivedEnumeration[Card.Color].defaultStringBased
   given Schema[Card.Rank] =
     Schema.schemaForInt.map(v => Card.Rank.values.find(_.value == v))(_.value)
 

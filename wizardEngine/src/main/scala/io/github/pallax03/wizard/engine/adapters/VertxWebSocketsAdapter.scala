@@ -3,18 +3,20 @@ package io.github.pallax03.wizard.engine.adapters
 import scala.collection.concurrent.TrieMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Success, Try}
+import scala.util.Success
 
 import cats.syntax.all.*
 
 import io.vertx.core.Vertx
 import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.ServerWebSocket
-import io.vertx.core.json.JsonObject
 
+import io.github.pallax03.wizard.application.web.ws.ChatMessage
+import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.engine.model.SystemEventCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
-import io.github.pallax03.wizard.engine.lobby.{LobbyId, LobbyStatus}
+import io.github.pallax03.wizard.codecs.ws.WsMessageCodecs.given
+import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId, LobbyStatus}
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{
@@ -24,7 +26,7 @@ import io.github.pallax03.wizard.engine.ports.{
   Subscription,
   WebSocketsPort
 }
-import io.github.pallax03.wizard.util.ChannelsKeys
+import io.github.pallax03.wizard.util.{ChannelsKeys, LogContext, WizardLogger}
 
 /** Internal container tracking an active WebSocket client session and its associated resources. */
 case class ClientSession(ws: ServerWebSocket, sub: Subscription, pingTimerId: Long)
@@ -64,12 +66,18 @@ class VertxWebSocketsAdapter(
       this.close(lobbyId, playerId)
 
     ws.textMessageHandler: text =>
-      Try:
-        val json = new JsonObject(text)
-        if json.containsKey("destinationId") then
-          val destId = PlayerId(json.getInteger("destinationId"))
-          pubSubPort.publish(ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, destId), text)
-        else pubSubPort.publish(ChannelsKeys.pubSubLobbyChannel(lobbyId), text)
+      text.decodeAs[ChatMessage] match
+        case Right(msg) =>
+          val channel = msg.destinationId.fold(
+            ChannelsKeys.pubSubLobbyChannel(lobbyId)
+          )(destId => ChannelsKeys.pubSubLobbyPlayerChannel(lobbyId, destId))
+          pubSubPort.publish(channel, msg.toJson)
+        case Left(err) =>
+          given LogContext = LogContext(lobbyId, playerId)
+          WizardLogger.warn(s"Rejected malformed WebSocket message: ${err.getMessage}")
+          ws.writeTextMessage(
+            (LobbyError.InternalServerError("INVALID_WS_MESSAGE"): LobbyError).toJson
+          )
 
     pubSubPort
       .subscribePlayer(lobbyId, playerId, rawJson => ws.writeTextMessage(rawJson))
@@ -103,7 +111,7 @@ class VertxWebSocketsAdapter(
   override def close(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
     sessions.remove((lobbyId, playerId)) match
       case Some(session) =>
-        Try(session.ws.close())
+        scala.util.Try(session.ws.close())
         vertx.cancelTimer(session.pingTimerId)
         session.sub.cancel()
         lobbyStatePort.setPlayerOnlineStatus(lobbyId, playerId, false).flatMap { _ =>

@@ -8,17 +8,19 @@ import io.vertx.ext.web.{Router, RoutingContext}
 
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.toJson
-import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
+import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, WebSocketsPort}
+import io.github.pallax03.wizard.util.ApiSupport
 import io.github.pallax03.wizard.util.FutureSyntax.*
+
+import sttp.model.StatusCode
 
 /**
  * Vert.x HTTP server verticle hosting the real-time WebSocket gateway.
  *
- * Route: `GET /lobby/:lobbyId?secret=<player_secret>`
  *  - Authenticates the player against [[LobbyStatePort.getAuthLobby]].
  *  - On success: Upgrades connection to WebSocket and invokes [[WebSocketsPort.subscribeToLobbyEvents]].
- *  - On failure: Closes socket with 401 (Unauthorized), 404 (Lobby Not Found), or 500 (Internal Error).
+ *  - On failure: Closes socket with the status code mapped via [[ApiSupport.statusCodeFor]].
  *  - Enforces a 60-second idle timeout.
  */
 class WebSocketsVerticle(
@@ -32,17 +34,17 @@ class WebSocketsVerticle(
   override def start(): Unit =
     val router = Router.router(vertx)
     router
-      .route("/lobby/:lobbyId")
+      .route(WebSocketEndpoints.vertxRoutePath)
       .handler: ctx =>
         val req = ctx.request()
-        val lobbyIdStr = req.getParam("lobbyId")
-        val secret = req.getParam("secret")
-        if lobbyIdStr == null || secret == null then
-          req
-            .response()
-            .setStatusCode(400)
-            .end("try with <url>/lobby/<lobbyId>?secret=<player_secret>")
-        else upgradeAndSubscribe(ctx, LobbyId(lobbyIdStr), secret)
+        (
+          Option(req.getParam(ApiSupport.LobbyIdParam)),
+          Option(req.getParam(WebSocketEndpoints.SecretParam))
+        ) match
+          case (Some(lobbyIdStr), Some(secret)) =>
+            upgradeAndSubscribe(ctx, LobbyId(lobbyIdStr), secret)
+          case _ =>
+            req.response().setStatusCode(StatusCode.BadRequest.code).end()
 
     val options = HttpServerOptions().setIdleTimeout(WS_IDLE_TIMEOUT_SECONDS)
     vertx.createHttpServer(options).requestHandler(router).listen(port)
@@ -63,9 +65,7 @@ class WebSocketsVerticle(
             .onVertxComplete(ctx):
               case Success(Right((player, _))) =>
                 wsPortAdapter.subscribeToLobbyEvents(lobbyId, player.id, ws)
-              case Success(Left(LobbyError.LobbyNotFound)) =>
-                ws.close(404, LobbyError.LobbyNotFound.toJson)
-              case Success(Left(err: LobbyError)) =>
-                ws.close(401, err.toJson)
+              case Success(Left(err)) =>
+                ws.close(ApiSupport.statusCodeFor(err).code.toShort, err.toJson)
               case _ =>
-                ws.close(500, "Internal Server Error")
+                ws.close(StatusCode.InternalServerError.code.toShort, "Internal Server Error")

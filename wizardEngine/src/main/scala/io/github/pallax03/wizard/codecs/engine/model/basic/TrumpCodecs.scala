@@ -8,6 +8,8 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Trump
 
 import sttp.tapir.Schema
+import sttp.tapir.generic.Configuration
+import sttp.tapir.generic.auto.*
 
 /** Circe codecs and Tapir schema for [[Trump]] round states, discriminated by type name. */
 object TrumpCodecs:
@@ -33,4 +35,5 @@ object TrumpCodecs:
         yield Trump.WizardResolved(wiz, color)
     case "Jester" | "Standard" | "WizardUnresolved" => Decoder.forProduct1("card")(Trump.apply)
 
-  given Schema[Trump] = Schema.anyObject[Trump].name(Schema.SName("Trump"))
+  private given Configuration = Configuration.default.withDiscriminator("type")
+  given Schema[Trump] = Schema.derived

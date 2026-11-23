@@ -26,6 +26,7 @@ class TestLobbyRoutes extends AnyWordSpec with Matchers with OptionValues with H
   import engine.model.basic.gameplay.Round
   import engine.model.core.state.{GameState, PlayerGameState, ServerCoreState}
   import engine.ports.{InMemoryLobbyStatePort, StubInboundPort}
+  import util.ApiSupport
 
   "LobbyRoutes" when:
     val aliceId = PlayerId(0)
@@ -35,7 +36,7 @@ class TestLobbyRoutes extends AnyWordSpec with Matchers with OptionValues with H
     val alice = human(aliceId, aliceSecret)
     val bob = human(bobId, "bob-secret")
     val ai = bot(aiId)
-    val lobbyPath = s"/api/lobby/$defaultLobbyId"
+    val lobbyPath = ApiSupport.lobbyPath(defaultLobbyId)
 
     def readyLobby(status: LobbyStatus = LobbyStatus.WAITING): Lobby =
       (alice - bob - ai).asLobby(status)
@@ -51,12 +52,13 @@ class TestLobbyRoutes extends AnyWordSpec with Matchers with OptionValues with H
       "assign a secret to humans and keep bot secret empty" in:
         withLobbyRoutes(): (lobbyPort, _) =>
           val created =
-            postJson("/api/lobby", JoinLobbyRequest("Alice", None)).bodyAs[AuthLobbyPlayer]
+            postJson(ApiSupport.LobbiesBasePath, JoinLobbyRequest("Alice", None))
+              .bodyAs[AuthLobbyPlayer]
           created.playerId shouldBe aliceId
           created.secret shouldBe defined
 
           postJson(
-            s"/api/lobby/${created.lobbyId}",
+            ApiSupport.lobbyPath(created.lobbyId),
             JoinLobbyRequest("Bot", Some(BotsDifficulty.Dumb), Some("ignored"))
           ).bodyAs[AuthLobbyPlayer].secret shouldBe None
           lobbyPort.currentLobby(created.lobbyId).value.players should have size 2
@@ -65,7 +67,7 @@ class TestLobbyRoutes extends AnyWordSpec with Matchers with OptionValues with H
         withLobbyRoutes(List((alice - bob).asLobby())): (_, _) =>
           get(lobbyPath).bodyAs[LobbyStateResponse].players.map(_.name) shouldBe
             List("Player-0", "Player-1")
-          get("/api/lobby/unknown").code shouldBe StatusCode.NotFound
+          get(ApiSupport.lobbyPath("unknown")).code shouldBe StatusCode.NotFound
 
     "starting, pausing, and returning from a game" should:
       "reject unauthenticated start and distinguish fresh start vs paused resume" in:
