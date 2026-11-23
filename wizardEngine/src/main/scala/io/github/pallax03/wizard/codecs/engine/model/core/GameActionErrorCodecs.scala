@@ -10,6 +10,8 @@ import io.github.pallax03.wizard.engine.model.core.{CardNotAllowedReasons, GameA
 import io.github.pallax03.wizard.engine.model.events.{InvitationEvent, WizardEvent}
 
 import sttp.tapir.Schema
+import sttp.tapir.generic.Configuration
+import sttp.tapir.generic.auto.*
 
 /**
  * Circe codecs and Tapir schemas for domain rule rejections ([[GameActionError]])
@@ -59,5 +61,10 @@ object GameActionErrorCodecs:
       }
     case "CardNotAllowed" => Decoder.forProduct1("reason")(GameActionError.CardNotAllowed.apply)
 
-  given Schema[CardNotAllowedReasons] = Schema.string
-  given Schema[GameActionError] = Schema.string
+  given Schema[CardNotAllowedReasons] =
+    given Configuration = Configuration.default.withDiscriminator("type")
+    Schema.derived
+
+  given Schema[GameActionError] =
+    given Configuration = Configuration.default.withDiscriminator("error")
+    Schema.derived

@@ -18,5 +18,7 @@ object BiddingCodecs:
   given Decoder[Tricks] = Decoder.decodeMap[PlayerId, Trick].asInstanceOf[Decoder[Tricks]]
 
   given Schema[Bid] = Schema.schemaForInt
-  given Schema[Bids] = Schema.anyObject[Bids].name(Schema.SName("Bids"))
-  given Schema[Tricks] = Schema.anyObject[Tricks].name(Schema.SName("Tricks"))
+  given Schema[Bids] =
+    Schema.schemaForMap[PlayerId, Bid](_.toString).as[Bids].name(Schema.SName("Bids"))
+  given Schema[Tricks] =
+    Schema.schemaForMap[PlayerId, Trick](_.toString).as[Tricks].name(Schema.SName("Tricks"))

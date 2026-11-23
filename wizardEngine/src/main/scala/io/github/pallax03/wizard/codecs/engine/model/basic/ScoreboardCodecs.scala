@@ -5,6 +5,7 @@ import io.circe.*
 import io.github.pallax03.wizard.engine.model.basic.*
 
 import sttp.tapir.Schema
+import sttp.tapir.generic.auto.*
 
 /** Circe codecs and Tapir schema for [[Scoreboard]] history, normalizing round entries to ordered arrays. */
 object ScoreboardCodecs:
@@ -31,4 +32,9 @@ object ScoreboardCodecs:
     Encoder[Map[PlayerId, Map[Round, (Score, Bid)]]].contramap(_.toMap)
   )
 
-  given Schema[Scoreboard] = Schema.anyObject[Scoreboard].name(Schema.SName("Scoreboard"))
+  private given Schema[RoundEntry] = Schema.derived
+  given Schema[Scoreboard] =
+    Schema
+      .schemaForMap[PlayerId, List[RoundEntry]](_.toString)
+      .as[Scoreboard]
+      .name(Schema.SName("Scoreboard"))

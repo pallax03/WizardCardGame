@@ -7,6 +7,9 @@ import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.core.GameActionError
 import io.github.pallax03.wizard.engine.model.events.*
 
+import sttp.tapir.generic.auto.*
+import sttp.tapir.{Schema, SchemaType}
+
 /**
  * Circe codecs for [[WizardEvent]] polymorphic hierarchy.
  *
@@ -28,12 +31,31 @@ object WizardEventsCodecs:
   import gameplay.Round
   import cards.Card
   import bidding.Bid
+  import basic.BiddingCodecs.given
   import basic.PlayerIdCodecs.given
   import basic.HandsCodecs.given
   import basic.TrumpCodecs.given
   import basic.CardCodecs.given
   import basic.ScoreboardCodecs.given
   import core.GameActionErrorCodecs.given
+
+  given Schema[LifecycleEvent] = Schema.derived
+  given Schema[ProgressEvent] = Schema.derived
+  given Schema[ActionEvent] = Schema.derived
+  given Schema[InvitationEvent] = Schema.derived
+  given Schema[FailureEvent] = Schema.derived
+  given Schema[WizardEvent] = Schema(
+    SchemaType.SCoproduct[WizardEvent](
+      List(
+        summon[Schema[LifecycleEvent]],
+        summon[Schema[ProgressEvent]],
+        summon[Schema[ActionEvent]],
+        summon[Schema[InvitationEvent]],
+        summon[Schema[FailureEvent]]
+      ),
+      None
+    )(_ => None)
+  ).name(Schema.SName("WizardEvent"))
 
   given Encoder[WizardEvent] = Encoder.instance: e =>
     val encodedEvent = e match

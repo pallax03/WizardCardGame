@@ -8,6 +8,7 @@ import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
 
 import sttp.tapir.Schema
+import sttp.tapir.generic.auto.*
 
 /** Circe codecs and Tapir schema for [[Table]] trick state, containing played cards and lead color. */
 object TableCodecs:
@@ -28,4 +29,6 @@ object TableCodecs:
   given Decoder[Table] = Decoder.instance: cursor =>
     cursor.downField("playedCards").as[List[(PlayerId, Card)]].map(_.asInstanceOf[Table])
 
-  given Schema[Table] = Schema.anyObject[Table].name(Schema.SName("Table"))
+  given Schema[(PlayerId, Card)] = Schema.derived
+  given Schema[Table] =
+    summon[Schema[List[(PlayerId, Card)]]].as[Table].name(Schema.SName("Table"))

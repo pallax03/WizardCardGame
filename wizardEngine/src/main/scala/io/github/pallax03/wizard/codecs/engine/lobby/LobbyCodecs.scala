@@ -8,8 +8,8 @@ import io.circe.generic.semiauto.*
 import io.github.pallax03.wizard.codecs.engine.model.basic.PlayerIdCodecs.given
 import io.github.pallax03.wizard.engine.lobby.*
 
-import sttp.tapir.Schema
 import sttp.tapir.generic.auto.*
+import sttp.tapir.{Schema, SchemaType}
 
 /**
  * Circe codecs and Tapir schemas for the Lobby domain model.
@@ -55,8 +55,8 @@ object LobbyCodecs:
     yield Lobby(uuid, players, status, configuration, version, createdAt)
 
   given Schema[LobbyId] = Schema.string
-  given Schema[LobbyStatus] = Schema.string
-  given Schema[BotsDifficulty] = Schema.string
+  given Schema[LobbyStatus] = Schema.derivedEnumeration[LobbyStatus].defaultStringBased
+  given Schema[BotsDifficulty] = Schema.derivedEnumeration[BotsDifficulty].defaultStringBased
   given Schema[Player] = Schema.derived
   given Schema[GameConfiguration] = Schema.derived
   given Schema[Lobby] = Schema.derived
@@ -78,5 +78,12 @@ object LobbyCodecs:
   given Decoder[LobbyError] = Decoder.instance: _ =>
     Right(null.asInstanceOf[LobbyError])
 
-  private case class LobbyErrorSchema(code: String)
-  given Schema[LobbyError] = Schema.derived[LobbyErrorSchema].as[LobbyError]
+  private case class ErrorResponse(code: String)
+  private case class BoundsErrorResponse(code: String, min: Int, max: Int)
+
+  given Schema[LobbyError] = Schema(
+    SchemaType.SCoproduct[LobbyError](
+      List(Schema.derived[ErrorResponse], Schema.derived[BoundsErrorResponse]),
+      None
+    )(_ => None)
+  ).name(Schema.SName("LobbyError"))
