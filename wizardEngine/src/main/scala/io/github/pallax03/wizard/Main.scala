@@ -16,8 +16,6 @@ import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologAdapter
 import io.github.pallax03.wizard.engine.adapters.redis.*
 import io.github.pallax03.wizard.engine.ports.*
 
-import sttp.tapir.swagger.bundle.SwaggerInterpreter
-
 /**
  * Application entry point and hexagonal runtime assembler.
  *
@@ -111,12 +109,11 @@ object Main:
     val aiRoutes = AIRoutes(lobbyStatePort, prologPort)
     val domainEndpoints = lobbyRoutes.all ++ actionRoutes.all ++ aiRoutes.all
 
-    val swaggerEndpoints =
-      if !isProduction then
-        SwaggerInterpreter().fromServerEndpoints(domainEndpoints, "Wizard Game Engine API", "1.0.0")
+    val docsEndpoints =
+      if !isProduction then ApiDocsRoutes(domainEndpoints).all
       else List.empty
 
-    val allEndpoints = domainEndpoints ++ swaggerEndpoints
+    val allEndpoints = domainEndpoints ++ docsEndpoints
     deploy(vertx, HttpServerVerticle(allEndpoints, httpPort), "HTTP", httpPort)
 
   private def runWSServer(

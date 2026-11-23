@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.application.web.http
 import scala.concurrent.Future
 
 import io.vertx.core.AbstractVerticle
-import io.vertx.ext.web.Router
+import io.vertx.ext.web.{Router, RoutingContext}
 
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.engine.lobby.LobbyError
@@ -12,7 +12,7 @@ import io.github.pallax03.wizard.engine.model.core.{
   GameException,
   RecoveredGameException
 }
-import io.github.pallax03.wizard.util.WizardLogger
+import io.github.pallax03.wizard.util.{ApiSupport, WizardLogger}
 
 import sttp.model.StatusCode
 import sttp.tapir.*
@@ -74,11 +74,12 @@ class HttpServerVerticle(
   )
 
   private def exceptionHandler = ExceptionHandler[Future](ctx =>
-    val uri = ctx.request.uri.toString
-    val lobbyIdOpt = "(?<=/lobby/)[^/?]+".r.findFirstIn(uri)
-    val playerIdOpt = "(?<=/player/)[^/?]+".r.findFirstIn(uri)
+    val lobbyIdOpt = PartialFunction
+      .condOpt(ctx.request.underlying):
+        case rc: RoutingContext => Option(rc.pathParam(ApiSupport.LobbyIdParam))
+      .flatten
 
-    WizardLogger.withContext(lobbyIdOpt, playerIdOpt):
+    WizardLogger.withContext(lobbyIdOpt):
       val (logMsg, _, code) = ctx.e match
         case rge: RecoveredGameException =>
           (
