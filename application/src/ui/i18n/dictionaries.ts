@@ -25,6 +25,11 @@ export const it = {
       statusFinished: "Conclusa",
       unavailable: "Non disponibile",
     },
+    links: {
+      reportLabel: "Report",
+      reportTooltip: "Report Tecnico",
+      githubTooltip: "Repository GitHub",
+    },
   },
   lobby: {
     title: "Stanza",
@@ -231,6 +236,11 @@ export const en = {
       statusPaused: "Paused",
       statusFinished: "Finished",
       unavailable: "Unavailable",
+    },
+    links: {
+      reportLabel: "Report",
+      reportTooltip: "Technical Report",
+      githubTooltip: "GitHub Repository",
     },
   },
   lobby: {
