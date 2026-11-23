@@ -1,11 +1,21 @@
-package io.github.pallax03.wizard.util
+package io.github.pallax03.wizard.application.web
+
+import scala.concurrent.Future
 
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
+import io.github.pallax03.wizard.engine.model.core.{
+  AbortedGameException,
+  GameException,
+  RecoveredGameException
+}
+import io.github.pallax03.wizard.util.WizardLogger
 
 import sttp.model.StatusCode
 import sttp.tapir.*
 import sttp.tapir.json.circe.*
+import sttp.tapir.server.interceptor.exception.ExceptionHandler
+import sttp.tapir.server.model.ValuedEndpointOutput
 
 /**
  * Shared API protocol definitions, version metadata, path builders, and error mappings
@@ -19,7 +29,7 @@ object ApiSupport:
     Option(getClass.getPackage.getImplementationVersion).getOrElse(s"$ApiMajorVersion.0.0")
 
   val LobbyIdParam: String = "lobbyId"
-  val LobbiesResource: String = "lobbies"
+  private val LobbiesResource: String = "lobbies"
 
   val LobbiesBasePath: String = s"/api/$VersionSegment/$LobbiesResource"
   def lobbyPath(lobbyId: LobbyId | String): String = s"$LobbiesBasePath/$lobbyId"
@@ -40,12 +50,53 @@ object ApiSupport:
 
   /** Maps a [[LobbyError]] to its corresponding HTTP [[StatusCode]]. */
   def statusCodeFor(error: LobbyError): StatusCode = error match
-    case LobbyError.NotFound(_) | LobbyError.LobbyNotFound => StatusCode.NotFound
-    case LobbyError.NotAuthenticated                       => StatusCode.Unauthorized
-    case _                                                 => StatusCode.BadRequest
+    case LobbyError.LobbyNotFound | LobbyError.GameNotFound | LobbyError.PlayerNotFound(_) =>
+      StatusCode.NotFound
+    case LobbyError.NotAuthenticated       => StatusCode.Unauthorized
+    case LobbyError.InternalServerError(_) => StatusCode.InternalServerError
+    case _                                 => StatusCode.BadRequest
+
+  /** Extracts `lobbyId` from the request path segments following the `lobbies` resource segment. */
+  private def extractLobbyId(segments: Seq[String]): Option[String] =
+    segments.dropWhile(_ != LobbiesResource).drop(1).headOption.filter(_.nonEmpty)
+
+  /** Maps an unhandled domain or recovery exception to a log message and client [[LobbyError]]. */
+  private def mapException(endpointShow: String, ex: Throwable): (String, LobbyError) = ex match
+    case rge: RecoveredGameException =>
+      (
+        s"RECOVERED GameException (${rge.ge}), endpoint: $endpointShow",
+        LobbyError.InternalServerError("GAME_RECOVERED")
+      )
+    case age: AbortedGameException =>
+      (
+        s"ABORTED GameException (${age.ge}), endpoint: $endpointShow",
+        LobbyError.InternalServerError("GAME_ABORTED")
+      )
+    case ge: GameException =>
+      (
+        s"NOT HANDLED GameException (${ge.getMessage}), endpoint: $endpointShow",
+        LobbyError.InternalServerError("GAME_EXCEPTION")
+      )
+    case _ =>
+      (
+        s"CRITICAL $endpointShow",
+        LobbyError.InternalServerError("INTERNAL_ERROR")
+      )
+
+  /** Centralized Tapir server exception handler mapping domain and recovery failures to JSON responses. */
+  val exceptionHandler: ExceptionHandler[Future] = ExceptionHandler[Future](ctx =>
+    val lobbyIdOpt = extractLobbyId(ctx.request.pathSegments)
+    WizardLogger.withContext(lobbyIdOpt):
+      val (logMsg, lobbyError) = mapException(ctx.endpoint.show, ctx.e)
+      WizardLogger.error(logMsg, ctx.e)
+      val status = statusCodeFor(lobbyError)
+      Future.successful(
+        Some(ValuedEndpointOutput(jsonBody[LobbyError].and(statusCode(status)), lobbyError))
+      )
+  )
 
   /** Shared error output: maps [[LobbyError]] to 400 / 401 / 404 for OpenAPI/AsyncAPI. */
-  val errorOutput: EndpointOutput[LobbyError] =
+  private val errorOutput: EndpointOutput[LobbyError] =
     oneOf[LobbyError](
       oneOfVariantValueMatcher(StatusCode.NotFound, jsonBody[LobbyError]) {
         case err: LobbyError if statusCodeFor(err) == StatusCode.NotFound => true

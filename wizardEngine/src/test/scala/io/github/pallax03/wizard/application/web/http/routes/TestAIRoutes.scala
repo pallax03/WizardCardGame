@@ -14,6 +14,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestAIRoutes extends AnyWordSpec with Matchers with HttpTestDSL:
 
+  import application.web.ApiSupport
   import codecs.engine.model.basic.CardCodecs.given
   import codecs.syntax.CodecSyntax.*
   import engine.lobby.*
@@ -21,10 +22,8 @@ class TestAIRoutes extends AnyWordSpec with Matchers with HttpTestDSL:
   import engine.model.basic.bidding.{Bid, Bids, Tricks}
   import engine.model.basic.cards.Card
   import engine.model.basic.gameplay.{Round, Table}
-  import engine.model.core.GameException
   import engine.model.core.state.{GameState, PlayerCoreState, ServerCoreState}
   import engine.ports.{AIError, InMemoryLobbyStatePort, InboundPort, StubAIPort, StubInboundPort}
-  import util.ApiSupport
 
   "AIRoutes" when:
     val p1 = PlayerId(1)
@@ -70,12 +69,12 @@ class TestAIRoutes extends AnyWordSpec with Matchers with HttpTestDSL:
 
     "mapping authentication and AI errors" should:
       "return 401 when token is invalid and 404 when game is not found" in:
-        withAIRoutes(StubInboundPort.failing(GameException.GameNotFound)):
+        withAIRoutes(StubInboundPort()):
           get(s"$hintPath/card", bearer = "wrong").code shouldBe StatusCode.Unauthorized
 
           val notFound = get(s"$hintPath/card", bearer = secret)
           notFound.code shouldBe StatusCode.NotFound
-          notFound.errorBody shouldBe errorJson(LobbyError.NotFound(GameException.GameNotFound))
+          notFound.errorBody shouldBe errorJson(LobbyError.GameNotFound)
 
       "return 400 InvalidPhase or NoHintFound on phase mismatch or empty hint" in:
         withAIRoutes(StubInboundPort.returning(choosingTrump)):

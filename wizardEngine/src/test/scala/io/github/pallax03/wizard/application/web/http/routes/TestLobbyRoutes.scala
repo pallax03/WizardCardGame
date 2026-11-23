@@ -15,6 +15,7 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestLobbyRoutes extends AnyWordSpec with Matchers with OptionValues with HttpTestDSL:
 
+  import application.web.ApiSupport
   import application.web.http.*
   import codecs.engine.lobby.LobbyCodecs.given
   import codecs.engine.model.basic.PlayerIdCodecs.given
@@ -24,9 +25,9 @@ class TestLobbyRoutes extends AnyWordSpec with Matchers with OptionValues with H
   import engine.model.basic.*
   import engine.model.basic.bidding.Bids
   import engine.model.basic.gameplay.Round
+  import engine.model.core.{AbortedGameException, GameException, RecoveredGameException}
   import engine.model.core.state.{GameState, PlayerGameState, ServerCoreState}
   import engine.ports.{InMemoryLobbyStatePort, StubInboundPort}
-  import util.ApiSupport
 
   "LobbyRoutes" when:
     val aliceId = PlayerId(0)
@@ -139,3 +140,23 @@ class TestLobbyRoutes extends AnyWordSpec with Matchers with OptionValues with H
           )
         ): (_, _) =>
           get(s"$lobbyPath/game", bearer = aliceSecret).code shouldBe StatusCode.Ok
+
+      "keep lobby IN_GAME and return 500 GAME_RECOVERED when state is recovered from checkpoint" in:
+        withLobbyRoutes(
+          List(readyLobby(LobbyStatus.IN_GAME)),
+          StubInboundPort.failing(RecoveredGameException(GameException.TableNoWinner))
+        ): (lobbyPort, _) =>
+          val res = get(s"$lobbyPath/game", bearer = aliceSecret)
+          res.code shouldBe StatusCode.InternalServerError
+          res.errorBody shouldBe errorJson(LobbyError.InternalServerError("GAME_RECOVERED"))
+          lobbyPort.currentLobby(defaultLobbyId).value.status shouldBe LobbyStatus.IN_GAME
+
+      "reconcile lobby to WAITING and return 500 GAME_ABORTED when recovery aborts the game" in:
+        withLobbyRoutes(
+          List(readyLobby(LobbyStatus.IN_GAME)),
+          StubInboundPort.failing(AbortedGameException(GameException.CorruptedState("bad")))
+        ): (lobbyPort, _) =>
+          val res = get(s"$lobbyPath/game", bearer = aliceSecret)
+          res.code shouldBe StatusCode.InternalServerError
+          res.errorBody shouldBe errorJson(LobbyError.InternalServerError("GAME_ABORTED"))
+          lobbyPort.currentLobby(defaultLobbyId).value.status shouldBe LobbyStatus.WAITING

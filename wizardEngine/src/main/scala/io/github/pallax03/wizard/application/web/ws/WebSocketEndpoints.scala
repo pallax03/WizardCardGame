@@ -1,8 +1,8 @@
 package io.github.pallax03.wizard.application.web.ws
 
+import io.github.pallax03.wizard.application.web.ApiSupport
 import io.github.pallax03.wizard.codecs.ws.WsMessageCodecs.given
 import io.github.pallax03.wizard.engine.lobby.{LobbyError, LobbyId}
-import io.github.pallax03.wizard.util.ApiSupport
 
 import sttp.capabilities.WebSockets
 import sttp.tapir.*

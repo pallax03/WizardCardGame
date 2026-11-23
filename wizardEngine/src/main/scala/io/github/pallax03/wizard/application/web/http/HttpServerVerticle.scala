@@ -3,25 +3,14 @@ package io.github.pallax03.wizard.application.web.http
 import scala.concurrent.Future
 
 import io.vertx.core.AbstractVerticle
-import io.vertx.ext.web.{Router, RoutingContext}
+import io.vertx.ext.web.Router
 
-import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
-import io.github.pallax03.wizard.engine.lobby.LobbyError
-import io.github.pallax03.wizard.engine.model.core.{
-  AbortedGameException,
-  GameException,
-  RecoveredGameException
-}
-import io.github.pallax03.wizard.util.{ApiSupport, WizardLogger}
+import io.github.pallax03.wizard.application.web.ApiSupport
+import io.github.pallax03.wizard.util.WizardLogger
 
-import sttp.model.StatusCode
-import sttp.tapir.*
-import sttp.tapir.json.circe.*
 import sttp.tapir.server.ServerEndpoint
-import sttp.tapir.server.interceptor.exception.ExceptionHandler
 import sttp.tapir.server.interceptor.log.DefaultServerLog
 import sttp.tapir.server.metrics.prometheus.PrometheusMetrics
-import sttp.tapir.server.model.ValuedEndpointOutput
 import sttp.tapir.server.vertx.{VertxFutureServerInterpreter, VertxFutureServerOptions}
 
 /**
@@ -30,9 +19,8 @@ import sttp.tapir.server.vertx.{VertxFutureServerInterpreter, VertxFutureServerO
  * Configures the HTTP server pipeline:
  *  - Routes: Binds declared Tapir domain endpoints, serves interactive Swagger UI documentation
  *    at `/docs` (in non-production environments), and exposes the `/metrics` Prometheus scraping endpoint.
- *  - Interceptors: Injects CORS, contextual SLF4J request logging, and metrics collectors.
- *  - Centralized Exception Handling: Maps unhandled [[GameException]]s, [[RecoveredGameException]]s,
- *    and [[AbortedGameException]]s to structured JSON error responses with HTTP 500 status.
+ *  - Interceptors: Injects CORS, contextual SLF4J request logging, metrics collectors,
+ *    and centralized exception handling via [[ApiSupport.exceptionHandler]].
  */
 class HttpServerVerticle(
     serverEndpoints: List[ServerEndpoint[Any, Future]],
@@ -47,7 +35,7 @@ class HttpServerVerticle(
     val serverOptions = VertxFutureServerOptions.customiseInterceptors
       .corsInterceptor(sttp.tapir.server.interceptor.cors.CORSInterceptor.default[Future])
       .serverLog(serverLog)
-      .exceptionHandler(exceptionHandler)
+      .exceptionHandler(ApiSupport.exceptionHandler)
       .metricsInterceptor(prometheusMetrics.metricsInterceptor())
       .options
 
@@ -71,41 +59,4 @@ class HttpServerVerticle(
       ),
     doLogExceptions = (msg, ex) => Future.successful(WizardLogger.error(msg, ex)),
     noLog = Future.successful(())
-  )
-
-  private def exceptionHandler = ExceptionHandler[Future](ctx =>
-    val lobbyIdOpt = PartialFunction
-      .condOpt(ctx.request.underlying):
-        case rc: RoutingContext => Option(rc.pathParam(ApiSupport.LobbyIdParam))
-      .flatten
-
-    WizardLogger.withContext(lobbyIdOpt):
-      val (logMsg, _, code) = ctx.e match
-        case rge: RecoveredGameException =>
-          (
-            s"RECOVERED GameException (${rge.ge}), endpoint: ${ctx.endpoint.show}",
-            rge.ge.getMessage,
-            rge.getMessage
-          )
-        case age: AbortedGameException =>
-          (
-            s"ABORTED GameException (${age.ge}), endpoint: ${ctx.endpoint.show}",
-            age.ge.getMessage,
-            age.getMessage
-          )
-        case ge: GameException =>
-          (s"NOT HANDLED GameException ${ctx.endpoint.show}", ge.getMessage, "GAME_EXCEPTION")
-        case _ =>
-          (s"CRITICAL ${ctx.endpoint.show}", "Internal Server Error", "INTERNAL_ERROR")
-
-      WizardLogger.error(logMsg, ctx.e)
-      val errorOutput = jsonBody[LobbyError].and(statusCode(StatusCode.InternalServerError))
-      Future.successful(
-        Some(
-          ValuedEndpointOutput(
-            errorOutput,
-            LobbyError.InternalServerError(code)
-          )
-        )
-      )
   )

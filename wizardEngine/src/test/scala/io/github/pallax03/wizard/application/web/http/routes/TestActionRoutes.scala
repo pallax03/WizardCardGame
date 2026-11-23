@@ -15,13 +15,19 @@ import org.scalatest.wordspec.AnyWordSpec
 
 class TestActionRoutes extends AnyWordSpec with Matchers with OptionValues with HttpTestDSL:
 
+  import application.web.ApiSupport
   import codecs.engine.model.basic.CardCodecs.given
   import engine.lobby.*
   import engine.model.basic.*
   import engine.model.basic.cards.Card
-  import engine.model.core.{GameAction, GameActionError}
+  import engine.model.core.{
+    AbortedGameException,
+    GameAction,
+    GameActionError,
+    GameException,
+    RecoveredGameException
+  }
   import engine.ports.{InMemoryLobbyStatePort, StubInboundPort}
-  import util.ApiSupport
 
   "ActionRoutes" when:
     val p1 = PlayerId(1)
@@ -79,3 +85,18 @@ class TestActionRoutes extends AnyWordSpec with Matchers with OptionValues with 
           )
           lobbyPort.clearedStrikes should have size 3
           lobbyPort.currentLobby(defaultLobbyId).value.players.head.strikes shouldBe 0
+
+    "handling unhandled server and recovery exceptions" should:
+      "map recovery, game, and generic exceptions to structured 500 responses" in:
+        List(
+          RecoveredGameException(GameException.TableNoWinner) -> "GAME_RECOVERED",
+          AbortedGameException(GameException.CorruptedHand(p1)) -> "GAME_ABORTED",
+          GameException.TableNoWinner -> "GAME_EXCEPTION",
+          new RuntimeException("boom") -> "INTERNAL_ERROR"
+        ).foreach: (ex, expectedCode) =>
+          val lobbyPort = InMemoryLobbyStatePort(activeLobby)
+          val inbound = StubInboundPort(actionResult = Future.failed(ex))
+          withEndpoints(ActionRoutes(lobbyPort, inbound).all):
+            val res = postJson(s"$lobbyPath/play", Ten of Red, bearer = secret)
+            res.code shouldBe StatusCode.InternalServerError
+            res.errorBody shouldBe errorJson(LobbyError.InternalServerError(expectedCode))

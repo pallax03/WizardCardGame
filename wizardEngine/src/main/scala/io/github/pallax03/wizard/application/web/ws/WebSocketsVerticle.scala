@@ -6,11 +6,11 @@ import io.vertx.core.AbstractVerticle
 import io.vertx.core.http.HttpServerOptions
 import io.vertx.ext.web.{Router, RoutingContext}
 
+import io.github.pallax03.wizard.application.web.ApiSupport
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.toJson
 import io.github.pallax03.wizard.engine.lobby.LobbyId
 import io.github.pallax03.wizard.engine.ports.{LobbyStatePort, WebSocketsPort}
-import io.github.pallax03.wizard.util.ApiSupport
 import io.github.pallax03.wizard.util.FutureSyntax.*
 
 import sttp.model.StatusCode

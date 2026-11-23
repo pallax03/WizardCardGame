@@ -34,8 +34,8 @@ class AIRoutes(lobbyStatePort: LobbyStatePort, aiPort: AIPort)(using ec: Executi
       playerPair <- EitherT(lobbyStatePort.getAuthLobby(lobbyId, secret))
       player = playerPair._1
       aiResultOpt <- EitherT(action(player.id)).leftMap {
-        case AIError.GameException(err) => LobbyError.NotFound(err)
-        case err                        => LobbyError.IAHintError(err)
+        case AIError.GameNotFound => LobbyError.GameNotFound
+        case err                  => LobbyError.IAHintError(err)
       }
       aiResult <- EitherT.fromOption[Future](
         aiResultOpt,

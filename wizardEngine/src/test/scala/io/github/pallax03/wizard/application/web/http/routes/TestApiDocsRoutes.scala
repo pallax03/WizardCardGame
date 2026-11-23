@@ -5,12 +5,12 @@ import javax.xml.parsers.DocumentBuilderFactory
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+import io.github.pallax03.wizard.application.web.ApiSupport
 import io.github.pallax03.wizard.application.web.http.HttpTestDSL
 import io.github.pallax03.wizard.application.web.ws.WebSocketEndpoints
 import io.github.pallax03.wizard.engine.lobby.LobbyError
-import io.github.pallax03.wizard.engine.model.core.GameException
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.ports.{InMemoryLobbyStatePort, StubAIPort, StubInboundPort}
-import io.github.pallax03.wizard.util.ApiSupport
 
 import org.xml.sax.InputSource
 import sttp.apispec.asyncapi.circe.yaml.*
@@ -65,10 +65,12 @@ class TestApiDocsRoutes extends AnyWordSpec with Matchers with HttpTestDSL:
 
     "map LobbyError variants consistently via ApiSupport.statusCodeFor" in:
       ApiSupport.statusCodeFor(LobbyError.LobbyNotFound) shouldBe StatusCode.NotFound
-      ApiSupport.statusCodeFor(LobbyError.NotFound(GameException.GameNotFound)) shouldBe
-        StatusCode.NotFound
+      ApiSupport.statusCodeFor(LobbyError.GameNotFound) shouldBe StatusCode.NotFound
+      ApiSupport.statusCodeFor(LobbyError.PlayerNotFound(PlayerId(1))) shouldBe StatusCode.NotFound
       ApiSupport.statusCodeFor(LobbyError.NotAuthenticated) shouldBe StatusCode.Unauthorized
       ApiSupport.statusCodeFor(LobbyError.GamePaused) shouldBe StatusCode.BadRequest
+      ApiSupport.statusCodeFor(LobbyError.InternalServerError("INTERNAL_ERROR")) shouldBe
+        StatusCode.InternalServerError
 
     "serve AsyncAPI YAML and valid XHTML UI via ApiDocsRoutes" in:
       withEndpoints(ApiDocsRoutes(domainEndpoints).all):
