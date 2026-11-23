@@ -5,7 +5,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import io.github.pallax03.wizard.application.web.http.*
 import io.github.pallax03.wizard.application.web.http.endpoints.*
 import io.github.pallax03.wizard.engine.lobby.*
-import io.github.pallax03.wizard.engine.model.core.GameException
+import io.github.pallax03.wizard.engine.model.core.AbortedGameException
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 import io.github.pallax03.wizard.engine.ports.{InboundPort, LobbyStatePort}
 
@@ -83,16 +83,22 @@ class LobbyRoutes(
           _ <- EitherT.cond[Future](
             lobby.status != LobbyStatus.WAITING,
             (),
-            LobbyError.NotFound(GameException.GameNotFound)
+            LobbyError.GameNotFound
           )
-          state <- EitherT(gameEngine.getState(lobbyId, player.id).map(Right(_)).recoverWith {
-            case _ =>
-              lobbyStatePort
-                .updateLobby[Unit](lobbyId) { l =>
-                  Right(((), l.copy(status = LobbyStatus.WAITING), None))
-                }
-                .map(_ => Left(LobbyError.NotFound(GameException.GameNotFound)))
-          })
+          state <- EitherT(
+            gameEngine
+              .getState(lobbyId, player.id)
+              .map(_.toRight(Future.successful(Left(LobbyError.GameNotFound))))
+              .recover { case age: AbortedGameException => Left(Future.failed(age)) }
+              .flatMap {
+                case Right(gameState) => Future.successful(Right(gameState))
+                case Left(outcome) =>
+                  lobbyStatePort
+                    .updateLobby(lobbyId)(l =>
+                      Right(((), l.copy(status = LobbyStatus.WAITING), None))
+                    ) >> outcome
+              }
+          )
         yield state).value
       }
 
@@ -126,7 +132,7 @@ class LobbyRoutes(
             Right(
               ((), lobby.copy(status = LobbyStatus.PAUSED), Some(SystemEvent.paused(player.id)))
             )
-          else Left(LobbyError.NotFound(GameException.GameNotFound))
+          else Left(LobbyError.GameNotFound)
         }).value
       }
 
@@ -175,7 +181,7 @@ class LobbyRoutes(
           if lobby.status == LobbyStatus.FINISHED || lobby.status == LobbyStatus.PAUSED then
             Right(((), lobby.copy(status = LobbyStatus.WAITING), None))
           else if lobby.status.existGame then Left(LobbyError.GameInProgress)
-          else Left(LobbyError.NotFound(GameException.GameNotFound))
+          else Left(LobbyError.GameNotFound)
         }).flatMap { _ =>
           EitherT.right[LobbyError](gameEngine.deleteGame(lobbyId))
         }.value

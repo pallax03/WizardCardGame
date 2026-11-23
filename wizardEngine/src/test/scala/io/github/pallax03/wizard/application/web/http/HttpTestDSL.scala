@@ -5,6 +5,7 @@ import scala.concurrent.Future
 
 import io.circe.{Decoder, Encoder}
 
+import io.github.pallax03.wizard.application.web.ApiSupport
 import io.github.pallax03.wizard.codecs.engine.lobby.LobbyCodecs.given
 import io.github.pallax03.wizard.codecs.syntax.CodecSyntax.*
 import io.github.pallax03.wizard.engine.lobby.LobbyError
@@ -13,6 +14,7 @@ import sttp.client4.*
 import sttp.client4.testing.BackendStub
 import sttp.model.Uri
 import sttp.tapir.server.ServerEndpoint
+import sttp.tapir.server.interceptor.CustomiseInterceptors
 import sttp.tapir.server.stub4.TapirStubInterpreter
 
 import org.scalatest.EitherValues
@@ -38,8 +40,10 @@ trait HttpTestDSL extends ScalaFutures with EitherValues:
   def withEndpoints(endpoints: List[ServerEndpoint[Any, Future]])(
       test: Backend[Future] ?=> Unit
   ): Unit =
+    val options = CustomiseInterceptors[Future, Any](_ => ())
+      .exceptionHandler(ApiSupport.exceptionHandler)
     given Backend[Future] =
-      TapirStubInterpreter(BackendStub.asynchronousFuture)
+      TapirStubInterpreter(options, BackendStub.asynchronousFuture)
         .whenServerEndpointsRunLogic(endpoints)
         .backend()
     test

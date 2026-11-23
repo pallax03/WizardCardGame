@@ -8,7 +8,7 @@ import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerGameState}
-import io.github.pallax03.wizard.engine.model.core.{GameAction, GameActionError, GameException}
+import io.github.pallax03.wizard.engine.model.core.{GameAction, GameActionError}
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 
 /** In-memory [[LobbyStatePort]] test double backed by real [[Lobby]] domain transitions. */
@@ -103,8 +103,8 @@ class InMemoryLobbyStatePort(initial: Lobby*) extends LobbyStatePort:
 
 /** In-memory [[InboundPort]] test double recording invocations and returning configured responses. */
 class StubInboundPort(
-    stateHandler: (LobbyId, PlayerId) => Future[PlayerGameState] = (_, _) =>
-      Future.failed(GameException.GameNotFound),
+    stateHandler: (LobbyId, PlayerId) => Future[Option[PlayerGameState]] = (_, _) =>
+      Future.successful(None),
     actionResult: Future[Either[GameActionError, Unit]] = Future.successful(Right(()))
 ) extends InboundPort:
   private val _startedGames = mutable.ListBuffer.empty[(LobbyId, List[PlayerId], GameConfiguration)]
@@ -119,7 +119,7 @@ class StubInboundPort(
   def submittedActions: List[(LobbyId, GameAction)] = _submittedActions.toList
   def forcedFallbacks: List[(LobbyId, PlayerId)] = _forcedFallbacks.toList
 
-  override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState] =
+  override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[Option[PlayerGameState]] =
     stateHandler(lobbyId, playerId)
 
   override def startGame(
@@ -151,7 +151,7 @@ class StubInboundPort(
 
 object StubInboundPort:
   def returning(state: PlayerGameState): StubInboundPort =
-    StubInboundPort(stateHandler = (_, _) => Future.successful(state))
+    StubInboundPort(stateHandler = (_, _) => Future.successful(Some(state)))
 
   def failing(error: Throwable): StubInboundPort =
     StubInboundPort(stateHandler = (_, _) => Future.failed(error))

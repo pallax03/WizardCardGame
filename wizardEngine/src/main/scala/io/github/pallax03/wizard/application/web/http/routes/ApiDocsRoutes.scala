@@ -2,8 +2,8 @@ package io.github.pallax03.wizard.application.web.http.routes
 
 import scala.concurrent.Future
 
+import io.github.pallax03.wizard.application.web.ApiSupport
 import io.github.pallax03.wizard.application.web.ws.WebSocketEndpoints
-import io.github.pallax03.wizard.util.ApiSupport
 
 import sttp.apispec.asyncapi.circe.yaml.*
 import sttp.apispec.openapi.Info

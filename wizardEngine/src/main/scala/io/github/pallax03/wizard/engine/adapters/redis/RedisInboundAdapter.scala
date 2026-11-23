@@ -69,11 +69,9 @@ class RedisInboundAdapter(
     (mainSave +: checkpointSave).traverse_(r => redisClient.send(r).asScala)
 
   /** @inheritdoc */
-  override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[PlayerGameState] =
+  override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[Option[PlayerGameState]] =
     withRecovery(lobbyId):
-      fetchGameState(lobbyId).map:
-        case Some(state) => PlayerGameState.from(state, playerId)
-        case None        => throw GameException.GameNotFound
+      fetchGameState(lobbyId).map(_.map(PlayerGameState.from(_, playerId)))
 
   /** @inheritdoc */
   override def startGame(
@@ -92,14 +90,18 @@ class RedisInboundAdapter(
 
   /** @inheritdoc */
   override def resumeGame(lobbyId: LobbyId): Future[Unit] =
-    fetchGameState(lobbyId).flatMap:
-      case Some(state) =>
-        val invitations =
-          state.playersIds.flatMap(id => PlayerGameState.from(state, id).pendingInvitation(id))
-        outboundPort.publish(lobbyId, LifecycleEvent.GameResumed(state.playersIds) +: invitations*)
-        Future.unit
-      case None =>
-        Future.failed(GameException.GameNotFound)
+    withRecovery(lobbyId):
+      fetchGameState(lobbyId).flatMap:
+        case Some(state) =>
+          val invitations =
+            state.playersIds.flatMap(id => PlayerGameState.from(state, id).pendingInvitation(id))
+          outboundPort.publish(
+            lobbyId,
+            LifecycleEvent.GameResumed(state.playersIds) +: invitations*
+          )
+          Future.unit
+        case None =>
+          Future.failed(GameException.CorruptedState("Game state missing on resume"))
 
   /** @inheritdoc */
   override def deleteGame(lobbyId: LobbyId): Future[Unit] =
@@ -135,10 +137,13 @@ class RedisInboundAdapter(
 
   /** @inheritdoc */
   override def forceFallbackAction(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
-    getState(lobbyId, playerId).flatMap: playerGameState =>
-      playerGameState.pendingInvitation(playerId) match
-        case Some(invitationEvent: InvitationEvent) =>
-          submitAction(lobbyId, FallbackStrategy.fallbackMove(invitationEvent)).flatMap:
-            case Left(err) => Future.failed(GameException.CorruptedState(s"Fallback failed: $err"))
-            case Right(_)  => Future.unit
-        case None => Future.unit
+    getState(lobbyId, playerId).flatMap:
+      case Some(playerGameState) =>
+        playerGameState.pendingInvitation(playerId) match
+          case Some(invitationEvent: InvitationEvent) =>
+            submitAction(lobbyId, FallbackStrategy.fallbackMove(invitationEvent)).flatMap:
+              case Left(err) =>
+                Future.failed(GameException.CorruptedState(s"Fallback failed: $err"))
+              case Right(_) => Future.unit
+          case None => Future.unit
+      case None => Future.unit

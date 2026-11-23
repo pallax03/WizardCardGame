@@ -19,14 +19,14 @@ object LobbyId:
   def apply(id: String): LobbyId = id
   def generate: LobbyId = UUID.randomUUID().toString
 
-import io.github.pallax03.wizard.engine.model.core.{GameActionError, EntityNotFound, GameException}
+import io.github.pallax03.wizard.engine.model.core.GameActionError
 import io.github.pallax03.wizard.engine.ports.AIError
 
 /** Domain errors returned by lobby lifecycle and player management operations. */
 enum LobbyError:
   case Full, GameInProgress, GamePaused, NotEnoughPlayers, PlayersOffline,
-    LobbyNotFound, NotAuthenticated
-  case NotFound(err: EntityNotFound)
+    LobbyNotFound, GameNotFound, NotAuthenticated
+  case PlayerNotFound(playerId: PlayerId)
   case GameActionRejected(err: GameActionError)
   case IAHintError(err: AIError)
   case ConfigurationInvalid(err: ConfigurationErrors)
@@ -97,8 +97,7 @@ case class Lobby(
 
   def removePlayer(playerId: PlayerId): Either[LobbyError, Lobby] =
     val newPlayers = players.filterNot(_.id == playerId)
-    if newPlayers.size == players.size then
-      Left(LobbyError.NotFound(GameException.PlayerNotFound(playerId)))
+    if newPlayers.size == players.size then Left(LobbyError.PlayerNotFound(playerId))
     else Right(copy(players = newPlayers, version = version + 1))
 
   private def evaluateStatus(currentPlayers: List[Player]): LobbyStatus =
@@ -114,7 +113,7 @@ case class Lobby(
       f: Player => Player
   ): Either[LobbyError, Lobby] =
     players.indexWhere(_.id == playerId) match
-      case -1 => Left(LobbyError.NotFound(GameException.PlayerNotFound(playerId)))
+      case -1 => Left(LobbyError.PlayerNotFound(playerId))
       case idx =>
         val newPlayers = players.updated(idx, f(players(idx)))
         val newStatus = if updateStatus then evaluateStatus(newPlayers) else status
