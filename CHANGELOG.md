@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/pallax03/WizardCardGame/compare/v1.0.3...v1.1.0) (2026-11-23)
+
+
+### Features
+
+* **ui:** add report and GitHub links to home page and update report URLs ([#198](https://github.com/pallax03/WizardCardGame/issues/198)) ([e67f2b0](https://github.com/pallax03/WizardCardGame/commit/e67f2b071110bb4ebdc3634696fb983d04f6e6db)), closes [#180](https://github.com/pallax03/WizardCardGame/issues/180)
+
 ## [1.0.3](https://github.com/pallax03/WizardCardGame/compare/v1.0.2...v1.0.3) (2026-11-21)
 
 
