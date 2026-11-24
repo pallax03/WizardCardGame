@@ -10,8 +10,11 @@ interface DisconnectingBannerProps {
   timerSeconds: number;
 }
 
-export function DisconnectingBanner({ timerSeconds }: DisconnectingBannerProps) {
-  const total = Number.isFinite(timerSeconds) && timerSeconds > 0 ? timerSeconds : 30;
+export function DisconnectingBanner({
+  timerSeconds,
+}: DisconnectingBannerProps) {
+  const total =
+    Number.isFinite(timerSeconds) && timerSeconds > 0 ? timerSeconds : 30;
   const [secondsLeft, setSecondsLeft] = useState(total);
 
   useEffect(() => {
@@ -21,7 +24,10 @@ export function DisconnectingBanner({ timerSeconds }: DisconnectingBannerProps) 
 
   useEffect(() => {
     if (secondsLeft <= 0) return;
-    const id = setTimeout(() => setSecondsLeft((s) => Math.max(0, s - 1)), 1000);
+    const id = setTimeout(
+      () => setSecondsLeft((s) => Math.max(0, s - 1)),
+      1000,
+    );
     return () => clearTimeout(id);
   }, [secondsLeft]);
 
@@ -31,11 +37,15 @@ export function DisconnectingBanner({ timerSeconds }: DisconnectingBannerProps) 
         <Hourglass className="w-4 h-4 animate-pulse" />
         {lobbyI18n.disconnectingTimer(secondsLeft)}
       </p>
-      <p className="text-xs text-amber-300/80">{lobbyI18n.disconnectingNotice}</p>
+      <p className="text-xs text-amber-300/80">
+        {lobbyI18n.disconnectingNotice}
+      </p>
       <div className="h-1 w-full overflow-hidden rounded-full bg-amber-500/20">
         <div
           className="h-full rounded-full bg-amber-400 transition-[width] duration-1000 ease-linear"
-          style={{ width: `${Math.max(0, Math.min(100, (secondsLeft / total) * 100))}%` }}
+          style={{
+            width: `${Math.max(0, Math.min(100, (secondsLeft / total) * 100))}%`,
+          }}
         />
       </div>
     </div>

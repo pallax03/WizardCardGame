@@ -5,7 +5,9 @@ import { getClientSecretCookie } from "@/lib/auth/clientSecret";
 import type { LobbyState } from "./types";
 
 export async function getLobbyState(lobbyId: string): Promise<LobbyState> {
-  return await apiFetch<LobbyState>(`/api/v1/lobbies/${lobbyId}`, { cache: "no-store" });
+  return await apiFetch<LobbyState>(`/api/v1/lobbies/${lobbyId}`, {
+    cache: "no-store",
+  });
 }
 
 /**
@@ -15,6 +17,8 @@ export async function getLobbyState(lobbyId: string): Promise<LobbyState> {
  * (`WebSocketsVerticle`): i WebSocket browser non possono inviare
  * header `Authorization`, quindi il secret va passato in query string.
  */
-export async function getLobbyWsSecret(lobbyId: string): Promise<string | undefined> {
+export async function getLobbyWsSecret(
+  lobbyId: string,
+): Promise<string | undefined> {
   return await getClientSecretCookie(lobbyId);
 }

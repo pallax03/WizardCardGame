@@ -1,5 +1,7 @@
-const host = typeof window !== "undefined" ? window.location.hostname : "localhost";
-const defaultPort = process.env.NEXT_PUBLIC_HTTP_PORT || process.env.HTTP_PORT || "5001";
+const host =
+  typeof window !== "undefined" ? window.location.hostname : "localhost";
+const defaultPort =
+  process.env.NEXT_PUBLIC_HTTP_PORT || process.env.HTTP_PORT || "5001";
 const defaultUrl = `http://${host}:${defaultPort}`;
 const BASE_URL =
   process.env.BACKEND_INTERNAL_URL ||
@@ -19,7 +21,7 @@ export class ApiError extends Error {
   constructor(
     public readonly status: number,
     public readonly code: string,
-    message: string
+    message: string,
   ) {
     super(message);
     this.name = "ApiError";
@@ -33,7 +35,7 @@ export class ApiError extends Error {
  */
 export async function apiFetch<T = unknown>(
   endpoint: string,
-  options: ApiFetchOptions = {}
+  options: ApiFetchOptions = {},
 ): Promise<T> {
   const { body, headers, ...restOptions } = options;
 
@@ -49,13 +51,20 @@ export async function apiFetch<T = unknown>(
     });
   } catch (err) {
     console.error(`Network error on [${endpoint}]:`, err);
-    throw new ApiError(0, "CONNECTION_ERROR", (err as Error).message || "Connection error");
+    throw new ApiError(
+      0,
+      "CONNECTION_ERROR",
+      (err as Error).message || "Connection error",
+    );
   }
 
   if (!res.ok) {
-    const errorPayload = (await res.json().catch(() => ({}))) as BackendErrorPayload;
+    const errorPayload = (await res
+      .json()
+      .catch(() => ({}))) as BackendErrorPayload;
     const code = errorPayload.code || "SERVER_ERROR";
-    const message = errorPayload.message || `Request failed with status ${res.status}`;
+    const message =
+      errorPayload.message || `Request failed with status ${res.status}`;
     throw new ApiError(res.status, code, message);
   }
 
@@ -78,7 +87,7 @@ export interface SafeApiResponse<T = unknown> {
  */
 export async function safeApiFetch<T = unknown>(
   endpoint: string,
-  options: ApiFetchOptions = {}
+  options: ApiFetchOptions = {},
 ): Promise<SafeApiResponse<T>> {
   try {
     const data = await apiFetch<T>(endpoint, options);

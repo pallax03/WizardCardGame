@@ -77,7 +77,9 @@ export function GameTurnBanner({
                     : "bg-zinc-900/90 text-amber-300 border-amber-500/30"
                 }`}
               >
-                <Clock className={`size-3 ${isLowTime ? "text-rose-400" : "text-amber-400"}`} />
+                <Clock
+                  className={`size-3 ${isLowTime ? "text-rose-400" : "text-amber-400"}`}
+                />
                 <span>{turnTimerSeconds}s</span>
               </div>
 
@@ -95,7 +97,9 @@ export function GameTurnBanner({
         <div className="text-center py-0.5">
           <p
             className={`text-xs sm:text-sm font-extrabold tracking-tight ${
-              isMyTurn ? "text-amber-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]" : "text-zinc-300"
+              isMyTurn
+                ? "text-amber-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.8)]"
+                : "text-zinc-300"
             }`}
           >
             {turnPrompt}

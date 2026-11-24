@@ -13,7 +13,7 @@ export async function generateMetadata() {
 export default async function LobbyPage() {
   return (
     <main className="app-page p-6 flex items-center justify-center">
-      <LobbyView/>
+      <LobbyView />
     </main>
   );
 }

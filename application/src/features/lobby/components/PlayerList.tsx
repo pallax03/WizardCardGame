@@ -22,7 +22,9 @@ export function PlayerList({
   onAddBot,
   onRemoveBot,
 }: PlayerListProps) {
-  const emptySlotsCount = canManagePlayers ? Math.max(0, maxPlayers - players.length) : 0;
+  const emptySlotsCount = canManagePlayers
+    ? Math.max(0, maxPlayers - players.length)
+    : 0;
 
   return (
     <div className="flex flex-col gap-4">
@@ -31,11 +33,14 @@ export function PlayerList({
           <Users className="w-5 h-5 text-zinc-400" />
           {lobbyI18n.playersCard.title}
         </span>
-        <Badge variant="secondary" className="bg-zinc-800 text-zinc-300 border border-zinc-700">
+        <Badge
+          variant="secondary"
+          className="bg-zinc-800 text-zinc-300 border border-zinc-700"
+        >
           {players.length} / {maxPlayers}
         </Badge>
       </div>
-      
+
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
         {players.map((player) => {
           const isMe = currentUserId !== null && player.id === currentUserId;
@@ -84,7 +89,9 @@ function EmptySlot({
   if (isSelecting) {
     return (
       <div className="flex items-center justify-between p-2.5 gap-2 rounded-xl border border-dashed border-cyan-800/80 bg-zinc-950/50 text-zinc-300 text-xs font-medium">
-        <span className="text-cyan-400 pl-1">{lobbyI18n.botSelection.label}</span>
+        <span className="text-cyan-400 pl-1">
+          {lobbyI18n.botSelection.label}
+        </span>
         <div className="flex items-center gap-1.5">
           <Button
             size="sm"
@@ -104,7 +111,13 @@ function EmptySlot({
           >
             {lobbyI18n.botSelection.prolog}
           </Button>
-          <Button size="icon" variant="ghost" disabled={isAddingBot} className="h-7 w-7" onClick={onCloseSelect}>
+          <Button
+            size="icon"
+            variant="ghost"
+            disabled={isAddingBot}
+            className="h-7 w-7"
+            onClick={onCloseSelect}
+          >
             <X className="w-3.5 h-3.5" />
           </Button>
         </div>

@@ -2,7 +2,12 @@
 
 import { useRef, useState, type RefObject } from "react";
 import { createPortal } from "react-dom";
-import { animate, motion, useMotionValue, type AnimationPlaybackControls } from "motion/react";
+import {
+  animate,
+  motion,
+  useMotionValue,
+  type AnimationPlaybackControls,
+} from "motion/react";
 import { GameCardView } from "./GameCardView";
 import { cardEquals, cardToString } from "../state/gameReducer";
 import type { Card } from "../types";
@@ -56,7 +61,9 @@ function DraggableHandCard({
 }: DraggableHandCardProps) {
   const x = useMotionValue(0);
   const y = useMotionValue(0);
-  const [overlayOrigin, setOverlayOrigin] = useState<OverlayOrigin | null>(null);
+  const [overlayOrigin, setOverlayOrigin] = useState<OverlayOrigin | null>(
+    null,
+  );
   const slotRef = useRef<HTMLDivElement | null>(null);
   const gestureRef = useRef<{
     pointerId: number;
@@ -75,7 +82,12 @@ function DraggableHandCard({
   const isOverDropZone = (point: { x: number; y: number }) => {
     const zone = dropZoneRef?.current?.getBoundingClientRect();
     if (!zone) return false;
-    return point.x >= zone.left && point.x <= zone.right && point.y >= zone.top && point.y <= zone.bottom;
+    return (
+      point.x >= zone.left &&
+      point.x <= zone.right &&
+      point.y >= zone.top &&
+      point.y <= zone.bottom
+    );
   };
 
   const handlePointerDown = (event: React.PointerEvent<HTMLDivElement>) => {
@@ -112,7 +124,11 @@ function DraggableHandCard({
     y.set(dy);
   };
 
-  const finishGesture = (clientX: number, clientY: number, cancelled: boolean) => {
+  const finishGesture = (
+    clientX: number,
+    clientY: number,
+    cancelled: boolean,
+  ) => {
     const gesture = gestureRef.current;
     gestureRef.current = null;
     if (!gesture) return;
@@ -142,7 +158,12 @@ function DraggableHandCard({
     stopReturnAnims();
     returnAnimsRef.current = [
       animate(x, 0, { type: "spring", stiffness: 500, damping: 35 }),
-      animate(y, 0, { type: "spring", stiffness: 500, damping: 35, onComplete: done }),
+      animate(y, 0, {
+        type: "spring",
+        stiffness: 500,
+        damping: 35,
+        onComplete: done,
+      }),
     ];
   };
 
@@ -155,11 +176,19 @@ function DraggableHandCard({
           y: isSelected ? 10 : offsetY,
           zIndex: isSelected ? 50 : 10,
         }}
-        whileHover={draggable && !hasSelectedCard ? { y: -12, rotate: 0, zIndex: 40, scale: 1.05 } : undefined}
+        whileHover={
+          draggable && !hasSelectedCard
+            ? { y: -12, rotate: 0, zIndex: 40, scale: 1.05 }
+            : undefined
+        }
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerUp={(event) => finishGesture(event.clientX, event.clientY, false)}
-        onPointerCancel={(event) => finishGesture(event.clientX, event.clientY, true)}
+        onPointerUp={(event) =>
+          finishGesture(event.clientX, event.clientY, false)
+        }
+        onPointerCancel={(event) =>
+          finishGesture(event.clientX, event.clientY, true)
+        }
         onDoubleClick={() => {
           if (draggable) onDropCard?.(card);
         }}
@@ -201,7 +230,7 @@ function DraggableHandCard({
               <GameCardView card={card} size={size} isClickable={false} />
             </div>
           </motion.div>,
-          document.body
+          document.body,
         )}
     </>
   );
@@ -227,7 +256,11 @@ export function PlayerHand({
   const cardSize: "sm" | "md" | "lg" =
     totalCards <= 4 ? "lg" : totalCards <= 7 ? "md" : "sm";
 
-  const renderRow = (cardsRow: Card[], startIndex: number, size: "sm" | "md" | "lg") => {
+  const renderRow = (
+    cardsRow: Card[],
+    startIndex: number,
+    size: "sm" | "md" | "lg",
+  ) => {
     const rowTotal = cardsRow.length;
 
     // Spaziatura adattata alla dimensione della carta
@@ -237,15 +270,17 @@ export function PlayerHand({
           ? "-space-x-3 sm:-space-x-5"
           : "-space-x-5 sm:-space-x-7"
         : rowTotal <= 2
-        ? "space-x-4 sm:space-x-8"
-        : rowTotal <= 4
-        ? "-space-x-4 sm:-space-x-6"
-        : rowTotal <= 6
-        ? "-space-x-6 sm:-space-x-8"
-        : "-space-x-8 sm:-space-x-10";
+          ? "space-x-4 sm:space-x-8"
+          : rowTotal <= 4
+            ? "-space-x-4 sm:-space-x-6"
+            : rowTotal <= 6
+              ? "-space-x-6 sm:-space-x-8"
+              : "-space-x-8 sm:-space-x-10";
 
     return (
-      <div className={`flex items-end justify-center w-full max-w-full ${spacingClass}  py-2 px-0.5 overflow-visible`}>
+      <div
+        className={`flex items-end justify-center w-full max-w-full ${spacingClass}  py-2 px-0.5 overflow-visible`}
+      >
         {cardsRow.map((card, i) => {
           const index = startIndex + i;
           const isSelected = canPlay && cardEquals(card, selectedCard);
@@ -301,8 +336,12 @@ export function PlayerHand({
 
     return (
       <div className="relative w-full pt-12 pb-4 px-0.5 overflow-visible flex flex-col items-center -space-y-10">
-        <div className="z-10 relative w-full flex justify-center">{renderRow(topRow, 0, cardSize)}</div>
-        <div className="z-20 relative w-full flex justify-center">{renderRow(bottomRow, halfIndex, cardSize)}</div>
+        <div className="z-10 relative w-full flex justify-center">
+          {renderRow(topRow, 0, cardSize)}
+        </div>
+        <div className="z-20 relative w-full flex justify-center">
+          {renderRow(bottomRow, halfIndex, cardSize)}
+        </div>
       </div>
     );
   }

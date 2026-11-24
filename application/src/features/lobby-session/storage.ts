@@ -56,7 +56,7 @@ export function readSavedLobbies(): SavedLobby[] {
         entry !== null &&
         typeof (entry as SavedLobby).lobbyId === "string" &&
         Number.isInteger((entry as SavedLobby).playerId) &&
-        (entry as SavedLobby).playerId >= 0
+        (entry as SavedLobby).playerId >= 0,
     );
   } catch {
     return [];
@@ -72,7 +72,9 @@ export function saveLobby(lobbyId: string, playerId: string | number): void {
   if (!storageAvailable()) return;
   const parsed = typeof playerId === "number" ? playerId : Number(playerId);
   if (!Number.isInteger(parsed) || parsed < 0) return;
-  const others = readSavedLobbies().filter((entry) => entry.lobbyId !== lobbyId);
+  const others = readSavedLobbies().filter(
+    (entry) => entry.lobbyId !== lobbyId,
+  );
   persist([...others, { lobbyId, playerId: parsed, savedAt: Date.now() }]);
 }
 

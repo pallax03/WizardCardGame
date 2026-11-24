@@ -49,7 +49,7 @@ export function GameEndOverlay({
       sortedScoreboard.map((item) => [
         item.id,
         { name: item.name, isOnline: true },
-      ])
+      ]),
     );
 
   // Costruiamo un oggetto scoreboard di fallback se non presente
@@ -59,7 +59,7 @@ export function GameEndOverlay({
       sortedScoreboard.map((item) => [
         item.id,
         [{ round: 1, score: item.score, bid: 0, tricks: 0 }],
-      ])
+      ]),
     );
 
   const winner = sortedScoreboard[0];
@@ -89,7 +89,8 @@ export function GameEndOverlay({
           {winner && (
             <p className="text-xs sm:text-sm text-zinc-400 font-medium">
               {gameI18n.winner}{" "}
-              <span className="text-white font-bold">{winner.name}</span> {gameI18n.winner_with}{" "}
+              <span className="text-white font-bold">{winner.name}</span>{" "}
+              {gameI18n.winner_with}{" "}
               <span className="font-mono font-bold text-zinc-200">
                 {winner.score} {gameI18n.points}
               </span>

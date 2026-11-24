@@ -13,9 +13,16 @@ interface ChatInputProps {
   onSendMessage: (text: string) => void;
 }
 
-export function ChatInput({ activePrivateId, connectionState, onSendMessage }: ChatInputProps) {
+export function ChatInput({
+  activePrivateId,
+  connectionState,
+  onSendMessage,
+}: ChatInputProps) {
   const [input, setInput] = useState("");
-  const placeholder = activePrivateId === null ? chatI18n.placeholder : chatI18n.privatePlaceholder;
+  const placeholder =
+    activePrivateId === null
+      ? chatI18n.placeholder
+      : chatI18n.privatePlaceholder;
 
   const handleSend = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -26,7 +33,10 @@ export function ChatInput({ activePrivateId, connectionState, onSendMessage }: C
   };
 
   return (
-    <form onSubmit={handleSend} className="flex shrink-0 items-center gap-2 border-t border-white/8 bg-zinc-950 px-3 pt-3 pb-[max(.75rem,env(safe-area-inset-bottom))]">
+    <form
+      onSubmit={handleSend}
+      className="flex shrink-0 items-center gap-2 border-t border-white/8 bg-zinc-950 px-3 pt-3 pb-[max(.75rem,env(safe-area-inset-bottom))]"
+    >
       <Input
         value={input}
         onChange={(event) => setInput(event.target.value)}

@@ -4,7 +4,10 @@ export function isBotPlayer(player: Pick<LobbyPlayer, "difficulty">): boolean {
   return player.difficulty !== undefined && player.difficulty !== null;
 }
 
-export function isPlayerOnline(player: LobbyPlayer, connectedPlayerIds: number[]): boolean {
+export function isPlayerOnline(
+  player: LobbyPlayer,
+  connectedPlayerIds: number[],
+): boolean {
   if (isBotPlayer(player)) return true;
   return connectedPlayerIds.includes(player.id);
 }
@@ -18,7 +21,7 @@ export interface PlayerPresence {
 
 export function buildPlayersMap(
   players: LobbyPlayer[],
-  connectedPlayerIds: number[]
+  connectedPlayerIds: number[],
 ): Map<number, PlayerPresence> {
   const map = new Map<number, PlayerPresence>();
   for (const player of players) {

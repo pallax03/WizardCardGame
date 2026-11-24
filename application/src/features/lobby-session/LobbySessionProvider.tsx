@@ -33,7 +33,10 @@ const initialState = (lobbyId: string): LobbySessionState => ({
   error: null,
 });
 
-function sessionReducer(state: LobbySessionState, action: LobbySessionAction): LobbySessionState {
+function sessionReducer(
+  state: LobbySessionState,
+  action: LobbySessionAction,
+): LobbySessionState {
   switch (action.type) {
     case "session/reset":
       return initialState(action.lobbyId);
@@ -48,11 +51,15 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
         else idSet.delete(state.playerId);
         newConnectedIds = Array.from(idSet);
       }
-      return { ...state, connectionState: action.connectionState, connectedPlayerIds: newConnectedIds };
+      return {
+        ...state,
+        connectionState: action.connectionState,
+        connectedPlayerIds: newConnectedIds,
+      };
     }
     case "lobby/loaded": {
       const httpOnlineIds = new Set(
-        action.lobby.players.filter((p) => p.isOnline).map((p) => p.id)
+        action.lobby.players.filter((p) => p.isOnline).map((p) => p.id),
       );
       if (state.connectionState === "open" && state.playerId !== null) {
         httpOnlineIds.add(state.playerId);
@@ -70,9 +77,13 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
         const playerId = action.event.playerId;
         const evAction = action.event.action;
         if (evAction === "joined" || evAction === "online") {
-          connectedPlayerIds = Array.from(new Set([...state.connectedPlayerIds, playerId]));
+          connectedPlayerIds = Array.from(
+            new Set([...state.connectedPlayerIds, playerId]),
+          );
         } else if (evAction === "left" || evAction === "offline") {
-          connectedPlayerIds = state.connectedPlayerIds.filter((id) => id !== playerId);
+          connectedPlayerIds = state.connectedPlayerIds.filter(
+            (id) => id !== playerId,
+          );
         }
       }
       let updatedLobby = state.lobby;
@@ -83,12 +94,14 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
         state.lobby
       ) {
         const targetId = action.event.playerId;
-        const newStrikes = action.event.strikes ?? (action.event.fields?.strikes as number | undefined);
+        const newStrikes =
+          action.event.strikes ??
+          (action.event.fields?.strikes as number | undefined);
         if (targetId !== undefined && newStrikes !== undefined) {
           updatedLobby = {
             ...state.lobby,
             players: state.lobby.players.map((p) =>
-              p.id === targetId ? { ...p, strikes: Number(newStrikes) } : p
+              p.id === targetId ? { ...p, strikes: Number(newStrikes) } : p,
             ),
           };
         }
@@ -104,7 +117,7 @@ function sessionReducer(state: LobbySessionState, action: LobbySessionAction): L
           updatedLobby = {
             ...(updatedLobby ?? state.lobby)!,
             players: (updatedLobby ?? state.lobby)!.players.map((p) =>
-              p.id === targetId ? { ...p, difficulty: "Bot" } : p
+              p.id === targetId ? { ...p, difficulty: "Bot" } : p,
             ),
           };
         }
@@ -141,7 +154,9 @@ type LobbySessionContextValue = LobbySessionState & {
   awaitOpen: (timeoutMs?: number) => Promise<boolean>;
 };
 
-const LobbySessionContext = createContext<LobbySessionContextValue | null>(null);
+const LobbySessionContext = createContext<LobbySessionContextValue | null>(
+  null,
+);
 
 const MAX_RECONNECT_ATTEMPTS = 10;
 
@@ -157,8 +172,12 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
   const everConnectedRef = useRef(false);
   const connectionOpenRef = useRef(false);
   const openWaitersRef = useRef(new Set<(ok: boolean) => void>());
-  const [wsAuth, setWsAuth] = useState<{ lobbyId: string; secret: string } | null>(null);
-  const wsSecret = wsAuth !== null && wsAuth.lobbyId === lobbyId ? wsAuth.secret : null;
+  const [wsAuth, setWsAuth] = useState<{
+    lobbyId: string;
+    secret: string;
+  } | null>(null);
+  const wsSecret =
+    wsAuth !== null && wsAuth.lobbyId === lobbyId ? wsAuth.secret : null;
 
   useEffect(() => {
     if (state.lobbyId === lobbyId) return;
@@ -166,10 +185,13 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
   }, [lobbyId, state.lobbyId]);
 
   useEffect(() => {
-    const urlPlayerId = new URLSearchParams(window.location.search).get("playerId");
+    const urlPlayerId = new URLSearchParams(window.location.search).get(
+      "playerId",
+    );
     const saved = findSavedLobby(lobbyId);
     const candidate = urlPlayerId ?? (saved ? String(saved.playerId) : null);
-    const playerId = candidate === null ? Number.NaN : Number.parseInt(candidate, 10);
+    const playerId =
+      candidate === null ? Number.NaN : Number.parseInt(candidate, 10);
 
     if (!Number.isInteger(playerId) || playerId < 0) {
       removeSavedLobby(lobbyId);
@@ -179,7 +201,10 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
 
     if (urlPlayerId) {
       saveLobby(lobbyId, urlPlayerId);
-      if (typeof window !== "undefined" && !window.location.pathname.endsWith("/game")) {
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.endsWith("/game")
+      ) {
         router.replace(`/lobby/${lobbyId}`);
       }
     }
@@ -194,7 +219,9 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       if (!secret) {
         dispatch({
           type: "sync/failed",
-          error: new Error("Missing lobby secret: rejoin the lobby from the home page."),
+          error: new Error(
+            "Missing lobby secret: rejoin the lobby from the home page.",
+          ),
         });
         return;
       }
@@ -217,7 +244,8 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
           const lobby = await getLobbyState(lobbyId);
           dispatch({ type: "lobby/loaded", lobby });
         } catch (reason: unknown) {
-          const error = reason instanceof Error ? reason : new Error(String(reason));
+          const error =
+            reason instanceof Error ? reason : new Error(String(reason));
           dispatch({ type: "sync/failed", error });
         }
       } while (lobbyRefreshQueuedRef.current);
@@ -231,32 +259,41 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     void refreshLobby();
   }, [refreshLobby]);
 
-  const handleServerEvent = useCallback((event: ServerEvent) => {
-    dispatch({ type: "event/received", event });
-    if (event.type === "system") {
-      void refreshLobby();
-      return;
-    }
+  const handleServerEvent = useCallback(
+    (event: ServerEvent) => {
+      dispatch({ type: "event/received", event });
+      if (event.type === "system") {
+        void refreshLobby();
+        return;
+      }
 
-    if (event.type === "event") {
-      if (event.event.action === "GameStarted" || event.event.action === "GameResumed") {
-        void refreshLobby();
+      if (event.type === "event") {
+        if (
+          event.event.action === "GameStarted" ||
+          event.event.action === "GameResumed"
+        ) {
+          void refreshLobby();
+        }
+        if (event.event.action === "GameCancelled") {
+          void refreshLobby();
+        }
+        // Refresh lobby on TurnOf so player strikes are always current after a timeout
+        if (event.event.action === "TurnOf") {
+          void refreshLobby();
+        }
       }
-      if (event.event.action === "GameCancelled") {
-        void refreshLobby();
-      }
-      // Refresh lobby on TurnOf so player strikes are always current after a timeout
-      if (event.event.action === "TurnOf") {
-        void refreshLobby();
-      }
-    }
-  }, [refreshLobby]);
+    },
+    [refreshLobby],
+  );
 
   useEffect(() => {
     if (state.lobby?.status === "IN_GAME") {
       const targetPath = `/lobby/${state.lobbyId}/game`;
 
-      if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== targetPath
+      ) {
         router.replace(targetPath);
       }
     }
@@ -266,7 +303,10 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
     if (state.lobby?.status === "PAUSED") {
       const targetPath = `/lobby/${state.lobbyId}`;
 
-      if (typeof window !== "undefined" && window.location.pathname !== targetPath) {
+      if (
+        typeof window !== "undefined" &&
+        window.location.pathname !== targetPath
+      ) {
         router.replace(targetPath);
       }
     }
@@ -329,7 +369,10 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
             dispatch({ type: "connection/changed", connectionState: "closed" });
             return;
           }
-          dispatch({ type: "connection/changed", connectionState: "reconnecting" });
+          dispatch({
+            type: "connection/changed",
+            connectionState: "reconnecting",
+          });
           const backoff = Math.min(500 * 2 ** (reconnectAttempt - 1), 5000);
           const delay = backoff * (0.5 + Math.random() * 0.5);
           reconnectTimer = setTimeout(connect, delay);
@@ -345,37 +388,55 @@ export function LobbySessionProvider({ children }: PropsWithChildren) {
       socketRef.current?.close();
       socketRef.current = null;
     };
-  }, [handleServerEvent, lobbyId, reconnectNonce, refreshLobby, state.playerId, wsSecret]);
-
-  const sendMessage = useCallback((text: string, destinationId?: number) => {
-    if (state.playerId === null) return false;
-    const message: ChatMessage = {
-      type: "message",
-      playerId: state.playerId,
-      destinationId,
-      text,
-      timestamp: new Date().toISOString(),
-    };
-    const sent = socketRef.current?.send(message) ?? false;
-    if (sent && destinationId !== undefined) {
-      dispatch({ type: "chat/privateSent", message });
-    }
-    return sent;
-  }, [state.playerId]);
-
-  const value = useMemo<LobbySessionContextValue>(() => ({
-    ...state,
-    sendMessage,
+  }, [
+    handleServerEvent,
+    lobbyId,
+    reconnectNonce,
     refreshLobby,
-    reconnect,
-    awaitOpen,
-  }), [awaitOpen, reconnect, refreshLobby, sendMessage, state]);
+    state.playerId,
+    wsSecret,
+  ]);
 
-  return <LobbySessionContext.Provider value={value}>{children}</LobbySessionContext.Provider>;
+  const sendMessage = useCallback(
+    (text: string, destinationId?: number) => {
+      if (state.playerId === null) return false;
+      const message: ChatMessage = {
+        type: "message",
+        playerId: state.playerId,
+        destinationId,
+        text,
+        timestamp: new Date().toISOString(),
+      };
+      const sent = socketRef.current?.send(message) ?? false;
+      if (sent && destinationId !== undefined) {
+        dispatch({ type: "chat/privateSent", message });
+      }
+      return sent;
+    },
+    [state.playerId],
+  );
+
+  const value = useMemo<LobbySessionContextValue>(
+    () => ({
+      ...state,
+      sendMessage,
+      refreshLobby,
+      reconnect,
+      awaitOpen,
+    }),
+    [awaitOpen, reconnect, refreshLobby, sendMessage, state],
+  );
+
+  return (
+    <LobbySessionContext.Provider value={value}>
+      {children}
+    </LobbySessionContext.Provider>
+  );
 }
 
 export function useLobbySession() {
   const session = useContext(LobbySessionContext);
-  if (!session) throw new Error("useLobbySession must be used inside LobbySessionProvider");
+  if (!session)
+    throw new Error("useLobbySession must be used inside LobbySessionProvider");
   return session;
 }

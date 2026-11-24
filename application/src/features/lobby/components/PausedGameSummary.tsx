@@ -35,7 +35,14 @@ function phaseLabel(status: GameBoardState["status"]): string {
   }
 }
 
-export function PausedGameSummary({ board, isLoading, loadFailed, playerId, players, connectedPlayerIds = [] }: PausedGameSummaryProps) {
+export function PausedGameSummary({
+  board,
+  isLoading,
+  loadFailed,
+  playerId,
+  players,
+  connectedPlayerIds = [],
+}: PausedGameSummaryProps) {
   if (isLoading) {
     return (
       <Card className="surface-card text-zinc-100">
@@ -68,37 +75,52 @@ export function PausedGameSummary({ board, isLoading, loadFailed, playerId, play
 
   const getEffectiveColorCircle = (color: string) => {
     switch (color) {
-      case "RED": return "bg-red-500";
-      case "BLUE": return "bg-blue-500";
-      case "GREEN": return "bg-emerald-500";
-      case "YELLOW": return "bg-amber-500";
-      default: return "";
+      case "RED":
+        return "bg-red-500";
+      case "BLUE":
+        return "bg-blue-500";
+      case "GREEN":
+        return "bg-emerald-500";
+      case "YELLOW":
+        return "bg-amber-500";
+      default:
+        return "";
     }
   };
-  
-  const effectiveTrumpColorClass = board.effectiveTrumpColor ? getEffectiveColorCircle(board.effectiveTrumpColor) : "";
+
+  const effectiveTrumpColorClass = board.effectiveTrumpColor
+    ? getEffectiveColorCircle(board.effectiveTrumpColor)
+    : "";
   const totalPlayersCount = players.length;
-  const maxRound = totalPlayersCount > 0 ? Math.floor(60 / totalPlayersCount) : 0;
+  const maxRound =
+    totalPlayersCount > 0 ? Math.floor(60 / totalPlayersCount) : 0;
 
   return (
     <div className="flex flex-col gap-4">
-      
       {/* Game State Header */}
       <div className="flex items-center justify-between px-1">
         <span className="text-lg font-semibold text-white">
-          {lobbyI18n.pausedSummary.round(board.round, maxRound || undefined)} - {phaseLabel(board.status)}
+          {lobbyI18n.pausedSummary.round(board.round, maxRound || undefined)} -{" "}
+          {phaseLabel(board.status)}
         </span>
-        
+
         {/* Trump */}
         {!isEnded && (
           <div className="flex items-center gap-2 text-xs font-medium text-zinc-400">
             {board.trump && "card" in board.trump && board.trump.card ? (
               <div className="flex items-center gap-1.5">
                 <div className="scale-75 origin-right">
-                  <GameCardView card={board.trump.card} size="sm" isClickable={false} />
+                  <GameCardView
+                    card={board.trump.card}
+                    size="sm"
+                    isClickable={false}
+                  />
                 </div>
                 {effectiveTrumpColorClass && (
-                  <div className={`w-3 h-3 rounded-full ${effectiveTrumpColorClass} shadow-sm`} title={board.effectiveTrumpColor || undefined} />
+                  <div
+                    className={`w-3 h-3 rounded-full ${effectiveTrumpColorClass} shadow-sm`}
+                    title={board.effectiveTrumpColor || undefined}
+                  />
                 )}
               </div>
             ) : (
@@ -137,7 +159,6 @@ export function PausedGameSummary({ board, isLoading, loadFailed, playerId, play
           );
         })}
       </div>
-      
     </div>
   );
 }

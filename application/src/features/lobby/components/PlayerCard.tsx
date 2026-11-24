@@ -8,7 +8,16 @@ import { GameCardView } from "@/features/game/components/GameCardView";
 
 import { PlayerAvatar } from "@/ui/components/player-avatar";
 
-export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemove, onRemoveBot, gameData }: PlayerCardProps) {
+export function PlayerCard({
+  player,
+  isMe,
+  isBot,
+  isOnline,
+  isRemoving,
+  canRemove,
+  onRemoveBot,
+  gameData,
+}: PlayerCardProps) {
   const [showHand, setShowHand] = useState(false);
 
   // Styling logic for bid and tricks
@@ -17,7 +26,7 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
   return (
     <div
       className={`flex flex-col rounded-xl border transition-colors ${
-        gameData?.isTurn 
+        gameData?.isTurn
           ? "bg-sky-500/10 border-sky-500/40 ring-1 ring-sky-500/30"
           : isMe
             ? "bg-zinc-800/90 border-zinc-500/50 ring-1 ring-zinc-500/30"
@@ -37,7 +46,9 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
 
           <div className="min-w-0 flex flex-col">
             <p className="font-semibold text-sm flex items-center gap-1.5 truncate">
-              <span className={`truncate ${gameData?.isTurn ? "text-sky-400" : "text-zinc-100"}`}>
+              <span
+                className={`truncate ${gameData?.isTurn ? "text-sky-400" : "text-zinc-100"}`}
+              >
                 {player.name}
               </span>
               {isMe && (
@@ -47,7 +58,15 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
               )}
             </p>
             <span className="text-xs text-zinc-400 font-mono">
-              {isBot ? (player.difficulty === "Dumb" ? lobbyI18n.botSelection.dumb : player.difficulty === "Prolog" ? lobbyI18n.botSelection.prolog : player.difficulty) : (isOnline ? "Online" : "Offline")}
+              {isBot
+                ? player.difficulty === "Dumb"
+                  ? lobbyI18n.botSelection.dumb
+                  : player.difficulty === "Prolog"
+                    ? lobbyI18n.botSelection.prolog
+                    : player.difficulty
+                : isOnline
+                  ? "Online"
+                  : "Offline"}
             </span>
           </div>
         </div>
@@ -58,37 +77,64 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
               {hasBid ? (
                 <div className="flex items-center gap-1 font-bold">
                   {(gameData.tricks ?? 0) === gameData.bid ? (
-                    <span className="text-emerald-400 flex items-center gap-0.5">{gameData.tricks ?? 0}/{gameData.bid} <Check className="w-3.5 h-3.5" /></span>
+                    <span className="text-emerald-400 flex items-center gap-0.5">
+                      {gameData.tricks ?? 0}/{gameData.bid}{" "}
+                      <Check className="w-3.5 h-3.5" />
+                    </span>
                   ) : (gameData.tricks ?? 0) > gameData.bid! ? (
-                    <span className="text-red-500 flex items-center gap-0.5">{gameData.tricks ?? 0}/{gameData.bid} <X className="w-3.5 h-3.5" /></span>
+                    <span className="text-red-500 flex items-center gap-0.5">
+                      {gameData.tricks ?? 0}/{gameData.bid}{" "}
+                      <X className="w-3.5 h-3.5" />
+                    </span>
                   ) : (
-                    <span><span className="text-zinc-400">{gameData.tricks ?? 0}</span><span className="text-zinc-600 mx-0.5">/</span><span className="text-amber-400">{gameData.bid}</span></span>
+                    <span>
+                      <span className="text-zinc-400">
+                        {gameData.tricks ?? 0}
+                      </span>
+                      <span className="text-zinc-600 mx-0.5">/</span>
+                      <span className="text-amber-400">{gameData.bid}</span>
+                    </span>
                   )}
                 </div>
               ) : (
                 <div className="text-zinc-600 font-bold">- / -</div>
               )}
             </div>
-            <div className="text-right font-black text-white whitespace-nowrap" title="Points">
-              {gameData.points ?? 0} <span className="text-[9px] text-zinc-500 font-normal">{lobbyI18n.pausedSummary.pointsShort}</span>
+            <div
+              className="text-right font-black text-white whitespace-nowrap"
+              title="Points"
+            >
+              {gameData.points ?? 0}{" "}
+              <span className="text-[9px] text-zinc-500 font-normal">
+                {lobbyI18n.pausedSummary.pointsShort}
+              </span>
             </div>
           </div>
         ) : (
-          !isMe && canRemove && (
+          !isMe &&
+          canRemove && (
             <Button
               size="icon"
               variant="ghost"
               disabled={isRemoving}
-              title={isBot ? lobbyI18n.playersCard.removeBotTooltip : lobbyI18n.playersCard.removePlayerTooltip}
+              title={
+                isBot
+                  ? lobbyI18n.playersCard.removeBotTooltip
+                  : lobbyI18n.playersCard.removePlayerTooltip
+              }
               className="h-7 w-7 text-zinc-400 hover:text-red-400 hover:bg-red-950/40"
               onClick={() => onRemoveBot(player.id)}
             >
-              {isRemoving ? <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" /> : <X className="w-3.5 h-3.5" />}
+              {isRemoving ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-red-400" />
+              ) : (
+                <X className="w-3.5 h-3.5" />
+              )}
             </Button>
           )
         )}
       </div>
-      
+
       {/* Hand section if available */}
       {gameData?.hand && gameData.hand.length > 0 && (
         <div className="border-t border-zinc-700/50 bg-zinc-900/30 rounded-b-xl overflow-hidden">
@@ -97,10 +143,18 @@ export function PlayerCard({ player, isMe, isBot, isOnline, isRemoving, canRemov
             onClick={() => setShowHand(!showHand)}
             className="w-full flex items-center justify-between px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-zinc-500 hover:text-zinc-300 transition-colors"
           >
-            <span>{lobbyI18n.pausedSummary?.yourHand ? lobbyI18n.pausedSummary.yourHand(gameData.hand.length) : `La tua mano (${gameData.hand.length})`}</span>
-            {showHand ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            <span>
+              {lobbyI18n.pausedSummary?.yourHand
+                ? lobbyI18n.pausedSummary.yourHand(gameData.hand.length)
+                : `La tua mano (${gameData.hand.length})`}
+            </span>
+            {showHand ? (
+              <ChevronUp className="w-3.5 h-3.5" />
+            ) : (
+              <ChevronDown className="w-3.5 h-3.5" />
+            )}
           </button>
-          
+
           {showHand && (
             <div className="p-3 pt-0 grid grid-rows-2 grid-flow-col gap-2 overflow-x-auto no-scrollbar snap-x snap-mandatory justify-start">
               {gameData.hand.map((card, index) => (

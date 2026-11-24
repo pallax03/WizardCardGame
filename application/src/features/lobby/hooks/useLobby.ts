@@ -2,7 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { addBotAction, discardPausedGameAction, leaveLobbyAction, pauseGameAction, startGameAction, updateConfigurationAction } from "@/features/lobby/api";
+import {
+  addBotAction,
+  discardPausedGameAction,
+  leaveLobbyAction,
+  pauseGameAction,
+  startGameAction,
+  updateConfigurationAction,
+} from "@/features/lobby/api";
 import { useLobbySession } from "@/features/lobby-session";
 import { removeSavedLobby, saveLobby } from "@/features/lobby-session/storage";
 import { getErrorMessage } from "@/ui/i18n/errors";
@@ -18,7 +25,7 @@ export function useLobby() {
     reconnect,
     awaitOpen,
     connectedPlayerIds,
-    error: sessionError
+    error: sessionError,
   } = useLobbySession();
 
   const [isAddingBot, setIsAddingBot] = useState<boolean>(false);
@@ -88,8 +95,11 @@ export function useLobby() {
     if (difficulty !== "Dumb" && difficulty !== "Prolog") return;
     setActionError(null);
     setIsAddingBot(true);
-    const result = await addBotAction(lobby.lobbyId, difficulty as "Dumb" | "Prolog");
-    
+    const result = await addBotAction(
+      lobby.lobbyId,
+      difficulty as "Dumb" | "Prolog",
+    );
+
     if (result.error) {
       setActionError(getErrorMessage(result.error));
     } else {
@@ -103,7 +113,7 @@ export function useLobby() {
     setActionError(null);
     setRemovingBotId(botId);
     const result = await leaveLobbyAction(lobby.lobbyId, botId, false);
-    
+
     if (result?.error) {
       setActionError(getErrorMessage(result.error));
     } else {
@@ -138,11 +148,17 @@ export function useLobby() {
     setIsPausing(false);
   };
 
-  const handleUpdateConfiguration = async (timer: number, maxStrikes: number) => {
+  const handleUpdateConfiguration = async (
+    timer: number,
+    maxStrikes: number,
+  ) => {
     if (!lobby?.lobbyId || isSavingConfig) return;
     setActionError(null);
     setIsSavingConfig(true);
-    const result = await updateConfigurationAction(lobby.lobbyId, { timer, maxStrikes });
+    const result = await updateConfigurationAction(lobby.lobbyId, {
+      timer,
+      maxStrikes,
+    });
     if (result.error) {
       setActionError(getErrorMessage(result.error));
     } else {
@@ -152,7 +168,11 @@ export function useLobby() {
   };
 
   useEffect(() => {
-    if (lobby && playerId !== null && !lobby.players.some((p) => p.id === playerId)) {
+    if (
+      lobby &&
+      playerId !== null &&
+      !lobby.players.some((p) => p.id === playerId)
+    ) {
       removeSavedLobby(lobby.lobbyId);
       router.push("/");
       return;
