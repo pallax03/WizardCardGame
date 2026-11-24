@@ -211,10 +211,10 @@ class BotManagerVerticle(
       .onComplete(_ => ())
 
   private def logError(msg: String): Unit =
-    WizardLogger.error(s"[BotManager] $msg")
+    WizardLogger.error(msg)
 
   private def logWarn(msg: String): Unit =
-    WizardLogger.warn(s"[BotManager] $msg")
+    WizardLogger.warn(msg)
 
 object BotManagerVerticle:
   private def DEFAULT_BOT_DELAY_MS: Int = Random.between(800, 2000)

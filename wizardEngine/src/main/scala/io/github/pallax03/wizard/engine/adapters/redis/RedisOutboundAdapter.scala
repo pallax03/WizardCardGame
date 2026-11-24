@@ -44,7 +44,7 @@ class RedisOutboundAdapter(
     events.toList.traverse_ { ev =>
       given LogContext = LogContext(lobbyId)
       val jsonMsg = ev.toJson
-      WizardLogger.info(s"Outbound event: $jsonMsg")
+      WizardLogger.debug(s"Outbound event: $jsonMsg")
 
       for
         _ <- publishToClients(lobbyId, ev, jsonMsg)
