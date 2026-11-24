@@ -16,8 +16,7 @@ const en = {
   },
 };
 
-export const getGameI18n = (lang: string) => lang === "en" ? en : it;
+export const getGameI18n = (lang: string) => (lang === "en" ? en : it);
 
 // Fallback for any client imports if they exist
 export const gameI18n = it;
-

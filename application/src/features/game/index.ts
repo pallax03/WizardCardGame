@@ -1,7 +1,12 @@
 ﻿export { GameBoard } from "./components/GameBoard";
 export { GameCardView } from "./components/GameCardView";
 export { useGameBoard } from "./hooks/useGameBoard";
-export { chooseTrumpColor, getPlayerGameSnapshot, playCard, placeBid } from "./api";
+export {
+  chooseTrumpColor,
+  getPlayerGameSnapshot,
+  playCard,
+  placeBid,
+} from "./api";
 export { mapSnapshotToBoardState } from "./state/snapshotMapper";
 export type { PlayerGameSnapshot } from "./state/snapshotMapper";
 export {

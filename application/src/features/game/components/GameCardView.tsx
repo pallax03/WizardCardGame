@@ -59,14 +59,17 @@ export function GameCardView({
       if (style) {
         cardStyle = `${style.border} ${style.bg} ${style.text} ${style.glow}`;
       } else {
-        cardStyle = "border-zinc-300 bg-gradient-to-b from-zinc-100 via-zinc-200 to-zinc-300 text-zinc-900 shadow-zinc-400/60";
+        cardStyle =
+          "border-zinc-300 bg-gradient-to-b from-zinc-100 via-zinc-200 to-zinc-300 text-zinc-900 shadow-zinc-400/60";
       }
     } else {
-      cardStyle = "border-zinc-300 bg-gradient-to-b from-zinc-100 via-zinc-200 to-zinc-300 text-zinc-900 shadow-zinc-400/60";
+      cardStyle =
+        "border-zinc-300 bg-gradient-to-b from-zinc-100 via-zinc-200 to-zinc-300 text-zinc-900 shadow-zinc-400/60";
     }
   } else if (card.type === "Jester") {
     label = "J";
-    cardStyle = "border-zinc-600/80 bg-gradient-to-b from-black via-zinc-900 to-black text-white shadow-zinc-900/60 ring-1 ring-zinc-600/30";
+    cardStyle =
+      "border-zinc-600/80 bg-gradient-to-b from-black via-zinc-900 to-black text-white shadow-zinc-900/60 ring-1 ring-zinc-600/30";
   }
 
   return (
@@ -79,7 +82,9 @@ export function GameCardView({
         "relative flex flex-col justify-between border-2 font-mono font-bold shadow-xl transition-all duration-200 select-none text-left backdrop-blur-md transform-gpu",
         sizeClasses,
         cardStyle,
-        isClickable && !isSelected && "cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:brightness-110",
+        isClickable &&
+          !isSelected &&
+          "cursor-pointer hover:-translate-y-2 hover:shadow-2xl hover:brightness-110",
         isClickable && isSelected && "cursor-pointer",
         !isClickable && "cursor-default",
         !isLegal && "opacity-35 grayscale-60 hover:translate-y-0",
@@ -88,7 +93,7 @@ export function GameCardView({
         isHinted &&
           !isSelected &&
           "ring-4 ring-purple-400 -translate-y-2 shadow-2xl shadow-purple-500/50 scale-105",
-        neonColor && CARD_NEON_STYLES[neonColor]
+        neonColor && CARD_NEON_STYLES[neonColor],
       )}
     >
       <div className="flex justify-between items-start">

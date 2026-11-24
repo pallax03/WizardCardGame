@@ -1,0 +1,9 @@
+node_modules
+.next
+out
+build
+wizardEngine
+CHANGELOG.md
+package-lock.json
+*.tsbuildinfo
+application/next-env.d.ts

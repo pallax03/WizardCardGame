@@ -1,0 +1,14 @@
+.git
+.github
+.husky
+.idea
+node_modules
+**/node_modules
+wizardEngine
+application/.next
+application/out
+application/tsconfig.tsbuildinfo
+*.md
+.env
+.env.*
+!.env.example

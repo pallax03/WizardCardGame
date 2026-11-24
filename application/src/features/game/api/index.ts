@@ -6,20 +6,26 @@ import type { PlayerGameSnapshot } from "../state/snapshotMapper";
 import type { Card, CardColor } from "../types";
 
 export async function getPlayerGameSnapshot(
-  lobbyId: string
+  lobbyId: string,
 ): Promise<PlayerGameSnapshot | null> {
   try {
-    return await apiFetch<PlayerGameSnapshot>(`/api/v1/lobbies/${lobbyId}/game`, {
-      cache: "no-store",
-      headers: await authHeadersForLobby(lobbyId),
-    });
+    return await apiFetch<PlayerGameSnapshot>(
+      `/api/v1/lobbies/${lobbyId}/game`,
+      {
+        cache: "no-store",
+        headers: await authHeadersForLobby(lobbyId),
+      },
+    );
   } catch (error) {
     if (error instanceof ApiError && error.status === 404) return null;
     throw error;
   }
 }
 
-export async function chooseTrumpColor(lobbyId: string, color: CardColor): Promise<void> {
+export async function chooseTrumpColor(
+  lobbyId: string,
+  color: CardColor,
+): Promise<void> {
   await apiFetch(`/api/v1/lobbies/${lobbyId}/choose`, {
     method: "POST",
     headers: await authHeadersForLobby(lobbyId),

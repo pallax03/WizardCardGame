@@ -50,7 +50,8 @@ services:
 
   application:
     build:
-      context: ./application
+      context: .
+      dockerfile: application/Dockerfile
     container_name: wizard-card-game-application
     profiles: ["frontend"]
     ports:

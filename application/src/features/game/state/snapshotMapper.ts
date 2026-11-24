@@ -31,7 +31,13 @@ export interface SnapshotTable {
 
 export type PlayerGameSnapshot =
   | { ChoosingTrump: { core: SnapshotCore } }
-  | { Bidding: { core: SnapshotCore; bids: Record<string, number>; playerTurn: number } }
+  | {
+      Bidding: {
+        core: SnapshotCore;
+        bids: Record<string, number>;
+        playerTurn: number;
+      };
+    }
   | {
       Playing: {
         core: SnapshotCore;
@@ -73,7 +79,7 @@ function asTableEntries(input: unknown): PlayedCardEntry[] {
       entry !== null &&
       typeof entry === "object" &&
       typeof (entry as { playerId?: unknown }).playerId === "number" &&
-      (entry as { card?: unknown }).card !== undefined
+      (entry as { card?: unknown }).card !== undefined,
   );
 }
 
@@ -85,18 +91,23 @@ function asTableEntries(input: unknown): PlayedCardEntry[] {
  * un reload, visto che lo snapshot non include `legalCards` (arrivano solo
  * via evento `WaitingForCard`).
  */
-export function computeLegalCards(hand: Card[], followingColor: CardColor | null): Card[] {
+export function computeLegalCards(
+  hand: Card[],
+  followingColor: CardColor | null,
+): Card[] {
   if (!followingColor) return [...hand];
   const hasFollowingColor = hand.some(
-    (card) => card.type === "Standard" && card.color === followingColor
+    (card) => card.type === "Standard" && card.color === followingColor,
   );
   if (!hasFollowingColor) return [...hand];
   return hand.filter(
-    (card) => card.type !== "Standard" || card.color === followingColor
+    (card) => card.type !== "Standard" || card.color === followingColor,
   );
 }
 
-function baseStateFromCore(core: SnapshotCore): Omit<
+function baseStateFromCore(
+  core: SnapshotCore,
+): Omit<
   GameBoardState,
   | "status"
   | "currentTurn"
@@ -129,7 +140,7 @@ function baseStateFromCore(core: SnapshotCore): Omit<
  */
 export function mapSnapshotToBoardState(
   snapshot: PlayerGameSnapshot,
-  myPlayerId: number
+  myPlayerId: number,
 ): GameBoardState {
   if ("ChoosingTrump" in snapshot) {
     const core = snapshot.ChoosingTrump.core;
@@ -171,14 +182,19 @@ export function mapSnapshotToBoardState(
   }
 
   if ("Playing" in snapshot) {
-    const { core, bids, table, playerTurn, tricksWon, currentWinner } = snapshot.Playing;
+    const { core, bids, table, playerTurn, tricksWon, currentWinner } =
+      snapshot.Playing;
     const turn = Number(playerTurn);
     const tableEntries = asTableEntries(table?.playedCards);
     const followingColor = (table?.followingColor ?? null) as CardColor | null;
-    const winnerId = currentWinner === undefined || currentWinner === null ? null : Number(currentWinner);
+    const winnerId =
+      currentWinner === undefined || currentWinner === null
+        ? null
+        : Number(currentWinner);
     const winningCard =
       winnerId !== null
-        ? (tableEntries.find((entry) => entry.playerId === winnerId)?.card ?? null)
+        ? (tableEntries.find((entry) => entry.playerId === winnerId)?.card ??
+          null)
         : null;
     const hand = asCardList(core.hand);
     return {
@@ -190,7 +206,8 @@ export function mapSnapshotToBoardState(
       winningCard,
       followingColor,
       invalidBid: null,
-      legalCards: turn === myPlayerId ? computeLegalCards(hand, followingColor) : [],
+      legalCards:
+        turn === myPlayerId ? computeLegalCards(hand, followingColor) : [],
       currentTurn: {
         actionType: "PLAY_CARD",
         playerId: turn,

@@ -15,9 +15,8 @@ interface AuthLobbyPlayerResponse {
   secret?: string;
 }
 
-
 export async function createLobbyAction(
-  username: string
+  username: string,
 ): Promise<{ error?: string } | void> {
   const trimmedName = username?.trim();
   if (!trimmedName) {
@@ -29,7 +28,7 @@ export async function createLobbyAction(
     {
       method: "POST",
       body: { name: trimmedName, bot: null },
-    }
+    },
   );
 
   if (error || !data) {
@@ -46,7 +45,7 @@ export async function createLobbyAction(
 
 export async function joinLobbyAction(
   username: string,
-  lobbyId: string
+  lobbyId: string,
 ): Promise<{ error?: string } | void> {
   const trimmedName = username?.trim();
   const trimmedLobbyId = lobbyId?.trim();
@@ -63,7 +62,7 @@ export async function joinLobbyAction(
     {
       method: "POST",
       body: { name: trimmedName, bot: null },
-    }
+    },
   );
 
   if (error || !data) {
@@ -81,7 +80,7 @@ export async function joinLobbyAction(
 
 export async function addBotAction(
   lobbyId: string,
-  botDifficulty: "Dumb" | "Prolog"
+  botDifficulty: "Dumb" | "Prolog",
 ): Promise<{ success?: boolean; error?: string }> {
   const { error } = await safeApiFetch(`/api/v1/lobbies/${lobbyId}`, {
     method: "POST",
@@ -99,7 +98,7 @@ export async function addBotAction(
 export async function leaveLobbyAction(
   lobbyId: string,
   playerId: number,
-  clearSecret = true
+  clearSecret = true,
 ): Promise<{ success?: boolean; error?: string }> {
   const { error } = await safeApiFetch(`/api/v1/lobbies/${lobbyId}`, {
     method: "DELETE",
@@ -120,11 +119,11 @@ export async function leaveLobbyAction(
 }
 
 export async function startGameAction(
-  lobbyId: string
+  lobbyId: string,
 ): Promise<{ success?: boolean; error?: string }> {
   const { error } = await safeApiFetch(`/api/v1/lobbies/${lobbyId}/start`, {
     method: "POST",
-    headers: await authHeadersForLobby(lobbyId)
+    headers: await authHeadersForLobby(lobbyId),
   });
 
   if (error) {
@@ -136,11 +135,11 @@ export async function startGameAction(
 }
 
 export async function discardPausedGameAction(
-  lobbyId: string
+  lobbyId: string,
 ): Promise<{ success?: boolean; error?: string }> {
   const { error } = await safeApiFetch(`/api/v1/lobbies/${lobbyId}/return`, {
     method: "POST",
-    headers: await authHeadersForLobby(lobbyId)
+    headers: await authHeadersForLobby(lobbyId),
   });
 
   if (error) {
@@ -152,11 +151,11 @@ export async function discardPausedGameAction(
 }
 
 export async function pauseGameAction(
-  lobbyId: string
+  lobbyId: string,
 ): Promise<{ success?: boolean; error?: string }> {
   const { error } = await safeApiFetch(`/api/v1/lobbies/${lobbyId}/pause`, {
     method: "POST",
-    headers: await authHeadersForLobby(lobbyId)
+    headers: await authHeadersForLobby(lobbyId),
   });
 
   if (error) {
@@ -169,13 +168,16 @@ export async function pauseGameAction(
 
 export async function updateConfigurationAction(
   lobbyId: string,
-  configuration: { timer: number; maxStrikes: number }
+  configuration: { timer: number; maxStrikes: number },
 ): Promise<{ success?: boolean; error?: string }> {
-  const { error } = await safeApiFetch(`/api/v1/lobbies/${lobbyId}/configuration`, {
-    method: "POST",
-    headers: await authHeadersForLobby(lobbyId),
-    body: configuration,
-  });
+  const { error } = await safeApiFetch(
+    `/api/v1/lobbies/${lobbyId}/configuration`,
+    {
+      method: "POST",
+      headers: await authHeadersForLobby(lobbyId),
+      body: configuration,
+    },
+  );
 
   if (error) {
     console.error("Error updating configuration:", error);

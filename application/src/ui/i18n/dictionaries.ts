@@ -15,7 +15,8 @@ export const it = {
     savedLobbies: {
       title: "Le tue partite",
       loading: "Caricamento partite salvate...",
-      players: (count: number) => `${count} ${count === 1 ? "giocatore" : "giocatori"}`,
+      players: (count: number) =>
+        `${count} ${count === 1 ? "giocatore" : "giocatori"}`,
       unknownPlayer: "Giocatore",
       createdAt: (date: string) => `Creata il ${date}`,
       statusWaiting: "In attesa",
@@ -72,22 +73,28 @@ export const it = {
       discardFinished: "Elimina partita conclusa",
       discarding: "Eliminazione...",
     },
-    disconnectingNotice: "Un giocatore è offline - la partita riprenderà al rientro o i bot lo sostituiranno allo scadere del timer.",
-    disconnectingTimer: (seconds: number) => `Sostituzione con bot tra ${seconds}s`,
+    disconnectingNotice:
+      "Un giocatore è offline - la partita riprenderà al rientro o i bot lo sostituiranno allo scadere del timer.",
+    disconnectingTimer: (seconds: number) =>
+      `Sostituzione con bot tra ${seconds}s`,
     disconnectOverlay: {
       title: "Giocatore disconnesso",
-      description: (names: string) => `${names} ha raggiunto il massimo degli strike e risulta offline.`,
-      timer: (seconds: number) => `Sostituzione automatica con bot tra ${seconds}s`,
+      description: (names: string) =>
+        `${names} ha raggiunto il massimo degli strike e risulta offline.`,
+      timer: (seconds: number) =>
+        `Sostituzione automatica con bot tra ${seconds}s`,
       expired: "Sostituzione in corso...",
       backToLobby: "Torna alla stanza",
     },
-    finishedNotice: "Partita conclusa: Elimina la partita per riniziarne una nuova ",
+    finishedNotice:
+      "Partita conclusa: Elimina la partita per riniziarne una nuova ",
     open_global_chat: "Apri Chat Globale",
     config: {
       title: "Configurazione",
       timer: "Timer turno (secondi)",
       maxStrikes: "Strike massimi",
-      max_strikes_help: "Auto-play massimo se non compi alcuna azione prima dello scadere del tempo.",
+      max_strikes_help:
+        "Auto-play massimo se non compi alcuna azione prima dello scadere del tempo.",
       save: "Salva",
       saving: "Salvataggio...",
     },
@@ -96,7 +103,8 @@ export const it = {
       titleEnded: "Partita conclusa",
       loading: "Caricamento riepilogo partita...",
       unavailable: "Riepilogo partita non disponibile.",
-      round: (round: number, maxRound?: number) => maxRound ? `Round ${round} / ${maxRound}` : `Round ${round}`,
+      round: (round: number, maxRound?: number) =>
+        maxRound ? `Round ${round} / ${maxRound}` : `Round ${round}`,
       yourHand: (count: number) => `Le tue carte (${count})`,
       standings: "Situazione",
       trump: "Briscola",
@@ -122,7 +130,8 @@ export const it = {
     startPrivate: "Avvia chat privata",
     connected: "Connessa",
     connecting: "Connessione…",
-    playersOnline: (count: number) => `${count} ${count === 1 ? "giocatore" : "giocatori"}`,
+    playersOnline: (count: number) =>
+      `${count} ${count === 1 ? "giocatore" : "giocatori"}`,
     placeholder: "Scrivi un messaggio...",
     privatePlaceholder: "Messaggio privato...",
     emptyLobby: "La chat della stanza è ancora vuota.",
@@ -148,13 +157,17 @@ export const it = {
     GameInProgress: "La partita è già iniziata.",
     NotAuthenticated: "Non sei autenticato.",
     RECONNECT_FAILED: "Riconnessione fallita: controlla la rete e riprova.",
-    wait_reconnect: "Attendi la riconnessione oppure torna alla stanza e premi Riprendi Partita.",
-    card_not_allowed_suit: "Carta non consentita: devi seguire il seme di mano se hai una carta di quel seme.",
-    card_not_in_hand: "Carta non consentita: la carta non è più nella tua mano (stato già aggiornato?).",
+    wait_reconnect:
+      "Attendi la riconnessione oppure torna alla stanza e premi Riprendi Partita.",
+    card_not_allowed_suit:
+      "Carta non consentita: devi seguire il seme di mano se hai una carta di quel seme.",
+    card_not_in_hand:
+      "Carta non consentita: la carta non è più nella tua mano (stato già aggiornato?).",
     not_your_turn: "Non è il tuo turno: attendi che tocchi a te.",
     invalid_action: "Azione non valida in questa fase della partita.",
     start_offline: "Impossibile avviare: alcuni giocatori sono offline.",
-    session_unknown: "Sessione non riconosciuta: rientra nella stanza dalla home.",
+    session_unknown:
+      "Sessione non riconosciuta: rientra nella stanza dalla home.",
     server_rejected: "Azione rifiutata dal server. Riprova tra poco.",
     game_aborted_server: "Game aborted by server",
   },
@@ -180,8 +193,10 @@ export const it = {
     suggested_card: "Carta suggerita",
     close_scoreboard: "Chiudi tabellone",
     waiting_upper: "IN ATTESA",
-    paused_returning: "Partita in pausa: stai tornando alla stanza, premi Riprendi Partita per continuare.",
-    player_disconnected_play: "Un giocatore si è disconnesso: se è il tuo turno puoi comunque giocare, altrimenti attendi la riconnessione.",
+    paused_returning:
+      "Partita in pausa: stai tornando alla stanza, premi Riprendi Partita per continuare.",
+    player_disconnected_play:
+      "Un giocatore si è disconnesso: se è il tuo turno puoi comunque giocare, altrimenti attendi la riconnessione.",
     turn_trump: "Tocca a te scegliere la briscola!",
     turn_play: "Tocca a te giocare una carta!",
     turn_your: "Il tuo turno!",
@@ -195,7 +210,8 @@ export const it = {
     playing_card: "Giocata in corso...",
     card_played: "Carta giocata con successo",
     hint_only_your_turn: "Suggerimento disponibile solo durante il tuo turno.",
-    hint_invalid_card: "Suggerimento non valido: la carta non è nella tua mano.",
+    hint_invalid_card:
+      "Suggerimento non valido: la carta non è nella tua mano.",
     wizard_logo: "Wizard Logo",
     loading_game: "Caricamento partita…",
     drop_card: "Rilascia Carta",
@@ -204,12 +220,13 @@ export const it = {
     empty_hand: "Mano vuota",
     winner: "Vincitore:",
     rotate_device: "Ruota il dispositivo",
-    rotate_device_desc: "Giocando da smartphone, utilizza l'orientamento verticale per un'esperienza ottimale.",
+    rotate_device_desc:
+      "Giocando da smartphone, utilizza l'orientamento verticale per un'esperienza ottimale.",
     dismiss_trick_tooltip: "Clicca per chiudere la presa",
     trick_starter_tooltip: "Primo di mano (ha iniziato il giro)",
     turn_order_tooltip: "Senso del giro dei turni",
     choose_color: (color: string) => `Scegli ${color}`,
-  }
+  },
 };
 
 export const en = {
@@ -229,7 +246,8 @@ export const en = {
     savedLobbies: {
       title: "Your games",
       loading: "Loading saved games...",
-      players: (count: number) => `${count} ${count === 1 ? "player" : "players"}`,
+      players: (count: number) =>
+        `${count} ${count === 1 ? "player" : "players"}`,
       unknownPlayer: "Player",
       createdAt: (date: string) => `Created ${date}`,
       statusWaiting: "Waiting",
@@ -285,22 +303,26 @@ export const en = {
       discardFinished: "Discard finished game",
       discarding: "Discarding...",
     },
-    disconnectingNotice: "A player is offline - the game resumes on return or a bot replaces them when the timer expires.",
+    disconnectingNotice:
+      "A player is offline - the game resumes on return or a bot replaces them when the timer expires.",
     disconnectingTimer: (seconds: number) => `Bot replacement in ${seconds}s`,
     disconnectOverlay: {
       title: "Player disconnected",
-      description: (names: string) => `${names} reached max strikes and is offline.`,
+      description: (names: string) =>
+        `${names} reached max strikes and is offline.`,
       timer: (seconds: number) => `Automatic bot replacement in ${seconds}s`,
       expired: "Replacing...",
       backToLobby: "Back to lobby",
     },
-    finishedNotice: "Game finished - check the standings or return to the lobby to start a new one.",
+    finishedNotice:
+      "Game finished - check the standings or return to the lobby to start a new one.",
     open_global_chat: "Open Global Chat",
     config: {
       title: "Configuration",
       timer: "Turn timer (seconds)",
       maxStrikes: "Max strikes",
-      max_strikes_help: "Max auto-play if you don't take any action before time runs out.",
+      max_strikes_help:
+        "Max auto-play if you don't take any action before time runs out.",
       save: "Save",
       saving: "Saving...",
     },
@@ -309,7 +331,8 @@ export const en = {
       titleEnded: "Finished game",
       loading: "Loading game summary...",
       unavailable: "Game summary unavailable.",
-      round: (round: number, maxRound?: number) => maxRound ? `Round ${round} / ${maxRound}` : `Round ${round}`,
+      round: (round: number, maxRound?: number) =>
+        maxRound ? `Round ${round} / ${maxRound}` : `Round ${round}`,
       yourHand: (count: number) => `Your cards (${count})`,
       standings: "Standings",
       trump: "Trump",
@@ -335,7 +358,8 @@ export const en = {
     startPrivate: "Start private chat",
     connected: "Connected",
     connecting: "Connecting…",
-    playersOnline: (count: number) => `${count} ${count === 1 ? "player" : "players"}`,
+    playersOnline: (count: number) =>
+      `${count} ${count === 1 ? "player" : "players"}`,
     placeholder: "Type a message...",
     privatePlaceholder: "Private message...",
     emptyLobby: "The lobby chat is still empty.",
@@ -361,7 +385,8 @@ export const en = {
     GameInProgress: "The game has already started.",
     NotAuthenticated: "You are not authenticated.",
     RECONNECT_FAILED: "Reconnection failed: check your network and retry.",
-    wait_reconnect: "Wait for reconnection or return to lobby and press Resume Game.",
+    wait_reconnect:
+      "Wait for reconnection or return to lobby and press Resume Game.",
     card_not_allowed_suit: "Card not allowed: you must follow the lead suit.",
     card_not_in_hand: "Card not allowed: card no longer in hand.",
     not_your_turn: "Not your turn: wait for your turn.",
@@ -393,8 +418,10 @@ export const en = {
     suggested_card: "Suggested card",
     close_scoreboard: "Close scoreboard",
     waiting_upper: "WAITING",
-    paused_returning: "Game paused: returning to lobby, press Resume Game to continue.",
-    player_disconnected_play: "A player disconnected: if it's your turn you can play, otherwise wait for reconnection.",
+    paused_returning:
+      "Game paused: returning to lobby, press Resume Game to continue.",
+    player_disconnected_play:
+      "A player disconnected: if it's your turn you can play, otherwise wait for reconnection.",
     turn_trump: "It is your turn to choose the Trump color!",
     turn_play: "It is your turn to play a card!",
     turn_your: "Your turn!",
@@ -417,10 +444,11 @@ export const en = {
     empty_hand: "Empty hand",
     winner: "Winner:",
     rotate_device: "Rotate device",
-    rotate_device_desc: "When playing on a smartphone, use portrait orientation for an optimal experience.",
+    rotate_device_desc:
+      "When playing on a smartphone, use portrait orientation for an optimal experience.",
     dismiss_trick_tooltip: "Click to dismiss trick",
     trick_starter_tooltip: "Trick leader (started this turn)",
     turn_order_tooltip: "Turn order direction",
     choose_color: (color: string) => `Choose ${color}`,
-  }
+  },
 };

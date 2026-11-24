@@ -12,7 +12,7 @@ import type {
  */
 export function cardEquals(
   a: Card | null | undefined,
-  b: Card | null | undefined
+  b: Card | null | undefined,
 ): boolean {
   if (!a || !b) return a === b;
   if (a.type !== b.type) return false;
@@ -100,7 +100,9 @@ function parseInvalidBidField(value: unknown): number | null {
   return amount;
 }
 
-export function parseInvalidBid(code: string): { round: number; bid: number } | null {
+export function parseInvalidBid(
+  code: string,
+): { round: number; bid: number } | null {
   const match = /InvalidBid\(\s*(\d+)\s*,\s*(-?\d+)\s*\)/.exec(code);
   if (!match) return null;
   return { round: Number(match[1]), bid: Number(match[2]) };
@@ -109,7 +111,7 @@ export function parseInvalidBid(code: string): { round: number; bid: number } | 
 export function formatGameActionError(
   code: string,
   round: number,
-  bidHint?: number
+  bidHint?: number,
 ): string {
   // GameActionRejected avvolge il GameError: estrai il contenuto interno.
   const rejectedMatch = /GameActionRejected\((.*)\)\s*$/.exec(code);
@@ -177,7 +179,8 @@ export function shortGameActionReason(code: string): string {
 
 export const MAX_EVENTS_HISTORY = 100;
 
-const PHASE_ORDER: Record<GameBoardState["status"], number> = {  WAITING: 0,
+const PHASE_ORDER: Record<GameBoardState["status"], number> = {
+  WAITING: 0,
   CHOOSING_TRUMP: 1,
   BIDDING: 2,
   PLAYING: 3,
@@ -199,15 +202,19 @@ const errorsI18n = t("errors");
 export function gameReducer(
   state: GameBoardState,
   eventMessage: EventMessage,
-  myPlayerId: number
+  myPlayerId: number,
 ): GameBoardState {
   const { event } = eventMessage;
   const action = event.action;
   const fields = (event.fields ?? {}) as Record<string, unknown>;
-  const eventPlayerId = (event.playerId ?? fields.playerId) as number | undefined;
-  const destinationPlayerId = (event.destinationId ?? fields.destinationId) as number | undefined;
+  const eventPlayerId = (event.playerId ?? fields.playerId) as
+    number | undefined;
+  const destinationPlayerId = (event.destinationId ?? fields.destinationId) as
+    number | undefined;
 
-  const updatedHistory = [...state.eventsHistory, eventMessage].slice(-MAX_EVENTS_HISTORY);
+  const updatedHistory = [...state.eventsHistory, eventMessage].slice(
+    -MAX_EVENTS_HISTORY,
+  );
 
   switch (action) {
     case "GameStarted": {
@@ -266,7 +273,8 @@ export function gameReducer(
 
     case "WaitingForTrump": {
       const dealerId = destinationPlayerId;
-      if (dealerId === undefined) return { ...state, eventsHistory: updatedHistory };
+      if (dealerId === undefined)
+        return { ...state, eventsHistory: updatedHistory };
       return {
         ...state,
         status: "CHOOSING_TRUMP",
@@ -286,7 +294,11 @@ export function gameReducer(
         !Number.isNaN(actorId) && state.currentTurn.playerId === actorId;
       const resolvedTrump: Trump | null =
         state.trump !== null && "card" in state.trump
-          ? { type: "WizardResolved", card: state.trump.card, color: chosenColor }
+          ? {
+              type: "WizardResolved",
+              card: state.trump.card,
+              color: chosenColor,
+            }
           : state.trump;
       return {
         ...state,
@@ -316,7 +328,8 @@ export function gameReducer(
 
     case "TurnOf": {
       const activeId =
-        typeof eventPlayerId === "number" && !Number.isNaN(Number(eventPlayerId))
+        typeof eventPlayerId === "number" &&
+        !Number.isNaN(Number(eventPlayerId))
           ? Number(eventPlayerId)
           : null;
       if (activeId === null) return { ...state, eventsHistory: updatedHistory };
@@ -333,8 +346,12 @@ export function gameReducer(
         actionType = "CHOOSE_TRUMP";
         status = "CHOOSING_TRUMP";
       }
-      if (actionType === "NONE") return { ...state, eventsHistory: updatedHistory };
-      const nextStatus = PHASE_ORDER[status] >= PHASE_ORDER[state.status] ? status : state.status;
+      if (actionType === "NONE")
+        return { ...state, eventsHistory: updatedHistory };
+      const nextStatus =
+        PHASE_ORDER[status] >= PHASE_ORDER[state.status]
+          ? status
+          : state.status;
       return {
         ...state,
         status: nextStatus,
@@ -349,7 +366,8 @@ export function gameReducer(
 
     case "WaitingForBid": {
       const bidderId = destinationPlayerId;
-      if (bidderId === undefined) return { ...state, eventsHistory: updatedHistory };
+      if (bidderId === undefined)
+        return { ...state, eventsHistory: updatedHistory };
       const invalidBid = parseInvalidBidField(fields.invalidBid);
       return {
         ...state,
@@ -386,9 +404,12 @@ export function gameReducer(
 
     case "WaitingForCard": {
       const activePlayerId = destinationPlayerId;
-      if (activePlayerId === undefined) return { ...state, eventsHistory: updatedHistory };
+      if (activePlayerId === undefined)
+        return { ...state, eventsHistory: updatedHistory };
       const isMyTurn = activePlayerId === myPlayerId;
-      const legalCards = isMyTurn ? ((fields.legalCards as Card[]) ?? []) : state.legalCards;
+      const legalCards = isMyTurn
+        ? ((fields.legalCards as Card[]) ?? [])
+        : state.legalCards;
 
       return {
         ...state,
@@ -407,10 +428,12 @@ export function gameReducer(
       const cardPlayerId = Number(eventPlayerId);
       const playedCard = fields.card as Card;
       const winningCard = (fields.winningCard as Card | undefined) ?? null;
-      const followingColor = (fields.followingColor as CardColor | undefined) ?? null;
+      const followingColor =
+        (fields.followingColor as CardColor | undefined) ?? null;
 
       const alreadyOnTable = state.table.some(
-        (entry) => entry.playerId === cardPlayerId && cardEquals(entry.card, playedCard)
+        (entry) =>
+          entry.playerId === cardPlayerId && cardEquals(entry.card, playedCard),
       );
       const newTable = alreadyOnTable
         ? state.table
@@ -506,18 +529,17 @@ export function gameReducer(
     }
 
     case "ActionFailed": {
-      const targetDest =
-        (event.destinationId ??
-          event.playerId ??
-          fields.destinationId ??
-          fields.playerId) as number | undefined;
+      const targetDest = (event.destinationId ??
+        event.playerId ??
+        fields.destinationId ??
+        fields.playerId) as number | undefined;
       const isForMe = targetDest === myPlayerId;
       if (!isForMe) return { ...state, eventsHistory: updatedHistory };
 
       const reasonObj = fields.reason as
-        | { error?: unknown; round?: unknown; bid?: unknown }
-        | undefined;
-      const errorTag = typeof reasonObj?.error === "string" ? reasonObj.error : "";
+        { error?: unknown; round?: unknown; bid?: unknown } | undefined;
+      const errorTag =
+        typeof reasonObj?.error === "string" ? reasonObj.error : "";
       let errorMsg: string;
       if (errorTag === "InvalidBid") {
         const round = Number(reasonObj?.round ?? state.round);

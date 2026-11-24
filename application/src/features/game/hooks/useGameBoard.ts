@@ -4,7 +4,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLobbySession } from "@/features/lobby-session";
 import { buildPlayersMap } from "@/features/lobby-session/presence";
 import type { EventMessage } from "@/features/chat/types";
-import { chooseTrumpColor, getBestBidHint, getBestCardHint, getBestTrumpHint, getPlayerGameSnapshot, placeBid, playCard } from "../api";
+import {
+  chooseTrumpColor,
+  getBestBidHint,
+  getBestCardHint,
+  getBestTrumpHint,
+  getPlayerGameSnapshot,
+  placeBid,
+  playCard,
+} from "../api";
 import {
   cardToString,
   extractApiErrorCode,
@@ -17,7 +25,12 @@ import {
   shortGameActionReason,
 } from "../state/gameReducer";
 import { mapSnapshotToBoardState } from "../state/snapshotMapper";
-import type { Card, CardColor, GameBoardState, PlayedCardEntry } from "../types";
+import type {
+  Card,
+  CardColor,
+  GameBoardState,
+  PlayedCardEntry,
+} from "../types";
 import { t } from "@/ui/i18n/core";
 
 /** Secondi di pausa a fine presa: il tavolo resta visibile prima di pulirsi. */
@@ -48,10 +61,15 @@ export function useGameBoard(customPlayerId?: number) {
   const [hintedBid, setHintedBid] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [actionStatus, setActionStatus] = useState<string | null>(null);
-  const [bidErrorRaw, setBidErrorRaw] = useState<{ round: number; message: string } | null>(null);
+  const [bidErrorRaw, setBidErrorRaw] = useState<{
+    round: number;
+    message: string;
+  } | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [bidAckRound, setBidAckRound] = useState<number | null>(null);
-  const [snapshotState, setSnapshotState] = useState<GameBoardState | null>(null);
+  const [snapshotState, setSnapshotState] = useState<GameBoardState | null>(
+    null,
+  );
   const [snapshotBaseline, setSnapshotBaseline] = useState(0);
   const [isRestoring, setIsRestoring] = useState(false);
   const [snapshotError, setSnapshotError] = useState<string | null>(null);
@@ -83,12 +101,12 @@ export function useGameBoard(customPlayerId?: number) {
 
   const gameEvents = useMemo(
     () => messages.filter((m): m is EventMessage => m.type === "event"),
-    [messages]
+    [messages],
   );
 
   const trickWonCount = useMemo(
     () => gameEvents.filter((e) => e.event.action === "TrickWon").length,
-    [gameEvents]
+    [gameEvents],
   );
 
   const gameEventsLengthRef = useRef(0);
@@ -129,7 +147,7 @@ export function useGameBoard(customPlayerId?: number) {
         if (snapshotRequestIdRef.current === requestId) setIsRestoring(false);
       }
     },
-    [lobbyId, playerId]
+    [lobbyId, playerId],
   );
 
   const sessionKeyRef = useRef(`${lobbyId}:${playerId ?? ""}`);
@@ -201,7 +219,7 @@ export function useGameBoard(customPlayerId?: number) {
   const eventBasedState = useMemo<GameBoardState>(() => {
     return gameEvents.reduce(
       (state, event) => gameReducer(state, event, reducerPlayerId),
-      initialGameBoardState
+      initialGameBoardState,
     );
   }, [gameEvents, reducerPlayerId]);
 
@@ -211,18 +229,30 @@ export function useGameBoard(customPlayerId?: number) {
       ...snapshotState,
       lastTrick: snapshotState.lastTrick ?? eventBasedState.lastTrick,
     };
-    const tail = snapshotBaseline <= gameEvents.length
-      ? gameEvents.slice(snapshotBaseline)
-      : gameEvents;
-    return tail.reduce((state, event) => gameReducer(state, event, reducerPlayerId), baseSnapshot);
-  }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, reducerPlayerId]);
+    const tail =
+      snapshotBaseline <= gameEvents.length
+        ? gameEvents.slice(snapshotBaseline)
+        : gameEvents;
+    return tail.reduce(
+      (state, event) => gameReducer(state, event, reducerPlayerId),
+      baseSnapshot,
+    );
+  }, [
+    snapshotState,
+    snapshotBaseline,
+    gameEvents,
+    eventBasedState,
+    reducerPlayerId,
+  ]);
 
   const turnTimerDuration = useMemo(() => {
     if (!lobby?.configuration) return null;
     const activePlayerId = gameState.currentTurn.playerId;
     if (activePlayerId === null || activePlayerId === undefined) return null;
     const timer = Number(lobby.configuration.timer);
-    const player = lobby.players.find((candidate) => candidate.id === activePlayerId);
+    const player = lobby.players.find(
+      (candidate) => candidate.id === activePlayerId,
+    );
     if (!Number.isFinite(timer) || timer <= 0 || !player) return null;
     if (player.difficulty) return Math.min(BOT_TURN_TIMEOUT_SECONDS, timer);
     const strikes = Math.max(0, Number(player.strikes ?? 0));
@@ -252,13 +282,23 @@ export function useGameBoard(customPlayerId?: number) {
     }
 
     const deadline = turnDeadlineRef.current!;
-    const initialSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+    const initialSeconds = Math.max(
+      0,
+      Math.ceil((deadline - Date.now()) / 1000),
+    );
     queueMicrotask(() => setTurnTimerSeconds(initialSeconds));
     const interval = setInterval(() => {
-      setTurnTimerSeconds(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+      setTurnTimerSeconds(
+        Math.max(0, Math.ceil((deadline - Date.now()) / 1000)),
+      );
     }, 200);
     return () => clearInterval(interval);
-  }, [turnTimerDuration, gameState.currentTurn.playerId, gameState.currentTurn.actionType, gameState.round]);
+  }, [
+    turnTimerDuration,
+    gameState.currentTurn.playerId,
+    gameState.currentTurn.actionType,
+    gameState.round,
+  ]);
 
   useEffect(() => {
     if (trickWonCount <= trickWonCountRef.current) {
@@ -274,9 +314,17 @@ export function useGameBoard(customPlayerId?: number) {
     const snapshot = gameState.lastTrick;
     if (!snapshot || !snapshot.entries || snapshot.entries.length === 0) return;
     trickWonCountRef.current = trickWonCount;
-    const { entries, winningCard, winnerId, bids, tricksSnapshot, round } = snapshot;
+    const { entries, winningCard, winnerId, bids, tricksSnapshot, round } =
+      snapshot;
     queueMicrotask(() => {
-      setRevealedTrick({ entries, winningCard, winnerId, bids, tricksSnapshot, round });
+      setRevealedTrick({
+        entries,
+        winningCard,
+        winnerId,
+        bids,
+        tricksSnapshot,
+        round,
+      });
       setRevealSecondsLeft(TRICK_REVEAL_SECONDS);
     });
   }, [trickWonCount, gameState.lastTrick]);
@@ -308,7 +356,8 @@ export function useGameBoard(customPlayerId?: number) {
   }, [gameState.lastTrick, revealedTrick, dismissRevealedTrick]);
 
   const isMyTurn = gameState.currentTurn.isMyTurn && playerId !== null;
-  const hasAlreadyBid = playerId !== null && gameState.bids[playerId] !== undefined;
+  const hasAlreadyBid =
+    playerId !== null && gameState.bids[playerId] !== undefined;
   const bidAckedThisRound = bidAckRound === gameState.round;
   const canChooseTrump =
     isMyTurn &&
@@ -326,8 +375,12 @@ export function useGameBoard(customPlayerId?: number) {
     gameState.status === "PLAYING";
 
   const bidsTotal = useMemo(
-    () => Object.values(gameState.bids).reduce((sum, bid) => sum + Number(bid ?? 0), 0),
-    [gameState.bids]
+    () =>
+      Object.values(gameState.bids).reduce(
+        (sum, bid) => sum + Number(bid ?? 0),
+        0,
+      ),
+    [gameState.bids],
   );
 
   const forbiddenBid = useMemo<number | null>(() => {
@@ -341,14 +394,27 @@ export function useGameBoard(customPlayerId?: number) {
     if (gameState.bids[playerId] !== undefined) return null;
     if (Object.keys(gameState.bids).length !== totalPlayers - 1) return null;
     const forbidden = gameState.round - bidsTotal;
-    if (!Number.isInteger(forbidden) || forbidden < 0 || forbidden > gameState.round) {
+    if (
+      !Number.isInteger(forbidden) ||
+      forbidden < 0 ||
+      forbidden > gameState.round
+    ) {
       return null;
     }
     return forbidden;
-  }, [gameState.invalidBid, gameState.status, gameState.bids, gameState.round, lobby?.players.length, bidsTotal, playerId]);
+  }, [
+    gameState.invalidBid,
+    gameState.status,
+    gameState.bids,
+    gameState.round,
+    lobby?.players.length,
+    bidsTotal,
+    playerId,
+  ]);
 
   const bidWarning = useMemo<string | null>(() => {
-    if (!canBid || forbiddenBid === null || forbiddenBid === undefined) return null;
+    if (!canBid || forbiddenBid === null || forbiddenBid === undefined)
+      return null;
     return (
       `La puntata ${forbiddenBid} non è valida: con ${bidsTotal} già puntati, ` +
       `la somma (${bidsTotal} + ${forbiddenBid}) sarebbe uguale al numero di carte del Round ${gameState.round}.`
@@ -371,7 +437,7 @@ export function useGameBoard(customPlayerId?: number) {
         setBidErrorRaw({ round: gameState.round, message });
       }
     },
-    [gameState.round]
+    [gameState.round],
   );
 
   const lobbyWarning = useMemo<string | null>(() => {
@@ -392,7 +458,7 @@ export function useGameBoard(customPlayerId?: number) {
     const activeId = gameState.currentTurn.playerId;
     const activePlayerName =
       activeId !== null
-        ? playersMap.get(activeId)?.name ?? `Player ${activeId}`
+        ? (playersMap.get(activeId)?.name ?? `Player ${activeId}`)
         : "Unknown";
 
     if (isMyTurn) {
@@ -427,7 +493,13 @@ export function useGameBoard(customPlayerId?: number) {
     if (gameState.status === "ABORTED") return gameI18n.game_aborted;
 
     return gameI18n.waiting_server;
-  }, [gameState.currentTurn, gameState.round, gameState.status, isMyTurn, playersMap]);
+  }, [
+    gameState.currentTurn,
+    gameState.round,
+    gameState.status,
+    isMyTurn,
+    playersMap,
+  ]);
 
   const handleChooseTrump = useCallback(
     async (color?: CardColor) => {
@@ -443,7 +515,9 @@ export function useGameBoard(customPlayerId?: number) {
         const msg = error instanceof Error ? error.message : String(error);
         if (code) {
           setActionError(formatGameActionError(code, gameState.round));
-          setActionStatus(`Briscola rifiutata: ${shortGameActionReason(code)}.`);
+          setActionStatus(
+            `Briscola rifiutata: ${shortGameActionReason(code)}.`,
+          );
         } else {
           setActionStatus(`Error choosing trump: ${msg}`);
         }
@@ -451,7 +525,7 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(false);
       }
     },
-    [lobbyId, selectedColor, gameState.round]
+    [lobbyId, selectedColor, gameState.round],
   );
 
   const handlePlaceBid = useCallback(
@@ -462,14 +536,23 @@ export function useGameBoard(customPlayerId?: number) {
         setActionStatus(gameI18n.not_your_turn_bid);
         return;
       }
-      if (gameState.bids[playerId] !== undefined || bidAckRound === gameState.round) {
+      if (
+        gameState.bids[playerId] !== undefined ||
+        bidAckRound === gameState.round
+      ) {
         setActionStatus(`Hai già puntato per il Round ${gameState.round}.`);
         return;
       }
-      if (forbiddenBid !== null && forbiddenBid !== undefined && bidToPlace === forbiddenBid) {
+      if (
+        forbiddenBid !== null &&
+        forbiddenBid !== undefined &&
+        bidToPlace === forbiddenBid
+      ) {
         const friendly = formatInvalidBidError(gameState.round, bidToPlace);
         setBidError(friendly);
-        setActionStatus(`Puntata ${bidToPlace} rifiutata: non valida per il Round ${gameState.round}.`);
+        setActionStatus(
+          `Puntata ${bidToPlace} rifiutata: non valida per il Round ${gameState.round}.`,
+        );
         return;
       }
       try {
@@ -491,11 +574,19 @@ export function useGameBoard(customPlayerId?: number) {
           const invalid = parsed ? parsed.bid : bidToPlace;
           const friendly = formatInvalidBidError(round, invalid);
           setBidError(friendly);
-          setActionStatus(`Puntata ${invalid} rifiutata: non valida per il Round ${round}.`);
+          setActionStatus(
+            `Puntata ${invalid} rifiutata: non valida per il Round ${round}.`,
+          );
         } else if (code) {
-          const friendly = formatGameActionError(code, gameState.round, bidToPlace);
+          const friendly = formatGameActionError(
+            code,
+            gameState.round,
+            bidToPlace,
+          );
           setBidError(friendly);
-          setActionStatus(`Puntata ${bidToPlace} rifiutata: ${shortGameActionReason(code)}.`);
+          setActionStatus(
+            `Puntata ${bidToPlace} rifiutata: ${shortGameActionReason(code)}.`,
+          );
         } else {
           setActionStatus(`Error placing bid: ${msg}`);
         }
@@ -503,7 +594,18 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(false);
       }
     },
-    [bidAckRound, bidInput, forbiddenBid, gameState.bids, gameState.round, gameState.status, isMyTurn, lobbyId, playerId, setBidError]
+    [
+      bidAckRound,
+      bidInput,
+      forbiddenBid,
+      gameState.bids,
+      gameState.round,
+      gameState.status,
+      isMyTurn,
+      lobbyId,
+      playerId,
+      setBidError,
+    ],
   );
 
   const handlePlayCard = useCallback(
@@ -536,7 +638,7 @@ export function useGameBoard(customPlayerId?: number) {
         setIsSubmitting(false);
       }
     },
-    [gameState.round, lobbyId, selectedCard]
+    [gameState.round, lobbyId, selectedCard],
   );
 
   const isCardPlayable = useCallback(
@@ -545,7 +647,7 @@ export function useGameBoard(customPlayerId?: number) {
       if (gameState.legalCards.length === 0) return true;
       return isCardInList(card, gameState.legalCards);
     },
-    [canPlay, gameState.legalCards]
+    [canPlay, gameState.legalCards],
   );
 
   const canRequestHint = isMyTurn && (canPlay || canBid || canChooseTrump);
@@ -597,12 +699,23 @@ export function useGameBoard(customPlayerId?: number) {
       setHintError(
         code && code !== "SERVER_ERROR"
           ? `Suggerimento non disponibile (${shortGameActionReason(code)}).`
-          : `Suggerimento non disponibile: ${msg}`
+          : `Suggerimento non disponibile: ${msg}`,
       );
     } finally {
       setIsHintLoading(false);
     }
-  }, [lobbyId, isMyTurn, isHintLoading, canPlay, canBid, canChooseTrump, gameState.hand, gameState.round, gameState.status, gameState.currentTurn]);
+  }, [
+    lobbyId,
+    isMyTurn,
+    isHintLoading,
+    canPlay,
+    canBid,
+    canChooseTrump,
+    gameState.hand,
+    gameState.round,
+    gameState.status,
+    gameState.currentTurn,
+  ]);
 
   /**
    * Carta suggerita effettivamente visibile: mostrata solo se il turno/fase/round
@@ -617,7 +730,14 @@ export function useGameBoard(customPlayerId?: number) {
     if (hintMeta.action !== gameState.currentTurn.actionType) return null;
     if (!isCardInList(hintedCard, gameState.hand)) return null;
     return hintedCard;
-  }, [hintedCard, hintMeta, gameState.round, gameState.status, gameState.currentTurn, gameState.hand]);
+  }, [
+    hintedCard,
+    hintMeta,
+    gameState.round,
+    gameState.status,
+    gameState.currentTurn,
+    gameState.hand,
+  ]);
 
   const visibleHintedBid = useMemo<number | null>(() => {
     if (hintedBid === null || !hintMeta) return null;
@@ -626,7 +746,13 @@ export function useGameBoard(customPlayerId?: number) {
     if (hintMeta.playerId !== gameState.currentTurn.playerId) return null;
     if (hintMeta.action !== gameState.currentTurn.actionType) return null;
     return hintedBid;
-  }, [hintedBid, hintMeta, gameState.round, gameState.status, gameState.currentTurn]);
+  }, [
+    hintedBid,
+    hintMeta,
+    gameState.round,
+    gameState.status,
+    gameState.currentTurn,
+  ]);
 
   return {
     lobbyId,

@@ -29,7 +29,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   }, []);
 
   const openChat = () => {
-    window.dispatchEvent(new CustomEvent('open-chat-global'));
+    window.dispatchEvent(new CustomEvent("open-chat-global"));
   };
   const router = useRouter();
   const {
@@ -67,8 +67,8 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
       const customEvent = e as CustomEvent<{ unreadTotal: number }>;
       setUnreadChatCount(customEvent.detail.unreadTotal);
     };
-    window.addEventListener('chat-unread-change', handler);
-    return () => window.removeEventListener('chat-unread-change', handler);
+    window.addEventListener("chat-unread-change", handler);
+    return () => window.removeEventListener("chat-unread-change", handler);
   }, []);
 
   useEffect(() => {
@@ -84,19 +84,30 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   const canManagePlayers = isWaiting;
   const canEditConfig = isWaiting || isPaused;
 
-  const snapshotEnabled = Boolean(lobby?.lobbyId) && (isPaused || isFinished || isWaiting);
+  const snapshotEnabled =
+    Boolean(lobby?.lobbyId) && (isPaused || isFinished || isWaiting);
   const {
     board: savedBoard,
     isLoading: isSnapshotLoading,
     loadFailed: isSnapshotFailed,
-  } = useLobbyGameSnapshot(lobby?.lobbyId ?? null, playerId, snapshotEnabled, lobby?.status);
+  } = useLobbyGameSnapshot(
+    lobby?.lobbyId ?? null,
+    playerId,
+    snapshotEnabled,
+    lobby?.status,
+  );
   const showSummary = isPaused || isFinished || savedBoard !== null;
   const showDiscard = isPaused || isFinished;
 
   if (!lobby && connectionState === "connecting") {
     return (
       <div className="flex items-center justify-center min-h-100">
-        <p suppressHydrationWarning className="text-slate-400 animate-pulse font-medium">{lobbyI18n.loading}</p>
+        <p
+          suppressHydrationWarning
+          className="text-slate-400 animate-pulse font-medium"
+        >
+          {lobbyI18n.loading}
+        </p>
       </div>
     );
   }
@@ -104,8 +115,13 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
   if (sessionError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-100 gap-4">
-        <p className="text-red-400 font-medium">{getErrorMessage(sessionError.message)}</p>
-        <button onClick={() => router.push("/")} className="px-4 py-2 border rounded-md text-slate-200">
+        <p className="text-red-400 font-medium">
+          {getErrorMessage(sessionError.message)}
+        </p>
+        <button
+          onClick={() => router.push("/")}
+          className="px-4 py-2 border rounded-md text-slate-200"
+        >
           {lobbyI18n.backToHome}
         </button>
       </div>
@@ -218,7 +234,7 @@ export function LobbyView({ maxPlayers = 6 }: LobbyViewProps) {
           />
         )}
       </div>
-      
+
       <LobbyActions
         isLeaving={isLeaving}
         isStarting={isStarting}

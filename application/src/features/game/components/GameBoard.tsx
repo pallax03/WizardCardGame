@@ -13,7 +13,17 @@ import { GameEndOverlay } from "./GameEndOverlay";
 import { DisconnectOverlay } from "./DisconnectOverlay";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { ArrowLeft, ArrowRight, ArrowRightFromLine, Lightbulb, Trophy, MessageCircle, AlertTriangle, Check, X } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ArrowRightFromLine,
+  Lightbulb,
+  Trophy,
+  MessageCircle,
+  AlertTriangle,
+  Check,
+  X,
+} from "lucide-react";
 import { t } from "@/ui/i18n/core";
 
 const lobbyI18n = t("lobby");
@@ -22,12 +32,18 @@ const gameI18n = t("game");
 function phaseLabel(status: string): string {
   const s = lobbyI18n.pausedSummary;
   switch (status) {
-    case "CHOOSING_TRUMP": return s.phaseChoosingTrump;
-    case "BIDDING": return s.phaseBidding;
-    case "PLAYING": return s.phasePlaying;
-    case "ROUND_SCORED": return s.phaseRoundScored;
-    case "GAME_ENDED": return s.phaseEnded;
-    default: return s.phaseWaiting;
+    case "CHOOSING_TRUMP":
+      return s.phaseChoosingTrump;
+    case "BIDDING":
+      return s.phaseBidding;
+    case "PLAYING":
+      return s.phasePlaying;
+    case "ROUND_SCORED":
+      return s.phaseRoundScored;
+    case "GAME_ENDED":
+      return s.phaseEnded;
+    default:
+      return s.phaseWaiting;
   }
 }
 
@@ -50,7 +66,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
     canChooseTrump,
     canBid,
     canPlay,
-    turnTimerSeconds, turnTimerDuration,
+    turnTimerSeconds,
+    turnTimerDuration,
     isCardPlayable,
     forbiddenBid,
     bidError,
@@ -78,7 +95,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   const [isPausing, setIsPausing] = useState(false);
   const [pauseError, setPauseError] = useState<string | null>(null);
   const [showScoreboard, setShowScoreboard] = useState(false);
-  const [scoreboardPlayer, setScoreboardPlayer] = useState<number | undefined>(undefined);
+  const [scoreboardPlayer, setScoreboardPlayer] = useState<number | undefined>(
+    undefined,
+  );
   const [unreadChatCount, setUnreadChatCount] = useState(0);
   const tableRef = useRef<HTMLDivElement | null>(null);
 
@@ -87,38 +106,52 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       const customEvent = e as CustomEvent<{ unreadTotal: number }>;
       setUnreadChatCount(customEvent.detail.unreadTotal);
     };
-    window.addEventListener('chat-unread-change', handler);
-    return () => window.removeEventListener('chat-unread-change', handler);
+    window.addEventListener("chat-unread-change", handler);
+    return () => window.removeEventListener("chat-unread-change", handler);
   }, []);
 
   const players = useMemo(() => lobby?.players ?? [], [lobby?.players]);
   const myIndex = players.findIndex((p) => p.id === playerId);
   const orderedPlayers = useMemo(
-    () => (myIndex !== -1 ? [...players.slice(myIndex), ...players.slice(0, myIndex)] : players),
-    [players, myIndex]
+    () =>
+      myIndex !== -1
+        ? [...players.slice(myIndex), ...players.slice(0, myIndex)]
+        : players,
+    [players, myIndex],
   );
 
   const isGameEnded = gameState.status === "GAME_ENDED";
   const isDisconnecting = lobby?.status === "DISCONNECTING";
 
   const totalPlayersCount = lobby?.players?.length || players.length || 0;
-  const maxRound = totalPlayersCount > 0 ? Math.floor(60 / totalPlayersCount) : 0;
+  const maxRound =
+    totalPlayersCount > 0 ? Math.floor(60 / totalPlayersCount) : 0;
 
   const trickStarterId = useMemo<number | null>(() => {
     if (revealedTrick && revealedTrick.entries.length > 0) {
       return revealedTrick.entries[0].playerId;
     }
     if (gameState.status === "PLAYING") {
-      return gameState.table[0]?.playerId ?? gameState.currentTurn.playerId ?? null;
+      return (
+        gameState.table[0]?.playerId ?? gameState.currentTurn.playerId ?? null
+      );
     }
     if (
-      (gameState.status === "BIDDING" || gameState.status === "CHOOSING_TRUMP") &&
+      (gameState.status === "BIDDING" ||
+        gameState.status === "CHOOSING_TRUMP") &&
       players.length > 0
     ) {
       return players[(gameState.round - 1) % players.length]?.id ?? null;
     }
     return null;
-  }, [revealedTrick, gameState.status, gameState.table, gameState.currentTurn.playerId, gameState.round, players]);
+  }, [
+    revealedTrick,
+    gameState.status,
+    gameState.table,
+    gameState.currentTurn.playerId,
+    gameState.round,
+    players,
+  ]);
 
   const sortedScoreboard = useMemo(() => {
     if (!gameState.scoreboard) return [];
@@ -129,18 +162,26 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         const playerName =
           typeof playerObj === "object" && playerObj !== null
             ? playerObj.name
-            : playerObj ?? `Giocatore ${pId}`;
+            : (playerObj ?? `Giocatore ${pId}`);
 
         let finalScore = 0;
         if (Array.isArray(entries) && entries.length > 0) {
           finalScore = Number(entries[entries.length - 1]?.score ?? 0);
         } else if (typeof entries === "number") {
           finalScore = entries;
-        } else if (entries && typeof entries === "object" && "score" in entries) {
+        } else if (
+          entries &&
+          typeof entries === "object" &&
+          "score" in entries
+        ) {
           finalScore = Number((entries as { score: unknown }).score ?? 0);
         }
 
-        return { id: pId, name: playerName, score: Number.isNaN(finalScore) ? 0 : finalScore };
+        return {
+          id: pId,
+          name: playerName,
+          score: Number.isNaN(finalScore) ? 0 : finalScore,
+        };
       })
       .sort((a, b) => b.score - a.score);
   }, [gameState.scoreboard, playersMap]);
@@ -193,7 +234,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
   };
 
   const openChat = () => {
-    window.dispatchEvent(new CustomEvent('open-chat-global'));
+    window.dispatchEvent(new CustomEvent("open-chat-global"));
   };
 
   return (
@@ -238,13 +279,18 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             className="text-zinc-400 hover:text-white px-2 h-8"
           >
             <ArrowLeft className="size-4 mr-1" />
-            <span className="text-xs hidden sm:inline">{lobbyI18n.disconnectOverlay.backToLobby}</span>
+            <span className="text-xs hidden sm:inline">
+              {lobbyI18n.disconnectOverlay.backToLobby}
+            </span>
           </Button>
         </div>
 
         <div className="flex flex-col items-center">
           <span className="text-xs font-bold text-white tracking-widest uppercase">
-            {lobbyI18n.pausedSummary.round(revealedTrick ? revealedTrick.round : gameState.round, maxRound || undefined)}
+            {lobbyI18n.pausedSummary.round(
+              revealedTrick ? revealedTrick.round : gameState.round,
+              maxRound || undefined,
+            )}
           </span>
           <span className="text-[10px] font-mono text-zinc-400 uppercase tracking-widest">
             {phaseLabel(gameState.status)}
@@ -280,26 +326,42 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
           const isTrickStarter = player.id === trickStarterId;
           const isMe = player.id === playerId;
-          const sourceBids = revealedTrick ? revealedTrick.bids : gameState.bids;
-          const sourceTricks = revealedTrick ? revealedTrick.tricksSnapshot : gameState.tricksWon;
-          const hasBid = sourceBids[player.id] !== undefined && sourceBids[player.id] !== null;
+          const sourceBids = revealedTrick
+            ? revealedTrick.bids
+            : gameState.bids;
+          const sourceTricks = revealedTrick
+            ? revealedTrick.tricksSnapshot
+            : gameState.tricksWon;
+          const hasBid =
+            sourceBids[player.id] !== undefined &&
+            sourceBids[player.id] !== null;
           const lastScore = gameState.scoreboard?.[String(player.id)]?.at(-1);
           const score = lastScore ? lastScore.score : 0;
 
-
           let timerPct = 0;
-          if (isCurrentTurn && turnTimerSeconds !== null && turnTimerSeconds !== undefined) {
-             const maxTime = turnTimerDuration ?? lobby?.configuration?.timer ?? 30;
-             timerPct = Math.max(0, Math.min(100, (turnTimerSeconds / maxTime) * 100));
+          if (
+            isCurrentTurn &&
+            turnTimerSeconds !== null &&
+            turnTimerSeconds !== undefined
+          ) {
+            const maxTime =
+              turnTimerDuration ?? lobby?.configuration?.timer ?? 30;
+            timerPct = Math.max(
+              0,
+              Math.min(100, (turnTimerSeconds / maxTime) * 100),
+            );
           }
 
           return (
             <button
               type="button"
               key={player.id}
-              onClick={() => { setScoreboardPlayer(player.id); setShowScoreboard(true); }}
+              onClick={() => {
+                setScoreboardPlayer(player.id);
+                setShowScoreboard(true);
+              }}
               className={`relative w-full sm:flex-1 sm:min-w-35 sm:max-w-45 flex flex-col rounded-xl border transition-all overflow-hidden text-left cursor-pointer active:scale-95 ${
-                isCurrentTurn 
+                isCurrentTurn
                   ? "bg-sky-500/10 border-sky-500/40 ring-1 ring-sky-500/30 shadow-lg shadow-sky-900/20"
                   : isMe
                     ? "bg-zinc-800/80 border-zinc-500/50 hover:bg-zinc-700/80"
@@ -309,70 +371,130 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               <div className="p-1.5 pb-1 md:p-2 md:pb-1.5 w-full flex flex-col justify-between h-14.5 md:h-17">
                 <div className="flex flex-col gap-0 min-w-0 w-full">
                   <div className="flex items-center justify-between min-w-0">
-                     <span className={`flex items-center gap-1 text-[10px] md:text-[13px] font-bold truncate ${isCurrentTurn ? 'text-sky-400' : 'text-zinc-100'}`}>
-                       {(() => {
-                         const isAllZero = sortedScoreboard.every(s => s.score === 0);
-                         if (isAllZero) return null;
-                         const rank = sortedScoreboard.findIndex(s => s.score === score) + 1;
-                         if (rank === 1 && score > 0) {
-                           return <Trophy className="size-3 md:size-3.5 text-amber-400 shrink-0" />;
-                         }
-                         return <span className="text-zinc-500 font-mono text-[9px] md:text-[11px]">{rank}#</span>;
-                       })()}
-                       <span className="truncate">{player.name}</span>
-                     </span>
-                     <div className="flex items-center gap-1 shrink-0">
-                       {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] md:text-[9px] h-3 md:h-4 bg-zinc-700">{gameI18n.you.replace(/[()]/g, "").toUpperCase()}</Badge>}
-                       {isTrickStarter ? (
-                         <span
-                           title={gameI18n.trick_starter_tooltip}
-                           className="inline-flex items-center text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.85)] shrink-0"
-                         >
-                           <ArrowRightFromLine className="size-3 md:size-3.5" strokeWidth={3} />
-                         </span>
-                       ) : (
-                         <span
-                           title={gameI18n.turn_order_tooltip}
-                           className="inline-flex items-center text-zinc-600 shrink-0"
-                         >
-                           <ArrowRight className="size-2.5" strokeWidth={2} />
-                         </span>
-                       )}
-                     </div>
+                    <span
+                      className={`flex items-center gap-1 text-[10px] md:text-[13px] font-bold truncate ${isCurrentTurn ? "text-sky-400" : "text-zinc-100"}`}
+                    >
+                      {(() => {
+                        const isAllZero = sortedScoreboard.every(
+                          (s) => s.score === 0,
+                        );
+                        if (isAllZero) return null;
+                        const rank =
+                          sortedScoreboard.findIndex((s) => s.score === score) +
+                          1;
+                        if (rank === 1 && score > 0) {
+                          return (
+                            <Trophy className="size-3 md:size-3.5 text-amber-400 shrink-0" />
+                          );
+                        }
+                        return (
+                          <span className="text-zinc-500 font-mono text-[9px] md:text-[11px]">
+                            {rank}#
+                          </span>
+                        );
+                      })()}
+                      <span className="truncate">{player.name}</span>
+                    </span>
+                    <div className="flex items-center gap-1 shrink-0">
+                      {isMe && (
+                        <Badge
+                          variant="secondary"
+                          className="px-1 py-0 text-[8px] md:text-[9px] h-3 md:h-4 bg-zinc-700"
+                        >
+                          {gameI18n.you.replace(/[()]/g, "").toUpperCase()}
+                        </Badge>
+                      )}
+                      {isTrickStarter ? (
+                        <span
+                          title={gameI18n.trick_starter_tooltip}
+                          className="inline-flex items-center text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.85)] shrink-0"
+                        >
+                          <ArrowRightFromLine
+                            className="size-3 md:size-3.5"
+                            strokeWidth={3}
+                          />
+                        </span>
+                      ) : (
+                        <span
+                          title={gameI18n.turn_order_tooltip}
+                          className="inline-flex items-center text-zinc-600 shrink-0"
+                        >
+                          <ArrowRight className="size-2.5" strokeWidth={2} />
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <span className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-bold truncate min-h-3 md:min-h-3.5 leading-tight">
-                    {Boolean(player.difficulty) ? (player.name.toLowerCase().includes("bot") ? (player.difficulty === "Dumb" ? lobbyI18n.botSelection.dumb.toUpperCase() : player.difficulty === "Prolog" ? lobbyI18n.botSelection.prolog.toUpperCase() : player.difficulty) : "BOT") : ""}
+                    {Boolean(player.difficulty)
+                      ? player.name.toLowerCase().includes("bot")
+                        ? player.difficulty === "Dumb"
+                          ? lobbyI18n.botSelection.dumb.toUpperCase()
+                          : player.difficulty === "Prolog"
+                            ? lobbyI18n.botSelection.prolog.toUpperCase()
+                            : player.difficulty
+                        : "BOT"
+                      : ""}
                   </span>
                 </div>
-                
+
                 <div className="flex justify-between items-center w-full text-[10px] sm:text-[11px] md:text-[13px] font-mono mt-auto">
                   {hasBid ? (
                     <div className="flex items-center gap-1 font-bold">
-                      {(sourceTricks[player.id] ?? 0) === sourceBids[player.id] ? (
-                        <span className="text-emerald-400 flex items-center gap-0.5">{sourceTricks[player.id] ?? 0}/{sourceBids[player.id]} <Check className="size-3 md:size-3.5" /></span>
-                      ) : (sourceTricks[player.id] ?? 0) > sourceBids[player.id]! ? (
-                        <span className="text-red-500 flex items-center gap-0.5">{sourceTricks[player.id] ?? 0}/{sourceBids[player.id]} <X className="size-3 md:size-3.5" /></span>
+                      {(sourceTricks[player.id] ?? 0) ===
+                      sourceBids[player.id] ? (
+                        <span className="text-emerald-400 flex items-center gap-0.5">
+                          {sourceTricks[player.id] ?? 0}/{sourceBids[player.id]}{" "}
+                          <Check className="size-3 md:size-3.5" />
+                        </span>
+                      ) : (sourceTricks[player.id] ?? 0) >
+                        sourceBids[player.id]! ? (
+                        <span className="text-red-500 flex items-center gap-0.5">
+                          {sourceTricks[player.id] ?? 0}/{sourceBids[player.id]}{" "}
+                          <X className="size-3 md:size-3.5" />
+                        </span>
                       ) : (
-                        <span><span className="text-zinc-400">{sourceTricks[player.id] ?? 0}</span><span className="text-zinc-600">/</span><span className="text-amber-400">{sourceBids[player.id]}</span></span>
+                        <span>
+                          <span className="text-zinc-400">
+                            {sourceTricks[player.id] ?? 0}
+                          </span>
+                          <span className="text-zinc-600">/</span>
+                          <span className="text-amber-400">
+                            {sourceBids[player.id]}
+                          </span>
+                        </span>
                       )}
                     </div>
                   ) : (
                     <div className="text-zinc-600 font-bold">- / -</div>
                   )}
                   <div className="font-black text-white text-right shrink-0">
-                    {score} <span className="text-[8px] md:text-[10px] text-zinc-500 font-normal">{lobbyI18n.pausedSummary.pointsShort}</span>
+                    {score}{" "}
+                    <span className="text-[8px] md:text-[10px] text-zinc-500 font-normal">
+                      {lobbyI18n.pausedSummary.pointsShort}
+                    </span>
                   </div>
                 </div>
               </div>
-              
+
               {/* Timer Border (SVG Full) */}
               {isCurrentTurn && (
-                <svg className="absolute inset-0 w-full h-full pointer-events-none z-10" style={{ borderRadius: "12px" }}>
+                <svg
+                  className="absolute inset-0 w-full h-full pointer-events-none z-10"
+                  style={{ borderRadius: "12px" }}
+                >
                   <rect
-                    x="0" y="0" width="100%" height="100%"
-                    rx="12" ry="12"
+                    x="0"
+                    y="0"
+                    width="100%"
+                    height="100%"
+                    rx="12"
+                    ry="12"
                     fill="none"
-                    stroke={turnTimerSeconds && turnTimerSeconds <= 5 ? "#ef4444" : "#38bdf8"}
+                    stroke={
+                      turnTimerSeconds && turnTimerSeconds <= 5
+                        ? "#ef4444"
+                        : "#38bdf8"
+                    }
                     strokeWidth="4"
                     pathLength="100"
                     strokeDasharray="100"
@@ -389,17 +511,17 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       {/* ERROR / WARNING OVERLAYS */}
       {(gameState.lastError || bidError || actionError || lobbyWarning) && (
         <div className="w-full flex justify-center z-40 my-1 animate-in slide-in-from-top-2">
-           <div className="flex items-center gap-2 max-w-sm bg-zinc-950/90 border border-rose-500/60 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md">
-             <AlertTriangle className="size-4 text-rose-400 shrink-0" />
-             <span className="text-[10px] font-semibold text-rose-200">
-               {gameState.lastError ?? bidError ?? actionError ?? lobbyWarning}
-             </span>
-           </div>
+          <div className="flex items-center gap-2 max-w-sm bg-zinc-950/90 border border-rose-500/60 rounded-xl px-3 py-2 shadow-2xl backdrop-blur-md">
+            <AlertTriangle className="size-4 text-rose-400 shrink-0" />
+            <span className="text-[10px] font-semibold text-rose-200">
+              {gameState.lastError ?? bidError ?? actionError ?? lobbyWarning}
+            </span>
+          </div>
         </div>
       )}
 
       {/* PLAY AREA (THE TABLE) */}
-      <div 
+      <div
         ref={tableRef}
         className={`relative flex-1 min-h-0 w-full max-w-6xl mx-auto mt-2 sm:mt-4 flex flex-col lg:flex-row items-center justify-center lg:justify-start lg:pl-8 lg:gap-8 rounded-3xl transition-all duration-300 ${isCardDragging ? "bg-emerald-950/20 border-2 border-dashed border-emerald-500/40 ring-4 ring-emerald-500/10" : "bg-transparent border-2 border-transparent"}`}
       >
@@ -412,7 +534,13 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         )}
 
         <div className="absolute inset-2 sm:inset-4 rounded-full border border-zinc-800/20 pointer-events-none flex flex-col items-center justify-center z-0">
-          <Image src="/wizard_logo.svg" alt={gameI18n.wizard_logo} width={180} height={75} className="opacity-5 grayscale" />
+          <Image
+            src="/wizard_logo.svg"
+            alt={gameI18n.wizard_logo}
+            width={180}
+            height={75}
+            className="opacity-5 grayscale"
+          />
         </div>
 
         {/* Trump In Table */}
@@ -421,56 +549,85 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             <span className="text-[9px] font-bold uppercase tracking-widest text-zinc-500">
               {lobbyI18n.pausedSummary.trump}
             </span>
-            {gameState.trump && "card" in gameState.trump && gameState.trump.card ? (
+            {gameState.trump &&
+            "card" in gameState.trump &&
+            gameState.trump.card ? (
               <div className="flex flex-col sm:flex-row items-center gap-2">
                 <div className="scale-75 origin-center -my-3 sm:my-0">
-                  <GameCardView card={gameState.trump.card} effectiveColor={gameState.effectiveTrumpColor || undefined} size="sm" isClickable={false} />
+                  <GameCardView
+                    card={gameState.trump.card}
+                    effectiveColor={gameState.effectiveTrumpColor || undefined}
+                    size="sm"
+                    isClickable={false}
+                  />
                 </div>
                 {/* se giocato un wizard, must decide color */}
-                {gameState.trump.card.type === "Wizard" && !gameState.effectiveTrumpColor && !canChooseTrump && (
-                  <span className="text-[10px] text-zinc-400 font-bold">{lobbyI18n.pausedSummary.noTrump}</span>
-                )}
+                {gameState.trump.card.type === "Wizard" &&
+                  !gameState.effectiveTrumpColor &&
+                  !canChooseTrump && (
+                    <span className="text-[10px] text-zinc-400 font-bold">
+                      {lobbyI18n.pausedSummary.noTrump}
+                    </span>
+                  )}
                 {/* INLINE TRUMP CHOOSER */}
                 {isMyTurn && canChooseTrump && (
                   <div className="flex gap-1.5 sm:ml-2">
                     {["Red", "Yellow", "Green", "Blue"].map((c) => {
-                       const bg = c === "Red" ? "bg-rose-500 hover:bg-rose-400" :
-                                  c === "Yellow" ? "bg-amber-500 hover:bg-amber-400" :
-                                  c === "Green" ? "bg-emerald-500 hover:bg-emerald-400" : "bg-blue-500 hover:bg-blue-400";
-                       return (
-                         <button
-                           type="button"
-                           key={c}
-                           disabled={isSubmitting}
-                           onClick={() => { setSelectedColor(c as CardColor); handleChooseTrump(c as CardColor); }}
-                           className={`size-8 rounded-full shadow-lg border-2 border-zinc-900 transition-transform active:scale-90 ${bg}`}
-                           title={gameI18n.choose_color(c)}
-                         />
-                       );
+                      const bg =
+                        c === "Red"
+                          ? "bg-rose-500 hover:bg-rose-400"
+                          : c === "Yellow"
+                            ? "bg-amber-500 hover:bg-amber-400"
+                            : c === "Green"
+                              ? "bg-emerald-500 hover:bg-emerald-400"
+                              : "bg-blue-500 hover:bg-blue-400";
+                      return (
+                        <button
+                          type="button"
+                          key={c}
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            setSelectedColor(c as CardColor);
+                            handleChooseTrump(c as CardColor);
+                          }}
+                          className={`size-8 rounded-full shadow-lg border-2 border-zinc-900 transition-transform active:scale-90 ${bg}`}
+                          title={gameI18n.choose_color(c)}
+                        />
+                      );
                     })}
                   </div>
                 )}
               </div>
             ) : (
               <div className="flex flex-col items-center gap-2">
-                <span className="text-[10px] font-bold text-zinc-400">{gameI18n.no_trump}</span>
+                <span className="text-[10px] font-bold text-zinc-400">
+                  {gameI18n.no_trump}
+                </span>
                 {/* INLINE TRUMP CHOOSER for NO TRUMP (if somehow it's a wizard played first on no trump game? Usually Wizard sets trump on its own) */}
                 {isMyTurn && canChooseTrump && (
                   <div className="flex gap-1.5">
                     {["Red", "Yellow", "Green", "Blue"].map((c) => {
-                       const bg = c === "Red" ? "bg-rose-500 hover:bg-rose-400" :
-                                  c === "Yellow" ? "bg-amber-500 hover:bg-amber-400" :
-                                  c === "Green" ? "bg-emerald-500 hover:bg-emerald-400" : "bg-blue-500 hover:bg-blue-400";
-                       return (
-                         <button
-                           type="button"
-                           key={c}
-                           disabled={isSubmitting}
-                           onClick={() => { setSelectedColor(c as CardColor); handleChooseTrump(c as CardColor); }}
-                           className={`size-8 rounded-full shadow-lg border-2 border-zinc-900 transition-transform active:scale-90 ${bg}`}
-                           title={gameI18n.choose_color(c)}
-                         />
-                       );
+                      const bg =
+                        c === "Red"
+                          ? "bg-rose-500 hover:bg-rose-400"
+                          : c === "Yellow"
+                            ? "bg-amber-500 hover:bg-amber-400"
+                            : c === "Green"
+                              ? "bg-emerald-500 hover:bg-emerald-400"
+                              : "bg-blue-500 hover:bg-blue-400";
+                      return (
+                        <button
+                          type="button"
+                          key={c}
+                          disabled={isSubmitting}
+                          onClick={() => {
+                            setSelectedColor(c as CardColor);
+                            handleChooseTrump(c as CardColor);
+                          }}
+                          className={`size-8 rounded-full shadow-lg border-2 border-zinc-900 transition-transform active:scale-90 ${bg}`}
+                          title={gameI18n.choose_color(c)}
+                        />
+                      );
                     })}
                   </div>
                 )}
@@ -481,13 +638,19 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
         <div className="absolute inset-0 lg:static lg:inset-auto lg:flex-1 lg:w-auto flex items-center justify-center lg:flex-row lg:flex-wrap lg:gap-6 pointer-events-none z-20">
           {(() => {
-            const tableSource = revealedTrick ? revealedTrick.entries : gameState.table;
-            const hasWizardOnTable = tableSource.some((entry) => entry.card.type === "Wizard");
+            const tableSource = revealedTrick
+              ? revealedTrick.entries
+              : gameState.table;
+            const hasWizardOnTable = tableSource.some(
+              (entry) => entry.card.type === "Wizard",
+            );
             const followingCardEntry = hasWizardOnTable
               ? undefined
               : tableSource.find((entry) => entry.card.type === "Standard");
             return tableSource.map((played) => {
-              const playerIndex = orderedPlayers.findIndex((p) => p.id === played.playerId);
+              const playerIndex = orderedPlayers.findIndex(
+                (p) => p.id === played.playerId,
+              );
               if (playerIndex === -1) return null;
               const player = orderedPlayers[playerIndex];
 
@@ -495,7 +658,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               const isTrickStarter = player.id === trickStarterId;
               const isWinning = revealedTrick
                 ? player.id === revealedTrick.winnerId
-                : Boolean(gameState.winningCard && cardEquals(played.card, gameState.winningCard));
+                : Boolean(
+                    gameState.winningCard &&
+                    cardEquals(played.card, gameState.winningCard),
+                  );
               const neonColor: CardColor | null =
                 followingCardEntry !== undefined &&
                 played.playerId === followingCardEntry.playerId &&
@@ -509,15 +675,26 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                 <div
                   key={player.id}
                   className="absolute lg:relative lg:transform-none! flex flex-col items-center pointer-events-auto"
-                  style={{ transform: `rotate(${angleDeg}deg) translateY(clamp(105px, min(30vw, 28cqmin), 260px)) rotate(-${angleDeg}deg)` }}
+                  style={{
+                    transform: `rotate(${angleDeg}deg) translateY(clamp(105px, min(30vw, 28cqmin), 260px)) rotate(-${angleDeg}deg)`,
+                  }}
                 >
                   <div
                     className={`flex flex-col items-center animate-in fade-in zoom-in-90 duration-300 ${
-                      isMe ? "slide-in-from-bottom-6 lg:slide-in-from-top-6" : "slide-in-from-top-6"
+                      isMe
+                        ? "slide-in-from-bottom-6 lg:slide-in-from-top-6"
+                        : "slide-in-from-top-6"
                     }`}
                   >
-                    <div className={`transition-all relative ${isWinning ? "scale-105 shadow-xl z-10" : "scale-95 opacity-90"}`}>
-                      <GameCardView card={played.card} size="sm" isClickable={false} neonColor={neonColor} />
+                    <div
+                      className={`transition-all relative ${isWinning ? "scale-105 shadow-xl z-10" : "scale-95 opacity-90"}`}
+                    >
+                      <GameCardView
+                        card={played.card}
+                        size="sm"
+                        isClickable={false}
+                        neonColor={neonColor}
+                      />
                     </div>
                     <div
                       className={`mt-1 px-2 py-0.5 rounded-lg border shadow-md z-20 whitespace-nowrap flex items-center gap-1 text-[9px] md:text-[10px] font-bold backdrop-blur-sm ${
@@ -528,10 +705,17 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                             : "bg-zinc-900/95 text-zinc-200 border-zinc-700/80"
                       }`}
                     >
-                      {isWinning && <Trophy className="size-2.5 text-amber-500 shrink-0" />}
-                      <span className="truncate max-w-[68px]">{player.name}</span>
+                      {isWinning && (
+                        <Trophy className="size-2.5 text-amber-500 shrink-0" />
+                      )}
+                      <span className="truncate max-w-[68px]">
+                        {player.name}
+                      </span>
                       {isMe && (
-                        <Badge variant="secondary" className="px-1 py-0 text-[7px] h-3 bg-zinc-700 text-zinc-100">
+                        <Badge
+                          variant="secondary"
+                          className="px-1 py-0 text-[7px] h-3 bg-zinc-700 text-zinc-100"
+                        >
                           {gameI18n.you.replace(/[()]/g, "").toUpperCase()}
                         </Badge>
                       )}
@@ -540,7 +724,10 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                           title={gameI18n.trick_starter_tooltip}
                           className={`inline-flex items-center shrink-0 ${isWinning ? "text-zinc-900" : "text-white"}`}
                         >
-                          <ArrowRightFromLine className="size-2.5" strokeWidth={3} />
+                          <ArrowRightFromLine
+                            className="size-2.5"
+                            strokeWidth={3}
+                          />
                         </span>
                       )}
                     </div>
@@ -550,119 +737,170 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
             });
           })()}
         </div>
-        
       </div>
 
-      
       {/* PLAYER HAND & HINT BUTTON */}
-      <div className={`w-full relative z-20 pb-4 flex justify-center items-end transition-all duration-500 ${(!canPlay && !canBid) || !!revealedTrick ? "translate-y-24 sm:translate-y-32 lg:translate-y-42" : "translate-y-0 opacity-100"}`}>
-
+      <div
+        className={`w-full relative z-20 pb-4 flex justify-center items-end transition-all duration-500 ${(!canPlay && !canBid) || !!revealedTrick ? "translate-y-24 sm:translate-y-32 lg:translate-y-42" : "translate-y-0 opacity-100"}`}
+      >
         {/* REVEALED TRICK OVERLAY & BIDDING CHIPS (ABOVE HAND) */}
-        <div className={`absolute bottom-full left-0 w-full flex justify-center z-40 pb-2 sm:pb-4 transition-all duration-500 ${(!canPlay && !canBid) && !revealedTrick ? "opacity-0 pointer-events-none" : "opacity-100"}`}>
+        <div
+          className={`absolute bottom-full left-0 w-full flex justify-center z-40 pb-2 sm:pb-4 transition-all duration-500 ${!canPlay && !canBid && !revealedTrick ? "opacity-0 pointer-events-none" : "opacity-100"}`}
+        >
           <div className="w-full flex justify-center flex-col items-center gap-1.5 z-40">
-{revealedTrick ? (
-          <div className="w-full flex justify-center animate-in slide-in-from-bottom-4 fade-in duration-300">
-            <div
-              role="button"
-              tabIndex={0}
-              onClick={dismissRevealedTrick}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') dismissRevealedTrick(); }}
-              title={gameI18n.dismiss_trick_tooltip}
-              className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-700/80 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.6)] cursor-pointer hover:border-white/50 hover:bg-zinc-800/95 transition-all select-none"
-            >
-              <span className="text-xs sm:text-sm font-black tracking-widest text-white uppercase flex items-center gap-1.5 whitespace-nowrap">
-                <Trophy className="size-4 text-amber-400" /> {(() => {
-                  const wId = revealedTrick.winnerId;
-                  const p = lobby?.players.find(x => x.id === wId);
-                  if (!p) return playersMap.get(wId)?.name ?? `P${wId}`;
-                  const isRealBot = p.name.toLowerCase().includes("bot");
-                  const diff2 = p.difficulty === 'Dumb' ? lobbyI18n.botSelection.dumb : p.difficulty === 'Prolog' ? lobbyI18n.botSelection.prolog : p.difficulty;
-                  return p.difficulty ? `${p.name} ${isRealBot ? diff2 : 'BOT'}` : p.name;
-                })()}
-              </span>
-              <div className="w-px h-4 bg-zinc-600 hidden sm:block"></div>
-              <div className="flex gap-3 text-[10px] sm:text-xs font-bold whitespace-nowrap items-center">
-                {(() => {
-                  const rBid = revealedTrick.bids[revealedTrick.winnerId];
-                  const rTrick = revealedTrick.tricksSnapshot[revealedTrick.winnerId] ?? 0;
-                  const hasBid = rBid !== undefined && rBid !== null;
-                  
-                  if (!hasBid) return <div className="text-zinc-600 font-bold">- / -</div>;
-                  
-                  if (rTrick === rBid) {
-                    return <span className="text-emerald-400 flex items-center gap-0.5">{rTrick}/{rBid} <Check className="size-3.5 sm:size-4" /></span>;
-                  } else if (rTrick > rBid) {
-                    return <span className="text-red-500 flex items-center gap-0.5">{rTrick}/{rBid} <X className="size-3.5 sm:size-4" /></span>;
-                  } else {
-                    return <span><span className="text-zinc-400">{rTrick}</span><span className="text-zinc-600 mx-0.5">/</span><span className="text-amber-400">{rBid}</span></span>;
-                  }
-                })()}
-              </div>
-              <div className="w-px h-4 bg-zinc-600"></div>
-              <div className="flex items-center gap-1">
-                <span className="font-mono text-xs sm:text-sm font-black text-white">{revealSecondsLeft}s</span>
-              </div>
-            </div>
-          </div>
-        ) : isMyTurn && canBid && (
-          <div className="w-full sm:max-w-xl animate-in slide-in-from-bottom-4 mb-2 flex flex-col gap-2">
-            <div className="flex flex-col gap-1.5 sm:gap-2 items-center px-1 pb-1 w-full max-w-sm sm:max-w-xl mx-auto">
-              {(() => {
-                const total = gameState.round + 1;
-                const sizeClass = "w-10 h-10 text-base";
-                const rowsCount = total > 14 ? 3 : total > 7 ? 2 : 1;
-                const rows = [];
-                let remaining = total;
-                let startIndex = 0;
-                for (let r = rowsCount; r > 0; r--) {
-                  const rowSize = Math.ceil(remaining / r);
-                  rows.push(Array.from({ length: rowSize }, (_, idx) => startIndex + idx));
-                  remaining -= rowSize;
-                  startIndex += rowSize;
-                }
-                
-                return rows.map((row, rowIdx) => (
-                  <div key={rowIdx} className="flex gap-1.5 sm:gap-2 justify-center">
-                    {row.map((i) => {
-                      const isForbidden = forbiddenBid !== null && forbiddenBid !== undefined && i === forbiddenBid;
-                      const isHinted = hintedBid === i;
-                      const isSelected = bidInput === i;
-                      return (
-                        <button
-                          type="button"
-                          key={i}
-                          disabled={isSubmitting || isForbidden}
-                          onClick={() => {
-                            if (isSelected) {
-                              handlePlaceBid(i);
-                            } else {
-                              setBidInput(i);
-                            }
-                          }}
-                          className={`relative flex items-center justify-center rounded-full font-black transition-all active:scale-90 border-2 ${sizeClass} ${
-                            isForbidden ? "opacity-30 bg-zinc-900 border-rose-900 text-rose-500 cursor-not-allowed" 
-                            : isSelected ? (isHinted ? "bg-white text-black border-purple-500 shadow-lg shadow-purple-500/40 scale-110 z-10" : "bg-white text-black border-white shadow-lg shadow-white/20 scale-110 z-10")
-                            : isHinted ? "bg-purple-500/20 text-purple-300 border-purple-500 hover:bg-purple-500/40"
-                            : "bg-zinc-800 text-zinc-300 border-zinc-600 hover:bg-zinc-700 hover:text-white"
-                          }`}
-                        >
-                          {i}
-                          {isHinted && (
-                            <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-purple-500 text-white shadow-md">
-                              <Lightbulb className="size-2.5 fill-current" />
-                            </span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                ));
-              })()}
-            </div>
-          </div>
-        )}
-        
+            {revealedTrick ? (
+              <div className="w-full flex justify-center animate-in slide-in-from-bottom-4 fade-in duration-300">
+                <div
+                  role="button"
+                  tabIndex={0}
+                  onClick={dismissRevealedTrick}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ")
+                      dismissRevealedTrick();
+                  }}
+                  title={gameI18n.dismiss_trick_tooltip}
+                  className="flex items-center gap-3 bg-zinc-900/95 backdrop-blur-md border border-zinc-700/80 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full shadow-[0_0_30px_rgba(0,0,0,0.6)] cursor-pointer hover:border-white/50 hover:bg-zinc-800/95 transition-all select-none"
+                >
+                  <span className="text-xs sm:text-sm font-black tracking-widest text-white uppercase flex items-center gap-1.5 whitespace-nowrap">
+                    <Trophy className="size-4 text-amber-400" />{" "}
+                    {(() => {
+                      const wId = revealedTrick.winnerId;
+                      const p = lobby?.players.find((x) => x.id === wId);
+                      if (!p) return playersMap.get(wId)?.name ?? `P${wId}`;
+                      const isRealBot = p.name.toLowerCase().includes("bot");
+                      const diff2 =
+                        p.difficulty === "Dumb"
+                          ? lobbyI18n.botSelection.dumb
+                          : p.difficulty === "Prolog"
+                            ? lobbyI18n.botSelection.prolog
+                            : p.difficulty;
+                      return p.difficulty
+                        ? `${p.name} ${isRealBot ? diff2 : "BOT"}`
+                        : p.name;
+                    })()}
+                  </span>
+                  <div className="w-px h-4 bg-zinc-600 hidden sm:block"></div>
+                  <div className="flex gap-3 text-[10px] sm:text-xs font-bold whitespace-nowrap items-center">
+                    {(() => {
+                      const rBid = revealedTrick.bids[revealedTrick.winnerId];
+                      const rTrick =
+                        revealedTrick.tricksSnapshot[revealedTrick.winnerId] ??
+                        0;
+                      const hasBid = rBid !== undefined && rBid !== null;
 
+                      if (!hasBid)
+                        return (
+                          <div className="text-zinc-600 font-bold">- / -</div>
+                        );
+
+                      if (rTrick === rBid) {
+                        return (
+                          <span className="text-emerald-400 flex items-center gap-0.5">
+                            {rTrick}/{rBid}{" "}
+                            <Check className="size-3.5 sm:size-4" />
+                          </span>
+                        );
+                      } else if (rTrick > rBid) {
+                        return (
+                          <span className="text-red-500 flex items-center gap-0.5">
+                            {rTrick}/{rBid} <X className="size-3.5 sm:size-4" />
+                          </span>
+                        );
+                      } else {
+                        return (
+                          <span>
+                            <span className="text-zinc-400">{rTrick}</span>
+                            <span className="text-zinc-600 mx-0.5">/</span>
+                            <span className="text-amber-400">{rBid}</span>
+                          </span>
+                        );
+                      }
+                    })()}
+                  </div>
+                  <div className="w-px h-4 bg-zinc-600"></div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-mono text-xs sm:text-sm font-black text-white">
+                      {revealSecondsLeft}s
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              isMyTurn &&
+              canBid && (
+                <div className="w-full sm:max-w-xl animate-in slide-in-from-bottom-4 mb-2 flex flex-col gap-2">
+                  <div className="flex flex-col gap-1.5 sm:gap-2 items-center px-1 pb-1 w-full max-w-sm sm:max-w-xl mx-auto">
+                    {(() => {
+                      const total = gameState.round + 1;
+                      const sizeClass = "w-10 h-10 text-base";
+                      const rowsCount = total > 14 ? 3 : total > 7 ? 2 : 1;
+                      const rows = [];
+                      let remaining = total;
+                      let startIndex = 0;
+                      for (let r = rowsCount; r > 0; r--) {
+                        const rowSize = Math.ceil(remaining / r);
+                        rows.push(
+                          Array.from(
+                            { length: rowSize },
+                            (_, idx) => startIndex + idx,
+                          ),
+                        );
+                        remaining -= rowSize;
+                        startIndex += rowSize;
+                      }
+
+                      return rows.map((row, rowIdx) => (
+                        <div
+                          key={rowIdx}
+                          className="flex gap-1.5 sm:gap-2 justify-center"
+                        >
+                          {row.map((i) => {
+                            const isForbidden =
+                              forbiddenBid !== null &&
+                              forbiddenBid !== undefined &&
+                              i === forbiddenBid;
+                            const isHinted = hintedBid === i;
+                            const isSelected = bidInput === i;
+                            return (
+                              <button
+                                type="button"
+                                key={i}
+                                disabled={isSubmitting || isForbidden}
+                                onClick={() => {
+                                  if (isSelected) {
+                                    handlePlaceBid(i);
+                                  } else {
+                                    setBidInput(i);
+                                  }
+                                }}
+                                className={`relative flex items-center justify-center rounded-full font-black transition-all active:scale-90 border-2 ${sizeClass} ${
+                                  isForbidden
+                                    ? "opacity-30 bg-zinc-900 border-rose-900 text-rose-500 cursor-not-allowed"
+                                    : isSelected
+                                      ? isHinted
+                                        ? "bg-white text-black border-purple-500 shadow-lg shadow-purple-500/40 scale-110 z-10"
+                                        : "bg-white text-black border-white shadow-lg shadow-white/20 scale-110 z-10"
+                                      : isHinted
+                                        ? "bg-purple-500/20 text-purple-300 border-purple-500 hover:bg-purple-500/40"
+                                        : "bg-zinc-800 text-zinc-300 border-zinc-600 hover:bg-zinc-700 hover:text-white"
+                                }`}
+                              >
+                                {i}
+                                {isHinted && (
+                                  <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-purple-500 text-white shadow-md">
+                                    <Lightbulb className="size-2.5 fill-current" />
+                                  </span>
+                                )}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      ));
+                    })()}
+                  </div>
+                </div>
+              )
+            )}
           </div>
         </div>
 
@@ -682,7 +920,9 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
               title={gameI18n.hint}
               className="size-10 sm:size-12 rounded-full bg-linear-to-r from-purple-600 to-purple-500 hover:from-purple-500 hover:to-purple-400 text-white shadow-xl shadow-purple-500/20 border-2 border-purple-400/50 transition-all hover:scale-105 active:scale-95"
             >
-              <Lightbulb className={`size-4 sm:size-5 ${isHintLoading ? "animate-spin" : ""}`} />
+              <Lightbulb
+                className={`size-4 sm:size-5 ${isHintLoading ? "animate-spin" : ""}`}
+              />
             </Button>
           </div>
         )}
@@ -708,7 +948,8 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
           onClick={() => setShowScoreboard(false)}
         >
           <div className="w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
-            <GameScoreboard players={lobby?.players}
+            <GameScoreboard
+              players={lobby?.players}
               scoreboard={gameState.scoreboard}
               playersMap={playersMap}
               myPlayerId={playerId}
@@ -722,8 +963,12 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       {/* PHONE LANDSCAPE WARNING */}
       <div className="hidden [@media(max-height:500px)_and_(orientation:landscape)]:flex fixed inset-0 z-9999 bg-zinc-950 flex-col items-center justify-center p-6 text-center">
         <AlertTriangle className="size-16 text-amber-500 mb-6 animate-pulse" />
-        <h2 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-widest">{gameI18n.rotate_device}</h2>
-        <p className="text-sm text-zinc-400 max-w-xs mx-auto">{gameI18n.rotate_device_desc}</p>
+        <h2 className="text-xl sm:text-2xl font-black text-white mb-2 uppercase tracking-widest">
+          {gameI18n.rotate_device}
+        </h2>
+        <p className="text-sm text-zinc-400 max-w-xs mx-auto">
+          {gameI18n.rotate_device_desc}
+        </p>
       </div>
     </div>
   );

@@ -9,7 +9,7 @@ export function useLobbyGameSnapshot(
   lobbyId: string | null,
   playerId: number | null,
   enabled: boolean,
-  statusKey: string | undefined
+  statusKey: string | undefined,
 ) {
   const [board, setBoard] = useState<GameBoardState | null>(null);
   const [isLoading, setIsLoading] = useState(false);

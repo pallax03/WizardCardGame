@@ -1,4 +1,8 @@
-import type { ChatMessage, EventMessage, SystemMessage } from "@/features/chat/types";
+import type {
+  ChatMessage,
+  EventMessage,
+  SystemMessage,
+} from "@/features/chat/types";
 import type { ConnectionState, ServerEvent } from "./types";
 
 type LobbySocketOptions = {
@@ -27,13 +31,21 @@ function parseServerEvent(rawData: string): ServerEvent | null {
   }
 
   if (!isRecord(raw)) return null;
-  const timestamp = typeof raw.timestamp === "string" ? raw.timestamp : new Date().toISOString();
+  const timestamp =
+    typeof raw.timestamp === "string"
+      ? raw.timestamp
+      : new Date().toISOString();
 
-  if (raw.type === "message" && typeof raw.playerId === "number" && typeof raw.text === "string") {
+  if (
+    raw.type === "message" &&
+    typeof raw.playerId === "number" &&
+    typeof raw.text === "string"
+  ) {
     return {
       type: "message",
       playerId: raw.playerId,
-      destinationId: typeof raw.destinationId === "number" ? raw.destinationId : undefined,
+      destinationId:
+        typeof raw.destinationId === "number" ? raw.destinationId : undefined,
       text: raw.text,
       timestamp,
     } satisfies ChatMessage;
@@ -53,12 +65,20 @@ function parseServerEvent(rawData: string): ServerEvent | null {
     } satisfies SystemMessage;
   }
 
-  if (isRecord(raw.event) && typeof raw.event.type === "string" && typeof raw.event.action === "string") {
+  if (
+    isRecord(raw.event) &&
+    typeof raw.event.type === "string" &&
+    typeof raw.event.action === "string"
+  ) {
     const event: EventMessage["event"] = {
       type: raw.event.type,
       action: raw.event.action,
-      playerId: typeof raw.event.playerId === "number" ? raw.event.playerId : undefined,
-      destinationId: typeof raw.event.destinationId === "number" ? raw.event.destinationId : undefined,
+      playerId:
+        typeof raw.event.playerId === "number" ? raw.event.playerId : undefined,
+      destinationId:
+        typeof raw.event.destinationId === "number"
+          ? raw.event.destinationId
+          : undefined,
       fields: isRecord(raw.event.fields) ? raw.event.fields : undefined,
     };
     return { type: "event", event, timestamp } satisfies EventMessage;
@@ -74,12 +94,18 @@ export function connectLobbySocket({
   onConnectionChange,
   onClose,
 }: LobbySocketOptions): LobbySocket {
-  const wsProtocol = typeof window !== "undefined" && window.location.protocol === "https:" ? "wss:" : "ws:";
-  const wsHost = typeof window !== "undefined" ? window.location.hostname : "localhost";
-  const wsPort = process.env.NEXT_PUBLIC_WS_PORT || process.env.WS_PORT || "5002";
-  const baseUrl = process.env.NEXT_PUBLIC_WS_URL || `${wsProtocol}//${wsHost}:${wsPort}`;
+  const wsProtocol =
+    typeof window !== "undefined" && window.location.protocol === "https:"
+      ? "wss:"
+      : "ws:";
+  const wsHost =
+    typeof window !== "undefined" ? window.location.hostname : "localhost";
+  const wsPort =
+    process.env.NEXT_PUBLIC_WS_PORT || process.env.WS_PORT || "5002";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_WS_URL || `${wsProtocol}//${wsHost}:${wsPort}`;
   const socket = new WebSocket(
-    `${baseUrl}/ws/v1/lobbies/${encodeURIComponent(lobbyId)}?secret=${encodeURIComponent(secret)}`
+    `${baseUrl}/ws/v1/lobbies/${encodeURIComponent(lobbyId)}?secret=${encodeURIComponent(secret)}`,
   );
 
   socket.onopen = () => onConnectionChange("open");

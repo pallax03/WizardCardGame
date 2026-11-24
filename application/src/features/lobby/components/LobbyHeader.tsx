@@ -12,7 +12,11 @@ interface LobbyHeaderPropsExtended extends LobbyHeaderProps {
   hideShare?: boolean;
 }
 
-export function LobbyHeader({ lobbyCode, children, hideShare }: LobbyHeaderPropsExtended) {
+export function LobbyHeader({
+  lobbyCode,
+  children,
+  hideShare,
+}: LobbyHeaderPropsExtended) {
   const [copied, setCopied] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
 
@@ -69,8 +73,14 @@ export function LobbyHeader({ lobbyCode, children, hideShare }: LobbyHeaderProps
               onClick={handleCopy}
               title={lobbyI18n.header.copyCodeButton}
             >
-              {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-zinc-400" />}
-              <span className="text-xs hidden sm:inline">{lobbyI18n.header.copyCodeButton}</span>
+              {copied ? (
+                <Check className="w-4 h-4 text-emerald-400" />
+              ) : (
+                <Copy className="w-4 h-4 text-zinc-400" />
+              )}
+              <span className="text-xs hidden sm:inline">
+                {lobbyI18n.header.copyCodeButton}
+              </span>
             </Button>
             <Button
               variant="default"
@@ -85,9 +95,7 @@ export function LobbyHeader({ lobbyCode, children, hideShare }: LobbyHeaderProps
         )}
       </div>
       {children && showConfig && (
-        <div className="animate-in fade-in slide-in-from-top-2">
-          {children}
-        </div>
+        <div className="animate-in fade-in slide-in-from-top-2">{children}</div>
       )}
     </div>
   );

@@ -19,10 +19,15 @@ export function ChatSheet() {
   const [isOpen, setIsOpen] = useState(false);
   const [activePrivateId, setActivePrivateId] = useState<number | null>(null);
   const [seenMessageCount, setSeenMessageCount] = useState(0);
-  const [seenPrivateCount, setSeenPrivateCount] = useState<Record<number, number>>({});
+  const [seenPrivateCount, setSeenPrivateCount] = useState<
+    Record<number, number>
+  >({});
   const { messages, sendMessage, connectionState } = useChat();
   const playersMap = useMemo(
-    () => Object.fromEntries((lobby?.players ?? []).map((player) => [player.id, player.name])),
+    () =>
+      Object.fromEntries(
+        (lobby?.players ?? []).map((player) => [player.id, player.name]),
+      ),
     [lobby?.players],
   );
   const botIds = useMemo(
@@ -50,36 +55,65 @@ export function ChatSheet() {
   );
 
   const chatMessages = useMemo(
-    () => feedMessages.filter((message): message is ChatMessage => message.type === "message"),
+    () =>
+      feedMessages.filter(
+        (message): message is ChatMessage => message.type === "message",
+      ),
     [feedMessages],
   );
   const privatePeers = useMemo(() => {
     if (playerId === null) return [];
-    return Array.from(new Set(chatMessages
-      .filter((message) => message.destinationId !== undefined)
-      .map((message) => message.playerId === playerId ? message.destinationId : message.playerId)
-      .filter((id): id is number => id !== undefined && id !== playerId)));
+    return Array.from(
+      new Set(
+        chatMessages
+          .filter((message) => message.destinationId !== undefined)
+          .map((message) =>
+            message.playerId === playerId
+              ? message.destinationId
+              : message.playerId,
+          )
+          .filter((id): id is number => id !== undefined && id !== playerId),
+      ),
+    );
   }, [chatMessages, playerId]);
   const visibleMessages = useMemo(() => {
     if (activePrivateId === null) {
-      return feedMessages.filter((message) => message.type !== "message" || message.destinationId === undefined);
+      return feedMessages.filter(
+        (message) =>
+          message.type !== "message" || message.destinationId === undefined,
+      );
     }
-    return chatMessages.filter((message) => message.destinationId !== undefined &&
-      (message.playerId === activePrivateId || message.destinationId === activePrivateId));
+    return chatMessages.filter(
+      (message) =>
+        message.destinationId !== undefined &&
+        (message.playerId === activePrivateId ||
+          message.destinationId === activePrivateId),
+    );
   }, [activePrivateId, chatMessages, feedMessages]);
 
-  const unreadTotal = isOpen ? 0 : Math.max(0, chatMessages.length - seenMessageCount);
+  const unreadTotal = isOpen
+    ? 0
+    : Math.max(0, chatMessages.length - seenMessageCount);
   const privateUnread = (peerId: number) => {
     if (playerId === null) return 0;
     if (isOpen && activePrivateId === peerId) return 0;
-    const received = chatMessages.filter((message) => message.playerId === peerId && message.destinationId === playerId).length;
+    const received = chatMessages.filter(
+      (message) =>
+        message.playerId === peerId && message.destinationId === playerId,
+    ).length;
     return Math.max(0, received - (seenPrivateCount[peerId] ?? 0));
   };
-  const markPrivateSeen = useCallback((peerId: number) => {
-    if (playerId === null) return;
-    const received = chatMessages.filter((message) => message.playerId === peerId && message.destinationId === playerId).length;
-    setSeenPrivateCount((current) => ({ ...current, [peerId]: received }));
-  }, [playerId, chatMessages]);
+  const markPrivateSeen = useCallback(
+    (peerId: number) => {
+      if (playerId === null) return;
+      const received = chatMessages.filter(
+        (message) =>
+          message.playerId === peerId && message.destinationId === playerId,
+      ).length;
+      setSeenPrivateCount((current) => ({ ...current, [peerId]: received }));
+    },
+    [playerId, chatMessages],
+  );
   const openPrivateChat = (peerId: number) => {
     setActivePrivateId(peerId);
     markPrivateSeen(peerId);
@@ -95,12 +129,14 @@ export function ChatSheet() {
       setIsOpen(true);
       setActivePrivateId(null);
     };
-    window.addEventListener('open-chat-global', handler);
-    return () => window.removeEventListener('open-chat-global', handler);
+    window.addEventListener("open-chat-global", handler);
+    return () => window.removeEventListener("open-chat-global", handler);
   }, []);
 
   useEffect(() => {
-    window.dispatchEvent(new CustomEvent('chat-unread-change', { detail: { unreadTotal } }));
+    window.dispatchEvent(
+      new CustomEvent("chat-unread-change", { detail: { unreadTotal } }),
+    );
   }, [unreadTotal]);
 
   useEffect(() => {
@@ -109,8 +145,8 @@ export function ChatSheet() {
       setIsOpen(true);
       setActivePrivateId(customEvent.detail.playerId);
     };
-    window.addEventListener('open-private-chat', handler);
-    return () => window.removeEventListener('open-private-chat', handler);
+    window.addEventListener("open-private-chat", handler);
+    return () => window.removeEventListener("open-private-chat", handler);
   }, []);
   useEffect(() => {
     if (isOpen && activePrivateId !== null) {
@@ -119,17 +155,27 @@ export function ChatSheet() {
   }, [isOpen, activePrivateId, chatMessages.length, markPrivateSeen]);
 
   if (playerId === null) {
-    return <Skeleton className="fixed right-4 bottom-4 z-90 size-14 rounded-full sm:right-6 sm:bottom-6" />;
+    return (
+      <Skeleton className="fixed right-4 bottom-4 z-90 size-14 rounded-full sm:right-6 sm:bottom-6" />
+    );
   }
 
-  const privateName = activePrivateId === null ? null : playersMap[activePrivateId];
+  const privateName =
+    activePrivateId === null ? null : playersMap[activePrivateId];
 
   return (
-    <MotionConfig reducedMotion="user" transition={{ type: "spring", stiffness: 420, damping: 34 }}>
-    <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-      {/* Chat is opened via header button (open-chat-global event), no floating FAB */}
+    <MotionConfig
+      reducedMotion="user"
+      transition={{ type: "spring", stiffness: 420, damping: 34 }}
+    >
+      <Sheet open={isOpen} onOpenChange={handleOpenChange}>
+        {/* Chat is opened via header button (open-chat-global event), no floating FAB */}
 
-      <SheetContent side="bottom" showCloseButton={false} className="inset-x-0 bottom-0 h-[min(88svh,46rem)]! max-h-[calc(100svh-env(safe-area-inset-top))] w-full origin-bottom overflow-hidden rounded-t-[1.75rem] border-white/10 bg-zinc-950/98 p-0 text-white shadow-2xl sm:right-6! sm:left-auto! sm:bottom-24 ssm:h-[min(72svh,40rem)] sm:max-h-[calc(100svh-7rem)] sm:w-104 sm:origin-bottom-right sm:rounded-[1.75rem] sm:border sm:data-ending-style:translate-x-8 sm:data-ending-style:translate-y-0 sm:data-starting-style:translate-x-8 sm:data-starting-style:translate-y-0">
+        <SheetContent
+          side="bottom"
+          showCloseButton={false}
+          className="inset-x-0 bottom-0 h-[min(88svh,46rem)]! max-h-[calc(100svh-env(safe-area-inset-top))] w-full origin-bottom overflow-hidden rounded-t-[1.75rem] border-white/10 bg-zinc-950/98 p-0 text-white shadow-2xl sm:right-6! sm:left-auto! sm:bottom-24 ssm:h-[min(72svh,40rem)] sm:max-h-[calc(100svh-7rem)] sm:w-104 sm:origin-bottom-right sm:rounded-[1.75rem] sm:border sm:data-ending-style:translate-x-8 sm:data-ending-style:translate-y-0 sm:data-starting-style:translate-x-8 sm:data-starting-style:translate-y-0"
+        >
           <ChatHeader
             activePrivateId={activePrivateId}
             privateName={privateName}
@@ -138,7 +184,10 @@ export function ChatSheet() {
             privatePeers={privatePeers}
             playersMap={playersMap}
             privateUnread={privateUnread}
-            onClosePrivate={() => { markPrivateSeen(activePrivateId as number); setActivePrivateId(null); }}
+            onClosePrivate={() => {
+              markPrivateSeen(activePrivateId as number);
+              setActivePrivateId(null);
+            }}
             onOpenPrivate={openPrivateChat}
           />
 
@@ -153,10 +202,12 @@ export function ChatSheet() {
           <ChatInput
             activePrivateId={activePrivateId}
             connectionState={connectionState}
-            onSendMessage={(text) => sendMessage(text, activePrivateId ?? undefined)}
+            onSendMessage={(text) =>
+              sendMessage(text, activePrivateId ?? undefined)
+            }
           />
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
     </MotionConfig>
   );
 }
