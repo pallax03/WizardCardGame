@@ -8,10 +8,10 @@
     "packages/*"
   ],
   "engines": {
-    "node": ">=24"
+    "node": "24.x"
   },
   "scripts": {
-    "prepare": "husky",
+    "prepare": "husky || true",
     "check": "npm run check:engine && npm run check:client",
     "check:engine": "cd wizardEngine && sbt --batch check",
     "check:client": "npm -w application run check",
