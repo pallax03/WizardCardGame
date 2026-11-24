@@ -1,3 +1,10 @@
+## [1.2.2](https://github.com/pallax03/WizardCardGame/compare/v1.2.1...v1.2.2) (2026-11-24)
+
+
+### Bug Fixes
+
+* **deploy:** resolve previous release tag in path filter and harden Azure deploy ([#213](https://github.com/pallax03/WizardCardGame/issues/213)) ([8f103ed](https://github.com/pallax03/WizardCardGame/commit/8f103ed702d0cbdbf7fbe336e6656782d5119ce9)), closes [#212](https://github.com/pallax03/WizardCardGame/issues/212)
+
 ## [1.2.1](https://github.com/pallax03/WizardCardGame/compare/v1.2.0...v1.2.1) (2026-11-24)
 
 
