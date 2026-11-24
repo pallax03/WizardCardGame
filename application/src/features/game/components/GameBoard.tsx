@@ -13,7 +13,7 @@ import { GameEndOverlay } from "./GameEndOverlay";
 import { DisconnectOverlay } from "./DisconnectOverlay";
 import { Badge } from "@/ui/components/badge";
 import { Button } from "@/ui/components/button";
-import { ArrowLeft, Lightbulb, Trophy, MessageCircle, AlertTriangle, Check, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, ArrowRightFromLine, Lightbulb, Trophy, MessageCircle, AlertTriangle, Check, X } from "lucide-react";
 import { t } from "@/ui/i18n/core";
 
 const lobbyI18n = t("lobby");
@@ -103,6 +103,22 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
 
   const totalPlayersCount = lobby?.players?.length || players.length || 0;
   const maxRound = totalPlayersCount > 0 ? Math.floor(60 / totalPlayersCount) : 0;
+
+  const trickStarterId = useMemo<number | null>(() => {
+    if (revealedTrick && revealedTrick.entries.length > 0) {
+      return revealedTrick.entries[0].playerId;
+    }
+    if (gameState.status === "PLAYING") {
+      return gameState.table[0]?.playerId ?? gameState.currentTurn.playerId ?? null;
+    }
+    if (
+      (gameState.status === "BIDDING" || gameState.status === "CHOOSING_TRUMP") &&
+      players.length > 0
+    ) {
+      return players[(gameState.round - 1) % players.length]?.id ?? null;
+    }
+    return null;
+  }, [revealedTrick, gameState.status, gameState.table, gameState.currentTurn.playerId, gameState.round, players]);
 
   const sortedScoreboard = useMemo(() => {
     if (!gameState.scoreboard) return [];
@@ -262,6 +278,7 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
       <div className="grid grid-cols-3 sm:flex sm:flex-wrap sm:justify-center gap-2 sm:gap-3 w-full">
         {orderedPlayers.map((player) => {
           const isCurrentTurn = gameState.currentTurn.playerId === player.id;
+          const isTrickStarter = player.id === trickStarterId;
           const isMe = player.id === playerId;
           const sourceBids = revealedTrick ? revealedTrick.bids : gameState.bids;
           const sourceTricks = revealedTrick ? revealedTrick.tricksSnapshot : gameState.tricksWon;
@@ -304,7 +321,24 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
                        })()}
                        <span className="truncate">{player.name}</span>
                      </span>
-                     {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] md:text-[9px] h-3 md:h-4 bg-zinc-700">{gameI18n.you.replace(/[()]/g, "").toUpperCase()}</Badge>}
+                     <div className="flex items-center gap-1 shrink-0">
+                       {isMe && <Badge variant="secondary" className="px-1 py-0 text-[8px] md:text-[9px] h-3 md:h-4 bg-zinc-700">{gameI18n.you.replace(/[()]/g, "").toUpperCase()}</Badge>}
+                       {isTrickStarter ? (
+                         <span
+                           title={gameI18n.trick_starter_tooltip}
+                           className="inline-flex items-center text-white drop-shadow-[0_0_6px_rgba(255,255,255,0.85)] shrink-0"
+                         >
+                           <ArrowRightFromLine className="size-3 md:size-3.5" strokeWidth={3} />
+                         </span>
+                       ) : (
+                         <span
+                           title={gameI18n.turn_order_tooltip}
+                           className="inline-flex items-center text-zinc-600 shrink-0"
+                         >
+                           <ArrowRight className="size-2.5" strokeWidth={2} />
+                         </span>
+                       )}
+                     </div>
                   </div>
                   <span className="text-[8px] md:text-[10px] text-zinc-500 uppercase font-bold truncate min-h-3 md:min-h-3.5 leading-tight">
                     {Boolean(player.difficulty) ? (player.name.toLowerCase().includes("bot") ? (player.difficulty === "Dumb" ? lobbyI18n.botSelection.dumb.toUpperCase() : player.difficulty === "Prolog" ? lobbyI18n.botSelection.prolog.toUpperCase() : player.difficulty) : "BOT") : ""}
@@ -446,33 +480,75 @@ export function GameBoard({ customPlayerId }: GameBoardProps) {
         )}
 
         <div className="absolute inset-0 lg:static lg:inset-auto lg:flex-1 lg:w-auto flex items-center justify-center lg:flex-row lg:flex-wrap lg:gap-6 pointer-events-none z-20">
-          {orderedPlayers.map((player, index) => {
+          {(() => {
             const tableSource = revealedTrick ? revealedTrick.entries : gameState.table;
-            const played = tableSource.find((entry) => entry.playerId === player.id);
-            if (!played) return null;
-            
-            const isWinning = revealedTrick ? player.id === revealedTrick.winnerId : Boolean(gameState.winningCard && cardEquals(played.card, gameState.winningCard));
-            
-            const total = orderedPlayers.length;
-            const angleDeg = (index * 360) / total;
-            return (
-              <div 
-                key={player.id} 
-                className="absolute lg:relative lg:transform-none! flex flex-col items-center animate-in zoom-in-95 duration-200 pointer-events-auto"
-                style={{ transform: `rotate(${angleDeg}deg) translateY(clamp(105px, min(30vw, 28cqmin), 260px)) rotate(-${angleDeg}deg)` }}
-              >
-                <div className={`transition-all relative ${isWinning ? 'scale-105 shadow-xl z-10' : 'scale-95 opacity-90'}`}>
-                  <GameCardView card={played.card} size="sm" isClickable={false} />
+            const hasWizardOnTable = tableSource.some((entry) => entry.card.type === "Wizard");
+            const followingCardEntry = hasWizardOnTable
+              ? undefined
+              : tableSource.find((entry) => entry.card.type === "Standard");
+            return tableSource.map((played) => {
+              const playerIndex = orderedPlayers.findIndex((p) => p.id === played.playerId);
+              if (playerIndex === -1) return null;
+              const player = orderedPlayers[playerIndex];
+
+              const isMe = player.id === playerId;
+              const isTrickStarter = player.id === trickStarterId;
+              const isWinning = revealedTrick
+                ? player.id === revealedTrick.winnerId
+                : Boolean(gameState.winningCard && cardEquals(played.card, gameState.winningCard));
+              const neonColor: CardColor | null =
+                followingCardEntry !== undefined &&
+                played.playerId === followingCardEntry.playerId &&
+                played.card.type === "Standard"
+                  ? played.card.color
+                  : null;
+
+              const total = orderedPlayers.length;
+              const angleDeg = (playerIndex * 360) / total;
+              return (
+                <div
+                  key={player.id}
+                  className="absolute lg:relative lg:transform-none! flex flex-col items-center pointer-events-auto"
+                  style={{ transform: `rotate(${angleDeg}deg) translateY(clamp(105px, min(30vw, 28cqmin), 260px)) rotate(-${angleDeg}deg)` }}
+                >
+                  <div
+                    className={`flex flex-col items-center animate-in fade-in zoom-in-90 duration-300 ${
+                      isMe ? "slide-in-from-bottom-6 lg:slide-in-from-top-6" : "slide-in-from-top-6"
+                    }`}
+                  >
+                    <div className={`transition-all relative ${isWinning ? "scale-105 shadow-xl z-10" : "scale-95 opacity-90"}`}>
+                      <GameCardView card={played.card} size="sm" isClickable={false} neonColor={neonColor} />
+                    </div>
+                    <div
+                      className={`mt-1 px-2 py-0.5 rounded-lg border shadow-md z-20 whitespace-nowrap flex items-center gap-1 text-[9px] md:text-[10px] font-bold backdrop-blur-sm ${
+                        isWinning
+                          ? "bg-zinc-100 text-zinc-900 border-white"
+                          : isMe
+                            ? "bg-zinc-800/95 text-zinc-100 border-zinc-500/60"
+                            : "bg-zinc-900/95 text-zinc-200 border-zinc-700/80"
+                      }`}
+                    >
+                      {isWinning && <Trophy className="size-2.5 text-amber-500 shrink-0" />}
+                      <span className="truncate max-w-[68px]">{player.name}</span>
+                      {isMe && (
+                        <Badge variant="secondary" className="px-1 py-0 text-[7px] h-3 bg-zinc-700 text-zinc-100">
+                          {gameI18n.you.replace(/[()]/g, "").toUpperCase()}
+                        </Badge>
+                      )}
+                      {isTrickStarter && (
+                        <span
+                          title={gameI18n.trick_starter_tooltip}
+                          className={`inline-flex items-center shrink-0 ${isWinning ? "text-zinc-900" : "text-white"}`}
+                        >
+                          <ArrowRightFromLine className="size-2.5" strokeWidth={3} />
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <div className={`absolute -bottom-2 sm:-bottom-3 px-1.5 py-0.5 rounded-md text-[8px] font-black tracking-wider border shadow-md z-20 whitespace-nowrap flex items-center gap-1 ${
-                  isWinning ? "bg-white text-black border-zinc-300" : "bg-zinc-800 text-zinc-300 border-zinc-600"
-                }`}>
-                  {isWinning && <Trophy className="size-2.5 text-amber-500" />}
-                  {player.name.length > 8 ? player.name.substring(0, 8) : player.name}
-                </div>
-              </div>
-            );
-          })}
+              );
+            });
+          })()}
         </div>
         
       </div>

@@ -40,3 +40,10 @@ export const CARD_COLOR_BADGE_STYLES: Record<CardColor, string> = {
   Green: "bg-emerald-950/90 text-emerald-200 border-emerald-600 shadow-emerald-950/50",
   Yellow: "bg-amber-950/90 text-amber-200 border-amber-500 shadow-amber-950/50",
 };
+
+export const CARD_NEON_STYLES: Record<CardColor, string> = {
+  Red: "ring-2 ring-rose-400 border-rose-300 shadow-[0_0_16px_2px_rgba(244,63,94,0.9),0_0_36px_8px_rgba(244,63,94,0.55)] drop-shadow-[0_0_10px_rgba(244,63,94,0.8)]",
+  Blue: "ring-2 ring-blue-400 border-blue-300 shadow-[0_0_16px_2px_rgba(59,130,246,0.9),0_0_36px_8px_rgba(59,130,246,0.55)] drop-shadow-[0_0_10px_rgba(59,130,246,0.8)]",
+  Green: "ring-2 ring-emerald-400 border-emerald-300 shadow-[0_0_16px_2px_rgba(16,185,129,0.9),0_0_36px_8px_rgba(16,185,129,0.55)] drop-shadow-[0_0_10px_rgba(16,185,129,0.8)]",
+  Yellow: "ring-2 ring-amber-300 border-amber-200 shadow-[0_0_16px_2px_rgba(245,158,11,0.9),0_0_36px_8px_rgba(245,158,11,0.55)] drop-shadow-[0_0_10px_rgba(245,158,11,0.8)]",
+};
