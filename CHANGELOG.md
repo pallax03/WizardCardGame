@@ -1,3 +1,10 @@
+## [1.2.1](https://github.com/pallax03/WizardCardGame/compare/v1.2.0...v1.2.1) (2026-11-24)
+
+
+### Bug Fixes
+
+* **application:** on game resume timer thread does not count down ([#211](https://github.com/pallax03/WizardCardGame/issues/211)) ([12770f7](https://github.com/pallax03/WizardCardGame/commit/12770f787876d4ffc88b13bb9234beaf6e5fa886)), closes [#194](https://github.com/pallax03/WizardCardGame/issues/194) [#127](https://github.com/pallax03/WizardCardGame/issues/127)
+
 # [1.2.0](https://github.com/pallax03/WizardCardGame/compare/v1.1.0...v1.2.0) (2026-11-23)
 
 
