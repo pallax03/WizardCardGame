@@ -292,6 +292,7 @@ export function gameReducer(
         ...state,
         trump: resolvedTrump,
         effectiveTrumpColor: getTrumpColor(resolvedTrump) ?? chosenColor,
+        lastTrick: null,
         currentTurn: isTurnHolder
           ? { actionType: "NONE", playerId: null, isMyTurn: false }
           : state.currentTurn,
@@ -373,6 +374,7 @@ export function gameReducer(
           ...state.bids,
           [bidderId]: bidAmount,
         },
+        lastTrick: null,
         currentTurn: isTurnHolder
           ? { actionType: "NONE", playerId: null, isMyTurn: false }
           : state.currentTurn,
@@ -431,6 +433,7 @@ export function gameReducer(
         followingColor,
         hand: newHand,
         legalCards: newLegal,
+        lastTrick: null,
         currentTurn: isTurnHolder
           ? { actionType: "NONE", playerId: null, isMyTurn: false }
           : state.currentTurn,

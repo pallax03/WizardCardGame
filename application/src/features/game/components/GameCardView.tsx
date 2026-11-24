@@ -3,7 +3,7 @@
 import { cn } from "@/lib/utils";
 import type { Card, CardColor } from "../types";
 import { cardToString } from "../state/gameReducer";
-import { CARD_COLOR_STYLES } from "./cardStyles";
+import { CARD_COLOR_STYLES, CARD_NEON_STYLES } from "./cardStyles";
 import { t } from "@/ui/i18n/core";
 
 interface GameCardViewProps {
@@ -15,6 +15,7 @@ interface GameCardViewProps {
   onClick?: () => void;
   size?: "sm" | "md" | "lg";
   effectiveColor?: string;
+  neonColor?: CardColor | null;
 }
 
 const gameI18n = t("game");
@@ -28,6 +29,7 @@ export function GameCardView({
   onClick,
   size = "md",
   effectiveColor,
+  neonColor = null,
 }: GameCardViewProps) {
   const sizeClasses = {
     sm: "h-[min(4.5rem,12svh)] sm:h-[min(7rem,15svh)] lg:h-[min(9rem,18svh)] w-auto aspect-[2/3] text-[clamp(10px,1.5svh,12px)] sm:text-[clamp(12px,2svh,14px)] p-1.5 sm:p-2 rounded-lg sm:rounded-xl",
@@ -85,7 +87,8 @@ export function GameCardView({
           "ring-4 ring-white -translate-y-4 shadow-2xl shadow-white/50 scale-105 z-20",
         isHinted &&
           !isSelected &&
-          "ring-4 ring-purple-400 -translate-y-2 shadow-2xl shadow-purple-500/50 scale-105"
+          "ring-4 ring-purple-400 -translate-y-2 shadow-2xl shadow-purple-500/50 scale-105",
+        neonColor && CARD_NEON_STYLES[neonColor]
       )}
     >
       <div className="flex justify-between items-start">

@@ -18,9 +18,14 @@ object InvitationEvent:
    * Prompts the player to place their bid.
    *
    * @param invalidBid the forbidden bid value for the dealer under the last-player rule, if applicable.
+   * @param isFirstBid whether this is the opening bid of a round after the first (following a trick recap).
    */
-  case class WaitingForBid(destinationId: PlayerId, round: Round, invalidBid: Option[Bid] = None)
-      extends InvitationEvent
+  case class WaitingForBid(
+      destinationId: PlayerId,
+      round: Round,
+      invalidBid: Option[Bid] = None,
+      isFirstBid: Boolean = false
+  ) extends InvitationEvent
 
   /**
    * Prompts the player to play a card.

@@ -28,7 +28,7 @@ class TestGameState extends AnyWordSpec with Matchers:
       "return WaitingForBid with the restricted bid if it's the last player" in:
         val bids = Bids.empty + (p1 place 1)
         GameState.Bidding(core, bids, p2).pendingInvitation(p2) match
-          case Some(InvitationEvent.WaitingForBid(p, 1, Some(0))) =>
+          case Some(InvitationEvent.WaitingForBid(p, 1, Some(0), _)) =>
             p shouldBe p2
           case _ => fail("Expected WaitingForBid with restricted bid")
 

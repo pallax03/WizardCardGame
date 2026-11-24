@@ -18,7 +18,7 @@ object FallbackStrategy:
   def fallbackMove(invitationEvent: InvitationEvent): GameAction = invitationEvent match
     case InvitationEvent.WaitingForTrump(playerId, colorOptions) =>
       GameAction.ResolveTrumpColor(playerId, colorOptions(Random.nextInt(colorOptions.length)))
-    case InvitationEvent.WaitingForBid(playerId, round, invalidBid) =>
+    case InvitationEvent.WaitingForBid(playerId, round, invalidBid, _) =>
       val validBids = (0 to (round / 2) + 1).filterNot(b => invalidBid.contains(b))
       GameAction.PlaceBid(playerId, validBids(Random.nextInt(validBids.size)))
     case InvitationEvent.WaitingForCard(playerId, legalCards, _) =>

@@ -79,7 +79,7 @@ class TestWizardEventsCodecs extends AnyWordSpec with Matchers:
     "encode WaitingForBid correctly" in:
       val event: WizardEvent = InvitationEvent.WaitingForBid(p2, round)
       val jsonString = event.toJson
-      jsonString shouldBe """{"event":{"type":"InvitationEvent","action":"WaitingForBid","destinationId":2,"fields":{"round":2,"invalidBid":null}}}"""
+      jsonString shouldBe """{"event":{"type":"InvitationEvent","action":"WaitingForBid","destinationId":2,"fields":{"round":2,"invalidBid":null,"isFirstBid":false}}}"""
       jsonString.decodeAs[WizardEvent].value shouldBe event
     "encode WaitingForCard correctly" in:
       val event: WizardEvent = InvitationEvent.WaitingForCard(p1, p1Cards, true)

@@ -31,7 +31,7 @@ import io.github.pallax03.wizard.util.{ChannelsKeys, WizardLogger}
  *  - Periodically executes `XAUTOCLAIM` to reclaim abandoned tasks from failed worker nodes.
  *  - Automatically recreates the consumer group from ID `0` if `NOGROUP` is detected at runtime.
  *  - Resolves player difficulty ([[io.github.pallax03.wizard.engine.lobby.BotsDifficulty]]) and invokes [[BotStrategy]].
- *  - Injects a realistic delay (800ms-2000ms, +5s on lead cards) to simulate human think time.
+ *  - Injects a realistic delay (800ms-2000ms, +5s after trick/round recap) to simulate human think time.
  *  - Submits the chosen action to [[InboundPort]] with guaranteed fallback to [[FallbackStrategy]] on rejection.
  *  - Acknowledges stream entries via `XACK` upon completion.
  */
@@ -132,9 +132,13 @@ class BotManagerVerticle(
         case Left(_)     => ackEntry(entryId)
     catch case e: Exception => logError(s"Entry parse failed: ${e.getMessage}")
 
-  private def computeDelay(inv: InvitationEvent): Int = inv match
+  private[bot] def computeDelay(inv: InvitationEvent): Int = inv match
     case c: InvitationEvent.WaitingForCard if c.isTableEmpty =>
-      DEFAULT_BOT_DELAY_MS + FIRST_CARD_DELAY_MS
+      DEFAULT_BOT_DELAY_MS + TRICK_RECAP_DELAY_MS
+    case b: InvitationEvent.WaitingForBid if b.isFirstBid =>
+      DEFAULT_BOT_DELAY_MS + TRICK_RECAP_DELAY_MS
+    case _: InvitationEvent.WaitingForTrump =>
+      DEFAULT_BOT_DELAY_MS + TRICK_RECAP_DELAY_MS
     case _ => DEFAULT_BOT_DELAY_MS
 
   private def processTask(entryId: String, task: BotTask): Unit =
@@ -218,7 +222,7 @@ class BotManagerVerticle(
 
 object BotManagerVerticle:
   private def DEFAULT_BOT_DELAY_MS: Int = Random.between(800, 2000)
-  private def FIRST_CARD_DELAY_MS: Int = 5000
+  private val TRICK_RECAP_DELAY_MS: Int = 5000
   private val POLL_INTERVAL_MS: Long = 500L
   private val CLAIM_CHECK_INTERVAL_MS: Long = 10_000L
   private val CLAIM_IDLE_MS: Long = 15_000L

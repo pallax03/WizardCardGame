@@ -75,14 +75,8 @@ export function useGameBoard(customPlayerId?: number) {
   } | null>(null);
   const [revealSecondsLeft, setRevealSecondsLeft] = useState(0);
   const trickWonCountRef = useRef(0);
-  const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const revealIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const dismissRevealedTrick = useCallback(() => {
-    if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
-    if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
-    revealTimeoutRef.current = null;
-    revealIntervalRef.current = null;
     setRevealedTrick(null);
     setRevealSecondsLeft(0);
   }, []);
@@ -138,7 +132,12 @@ export function useGameBoard(customPlayerId?: number) {
     [lobbyId, playerId]
   );
 
+  const sessionKeyRef = useRef(`${lobbyId}:${playerId ?? ""}`);
+
   useEffect(() => {
+    const nextKey = `${lobbyId}:${playerId ?? ""}`;
+    if (sessionKeyRef.current === nextKey) return;
+    sessionKeyRef.current = nextKey;
     queueMicrotask(() => {
       snapshotRequestIdRef.current += 1;
       setSnapshotState(null);
@@ -155,10 +154,6 @@ export function useGameBoard(customPlayerId?: number) {
       setIsHintLoading(false);
       hasConnectedRef.current = false;
       trickWonCountRef.current = 0;
-      if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
-      if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
-      revealTimeoutRef.current = null;
-      revealIntervalRef.current = null;
       setRevealedTrick(null);
       setRevealSecondsLeft(0);
     });
@@ -212,10 +207,14 @@ export function useGameBoard(customPlayerId?: number) {
 
   const gameState = useMemo<GameBoardState>(() => {
     if (!snapshotState) return eventBasedState;
+    const baseSnapshot: GameBoardState = {
+      ...snapshotState,
+      lastTrick: snapshotState.lastTrick ?? eventBasedState.lastTrick,
+    };
     const tail = snapshotBaseline <= gameEvents.length
       ? gameEvents.slice(snapshotBaseline)
       : gameEvents;
-    return tail.reduce((state, event) => gameReducer(state, event, reducerPlayerId), snapshotState);
+    return tail.reduce((state, event) => gameReducer(state, event, reducerPlayerId), baseSnapshot);
   }, [snapshotState, snapshotBaseline, gameEvents, eventBasedState, reducerPlayerId]);
 
   const turnTimerDuration = useMemo(() => {
@@ -248,15 +247,12 @@ export function useGameBoard(customPlayerId?: number) {
     const turnKey = `${gameState.currentTurn.playerId}-${gameState.currentTurn.actionType}-${gameState.round}-${turnTimerDuration}`;
 
     if (turnKey !== turnKeyRef.current) {
-      console.log("[TIMER] New turn key:", turnKey, "prev:", turnKeyRef.current, "duration:", turnTimerDuration);
       turnKeyRef.current = turnKey;
       turnDeadlineRef.current = Date.now() + turnTimerDuration * 1000;
-      console.log("[TIMER] Deadline in", turnTimerDuration, "s, at", new Date(turnDeadlineRef.current).toISOString());
     }
 
     const deadline = turnDeadlineRef.current!;
     const initialSeconds = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
-    console.log("[TIMER] Starting interval, initialSeconds:", initialSeconds, "deadline delta:", (deadline - Date.now()) / 1000);
     queueMicrotask(() => setTurnTimerSeconds(initialSeconds));
     const interval = setInterval(() => {
       setTurnTimerSeconds(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
@@ -264,18 +260,10 @@ export function useGameBoard(customPlayerId?: number) {
     return () => clearInterval(interval);
   }, [turnTimerDuration, gameState.currentTurn.playerId, gameState.currentTurn.actionType, gameState.round]);
 
-  const clearRevealTimers = () => {
-    if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
-    if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
-    revealTimeoutRef.current = null;
-    revealIntervalRef.current = null;
-  };
-
   useEffect(() => {
     if (trickWonCount <= trickWonCountRef.current) {
       if (trickWonCount < trickWonCountRef.current) {
         trickWonCountRef.current = trickWonCount;
-        clearRevealTimers();
         queueMicrotask(() => {
           setRevealedTrick(null);
           setRevealSecondsLeft(0);
@@ -283,43 +271,41 @@ export function useGameBoard(customPlayerId?: number) {
       }
       return;
     }
-    trickWonCountRef.current = trickWonCount;
     const snapshot = gameState.lastTrick;
     if (!snapshot || !snapshot.entries || snapshot.entries.length === 0) return;
-    clearRevealTimers();
-    const entries = snapshot.entries;
-    const winningCard = snapshot.winningCard;
-    const winnerId = snapshot.winnerId;
-    const bids = snapshot.bids;
-    const tricksSnapshot = snapshot.tricksSnapshot;
+    trickWonCountRef.current = trickWonCount;
+    const { entries, winningCard, winnerId, bids, tricksSnapshot, round } = snapshot;
     queueMicrotask(() => {
-      setRevealedTrick({ entries, winningCard, winnerId, bids, tricksSnapshot, round: snapshot.round });
+      setRevealedTrick({ entries, winningCard, winnerId, bids, tricksSnapshot, round });
       setRevealSecondsLeft(TRICK_REVEAL_SECONDS);
     });
+  }, [trickWonCount, gameState.lastTrick]);
+
+  useEffect(() => {
+    if (!revealedTrick) return;
     const deadline = Date.now() + TRICK_REVEAL_SECONDS * 1000;
-    revealIntervalRef.current = setInterval(() => {
-      setRevealSecondsLeft(Math.max(0, Math.ceil((deadline - Date.now()) / 1000)));
+    const interval = setInterval(() => {
+      const remaining = Math.max(0, Math.ceil((deadline - Date.now()) / 1000));
+      setRevealSecondsLeft(remaining);
+      if (remaining <= 0) {
+        setRevealedTrick(null);
+      }
     }, 200);
-    revealTimeoutRef.current = setTimeout(() => {
-      clearRevealTimers();
+    const timeout = setTimeout(() => {
       setRevealedTrick(null);
       setRevealSecondsLeft(0);
     }, TRICK_REVEAL_SECONDS * 1000);
-  }, [trickWonCount, gameState.lastTrick]);
-
-  useEffect(
-    () => () => {
-      if (revealTimeoutRef.current) clearTimeout(revealTimeoutRef.current);
-      if (revealIntervalRef.current) clearInterval(revealIntervalRef.current);
-    },
-    [],
-  );
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
+  }, [revealedTrick]);
 
   useEffect(() => {
-    if (revealedTrick && gameState.status === "PLAYING" && gameState.table.length > 0) {
+    if (revealedTrick && !gameState.lastTrick) {
       queueMicrotask(() => dismissRevealedTrick());
     }
-  }, [gameState.status, gameState.table.length, revealedTrick, dismissRevealedTrick]);
+  }, [gameState.lastTrick, revealedTrick, dismissRevealedTrick]);
 
   const isMyTurn = gameState.currentTurn.isMyTurn && playerId !== null;
   const hasAlreadyBid = playerId !== null && gameState.bids[playerId] !== undefined;

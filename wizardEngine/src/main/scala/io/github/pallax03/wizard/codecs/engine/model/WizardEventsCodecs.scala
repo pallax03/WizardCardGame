@@ -108,7 +108,8 @@ object WizardEventsCodecs:
             p <- ev.get[PlayerId]("destinationId")
             r <- fields.get[Round]("round")
             i <- fields.get[Option[Bid]]("invalidBid")
-          yield InvitationEvent.WaitingForBid(p, r, i)
+            first = fields.get[Boolean]("isFirstBid").getOrElse(false)
+          yield InvitationEvent.WaitingForBid(p, r, i, first)
         case "WaitingForCard" =>
           for
             p <- ev.get[PlayerId]("destinationId")

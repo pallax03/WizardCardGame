@@ -206,6 +206,8 @@ export const it = {
     rotate_device: "Ruota il dispositivo",
     rotate_device_desc: "Giocando da smartphone, utilizza l'orientamento verticale per un'esperienza ottimale.",
     dismiss_trick_tooltip: "Clicca per chiudere la presa",
+    trick_starter_tooltip: "Primo di mano (ha iniziato il giro)",
+    turn_order_tooltip: "Senso del giro dei turni",
     choose_color: (color: string) => `Scegli ${color}`,
   }
 };
@@ -417,6 +419,8 @@ export const en = {
     rotate_device: "Rotate device",
     rotate_device_desc: "When playing on a smartphone, use portrait orientation for an optimal experience.",
     dismiss_trick_tooltip: "Click to dismiss trick",
+    trick_starter_tooltip: "Trick leader (started this turn)",
+    turn_order_tooltip: "Turn order direction",
     choose_color: (color: string) => `Choose ${color}`,
   }
 };

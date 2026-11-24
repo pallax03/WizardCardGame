@@ -3,6 +3,8 @@ import io.vertx.core.Future as VertxFuture
 import io.vertx.redis.client.{Command, Response}
 
 import io.github.pallax03.wizard.engine.adapters.redis.StubRedis
+import io.github.pallax03.wizard.engine.model.basic.PlayerId
+import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.ports.*
 import io.github.pallax03.wizard.util.ChannelsKeys
 
@@ -146,3 +148,17 @@ class TestBotManagerVerticle extends AnyWordSpec with Matchers with ScalaFutures
         val noMessage = new RuntimeException()
         BotManagerVerticle.isNoGroupError(noMessage) shouldBe false
         BotManagerVerticle.isBusyGroupError(noMessage) shouldBe false
+
+    "computing bot turn delays" should:
+      "include the recap delay for lead cards, opening bids after round 1, and trump choice" in:
+        val (verticle, _) = newVerticle()
+        val p1 = PlayerId(1)
+        verticle.computeDelay(InvitationEvent.WaitingForCard(p1, Nil, isTableEmpty = true)) should
+          be >= 5800
+        verticle.computeDelay(InvitationEvent.WaitingForCard(p1, Nil, isTableEmpty = false)) should
+          be < 5000
+        verticle.computeDelay(InvitationEvent.WaitingForBid(p1, 2, isFirstBid = true)) should
+          be >= 5800
+        verticle.computeDelay(InvitationEvent.WaitingForBid(p1, 2, isFirstBid = false)) should
+          be < 5000
+        verticle.computeDelay(InvitationEvent.WaitingForTrump(p1)) should be >= 5800
