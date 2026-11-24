@@ -1,3 +1,10 @@
+## [1.2.3](https://github.com/pallax03/WizardCardGame/compare/v1.2.2...v1.2.3) (2026-11-24)
+
+
+### Bug Fixes
+
+* **repo:** guard husky prepare script and pin engines.node to 24.x for Vercel ([#215](https://github.com/pallax03/WizardCardGame/issues/215)) ([e57786f](https://github.com/pallax03/WizardCardGame/commit/e57786f501f34cb9079a1beada7932096e55df2d)), closes [#200](https://github.com/pallax03/WizardCardGame/issues/200)
+
 ## [1.2.2](https://github.com/pallax03/WizardCardGame/compare/v1.2.1...v1.2.2) (2026-11-24)
 
 
