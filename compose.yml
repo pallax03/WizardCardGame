@@ -20,6 +20,7 @@ services:
     environment:
       - ROLE=engine
       - APP_ENV=${APP_ENV:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - HTTP_PORT=${HTTP_PORT:-5001}
       - WS_PORT=${WS_PORT:-5002}
       - REDIS_HOST=redis
@@ -36,6 +37,7 @@ services:
     environment:
       - ROLE=bot_worker
       - APP_ENV=${APP_ENV:-development}
+      - LOG_LEVEL=${LOG_LEVEL:-INFO}
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - REDIS_PASSWORD=${REDIS_PASSWORD:-}

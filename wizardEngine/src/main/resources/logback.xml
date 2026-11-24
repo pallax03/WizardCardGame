@@ -2,33 +2,36 @@
     <property name="APP_ENV" value="${APP_ENV:-development}" />
     <property name="APP_LOG_LEVEL" value="${LOG_LEVEL:-INFO}" />
 
-    <appender name="STDOUT_TEXT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{lobbyId:-system}] [%X{playerId:-system}] - %msg%n</pattern>
-        </encoder>
-    </appender>
+    <condition class="ch.qos.logback.core.boolex.PropertyEqualityCondition">
+        <key>APP_ENV</key>
+        <value>production</value>
+    </condition>
+    <if>
+        <then>
+            <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder class="net.logstash.logback.encoder.LogstashEncoder" />
+            </appender>
+        </then>
+        <else>
+            <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+                <encoder>
+                    <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} [%X{lobbyId:-system}] [%X{playerId:-system}] - %msg%n</pattern>
+                </encoder>
+            </appender>
+        </else>
+    </if>
 
-    <appender name="STDOUT_JSON" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder">
-            <!-- Include MDC explicitly or let LogstashEncoder handle it by default -->
-        </encoder>
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>512</queueSize>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="CONSOLE" />
     </appender>
 
     <logger name="io.netty" level="WARN" />
     <logger name="io.vertx" level="WARN" />
-
     <logger name="io.github.pallax03.wizard" level="${APP_LOG_LEVEL}" />
-    <logger name="WizardApp" level="${APP_LOG_LEVEL}" />
 
     <root level="WARN">
-        <if condition='property("APP_ENV").equals("production")'>
-            <then>
-                <appender-ref ref="STDOUT_JSON" />
-            </then>
-            <else>
-                <appender-ref ref="STDOUT_TEXT" />
-            </else>
-        </if>
+        <appender-ref ref="ASYNC" />
     </root>
-
 </configuration>

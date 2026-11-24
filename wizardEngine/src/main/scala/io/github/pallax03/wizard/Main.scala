@@ -15,6 +15,7 @@ import io.github.pallax03.wizard.engine.adapters.VertxWebSocketsAdapter
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardPrologAdapter
 import io.github.pallax03.wizard.engine.adapters.redis.*
 import io.github.pallax03.wizard.engine.ports.*
+import io.github.pallax03.wizard.util.WizardLogger
 
 /**
  * Application entry point and hexagonal runtime assembler.
@@ -36,6 +37,7 @@ import io.github.pallax03.wizard.engine.ports.*
  *  - `REDIS_PASSWORD`: optional Redis authentication credential.
  *  - `REDIS_POOL_SIZE`: Redis client connection pool capacity (default: 6).
  *  - `APP_ENV`: environment mode (`development` exposes Swagger documentation, `production` disables it).
+ *  - `LOG_LEVEL`: logging threshold for `io.github.pallax03.wizard` (default: `INFO`).
  */
 object Main:
   private val httpPort: Int = sys.env.getOrElse("HTTP_PORT", "5001").toInt
@@ -67,9 +69,7 @@ object Main:
 
     role match
       case "bot_worker" =>
-        println(
-          s"[Main] Starting as BOT WORKER (redis=$redisHost:$redisPort)"
-        )
+        WizardLogger.info(s"Starting as BOT WORKER (redis=$redisHost:$redisPort)")
         deploy(
           vertx,
           BotManagerVerticle(
@@ -83,8 +83,8 @@ object Main:
         )
 
       case _ =>
-        println(
-          s"[Main] Starting as ENGINE (http=$httpPort, ws=$wsPort, redis=$redisHost:$redisPort)"
+        WizardLogger.info(
+          s"Starting as ENGINE (http=$httpPort, ws=$wsPort, redis=$redisHost:$redisPort)"
         )
         deploy(
           vertx,
@@ -129,5 +129,5 @@ object Main:
     vertx
       .deployVerticle(verticle)
       .onComplete: ar =>
-        if ar.succeeded() then println(s"[$name] deployed (port=$port)")
-        else println(s"[$name] Deploy FAILED: ${ar.cause().getMessage}")
+        if ar.succeeded() then WizardLogger.info(s"[$name] deployed (port=$port)")
+        else WizardLogger.error(s"[$name] Deploy FAILED: ${ar.cause().getMessage}", ar.cause())

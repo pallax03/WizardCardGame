@@ -24,9 +24,8 @@ object Dependencies {
     "com.softwaremill.sttp.tapir" %% "tapir-asyncapi-docs" % tapir,
     "com.softwaremill.sttp.apispec" %% "asyncapi-circe-yaml" % apispec,
     "com.softwaremill.sttp.tapir" %% "tapir-prometheus-metrics" % tapir,
-    "ch.qos.logback" % "logback-classic" % "1.6.6",
+    "ch.qos.logback" % "logback-classic" % "1.6.8",
     "net.logstash.logback" % "logstash-logback-encoder" % "9.0",
-    "org.codehaus.janino" % "janino" % "3.1.12",
     "org.scalatest" %% "scalatest" % "3.2.20" % Test,
     "com.tngtech.archunit" % "archunit" % "1.5.1" % Test,
     "com.softwaremill.sttp.tapir" %% "tapir-sttp-stub4-server" % tapir % Test
