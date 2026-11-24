@@ -343,7 +343,8 @@ object GameEngine:
           InvitationEvent.WaitingForBid(
             playerTurn,
             round,
-            Bids.empty.notValidBid(round, newCore.playersIds.size)
+            Bids.empty.notValidBid(round, newCore.playersIds.size),
+            isFirstBid = round > Round.start
           )
         )
       case _ => List.empty

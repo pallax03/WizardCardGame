@@ -2,7 +2,7 @@ package io.github.pallax03.wizard.engine.model.core.state
 
 import io.github.pallax03.wizard.engine.model.basic.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bids, Tricks}
-import io.github.pallax03.wizard.engine.model.basic.gameplay.Table
+import io.github.pallax03.wizard.engine.model.basic.gameplay.{Round, Table}
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.model.rules.BiddingRules.notValidBid
 import io.github.pallax03.wizard.engine.model.rules.TableRules.legalCards
@@ -52,7 +52,8 @@ object GameState:
             InvitationEvent.WaitingForBid(
               playerId,
               core.round,
-              bids.notValidBid(core.round, core.playersIds.size)
+              bids.notValidBid(core.round, core.playersIds.size),
+              isFirstBid = bids.isEmpty && core.round > Round.start
             )
           )
         case GameState.Playing(core: ServerCoreState, _, table, turn, _) if turn == playerId =>
