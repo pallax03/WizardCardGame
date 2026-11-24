@@ -1,20 +1,22 @@
 # Stage 1: Build Next.js
-FROM node:20-alpine AS builder
+FROM node:24-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
-COPY . .
+COPY package.json package-lock.json ./
+COPY application/package.json ./application/
+RUN npm ci --workspace=application
+COPY application ./application
 ENV STANDALONE_BUILD=true
-RUN npm run build
+RUN npm run build:client
 
 # Stage 2: Run standalone Next.js
-FROM node:20-alpine AS runner
+FROM node:24-alpine AS runner
 WORKDIR /app
-ENV NODE_ENV production
-# Copy standalone build output
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/public ./public
+ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
+COPY --from=builder --chown=node:node /app/application/.next/standalone ./
+COPY --from=builder --chown=node:node /app/application/.next/static ./application/.next/static
+COPY --from=builder --chown=node:node /app/application/public ./application/public
+USER node
 EXPOSE 3000
-ENV PORT 3000
-CMD ["node", "server.js"]
+CMD ["node", "application/server.js"]

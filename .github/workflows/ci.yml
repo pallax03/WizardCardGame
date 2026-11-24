@@ -31,14 +31,11 @@ jobs:
 
       - name: Setup Node.js
         uses: ./.github/actions/setup-node
-        with:
-          working-directory: ./application
 
       - name: Check & Build Application
-        working-directory: ./application
         run: |
-          npm run check
-          npm run build
+          npm run check:client
+          npm run build:client
 
   wizard-engine-test:
     strategy:
