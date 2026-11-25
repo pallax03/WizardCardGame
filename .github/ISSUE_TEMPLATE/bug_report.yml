@@ -42,4 +42,3 @@ body:
       label: "Resolution Requirement (Regression Test)"
       options:
         - label: "A regression test reproducing this bug must be added before closing."
-          required: true

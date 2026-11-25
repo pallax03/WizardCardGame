@@ -7,21 +7,18 @@ body:
     id: description
     attributes:
       label: "Description"
-      description: "Describe what needs to be implemented or improved, and the motivation behind it."
-      placeholder: "Briefly explain the goal, expected changes, or context..."
+      description: "State what needs to be done and why."
+      placeholder: "Briefly explain the goal, context, or user story..."
     validations:
       required: true
 
-  - type: checkboxes
+  - type: textarea
     id: dod
     attributes:
       label: "Definition of Done (DoD)"
-      description: "Criteria required to merge the Pull Request and close this issue:"
-      options:
-        - label: "Code compiles and passes static analysis (`scalafmt`/`scalafix` or `eslint`/`tsc`)."
-          required: true
-        - label: "Commits are atomic and strictly follow `<type>(<scope>): <summary>`."
-          required: true
-        - label: "Unit or integration tests cover the new logic / regression."
-          required: true
-        - label: "Relevant documentation, OpenAPI specs, or Astro report updated (if applicable)."
+      description: "Task-specific completion criteria (optional)."
+      placeholder: |
+        - [ ] Specific verifiable outcome 1
+        - [ ] Specific verifiable outcome 2
+    validations:
+      required: false
