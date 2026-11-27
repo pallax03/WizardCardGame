@@ -1,0 +1,130 @@
+---
+title: 2. Requirements
+description: Act III (SPE) functional user stories with DoD, non-functional quality attributes, and implementation constraints.
+---
+
+import { Card, CardGrid, TabItem, Tabs } from '@astrojs/starlight/components';
+
+*Wizard* gameplay is sealed in [`v1.0.0` (Act I-II)](https://github.com/pallax03/WizardCardGame/milestone/1?closed=1) ([Chapter 1](/WizardCardGame/01-introduction/)). Atomic Act III tasks live in **GitHub Issues**.
+
+## 2.1 Functional Requirements
+
+<Tabs>
+  <TabItem label="bot-dialogue (M4)">
+    <CardGrid>
+      <Card title="FR-01 · Per-Bot Tone">
+        - **Story**: Any player can set each bot's tone (`Silent`, `Friendly`, `Toxic`) independently.
+        - **DoD**: Live updates apply immediately; muting allows one parting shot.
+        - **Issues**: [#204](https://github.com/pallax03/WizardCardGame/issues/204), [#205](https://github.com/pallax03/WizardCardGame/issues/205)
+      </Card>
+
+      <Card title="FR-02 · Contextual Reactions">
+        - **Story**: Bots react to gameplay, timing, and connection events.
+        - **DoD**: Rules evaluate domain facts without coupling to core game logic.
+        - **Issues**: [#203](https://github.com/pallax03/WizardCardGame/issues/203), [#204](https://github.com/pallax03/WizardCardGame/issues/204), [#218](https://github.com/pallax03/WizardCardGame/issues/218)
+      </Card>
+
+      <Card title="FR-03 · Pacing & Intensity Gating">
+        - **Story**: Keep bot chat sparse and non-repetitive even with 5 bots; high-intensity lines stay rare.
+        - **DoD**: Gating/cooldowns throttle bursts; anti-repetition spans rematches; 0 online humans mutes output.
+        - **Issues**: [#203](https://github.com/pallax03/WizardCardGame/issues/203), [#218](https://github.com/pallax03/WizardCardGame/issues/218)
+      </Card>
+
+      <Card title="FR-04 · Public Chat, DMs, Chains & AFK">
+        - **Story**: Support public banter, targeted DMs, short reply chains, and AFK-replacement bots.
+        - **DoD**: Enforces **no self-DM**; AFK bots speak publicly under the offline player's avatar.
+        - **Issues**: [#203](https://github.com/pallax03/WizardCardGame/issues/203), [#218](https://github.com/pallax03/WizardCardGame/issues/218), [#205](https://github.com/pallax03/WizardCardGame/issues/205)
+      </Card>
+
+      <Card title="FR-05 · Per-Player Localization">
+        - **Story**: Each player reads bot messages in their own client language (`it` / `en`).
+        - **DoD**: Backend stays locale-agnostic (emits message reference + params); client resolves localized text.
+        - **Issues**: [#203](https://github.com/pallax03/WizardCardGame/issues/203), [#205](https://github.com/pallax03/WizardCardGame/issues/205)
+      </Card>
+
+      <Card title="FR-06 · Decoupled Catalog">
+        - **Story**: Maintain rules and lines outside the engine and public repository.
+        - **DoD**: Inactive entries skipped; undeclared placeholders rejected; updates need zero engine deploys.
+        - **Issues**: [#202](https://github.com/pallax03/WizardCardGame/issues/202), [#218](https://github.com/pallax03/WizardCardGame/issues/218)
+      </Card>
+    </CardGrid>
+  </TabItem>
+
+  <TabItem label="Process & Governance (M5 / M3)">
+    <CardGrid>
+      <Card title="FR-07 · Automated QA & Releases">
+        - **Story**: Validate every PR across OSes and publish versioned releases automatically.
+        - **DoD**: Multi-OS CI green; `sbt check` and `npm run check` pass; SemVer releases via Bot App.
+        - **Milestone**: [M5](https://github.com/pallax03/WizardCardGame/milestone/5)
+      </Card>
+
+      <Card title="FR-08 · Licensing, FTO & AI Governance">
+        - **Story**: Document license choice, FTO boundaries, and GenAI usage.
+        - **DoD**: `LICENSE`, `AI-DECLARATION.md`, `AGENTS.md`, and `README.md` audited.
+        - **Issues**: [#126](https://github.com/pallax03/WizardCardGame/issues/126), [#191](https://github.com/pallax03/WizardCardGame/issues/191)
+      </Card>
+    </CardGrid>
+  </TabItem>
+</Tabs>
+
+---
+
+## 2.2 Non-Functional Requirements & Constraints
+
+<Tabs>
+  <TabItem label="Quality Attributes (NFR)">
+    <CardGrid>
+      <Card title="NFR-01 · Fog of War & Security">
+        - **Rule**: Zero access to private hands; least-privilege read-only catalog access.
+        - **DoD**: Public-only event feed and read-only DB role verified.
+        - **Issues**: [#218](https://github.com/pallax03/WizardCardGame/issues/218), [#202](https://github.com/pallax03/WizardCardGame/issues/202)
+      </Card>
+
+      <Card title="NFR-02 · Fault Isolation">
+        - **Rule**: Zero turn latency added; matches continue if the dialogue worker stops.
+        - **DoD**: No synchronous engine calls; worker stop test leaves play unaffected.
+        - **Issues**: [#218](https://github.com/pallax03/WizardCardGame/issues/218)
+      </Card>
+
+      <Card title="NFR-03 · Causal Consistency">
+        - **Rule**: Public bot messages render in consistent order with gameplay events.
+        - **DoD**: All bot messages broadcast via central Redis Pub/Sub.
+        - **Issues**: [#218](https://github.com/pallax03/WizardCardGame/issues/218)
+      </Card>
+
+      <Card title="NFR-04 · Contract Coherence">
+        - **Rule**: Single source of truth for shared public event schemas across TypeScript services.
+        - **DoD**: `@wizard/protocol` compiles and is consumed by client and worker.
+        - **Issues**: [#217](https://github.com/pallax03/WizardCardGame/issues/217)
+      </Card>
+
+      <Card title="NFR-05 · Resource Budget (<= 1 GB)">
+        - **Rule**: Backend stack fits `<= 1 GB RAM`; zero external HTTP calls during turns.
+        - **DoD**: Memory caps in `compose.yml`; catalog cached in RAM.
+        - **Issues**: [#218](https://github.com/pallax03/WizardCardGame/issues/218), [#202](https://github.com/pallax03/WizardCardGame/issues/202)
+      </Card>
+
+      <Card title="NFR-06 · QA & Versioning (>= 75% Core)">
+        - **Rule**: Bisectable Conventional Commits, containerized integration tests, static analysis, `/api/v1`.
+        - **DoD**: CI enforces coverage, linters, and OpenAPI `/api/v1` parity.
+        - **Milestone**: [M5](https://github.com/pallax03/WizardCardGame/milestone/5)
+      </Card>
+    </CardGrid>
+  </TabItem>
+
+  <TabItem label="Constraints (IR)">
+    <CardGrid>
+      <Card title="IR-01 · Act I-II Stack">
+        Interoperate with the existing **JVM (Scala 3 + tuProlog)** engine, **Redis**, and **TypeScript / Next.js** client.
+      </Card>
+
+      <Card title="IR-02 · SPE Mandates">
+        Target `>= 2` platforms (dominant `<= 75%`), containerization, `AI-DECLARATION.md`, and `AGENTS.md`.
+      </Card>
+
+      <Card title="IR-03 · Hosting Budget">
+        Single **1 GB RAM Azure Student VM** and free-tier services.
+      </Card>
+    </CardGrid>
+  </TabItem>
+</Tabs>
