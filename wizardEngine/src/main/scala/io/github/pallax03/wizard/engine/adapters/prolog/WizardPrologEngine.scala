@@ -1,7 +1,5 @@
 package io.github.pallax03.wizard.engine.adapters.prolog
 
-import scala.util.Using
-
 import io.github.pallax03.wizard.engine.adapters.prolog.WizardTermMapper.*
 import io.github.pallax03.wizard.engine.model.basic.bidding.{Bid, Trick}
 import io.github.pallax03.wizard.engine.model.basic.cards.{Card, Hand}
@@ -17,18 +15,8 @@ import alice.tuprolog.{Term, Theory}
  * and executes declarative queries, mapping solutions back into typed domain models.
  * Returns `Option` to enable robust fallback handling when Prolog queries fail.
  */
-class WizardPrologEngine:
-  private val prologEngine = PrologEngine.buildEngine(defineTheory)
-
-  private def defineTheory: Theory =
-    import PrologEngine.given
-    Seq(
-      "prolog/utils.pl",
-      "prolog/domain.pl",
-      "prolog/rules.pl",
-      "prolog/strategy.pl",
-      "prolog/api.pl"
-    ).map(f => Using.resource(scala.io.Source.fromResource(f))(_.mkString)).mkString("\n")
+class WizardPrologEngine(theory: Theory = WizardPrologEngine.defaultTheory):
+  private val prologEngine = PrologEngine.buildEngine(theory)
 
   /** Queries Prolog goal `choose_trump/2` to select the color maximizing hand potential. */
   def chooseTrumpColor(hand: Hand): Option[Card.Color] =
@@ -81,3 +69,14 @@ class WizardPrologEngine:
     prologEngine(goal)
       .find(_.isSuccess)
       .flatMap(solution => PrologEngine.extractVars(solution).get(extractTerm))
+
+object WizardPrologEngine:
+  val theoryResources: Seq[String] = Seq(
+    "prolog/utils.pl",
+    "prolog/domain.pl",
+    "prolog/rules.pl",
+    "prolog/strategy.pl",
+    "prolog/api.pl"
+  )
+
+  lazy val defaultTheory: Theory = PrologEngine.loadFromResources(theoryResources)

@@ -15,6 +15,10 @@ object QualityPlugin extends AutoPlugin {
       "scalafmtCheckAll; scalafixAll --check; coverage; test; coverageReport"
     ) ++
       addCommandAlias("format", "scalafmtAll; scalafmtSbt; scalafixAll") ++
+      addCommandAlias(
+        "benchmark",
+        "Test / runMain io.github.pallax03.wizard.application.bot.strategy.arena.BotBenchmarkApp"
+      ) ++
       Seq(
         scalacOptions := Seq(
           "-deprecation",

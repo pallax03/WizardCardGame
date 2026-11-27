@@ -20,9 +20,10 @@ import io.github.pallax03.wizard.engine.ports.{AIPort, InboundPort}
  *  3. Move Legality Filtering: Filters Prolog card recommendations against [[Hand.legalCards]] to
  *     prevent illegal table plays.
  */
-class WizardPrologAdapter(inboundPort: InboundPort) extends AIPort(inboundPort):
-
-  private val engine = WizardPrologEngine()
+class WizardPrologAdapter(
+    inboundPort: InboundPort,
+    engine: WizardPrologEngine = WizardPrologEngine()
+) extends AIPort(inboundPort):
 
   /** @inheritdoc */
   override protected def resolveTrumpColorLogic(

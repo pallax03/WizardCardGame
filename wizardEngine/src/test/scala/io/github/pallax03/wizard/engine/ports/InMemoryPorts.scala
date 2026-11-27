@@ -7,7 +7,11 @@ import io.github.pallax03.wizard.engine.lobby.*
 import io.github.pallax03.wizard.engine.model.basic.PlayerId
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
-import io.github.pallax03.wizard.engine.model.core.state.{GameState, PlayerGameState}
+import io.github.pallax03.wizard.engine.model.core.state.{
+  GameState,
+  PlayerGameState,
+  ServerGameState
+}
 import io.github.pallax03.wizard.engine.model.core.{GameAction, GameActionError}
 import io.github.pallax03.wizard.engine.model.events.SystemEvent
 
@@ -155,6 +159,32 @@ object StubInboundPort:
 
   def failing(error: Throwable): StubInboundPort =
     StubInboundPort(stateHandler = (_, _) => Future.failed(error))
+
+/** In-memory [[InboundPort]] backed by a mutable [[ServerGameState]] enforcing Fog of War. */
+class InMemoryInboundPort extends InboundPort:
+  @volatile private var currentState: Option[ServerGameState] = None
+
+  def update(state: ServerGameState): Unit = currentState = Some(state)
+
+  override def getState(lobbyId: LobbyId, playerId: PlayerId): Future[Option[PlayerGameState]] =
+    Future.successful(currentState.map(PlayerGameState.from(_, playerId)))
+
+  override def startGame(
+      lobbyId: LobbyId,
+      players: List[PlayerId],
+      config: GameConfiguration
+  ): Future[Unit] = Future.unit
+
+  override def resumeGame(lobbyId: LobbyId): Future[Unit] = Future.unit
+  override def deleteGame(lobbyId: LobbyId): Future[Unit] = Future.unit
+
+  override def submitAction(
+      lobbyId: LobbyId,
+      action: GameAction
+  ): Future[Either[GameActionError, Unit]] = Future.successful(Right(()))
+
+  override def forceFallbackAction(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
+    Future.unit
 
 /** In-memory [[AIPort]] test double returning fixed hints for each matching game phase. */
 class StubAIPort(
