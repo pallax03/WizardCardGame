@@ -32,7 +32,7 @@ enum AIError:
  * that the game is in the appropriate phase, and delegates strategic inference to concrete
  * engine implementations (such as the Prolog rule engine).
  */
-trait AIPort(inboundPort: InboundPort):
+trait AIPort(val inboundPort: InboundPort):
 
   private def onRunningPhase[T](lobbyId: LobbyId)(playerId: PlayerId)(
       phaseLogic: PartialFunction[PlayerGameState, T]

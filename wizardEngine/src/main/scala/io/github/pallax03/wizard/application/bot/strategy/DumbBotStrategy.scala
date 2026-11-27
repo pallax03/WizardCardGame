@@ -7,14 +7,13 @@ import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent.{WaitingForBid, WaitingForCard}
+import io.github.pallax03.wizard.engine.ports.InboundPort
 
 /**
- * Baseline bot strategy that delegates all move decisions to [[FallbackStrategy]].
- *
- * Fails individual strategy choices to allow the template method in [[BotStrategy]]
- * to invoke deterministic, rule-compliant fallback moves ([[engine.model.rules.FallbackStrategy]]).
+ * Casual bot strategy that delegates move decisions to [[FallbackStrategy]]
+ * via the template method in [[BotStrategy]].
  */
-class DumbBotStrategy extends BotStrategy:
+class DumbBotStrategy(inboundPort: InboundPort) extends BotStrategy(inboundPort):
   private val recoveredByBotStrategy = Future.failed(Exception("recovered with FallbackStrategy"))
   override protected def chooseCard(lobbyId: LobbyId, event: WaitingForCard): Future[Card] =
     recoveredByBotStrategy

@@ -2,22 +2,24 @@ package io.github.pallax03.wizard.application.bot.strategy
 
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.data.OptionT
+
 import io.github.pallax03.wizard.engine.lobby.{BotsDifficulty, LobbyId}
 import io.github.pallax03.wizard.engine.model.basic.bidding.Bid
 import io.github.pallax03.wizard.engine.model.basic.cards.Card
 import io.github.pallax03.wizard.engine.model.core.GameAction
 import io.github.pallax03.wizard.engine.model.events.InvitationEvent
 import io.github.pallax03.wizard.engine.model.rules.FallbackStrategy
-import io.github.pallax03.wizard.engine.ports.AIPort
+import io.github.pallax03.wizard.engine.ports.{AIPort, InboundPort}
 
 /**
  * Strategy interface abstracting decision-making algorithms for automated bot players.
  *
  * Implements a template method in [[resolveInvitation]]: delegates individual move selections
  * (`chooseCard`, `chooseBid`, `chooseTrump`) to concrete difficulty strategies and automatically
- * falls back to [[FallbackStrategy]] if the strategy computation fails.
+ * falls back to [[FallbackStrategy]] using [[InboundPort]] state if the strategy computation fails.
  */
-trait BotStrategy:
+trait BotStrategy(inboundPort: InboundPort):
   protected def chooseCard(lobbyId: LobbyId, event: InvitationEvent.WaitingForCard): Future[Card]
   protected def chooseBid(lobbyId: LobbyId, event: InvitationEvent.WaitingForBid): Future[Bid]
   protected def chooseTrump(
@@ -36,9 +38,12 @@ trait BotStrategy:
       case e: InvitationEvent.WaitingForTrump =>
         chooseTrump(lobbyId, e).map(GameAction.ResolveTrumpColor(e.destinationId, _))
 
-    actionFuture.recover { _ => FallbackStrategy.fallbackMove(invitation) }
+    actionFuture.recoverWith: _ =>
+      OptionT(inboundPort.getState(lobbyId, invitation.destinationId))
+        .subflatMap(FallbackStrategy.fallbackMove(_, invitation.destinationId))
+        .getOrElseF(Future.failed(new IllegalStateException(s"No fallback move for $invitation")))
 
 object BotStrategy:
   def apply(difficulty: BotsDifficulty, port: AIPort): BotStrategy = difficulty match
-    case BotsDifficulty.Dumb   => new DumbBotStrategy
+    case BotsDifficulty.Dumb   => new DumbBotStrategy(port.inboundPort)
     case BotsDifficulty.Prolog => new PrologBotStrategy(port)
