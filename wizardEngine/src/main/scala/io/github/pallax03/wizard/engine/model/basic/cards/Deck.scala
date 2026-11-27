@@ -14,14 +14,14 @@ opaque type Deck = List[Card]
 
 object Deck:
   import cats.data.State
+  import scala.util.Random
 
   final val TOTAL_WIZARD: Int = 4
   final val TOTAL_JESTER: Int = 4
   final val TOTAL_SIZE: Int =
     TOTAL_JESTER + TOTAL_WIZARD + (Card.Rank.values.length * Card.Color.values.length)
 
-  def create(cards: List[Card]): Deck = cards.distinct
-  def create: Deck = DeckFactory.create()
+  def create(rng: Random = Random): Deck = DeckFactory.create(rng)
 
   extension (d: Deck)
     def length: Int = d.length
@@ -45,8 +45,7 @@ object Deck:
       currentDeck.splitAt(n).swap
 
   private object DeckFactory:
-    import scala.util.Random
-    def create(): Deck =
+    def create(rng: Random): Deck =
       val standards = for
         color <- Card.Color.values.toList
         rank <- Card.Rank.values.toList
@@ -55,4 +54,4 @@ object Deck:
       val wizards = (0 until TOTAL_WIZARD).map(Card.Wizard.apply)
       val jesters = (0 until TOTAL_JESTER).map(Card.Jester.apply)
 
-      Random.shuffle(standards ++ wizards ++ jesters)
+      rng.shuffle(standards ++ wizards ++ jesters)

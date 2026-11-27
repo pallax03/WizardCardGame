@@ -329,7 +329,7 @@ object GameEngine:
       round: Round,
       coreContext: ServerCoreState
   ): GameEngine =
-    val (newCore, gameState) = round.initialize(Deck.create).run(coreContext).value
+    val (newCore, gameState) = round.initialize(Deck.create()).run(coreContext).value
 
     val invitationEvents: List[WizardEvent] = gameState match
       case GameState.ChoosingTrump(_) =>
