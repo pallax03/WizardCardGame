@@ -1,6 +1,8 @@
 package io.github.pallax03.wizard.util
 
+import scala.io.Source
 import scala.jdk.CollectionConverters.*
+import scala.util.Using
 
 import alice.tuprolog.{Prolog, SolveInfo, Term, Theory}
 
@@ -14,6 +16,12 @@ import alice.tuprolog.{Prolog, SolveInfo, Term, Theory}
 object PrologEngine:
 
   given Conversion[String, Theory] = Theory.parseWithStandardOperators(_)
+
+  /** Loads and concatenates classpath Prolog theory resources into a single [[Theory]]. */
+  def loadFromResources(resources: Seq[String]): Theory =
+    resources
+      .map(res => Using.resource(Source.fromResource(res))(_.mkString))
+      .mkString("\n")
 
   /**
    * Builds a Prolog solver engine from a given theory.
