@@ -1,21 +1,29 @@
-% UTILS
-range(X, _, X).
-range(A, B, X) :- A2 is A+1, A2 =< B, range(A2, B, X).
+% WIZARD UTILS -> Pure O(1) / O(N) tail-recursive helpers missing from tuProlog BasicLibrary
 
-count(List, E, N) :- count(List, E, 0, N).
-count([], _, N, N).
-count([E | T], E, Acc, N) :- Acc2 is Acc + 1, count(T, E, Acc2, N).
-count([H | T], E, Acc, N) :- H \= E, count(T, E, Acc, N).
+% in_range(+Low, +High, +Value) -> deterministic O(1) integer bounds check
+in_range(Low, High, Value) :-
+    integer(Value),
+    Value >= Low,
+    Value =< High.
 
-min_max([H], H, H).
-min_max([H | T], H, Min) :- min_max(T, Mx, Min), H > Mx, !.
-min_max([H | T], Max, H) :- min_max(T, Max, Mn), H < Mn, !.
-min_max([H | T], Max, Min) :- min_max(T, Max, Min).
+% max_scored(+Pairs, -BestItem) -> O(N) selection of item with highest Score in pair(Score, Item)
+max_scored([pair(Score, Item) | Rest], BestItem) :-
+    max_scored_acc(Rest, Score, Item, BestItem).
 
-length([], 0).
-length([_|T], N) :- length(T, N1), N is N1 + 1.
+max_scored_acc([], _, BestItem, BestItem).
+max_scored_acc([pair(Score, Item) | Rest], BestScore, _, BestItem) :-
+    Score > BestScore, !,
+    max_scored_acc(Rest, Score, Item, BestItem).
+max_scored_acc([_ | Rest], BestScore, CurrentItem, BestItem) :-
+    max_scored_acc(Rest, BestScore, CurrentItem, BestItem).
 
-distinct(List, O) :- distinct(List, [], O).
-distinct([], _, []).
-distinct([H|T], Seen, O) :- member(H, Seen), !, distinct(T, Seen, O).
-distinct([H|T], Seen, [H|O]) :- distinct(T, [H|Seen], O).
+% min_scored(+Pairs, -BestItem) -> O(N) selection of item with lowest Score in pair(Score, Item)
+min_scored([pair(Score, Item) | Rest], BestItem) :-
+    min_scored_acc(Rest, Score, Item, BestItem).
+
+min_scored_acc([], _, BestItem, BestItem).
+min_scored_acc([pair(Score, Item) | Rest], BestScore, _, BestItem) :-
+    Score < BestScore, !,
+    min_scored_acc(Rest, Score, Item, BestItem).
+min_scored_acc([_ | Rest], BestScore, CurrentItem, BestItem) :-
+    min_scored_acc(Rest, BestScore, CurrentItem, BestItem).
