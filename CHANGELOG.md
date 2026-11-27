@@ -1,3 +1,10 @@
+## [1.2.4](https://github.com/pallax03/WizardCardGame/compare/v1.2.3...v1.2.4) (2026-11-27)
+
+
+### Bug Fixes
+
+* **util:** avoid SLF4J startup race in TestWizardLogger ([#227](https://github.com/pallax03/WizardCardGame/issues/227)) ([d227970](https://github.com/pallax03/WizardCardGame/commit/d2279701f70c45ec3f34e1f0998ec27b604c3a07)), closes [#226](https://github.com/pallax03/WizardCardGame/issues/226) [#225](https://github.com/pallax03/WizardCardGame/issues/225)
+
 ## [1.2.3](https://github.com/pallax03/WizardCardGame/compare/v1.2.2...v1.2.3) (2026-11-24)
 
 
