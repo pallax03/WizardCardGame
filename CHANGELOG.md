@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/pallax03/WizardCardGame/compare/v1.3.0...v1.4.0) (2026-11-27)
+
+
+### Features
+
+* **ai:** unify hand-aware fallback heuristic in FallbackStrategy and DumbBot ([#229](https://github.com/pallax03/WizardCardGame/issues/229)) ([72fa025](https://github.com/pallax03/WizardCardGame/commit/72fa02501dd9092f4f63055c3eed723cecf9113d)), closes [#223](https://github.com/pallax03/WizardCardGame/issues/223)
+
 # [1.3.0](https://github.com/pallax03/WizardCardGame/compare/v1.2.4...v1.3.0) (2026-11-27)
 
 
