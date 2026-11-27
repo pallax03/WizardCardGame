@@ -7,10 +7,14 @@ import ch.qos.logback.classic.{AsyncAppender, Level, Logger as LogbackLogger, Lo
 import ch.qos.logback.core.status.Status
 import org.slf4j.MDC
 
+import org.scalatest.concurrent.Eventually
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.time.{Millis, Seconds, Span}
 import org.scalatest.wordspec.AnyWordSpec
 
-class TestWizardLogger extends AnyWordSpec with Matchers:
+class TestWizardLogger extends AnyWordSpec with Matchers with Eventually:
+
+  given PatienceConfig = PatienceConfig(timeout = Span(5, Seconds), interval = Span(25, Millis))
 
   "Logback configuration" should:
     "initialize without status errors and route root logging through AsyncAppender" in:
@@ -49,14 +53,25 @@ class TestWizardLogger extends AnyWordSpec with Matchers:
       MDC.get("playerId") shouldBe null
 
     "evaluate debug messages lazily only when debug logging is enabled" in:
-      val logbackLogger = Option(WizardLogger.callerLogger).collect { case l: LogbackLogger => l }
-      val previousLevel = logbackLogger.map(_.getLevel)
+      val logbackLogger = eventually:
+        WizardLogger.callerLogger match
+          case l: LogbackLogger => l
+          case other            => fail(s"SLF4J still initializing (got ${other.getClass.getName})")
+      val previousLevel = logbackLogger.getLevel
       try
-        logbackLogger.foreach(_.setLevel(Level.INFO))
-        var evaluated = false
+        logbackLogger.setLevel(Level.INFO)
+        var evaluatedAtInfo = false
         WizardLogger.debug {
-          evaluated = true
+          evaluatedAtInfo = true
           "should not be evaluated"
         }
-        evaluated shouldBe false
-      finally logbackLogger.foreach(l => l.setLevel(previousLevel.orNull))
+        evaluatedAtInfo shouldBe false
+
+        logbackLogger.setLevel(Level.DEBUG)
+        var evaluatedAtDebug = false
+        WizardLogger.debug {
+          evaluatedAtDebug = true
+          "should be evaluated"
+        }
+        evaluatedAtDebug shouldBe true
+      finally logbackLogger.setLevel(previousLevel)
