@@ -24,45 +24,63 @@ class WizardPrologEngine(theory: Theory = WizardPrologEngine.defaultTheory):
       Card.Color.values.find(colorTerm(_) == term.toString)
     )
 
-  /** Queries Prolog goal `place_bid/3` to estimate trick potential from hand strength and trump. */
-  def placeBid(hand: Hand, trump: Trump): Option[Bid] =
-    query(s"place_bid(${cardsTerm(hand.toList)}, ${trumpColorTerm(trump)}, Bid)", "Bid").map(term =>
-      term.toString.toInt
-    )
+  /** Queries Prolog goal `place_bid/6` (falling back to `place_bid/3`) for contextual bidding. */
+  def placeBid(
+      hand: Hand,
+      trump: Trump,
+      totalPlayers: Int = 4,
+      bidsPlaced: Int = 0,
+      otherBidsSum: Int = 0
+  ): Option[Bid] =
+    val h = cardsTerm(hand.toList)
+    val t = trumpColorTerm(trump)
+    query(s"place_bid($h, $t, $totalPlayers, $bidsPlaced, $otherBidsSum, Bid)", "Bid")
+      .orElse(query(s"place_bid($h, $t, Bid)", "Bid"))
+      .map(_.toString.toInt)
 
-  /**
-   * Queries Prolog goal `adjust_bid/3` to compute a strategic alternative when a bid
-   * violates dealer Hook Rule constraints.
-   */
-  def adjustBid(hand: Hand, rejectedBid: Bid): Option[Bid] =
-    query(s"adjust_bid(${cardsTerm(hand.toList)}, $rejectedBid, FinalBid)", "FinalBid").map(term =>
-      term.toString.toInt
-    )
+  /** Queries Prolog goal `adjust_bid/7` (falling back to `adjust_bid/3`) for Hook Rule recovery. */
+  def adjustBid(
+      hand: Hand,
+      rejectedBid: Bid,
+      trump: Trump = Trump.Absent,
+      totalPlayers: Int = 4,
+      bidsPlaced: Int = 0,
+      otherBidsSum: Int = 0
+  ): Option[Bid] =
+    val h = cardsTerm(hand.toList)
+    val t = trumpColorTerm(trump)
+    query(
+      s"adjust_bid($h, $t, $totalPlayers, $bidsPlaced, $otherBidsSum, $rejectedBid, FinalBid)",
+      "FinalBid"
+    ).orElse(query(s"adjust_bid($h, $rejectedBid, FinalBid)", "FinalBid"))
+      .map(_.toString.toInt)
 
-  /**
-   * Queries Prolog goal `best_playable_card/7` to evaluate the optimal legal card.
-   *
-   * Analyzes trick deficit vs target bid to decide between winning or dodging the trick.
-   */
+  /** Queries Prolog goal `best_playable_card/10` (falling back to `/7`) for contextual card play. */
   def bestPlayableCard(
       hand: Hand,
       winningCard: Option[Card],
       followingColor: Option[Card.Color],
       trump: Trump,
       playerBid: Bid,
-      playerTrick: Trick
-  ): Option[Card] = query(
-    s"""best_playable_card(
-             |${cardsTerm(hand.toList)},
-             |${cardTerm(winningCard)},
-             |${colorTerm(followingColor)},
-             |${trumpColorTerm(trump)},
-             |$playerBid,
-             |$playerTrick,
-             |BestCard
-             |)""".stripMargin,
-    "BestCard"
-  ).flatMap(term => hand.toList.find(cardTerm(_) == term.toString))
+      playerTrick: Trick,
+      tableCards: List[Card] = Nil,
+      remainingPlayers: Int = 0,
+      tableOverbid: Int = 0
+  ): Option[Card] =
+    val h = cardsTerm(hand.toList)
+    val tbl = cardsTerm(tableCards)
+    val w = cardTerm(winningCard)
+    val f = colorTerm(followingColor)
+    val t = trumpColorTerm(trump)
+    query(
+      s"best_playable_card($h, $tbl, $w, $f, $t, $playerBid, $playerTrick, $remainingPlayers, $tableOverbid, BestCard)",
+      "BestCard"
+    ).orElse(
+      query(
+        s"best_playable_card($h, $w, $f, $t, $playerBid, $playerTrick, BestCard)",
+        "BestCard"
+      )
+    ).flatMap(term => hand.toList.find(cardTerm(_) == term.toString))
 
   /** Helper to execute a goal and extract a specific variable from the solution. */
   private def query[B](goal: String, extractTerm: String): Option[Term] =

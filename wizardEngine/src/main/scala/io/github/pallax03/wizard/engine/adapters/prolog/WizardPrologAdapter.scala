@@ -38,13 +38,16 @@ class WizardPrologAdapter(
   ): PartialFunction[PlayerGameState, Option[Bid]] =
     case state @ GameState.Bidding(_, _, _) =>
       val hand = state.core.hand
+      val (round, bids, players) = (state.core.round, state.bids, state.core.playersIds.size)
+      val (bidsPlaced, otherBidsSum) = (bids.size, bids.total)
       engine
-        .placeBid(hand, state.core.trump)
+        .placeBid(hand, state.core.trump, players, bidsPlaced, otherBidsSum)
         .flatMap: bid =>
-          val (round, bids, players) = (state.core.round, state.bids, state.core.playersIds.size)
           bid.validateBid(round, bids, players) match
             case Left(_) =>
-              engine.adjustBid(hand, bid).filter(_.validateBid(round, bids, players).isRight)
+              engine
+                .adjustBid(hand, bid, state.core.trump, players, bidsPlaced, otherBidsSum)
+                .filter(_.validateBid(round, bids, players).isRight)
             case Right(_) => Option(bid)
 
   /** @inheritdoc */
@@ -53,6 +56,9 @@ class WizardPrologAdapter(
   ): PartialFunction[PlayerGameState, Option[Card]] =
     case state @ GameState.Playing(_, _, _, _, _) =>
       val hand = state.core.hand
+      val tableCards = state.table.playedCards
+      val remainingPlayers = (state.core.playersIds.size - tableCards.size - 1).max(0)
+      val tableOverbid = state.bids.total - state.core.round
       engine
         .bestPlayableCard(
           hand = hand,
@@ -60,6 +66,9 @@ class WizardPrologAdapter(
           followingColor = state.table.followingColor,
           trump = state.core.trump,
           playerBid = state.bids(playerId),
-          playerTrick = state.tricksWon(playerId)
+          playerTrick = state.tricksWon(playerId),
+          tableCards = tableCards,
+          remainingPlayers = remainingPlayers,
+          tableOverbid = tableOverbid
         )
         .filter(hand.legalCards(state.table).contains)
