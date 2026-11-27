@@ -35,7 +35,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
 
     "dealing cards" should:
       "distribute the correct amount of cards based on the round" in:
-        val initialDeck = Deck.create
+        val initialDeck = Deck.create()
         val round = Round.start
         val (deckAfter, (hands, trump)) = round.deal(playersIds).run(initialDeck).value
 
@@ -45,7 +45,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         deckAfter.cards should have length (Deck.TOTAL_SIZE - 3 - 1)
 
       "handle deals where no cards are left for the trump card" in:
-        val initialDeck = Deck.create
+        val initialDeck = Deck.create()
         val maxRound = (1 until 20).foldLeft(Round.start)((r, _) => r.next)
 
         val (deckAfter, (hands, trump)) = maxRound.deal(playersIds).run(initialDeck).value
@@ -56,7 +56,7 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         maxRound.isLastRound(playersIds) shouldBe true
 
       "popped trump should not be in deck or in any player's hand" in:
-        val initialDeck = Deck.create
+        val initialDeck = Deck.create()
         val round = Round.start.next.next.next.next.next.next
         val (deckAfter, (hands, trump)) = round.deal(playersIds).run(initialDeck).value
 
@@ -76,34 +76,38 @@ class TestRoundManager extends AnyWordSpec with Matchers:
         p2.validateTurnOf(p1) shouldBe Left(GameActionError.NotYourTurn(p2))
 
     "initializing a new round" should:
-      val deckCards = (One of Red) - (Two of Yellow) - jester
+      def deckWithTrump(pred: Card => Boolean): Deck =
+        Iterator
+          .from(0)
+          .map(s => Deck.create(new scala.util.Random(s)))
+          .find(d => pred(d.cards(playersIds.size)))
+          .get
+
       "correctly transition to Bidding state" in:
         val round = Round.start
-        val Card_TrumpResolved = Thirteen of Green
-        val TrumpResolved = Option(Card_TrumpResolved).asTrump
-        val customDeck_TrumpResolved = Deck.create(deckCards - Card_TrumpResolved)
+        val deck = deckWithTrump { case _: Card.Standard => true; case _ => false }
+        val expectedTrump = Option(deck.cards(playersIds.size)).asTrump
 
         round
-          .initialize(customDeck_TrumpResolved)
+          .initialize(deck)
           .runA(ServerCoreState.initialize(playersIds, round))
           .value match
           case biddingState: GameState.Bidding[?] =>
             biddingState.core.hands.getHand(p1).toList should have length 1
             biddingState.playerTurn shouldBe p1
-            biddingState.core.trump shouldBe TrumpResolved
+            biddingState.core.trump shouldBe expectedTrump
           case _ => ()
 
       "correctly transition to ChoosingTrump state" in:
         val round = Round.start
-        val Card_TrumpUnResolved = wizard
-        val TrumpUnResolved = Option(Card_TrumpUnResolved).asTrump
-        val customDeck_TrumpUnresolved = Deck.create(deckCards - Card_TrumpUnResolved)
+        val deck = deckWithTrump(_.isWizard)
+        val expectedTrump = Option(deck.cards(playersIds.size)).asTrump
 
         round
-          .initialize(customDeck_TrumpUnresolved)
+          .initialize(deck)
           .runA(ServerCoreState.initialize(playersIds, round))
           .value match
           case choosingState: GameState.ChoosingTrump[?] =>
             choosingState.core.hands.getHand(p1).toList should have length 1
-            choosingState.core.trump shouldBe TrumpUnResolved
+            choosingState.core.trump shouldBe expectedTrump
           case _ => ()
