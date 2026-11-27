@@ -83,9 +83,10 @@ import { Badge, Card, CardGrid, Steps, TabItem, Tabs } from '@astrojs/starlight/
 
 **WizardCardGame** follows a **Continuous Evolution** lifecycle across four university courses, preserving domain invariants while evolving architecture and DevOps processes:
 
+<div class="active-step-3">
 <Steps>
-  1. **Act I: Paradigmi di Programmazione e Sviluppo - PPS (Genesis & Core Domain)**
-     - Pure functional game engine in Scala 3 (`wizardEngine`).
+  1. **Act I: Programming and Development Paradigms - PPS (Genesis & Core Domain)**
+     - Pure functional game engine (FSM) in Scala 3 (`wizardEngine`).
      - Symbolic AI bot solvers using **tuProlog** theories.
      - Strict Hexagonal Architecture (`engine/model`, `engine/ports`, `engine/adapters`).
 
@@ -94,16 +95,17 @@ import { Badge, Card, CardGrid, Steps, TabItem, Tabs } from '@astrojs/starlight/
      - Vert.x REST endpoints (`HttpServerVerticle`, OpenAPI) and WebSockets (`WebSocketsVerticle`).
      - Prototypal Next.js client (`application/`) for browser multiplayer sessions.
 
-  3. **Act III: Software Process Engineering - SPE (Current Iteration)**
+  3. **Act III: Software Process Engineering - SPE**
      - Restructured 496 historical commits into 8 bisectable commits sealed with tag `v1.0.0`.
      - Trunk-Based Development with GitHub Rulesets and Bot App automation.
      - Multi-platform CI/CD (DRY Composite Actions, Ubuntu/macOS/Windows matrices).
-     - **`humanize-bot`** Bounded Context in TypeScript on Supabase (PostgreSQL).
+     - **`bot-dialogue`** Bounded Context in TypeScript on Supabase (PostgreSQL).
 
-  4. **Act IV: Web Technologies (Future Horizon)**
+  4. **Act IV: Web Technologies**
      - Complete rewrite of `application/` client with persistent authentication and match history.
      - *Database per Bounded Context*: Schema isolation on Supabase (`bot_dialogue` vs. `public`/`auth`).
 </Steps>
+</div>
 
 ---
 
