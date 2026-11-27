@@ -1,19 +1,29 @@
-% WIZARD ENGINE.BASIC
+% WIZARD DOMAIN -> Card representation, validation, and pure accessors
 
-is_valid_rank(RANK) :- range(1, 13, RANK).
-is_valid_color(COLOR) :- member(COLOR, [red, green, yellow, blue]).
-card(RANK, COLOR) :- is_valid_rank(RANK), is_valid_color(COLOR).
+valid_color(red).
+valid_color(green).
+valid_color(yellow).
+valid_color(blue).
 
-% validate_cards(+CARDS)
+valid_rank(Rank) :- in_range(1, 13, Rank).
+
+% valid_card(+Card) -> deterministic validation of a single Wizard card term
+valid_card(wizard) :- !.
+valid_card(jester) :- !.
+valid_card(card(Rank, Color)) :-
+    valid_rank(Rank),
+    valid_color(Color), !.
+
+% validate_cards(+Cards) -> succeeds iff every element is a valid card
 validate_cards([]).
-validate_cards([wizard | T]) :- validate_cards(T).
-validate_cards([jester | T]) :- validate_cards(T).
-validate_cards([card(RANK, Color) | T]) :- card(RANK, Color), !, validate_cards(T).
+validate_cards([Card | Rest]) :-
+    valid_card(Card),
+    validate_cards(Rest).
 
-% card_of_color(?StandardCard, ?Color).
-card_of_color(card(Rank, Color), Color) :- card(Rank, Color).
+% card_of_color(?Card, ?Color) -> fast structural accessor (no re-validation in hot loops)
+card_of_color(card(_, Color), Color).
 
-% card_value(+Card, -Rank)
-card_value(card(Rank, Color), Rank):- card(Rank, Color).
+% card_value(+Card, -RankValue) -> base rank value (0 for jester, 1..13 for standard, 14 for wizard)
 card_value(jester, 0).
+card_value(card(Rank, _), Rank).
 card_value(wizard, 14).
