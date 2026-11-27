@@ -1,5 +1,5 @@
 ---
-title: Wizard Card Game
+title: Report
 description: Software Process Engineering (SPE / DevOps) Technical Report
 template: splash
 hero:
@@ -17,37 +17,41 @@ hero:
       variant: secondary
 ---
 
-import { Card, LinkCard } from '@astrojs/starlight/components';
-import FeatureGrid from 'starlight-theme-terminal/components/FeatureGrid.astro';
+import { Card, CardGrid, LinkCard } from '@astrojs/starlight/components';
 
 ## Architectural Pillars
 
-<FeatureGrid columns={2}>
-  <Card title="Hexagonal Architecture & DDD" icon="puzzle">
-    Pure functional core in **Scala 3** isolated from distributed infrastructure via ports, adapters, and domain boundaries.
+<CardGrid>
+  <Card title="Pure Functional Core & Symbolic AI" icon="puzzle">
+    60-card *Wizard* rules in **Scala 3** with declarative **tuProlog** bot solvers, isolated behind Hexagonal ports.
   </Card>
-  <Card title="Distributed State & Symbolic AI" icon="laptop">
-    Concurrency handled via **Redis CAS Lua scripts**, Pub/Sub event bus, and declarative **tuProlog** bot solvers.
+  <Card title="Fault-Tolerant Multiplayer" icon="random">
+    Distributed state via **Redis CAS Lua scripts**, Pub/Sub sync, Fog of War, and automatic crash/AFK recovery.
   </Card>
-  <Card title="DVCS Governance & Least Privilege" icon="github">
-    **Trunk-based development** sealed with annotated tag `v1.0.0`, GitHub Rulesets, and bot-delegated releases.
+  <Card title="Contextual Bot Personalities" icon="comment">
+    Event-driven TypeScript dialogue worker (`bot-dialogue`) reacting to table events with per-bot tones and per-player localization.
   </Card>
-  <Card title="Multi-Platform CI/CD" icon="rocket">
-    Automated multi-OS test matrices (`Linux`, `macOS`, `Windows`), Docker orchestration, and semantic releases.
+  <Card title="Real-Time Web Experience" icon="laptop">
+    Zero-install **Next.js** browser client backed by versioned REST (`/api/v1`) and live WebSockets.
   </Card>
-</FeatureGrid>
+</CardGrid>
 
 ## Report Chapters
 
-<FeatureGrid columns={2}>
+<CardGrid>
   <LinkCard
     title="1. Introduction & Evolution"
     description="Domain mechanics, 4-act multi-course evolution, and baseline problem diagnosis."
     href="/WizardCardGame/01-introduction/"
   />
   <LinkCard
+    title="2. Requirements"
+    description="Act III functional user stories with DoD, quality attributes, and implementation constraints."
+    href="/WizardCardGame/02-requirements/"
+  />
+  <LinkCard
     title="4. Development Process & DVCS"
     description="496-commit historical audit, bisectable v1.0.0 reconstruction, and Conventional Commits taxonomy."
     href="/WizardCardGame/04-process-dvcs/"
   />
-</FeatureGrid>
+</CardGrid>

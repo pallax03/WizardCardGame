@@ -1,7 +1,7 @@
 import { defineConfig } from 'astro/config';
 import mermaid from 'astro-mermaid';
 import starlight from '@astrojs/starlight';
-import starlightThemeTerminal from 'starlight-theme-terminal';
+import starlightThemeRapide from 'starlight-theme-rapide';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 
@@ -18,13 +18,22 @@ export default defineConfig({
       autoTheme: true,
     }),
     starlight({
-      title: 'WizardCardGame - SPE Report',
+      title: 'WizardCardGame',
       description: 'Software Process Engineering (SPE) Technical Report',
       plugins: [
-        starlightThemeTerminal(),
+        starlightThemeRapide(),
+        {
+          name: 'custom-css-after-rapide',
+          hooks: {
+            'config:setup'({ config, updateConfig }) {
+              updateConfig({
+                customCss: [...(config.customCss ?? []), './src/styles/custom.css'],
+              });
+            },
+          },
+        },
       ],
       customCss: [
-        './src/styles/terminal-custom.css',
         'katex/dist/katex.min.css',
       ],
       head: [
@@ -46,8 +55,14 @@ export default defineConfig({
           items: [
             { label: 'Overview', slug: 'index' },
             { label: '1. Introduction & Evolution', slug: '01-introduction' },
+            { label: '2. Requirements', slug: '02-requirements' },
             { label: '4. Development Process & DVCS', slug: '04-process-dvcs' },
           ],
+        },
+        {
+          label: 'Play Wizard Online',
+          link: 'https://wizardcardgame.vercel.app/',
+          attrs: { target: '_blank', rel: 'noopener noreferrer' },
         },
       ],
     }),

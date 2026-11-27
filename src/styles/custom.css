@@ -1,0 +1,174 @@
+/* Primary accent: white (dark) / near-black (light), keeping Rapide semantic palette */
+:root,
+::backdrop {
+  --sl-color-accent-low: oklch(25% 0 0);
+  --sl-color-accent: oklch(88% 0 0);
+  --sl-color-accent-high: oklch(98% 0 0);
+  --sl-color-text-accent: oklch(98% 0 0);
+}
+
+:root[data-theme='light'],
+[data-theme='light'] ::backdrop {
+  --sl-color-accent-low: oklch(93% 0 0);
+  --sl-color-accent: oklch(24% 0 0);
+  --sl-color-accent-high: oklch(14% 0 0);
+  --sl-color-text-accent: oklch(14% 0 0);
+}
+
+:is(.hero, .sl-markdown-content) .sl-link-button.primary {
+  background-color: var(--sl-color-accent-high);
+  border-color: var(--sl-color-accent-high);
+  color: var(--sl-color-black);
+}
+
+:is(.hero, .sl-markdown-content) .sl-link-button.primary:is(:hover, :focus-visible) {
+  background-color: var(--sl-color-accent);
+  border-color: var(--sl-color-accent);
+  color: var(--sl-color-black);
+}
+
+/* Global: prevent mobile horizontal overflow, hide scrollbars, guard fixed-header scroll offset */
+html {
+  scroll-padding-top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height, 0rem) + 1rem);
+}
+
+html,
+body {
+  overflow-x: clip;
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+}
+
+/* Header Wizard favicon */
+header.header .site-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  line-height: 1;
+}
+
+header.header .site-title::before {
+  content: '';
+  display: block;
+  width: 1.35rem;
+  height: 1.35rem;
+  flex-shrink: 0;
+  background: url('https://raw.githubusercontent.com/pallax03/WizardCardGame/master/application/src/app/icon.svg') center / contain no-repeat;
+}
+
+/* Sidebar external game link with Wizard favicon */
+nav.sidebar a[href='https://wizardcardgame.vercel.app/'] {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+nav.sidebar a[href='https://wizardcardgame.vercel.app/']::before {
+  content: '';
+  display: inline-block;
+  width: 1.5rem;
+  height: 1.5rem;
+  flex-shrink: 0;
+  background: url('https://raw.githubusercontent.com/pallax03/WizardCardGame/master/application/src/app/icon.svg') center / contain no-repeat;
+}
+
+/* Mobile header: hamburger on the left (pages with sidebar), safe-area top padding */
+@media (max-width: 50rem) {
+  header.header {
+    padding-top: calc(var(--sl-nav-pad-y) + env(safe-area-inset-top, 0px));
+    height: calc(var(--sl-nav-height) + env(safe-area-inset-top, 0px));
+  }
+
+  .main-frame {
+    padding-top: calc(var(--sl-nav-height) + var(--sl-mobile-toc-height, 0rem) + env(safe-area-inset-top, 0px));
+  }
+
+  [data-has-sidebar] header.header {
+    padding-inline-start: calc(var(--sl-nav-pad-x) + var(--sl-menu-button-size) + 0.5rem);
+    padding-inline-end: var(--sl-nav-pad-x);
+  }
+
+  starlight-menu-button button,
+  starlight-menu-button[aria-expanded='true'] button,
+  [data-theme='light'] starlight-menu-button button,
+  [data-theme='light'] starlight-menu-button[aria-expanded='true'] button {
+    top: calc(env(safe-area-inset-top, 0px) + (var(--sl-nav-height) - var(--sl-menu-button-size)) / 2);
+    inset-inline-start: var(--sl-nav-pad-x);
+    inset-inline-end: auto;
+    padding: 0;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    color: var(--sl-color-gray-1);
+  }
+}
+
+/* Hero logo: prevent 380px SVG from overflowing narrow mobile viewports */
+.hero-html,
+.hero-html a {
+  display: flex;
+  justify-content: center;
+  max-width: 100%;
+}
+
+.hero-html img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+/* Light mode: invert white SVGs to charcoal while preserving the gold star (#E3B200) */
+:root[data-theme='light'] .hero-html img,
+:root[data-theme='light'] header.header .site-title::before,
+:root[data-theme='light'] nav.sidebar a[href='https://wizardcardgame.vercel.app/']::before {
+  filter: invert(0.88) hue-rotate(180deg);
+}
+
+/* Tabs: keep equal height and prevent stair-stepped wrapping on mobile */
+starlight-tabs ul[role='tablist'] {
+  align-items: stretch;
+}
+
+starlight-tabs ul[role='tablist'] .tab {
+  display: flex;
+  flex-shrink: 0;
+}
+
+starlight-tabs ul[role='tablist'] a[role='tab'] {
+  white-space: nowrap;
+  height: 100%;
+  padding: 0.45rem 1rem;
+}
+
+/* Highlight active Act III step in Ch. 01 <Steps> using Rapide's native accent */
+.active-step-3 .sl-steps > li:nth-child(3)::before {
+  background-color: var(--sl-color-text-accent);
+  color: var(--sl-color-bg);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--sl-color-text-accent) 28%, transparent);
+  animation: step-pulse 2.2s ease-in-out infinite;
+}
+
+@keyframes step-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--sl-color-text-accent) 25%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in srgb, var(--sl-color-text-accent) 12%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .active-step-3 .sl-steps > li:nth-child(3)::before {
+    animation: none;
+  }
+}
