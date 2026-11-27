@@ -27,3 +27,12 @@ min_scored_acc([pair(Score, Item) | Rest], BestScore, _, BestItem) :-
     min_scored_acc(Rest, Score, Item, BestItem).
 min_scored_acc([_ | Rest], BestScore, CurrentItem, BestItem) :-
     min_scored_acc(Rest, BestScore, CurrentItem, BestItem).
+
+% sum_list(+Numbers, -Sum) -> tail-recursive O(N) integer sum
+sum_list(List, Sum) :-
+    sum_list_acc(List, 0, Sum).
+
+sum_list_acc([], Acc, Acc).
+sum_list_acc([H | T], Acc, Sum) :-
+    NextAcc is Acc + H,
+    sum_list_acc(T, NextAcc, Sum).
