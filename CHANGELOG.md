@@ -1,3 +1,11 @@
+# [1.3.0](https://github.com/pallax03/WizardCardGame/compare/v1.2.4...v1.3.0) (2026-11-27)
+
+
+### Features
+
+* **ai:** strengthen Prolog strategies with weighted trump and continuous bidding ([79ed346](https://github.com/pallax03/WizardCardGame/commit/79ed3462a894232cf972413a4a718aeb1a579c4b))
+* **domain:** unify Deck.create with optional Random for deterministic dealing ([1a08c9f](https://github.com/pallax03/WizardCardGame/commit/1a08c9fe8a6f3d96d1d726288e4bb9e543ff6e2f))
+
 ## [1.2.4](https://github.com/pallax03/WizardCardGame/compare/v1.2.3...v1.2.4) (2026-11-27)
 
 
