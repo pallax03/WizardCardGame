@@ -46,23 +46,20 @@ class TestBotStrategy extends AnyWordSpec with Matchers with ScalaFutures:
       BotStrategy(BotsDifficulty.Prolog, StubAIPort(inbound, trump, bid, card))
 
     "using Dumb difficulty" should:
-      val dumb = BotStrategy(BotsDifficulty.Dumb, StubAIPort(StubInboundPort()))
+      "resolve trump, bid, and card moves using PlayerGameState" in:
+        List(
+          (GameState.ChoosingTrump(core), trumpInv),
+          (GameState.Bidding(core, Bids.empty, botId), bidInv),
+          (GameState.Playing(core, Bids.empty, Table.empty, botId, Tricks.empty), cardInv)
+        ).foreach: (state, invitation) =>
+          val dumb = BotStrategy(BotsDifficulty.Dumb, StubAIPort(StubInboundPort.returning(state)))
+          val action = dumb.resolveInvitation(defaultLobbyId, invitation).futureValue
+          action.playerId shouldBe botId
 
-      "resolve trump, bid, and card moves with legal fallback actions" in:
-        dumb.resolveInvitation(defaultLobbyId, trumpInv).futureValue match
-          case GameAction.ResolveTrumpColor(p, color) =>
-            p shouldBe botId
-            Card.Color.values should contain(color)
-          case other => fail(s"Unexpected action: $other")
-
-        dumb.resolveInvitation(defaultLobbyId, bidInv).futureValue match
-          case GameAction.PlaceBid(p, bid) =>
-            p shouldBe botId
-            bid should not be 0
-          case other => fail(s"Unexpected action: $other")
-
-        dumb.resolveInvitation(defaultLobbyId, cardInv).futureValue shouldBe
-          GameAction.PlayCard(botId, Ten of Blue)
+      "fail cleanly when PlayerGameState is absent" in:
+        val dumb = BotStrategy(BotsDifficulty.Dumb, StubAIPort(StubInboundPort()))
+        dumb.resolveInvitation(defaultLobbyId, cardInv).failed.futureValue shouldBe
+          a[IllegalStateException]
 
     "using Prolog difficulty" should:
       "return AI-suggested actions when hints are available" in:
@@ -96,13 +93,22 @@ class TestBotStrategy extends AnyWordSpec with Matchers with ScalaFutures:
         ).foreach: (strategy, invitation, expectedAction) =>
           strategy.resolveInvitation(defaultLobbyId, invitation).futureValue shouldBe expectedAction
 
-      "fall back cleanly when AI returns no hint, an AIError, or a failed future" in:
-        List(
-          StubInboundPort.returning(
-            GameState.Playing(core, Bids.empty, Table.empty, botId, Tricks.empty)
-          ),
-          StubInboundPort(),
-          StubInboundPort.failing(new RuntimeException("boom"))
-        ).foreach: inbound =>
-          prologStrategy(inbound).resolveInvitation(defaultLobbyId, cardInv).futureValue shouldBe
-            GameAction.PlayCard(botId, Ten of Blue)
+      "fall back cleanly when AI returns no hint and state is available" in:
+        val inbound = StubInboundPort.returning(
+          GameState.Playing(core, Bids.empty, Table.empty, botId, Tricks.empty)
+        )
+        prologStrategy(inbound).resolveInvitation(defaultLobbyId, cardInv).futureValue match
+          case GameAction.PlayCard(p, card) =>
+            p shouldBe botId
+            legalCards should contain(card)
+          case other => fail(s"Unexpected action: $other")
+
+      "fail cleanly when AI fails and state is absent or errored" in:
+        prologStrategy(StubInboundPort())
+          .resolveInvitation(defaultLobbyId, cardInv)
+          .failed
+          .futureValue shouldBe a[IllegalStateException]
+        prologStrategy(StubInboundPort.failing(new RuntimeException("boom")))
+          .resolveInvitation(defaultLobbyId, cardInv)
+          .failed
+          .futureValue shouldBe a[RuntimeException]

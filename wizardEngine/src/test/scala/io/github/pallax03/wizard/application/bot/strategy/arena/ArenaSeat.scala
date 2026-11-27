@@ -20,7 +20,7 @@ final case class ArenaSeat(name: String, instantiate: InboundPort => SeatInstanc
 
 object ArenaSeat:
   val dumbName = "DumbBot"
-  def dumb: ArenaSeat = ArenaSeat(dumbName, _ => SeatInstance(new DumbBotStrategy))
+  def dumb: ArenaSeat = ArenaSeat(dumbName, inbound => SeatInstance(new DumbBotStrategy(inbound)))
   val prologName = "PrologBot"
   def prolog: ArenaSeat = prolog(prologName)
 

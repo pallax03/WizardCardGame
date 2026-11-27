@@ -3,7 +3,7 @@ package io.github.pallax03.wizard.engine.adapters.redis
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-import cats.data.EitherT
+import cats.data.{EitherT, OptionT}
 import cats.syntax.all.*
 
 import io.vertx.redis.client.{Command, Redis, Request}
@@ -137,13 +137,11 @@ class RedisInboundAdapter(
 
   /** @inheritdoc */
   override def forceFallbackAction(lobbyId: LobbyId, playerId: PlayerId): Future[Unit] =
-    getState(lobbyId, playerId).flatMap:
-      case Some(playerGameState) =>
-        playerGameState.pendingInvitation(playerId) match
-          case Some(invitationEvent: InvitationEvent) =>
-            submitAction(lobbyId, FallbackStrategy.fallbackMove(invitationEvent)).flatMap:
-              case Left(err) =>
-                Future.failed(GameException.CorruptedState(s"Fallback failed: $err"))
-              case Right(_) => Future.unit
-          case None => Future.unit
-      case None => Future.unit
+    OptionT(getState(lobbyId, playerId))
+      .subflatMap(FallbackStrategy.fallbackMove(_, playerId))
+      .semiflatMap: action =>
+        submitAction(lobbyId, action).flatMap:
+          case Left(err) =>
+            Future.failed(GameException.CorruptedState(s"Fallback failed: $err"))
+          case Right(_) => Future.unit
+      .getOrElse(())
