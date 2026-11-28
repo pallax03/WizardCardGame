@@ -28,6 +28,7 @@ object Bids:
   extension (b: Bids)
     def apply(p: PlayerId): Bid = b.getOrElse(p, 0)
     def isEmpty: Boolean = b.isEmpty
+    def size: Int = b.size
     infix def +(entry: (PlayerId, Bid)): Bids = b + entry
     def isComplete(totalPlayers: Int): Boolean = b.size == totalPlayers
     def total: Bid = b.values.sum

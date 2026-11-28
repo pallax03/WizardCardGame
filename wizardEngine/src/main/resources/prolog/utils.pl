@@ -36,3 +36,8 @@ sum_list_acc([], Acc, Acc).
 sum_list_acc([H | T], Acc, Sum) :-
     NextAcc is Acc + H,
     sum_list_acc(T, NextAcc, Sum).
+
+% clamp(+Min, +Max, +Value, -Clamped) -> deterministic O(1) bounds clamping
+clamp(Min, _, Value, Min) :- Value < Min, !.
+clamp(_, Max, Value, Max) :- Value > Max, !.
+clamp(_, _, Value, Value).

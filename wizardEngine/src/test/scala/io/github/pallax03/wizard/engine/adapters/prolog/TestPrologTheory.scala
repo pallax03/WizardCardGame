@@ -77,6 +77,22 @@ class TestPrologTheory extends AnyWordSpec with Matchers with TableDrivenPropert
           adjusted.get should be >= 0
           adjusted.get should be <= hand.toList.size
 
+      "adjust bid higher under opponent underbid pressure and lower under overbid pressure" in:
+        val marginalHand =
+          ((Ten of Red) - (Nine of Red) - (Twelve of Blue) - (Eleven of Green) - (Three of Yellow) - (Four of Blue)).asHand
+        val trump = Option(Two of Red).asTrump
+        val underbid = engine
+          .placeBid(marginalHand, trump, totalPlayers = 4, bidsPlaced = 2, otherBidsSum = 0)
+          .get
+        val overbid = engine
+          .placeBid(marginalHand, trump, totalPlayers = 4, bidsPlaced = 2, otherBidsSum = 6)
+          .get
+        underbid should be >= overbid
+
+        val threePlayers = engine.placeBid(marginalHand, trump, totalPlayers = 3).get
+        val sixPlayers = engine.placeBid(marginalHand, trump, totalPlayers = 6).get
+        threePlayers should be >= sixPlayers
+
     "selecting best playable card" should:
       "always return a legal card across 100 seeded random game states" in:
         val rng = new Random(12345L)
@@ -100,13 +116,19 @@ class TestPrologTheory extends AnyWordSpec with Matchers with TableDrivenPropert
           val bid = rng.nextInt(handSize + 1)
           val tricks = rng.nextInt(handSize + 1)
 
+          val tableCards = deck.slice(handSize, handSize + tablePlays).toList
+          val remainingPlayers = rng.nextInt(4)
+          val tableOverbid = rng.nextInt(7) - 3
           val chosen = engine.bestPlayableCard(
             hand = hand,
             winningCard = table.evaluateTrick(trump),
             followingColor = table.followingColor,
             trump = trump,
             playerBid = bid,
-            playerTrick = tricks
+            playerTrick = tricks,
+            tableCards = tableCards,
+            remainingPlayers = remainingPlayers,
+            tableOverbid = tableOverbid
           )
           chosen shouldBe defined
           hand.legalCards(table) should contain(chosen.get)
@@ -218,6 +240,74 @@ class TestPrologTheory extends AnyWordSpec with Matchers with TableDrivenPropert
         hand.toList should contain(winLead.get)
         hand.toList should contain(loseLead.get)
 
+      "adapt card play to seat position and table pressure" in:
+        val winHand = ((Eleven of Yellow) - (Thirteen of Yellow) - wizard - (Two of Blue)).asHand
+        val trump = Option(Five of Red).asTrump
+        engine.bestPlayableCard(
+          winHand,
+          Some(Ten of Yellow),
+          Some(Yellow),
+          trump,
+          playerBid = 2,
+          playerTrick = 0,
+          remainingPlayers = 0,
+          tableOverbid = 1
+        ) shouldBe Some(Eleven of Yellow)
+        engine.bestPlayableCard(
+          winHand,
+          Some(Ten of Yellow),
+          Some(Yellow),
+          trump,
+          playerBid = 2,
+          playerTrick = 0,
+          remainingPlayers = 2,
+          tableOverbid = 1
+        ) shouldBe Some(Thirteen of Yellow)
+
+        val forcedWinHand = ((Four of Yellow) - (Thirteen of Yellow)).asHand
+        engine.bestPlayableCard(
+          forcedWinHand,
+          Some(Three of Yellow),
+          Some(Yellow),
+          trump,
+          playerBid = 0,
+          playerTrick = 0,
+          remainingPlayers = 2
+        ) shouldBe Some(Four of Yellow)
+        engine.bestPlayableCard(
+          forcedWinHand,
+          Some(Three of Yellow),
+          Some(Yellow),
+          trump,
+          playerBid = 0,
+          playerTrick = 0,
+          remainingPlayers = 0
+        ) shouldBe Some(Thirteen of Yellow)
+
+        val underbidHand = ((Two of Blue) - (Eleven of Red) - jester).asHand
+        engine.bestPlayableCard(
+          underbidHand,
+          None,
+          None,
+          Option(Five of Green).asTrump,
+          playerBid = 0,
+          playerTrick = 0,
+          tableOverbid = -2
+        ) shouldBe Some(jester)
+
+        val ruffHand = ((Three of Red) - (Thirteen of Red) - wizard).asHand
+        engine.bestPlayableCard(
+          ruffHand,
+          Some(Ten of Yellow),
+          Some(Yellow),
+          trump,
+          playerBid = 1,
+          playerTrick = 0,
+          tableCards = List(Ten of Yellow),
+          remainingPlayers = 1,
+          tableOverbid = 0
+        ) shouldBe Some(Three of Red)
+
     "evaluating determinism, rules, and 20-card performance" should:
       val solver = PrologEngine.buildEngine(WizardPrologEngine.defaultTheory)
 
@@ -226,8 +316,11 @@ class TestPrologTheory extends AnyWordSpec with Matchers with TableDrivenPropert
           "choose_trump([card(1,red),card(2,red),wizard], C)",
           "choose_trump([wizard,jester], C)",
           "place_bid([card(13,red),wizard,jester], blue, B)",
+          "place_bid([card(13,red),wizard,jester], blue, 4, 2, 1, B)",
           "adjust_bid([card(1,red),jester,wizard], 1, B)",
+          "adjust_bid([card(1,red),jester,wizard], red, 4, 2, 1, 1, B)",
           "best_playable_card([card(11,yellow),wizard], card(10,yellow), yellow, red, 2, 0, C)",
+          "best_playable_card([card(11,yellow),wizard], [card(10,yellow)], card(10,yellow), yellow, red, 2, 0, 2, 1, C)",
           "best_playable_card([card(2,blue),card(10,red)], none, none, green, 0, 0, C)"
         )
         goals.foreach: goal =>
