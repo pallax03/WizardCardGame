@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/pallax03/WizardCardGame/compare/v1.4.0...v1.5.0) (2026-11-28)
+
+
+### Features
+
+* **ai:** expand Prolog context with opponent bids, table plays, and seat position ([#231](https://github.com/pallax03/WizardCardGame/issues/231)) ([ab2f586](https://github.com/pallax03/WizardCardGame/commit/ab2f586e6c61597076a00bab790e3b3cd46d1948)), closes [#222](https://github.com/pallax03/WizardCardGame/issues/222) [#223](https://github.com/pallax03/WizardCardGame/issues/223)
+
 # [1.4.0](https://github.com/pallax03/WizardCardGame/compare/v1.3.0...v1.4.0) (2026-11-27)
 
 
